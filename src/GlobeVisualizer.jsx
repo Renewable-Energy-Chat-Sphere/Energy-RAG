@@ -47,13 +47,14 @@ const LonLines = ({ segments = 12, radius = 3 }) => {
 };
 
 const data = [
-  { code: "S01", color: "#fce4ec" },
-  { code: "S02", color: "#f8bbd0" },
-  { code: "S03", color: "#f48fb1" },
-  { code: "H01", color: "#e3f2fd" },
-  { code: "H02", color: "#90caf9" },
-  { code: "H03", color: "#42a5f5" }
+  { code: "S01", color: "#fce4ec", url: "https://example.com/s01" },
+  { code: "S02", color: "#f8bbd0", url: "https://example.com/s02" },
+  { code: "S03", color: "#f48fb1", url: "https://example.com/s03" },
+  { code: "H01", color: "#e3f2fd", url: "https://example.com/h01" },
+  { code: "H02", color: "#90caf9", url: "https://example.com/h02" },
+  { code: "H03", color: "#42a5f5", url: "https://example.com/h03" }
 ];
+
 
 const GridShell = ({ radius = 3, rows = 12, cols = 24 }) => {
   const tiles = [];
@@ -84,16 +85,40 @@ const GridShell = ({ radius = 3, rows = 12, cols = 24 }) => {
 
       tiles.push(
   <group key={`tile-${row}-${col}`} position={pos} quaternion={quaternion}>
-    <mesh>
+    <mesh
+      onClick={() => window.open(item.url, "_blank")} // 在新分頁開啟連結
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "pointer";       // 滑鼠變成手指
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "default";       // 滑鼠變回箭頭
+      }}
+    >
       <planeGeometry args={[tileWidth, tileHeight]} />
-      <meshBasicMaterial color={item.color} transparent opacity={0.6} side={THREE.DoubleSide} />
+      <meshBasicMaterial
+        color={item.color}
+        transparent
+        opacity={0.6}
+        side={THREE.DoubleSide}
+      />
     </mesh>
     <Text
       position={[0, 0, 0.01]}
-      fontSize={tileHeight * 0.25 * sinTheta} // 字體依緯度縮放
+      fontSize={tileHeight * 0.25 * sinTheta}
       color="#000"
       anchorX="center"
       anchorY="middle"
+      onClick={() => window.open(item.url, "_blank")}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "default";
+      }}
     >
       {item.code}
     </Text>
