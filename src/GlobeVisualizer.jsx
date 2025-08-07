@@ -46,20 +46,105 @@ const LonLines = ({ segments = 12, radius = 3 }) => {
   return <group>{lines}</group>;
 };
 
-const data = [
-  { code: "S01", color: "#fce4ec", url: "https://example.com/s01" },
-  { code: "S02", color: "#f8bbd0", url: "https://example.com/s02" },
-  { code: "S03", color: "#f48fb1", url: "https://example.com/s03" },
-  { code: "H01", color: "#e3f2fd", url: "https://example.com/h01" },
-  { code: "H02", color: "#90caf9", url: "https://example.com/h02" },
-  { code: "H03", color: "#42a5f5", url: "https://example.com/h03" }
+const testSymptoms = [
+  {
+    code: "S01",
+    zh: "右膝內側半月板桶柄撕裂",
+    en: "Right knee medial meniscus bucket handle tear",
+    url: "https://example.com/s01"
+  },
+  {
+    code: "S02",
+    zh: "外側半月板放射狀撕裂",
+    en: "Lateral meniscus radial tear",
+    url: "https://example.com/s02"
+  },
+  {
+    code: "S03",
+    zh: "已在滑車處接受 BiCRI 手術",
+    en: "Status post BiCRI at Trochlea",
+    url: "https://example.com/s03"
+  },
+  {
+    code: "S04",
+    zh: "雙側彈性扁平足",
+    en: "Bilateral flexible flatfoot",
+    url: "https://example.com/s04"
+  },
+  {
+    code: "S05",
+    zh: "板機指",
+    en: "Trigger finger",
+    url: "https://example.com/s05"
+  },
+
 ];
 
+const testDrugs = [
+  {
+    code: "H01",
+    zh: "滋骨加強咀嚼錠",
+    en: "Bio-cal Plus chewable",
+    sci: "Tricalcium phosphate + Cholecalciferol",
+    url: "https://example.com/h01"
+  },
+  {
+    code: "H02",
+    zh: "骨力強注射液",
+    en: "Aclasta",
+    sci: "Zoledronic acid",
+    url: "https://example.com/h02"
+  },
+  {
+    code: "H03",
+    zh: "骨穩 注射液",
+    en: "Forteo",
+    sci: "Teriparatide",
+    url: "https://example.com/h03"
+  },
+  {
+    code: "H04",
+    zh: "鈣穩膜衣錠",
+    en: "Evista",
+    sci: "Raloxifene hydrochloride",
+    url: "https://example.com/h04"
+  },
+  {
+    code: "H05",
+    zh: "希樂葆膠囊",
+    en: "Celebrex / Celebrex Capsule",
+    sci: "Celecoxib",
+    url: "https://example.com/h05"
+  }
+  
+];
 
-const GridShell = ({ radius = 3, rows = 12, cols = 24 }) => {
+// 合併為單一資料陣列
+const data = [...testSymptoms, ...testDrugs];
+
+
+
+// LabeledGridShell with S/H split hemisphere
+const LabeledGridShell = ({ data, radius = 3, rows = 12, cols = 12 }) => {
   const tiles = [];
 
-  for (let row = 0; row < rows; row++) {
+  // 分類資料為 symptoms (S 開頭) 與 drugs (H 開頭)
+  const symptoms = data.filter((item) => item.code.startsWith("S"));
+  const drugs = data.filter((item) => item.code.startsWith("H"));
+
+  // 產生從赤道往上下交錯排的 row 順序
+  const rowOrder = [];
+  const mid = Math.floor(rows / 2);
+  for (let i = 0; i < rows; i++) {
+    const offset = Math.floor((i + 1) / 2);
+    rowOrder.push(i % 2 === 0 ? mid - offset : mid + offset);
+  }
+
+  // 將 drugs 與 symptoms 分別安排到不同半球 row
+  let indexH = 0;
+  let indexS = 0;
+
+  for (const row of rowOrder) {
     const theta = ((row + 0.5) / rows) * Math.PI;
     const sinTheta = Math.sin(theta);
     const latCircumference = 2 * Math.PI * radius * sinTheta;
@@ -67,11 +152,19 @@ const GridShell = ({ radius = 3, rows = 12, cols = 24 }) => {
     const tileHeight = (Math.PI * radius / rows) * 0.98;
 
     for (let col = 0; col < cols; col++) {
-      const phi = ((col + 0.5) / cols) * 2 * Math.PI;
-      const index = (row * cols + col) % data.length;
-      const item = data[index];
+      let item = null;
 
-      const r = radius + 0.005;
+      if (row >= mid && indexH < drugs.length) {
+        item = drugs[indexH++];
+      } else if (row < mid && indexS < symptoms.length) {
+        item = symptoms[indexS++];
+      }
+
+      if (!item) continue;
+
+      const phi = ((col + 0.5) / cols) * 2 * Math.PI;
+
+      const r = radius;
       const x = r * Math.sin(theta) * Math.cos(phi);
       const y = r * Math.cos(theta);
       const z = r * Math.sin(theta) * Math.sin(phi);
@@ -83,51 +176,75 @@ const GridShell = ({ radius = 3, rows = 12, cols = 24 }) => {
         new THREE.Matrix4().lookAt(current, lookAt, new THREE.Vector3(0, 1, 0))
       );
 
+      const fitText = (text, maxChars = 22) => {
+        if (!text) return "";
+        return text.length > maxChars ? text.slice(0, maxChars - 3) + "..." : text;
+      };
+
       tiles.push(
-  <group key={`tile-${row}-${col}`} position={pos} quaternion={quaternion}>
-    <mesh
-      onClick={() => window.open(item.url, "_blank")} // 在新分頁開啟連結
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "pointer";       // 滑鼠變成手指
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "default";       // 滑鼠變回箭頭
-      }}
-    >
-      <planeGeometry args={[tileWidth, tileHeight]} />
-      <meshBasicMaterial
-        color={item.color}
-        transparent
-        opacity={0.6}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-    <Text
-      position={[0, 0, 0.01]}
-      fontSize={tileHeight * 0.25 * sinTheta}
-      color="#000"
-      anchorX="center"
-      anchorY="middle"
-      onClick={() => window.open(item.url, "_blank")}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "default";
-      }}
-    >
-      {item.code}
-    </Text>
-  </group>
-);
+        <group key={`tile-${row}-${col}`} position={pos} quaternion={quaternion}>
+          <mesh
+            onClick={() => window.open(item.url, "_blank")}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              document.body.style.cursor = "pointer";
+            }}
+            onPointerOut={(e) => {
+              e.stopPropagation();
+              document.body.style.cursor = "default";
+            }}
+          >
+            <planeGeometry args={[tileWidth, tileHeight]} />
+            <meshBasicMaterial
+              color={"#fdfcdc"}
+              transparent
+              opacity={0.8}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+
+
+          {/* Code */}
+          <Text
+            position={[0, tileHeight * 0.25, 0.01]}
+            fontSize={tileHeight * 0.2}
+            color="#000"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {fitText(item.code, 12)}
+          </Text>
+
+          {/* 中文 */}
+          <Text
+            position={[0, 0, 0.01]}
+            fontSize={tileHeight * 0.16}
+            color="#000"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {fitText(item.zh, 18)}
+          </Text>
+
+          {/* 英文 */}
+          <Text
+            position={[0, -tileHeight * 0.25, 0.01]}
+            fontSize={tileHeight * 0.13}
+            color="#333"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {fitText(item.en, 22)}
+          </Text>
+        </group>
+      );
     }
   }
+
   return <group>{tiles}</group>;
 };
+
+
 
 const Globe = () => {
   return (
@@ -137,12 +254,13 @@ const Globe = () => {
       <OrbitControls enablePan={false} enableZoom={true} />
       <LatLines layers={12} radius={3} />
       <LonLines segments={12} radius={3} />
-      <GridShell />
+      <LabeledGridShell data={data} />
     </Canvas>
   );
 };
 
 export default Globe;
+
 
 // 👉 若要將每個 tile 換成圖片
 // 1. 改成 <ImageTile url={item.image} ... />
