@@ -209,50 +209,80 @@ const Globe = () => {
   }, [allCodes]);
 
   const [focus, setFocus] = useState(defaultFocus);
+  const goToDetail = (newTab = true) => {
+      if (!focus) return;
+      const path = `/focus/${encodeURIComponent(focus.code)}`; 
+      if (newTab) {
+        window.open(path, "_blank", "noopener,noreferrer");
+      } else {
+        window.location.href = path; 
+      }
+    };
 
-  return (
-    <>
-      {/* 控制面板：選擇基準點 */}
-      <div
-        style={{
-          position: "fixed",
-          top: 12,
-          left: 12,
-          zIndex: 10,
-          background: "rgba(255,255,255,0.9)",
-          padding: 10,
-          borderRadius: 8,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
-        }}
-      >
-        <div style={{ fontSize: 14, marginBottom: 6, fontWeight: 600 }}>請選擇基準點</div>
-        <select
-          value={focus ? focus.code : ""}
-          onChange={(e) => {
-            const code = e.target.value;
-            const type = code.startsWith("S") ? "S" : "H";
-            setFocus({ code, type });
+    return (
+      <>
+        {/* 控制面板：選擇基準點 + 前往按鈕 */}
+        <div
+          style={{
+            position: "fixed",
+            top: 12,
+            left: 12,
+            zIndex: 10,
+            background: "rgba(255,255,255,0.9)",
+            padding: 10,
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
+            minWidth: 320,
           }}
-          style={{ width: 260, padding: "6px 8px", borderRadius: 6, border: "1px solid #ddd" }}
         >
-          {/* 分組顯示 S / H */}
-          <optgroup label="症狀 (S)">
-            {allCodes.filter((c) => c.type === "S").map((c) => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </optgroup>
-          <optgroup label="藥物 (H)">
-            {allCodes.filter((c) => c.type === "H").map((c) => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </optgroup>
-        </select>
-        <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
-          規則解釋：相似度低→綠，高→紅。
-          {` `}選 Sxx 只上色 S 半球，選 Hxx 只上色 H 半球。
+          <div style={{ fontSize: 14, marginBottom: 6, fontWeight: 600 }}>請選擇基準點</div>
+
+          {/* 同一行：select + button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <select
+              value={focus ? focus.code : ""}
+              onChange={(e) => {
+                const code = e.target.value;
+                const type = code.startsWith("S") ? "S" : "H";
+                setFocus({ code, type });
+              }}
+              style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #ddd" }}
+            >
+              <optgroup label="症狀 (S)">
+                {allCodes.filter((c) => c.type === "S").map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </optgroup>
+              <optgroup label="藥物 (H)">
+                {allCodes.filter((c) => c.type === "H").map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </optgroup>
+            </select>
+
+            <button
+              onClick={() => goToDetail(true)} // true=新分頁；改成 false 就同分頁跳轉
+              disabled={!focus}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 6,
+                border: "1px solid #ddd",
+                background: "#fff",
+                cursor: focus ? "pointer" : "not-allowed",
+                opacity: focus ? 1 : 0.5,
+                whiteSpace: "nowrap"
+              }}
+              title="在新分頁開啟專屬頁"
+            >
+              前往專屬頁
+            </button>
+          </div>
+
+          <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
+            規則解釋：相似度低→綠，高→紅。 選 Sxx 只上色 S 半球，選 Hxx 只上色 H 半球。
+          </div>
         </div>
-      </div>
 
       <Canvas camera={{ position: [0, 0, 10], fov: 75 }} style={{ width: "100vw", height: "100vh" }}>
         <ambientLight intensity={0.6} />
