@@ -1,24 +1,61 @@
-﻿# ── secrets & envs
+﻿# secrets
 .env
+*.key
+*.pem
 
-# ── virtual env
+# Python
 .venv/
-
-# ── python caches
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# ── temp / uploads / caches
+# Node/Frontend
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+.vite/
+.turbo/
+.parcel-cache/
+.svelte-kit/
+coverage/
+.eslintcache
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 產生物 / 資料集 / 上傳 / 日誌
 uploads/
+static/uploads/
+runs/
+data/
+datasets/
+logs/
 tmp/
-.cache/
+cache/
+media/
 
-# ── big media & docs (避免把測試檔推上去)
-*.wav
-*.mp3
+# 常見巨大二進位
+*.pt
+*.pth
+*.onnx
+*.tflite
 *.mp4
 *.mkv
-*.pdf
-
-# ── archives
+*.mov
+*.avi
+*.wav
+*.mp3
 *.zip
+*.7z
+*.tar
+*.gz
+*.rar
+*.pdf
