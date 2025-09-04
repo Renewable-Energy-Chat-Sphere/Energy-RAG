@@ -1,0 +1,24 @@
+﻿# ── secrets & envs
+.env
+
+# ── virtual env
+.venv/
+
+# ── python caches
+__pycache__/
+*.pyc
+
+# ── temp / uploads / caches
+uploads/
+tmp/
+.cache/
+
+# ── big media & docs (避免把測試檔推上去)
+*.wav
+*.mp3
+*.mp4
+*.mkv
+*.pdf
+
+# ── archives
+*.zip
