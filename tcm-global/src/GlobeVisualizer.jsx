@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useSpring, animated } from "@react-spring/three";
-import data from "./data_with_similarity";
+import data from "./energy_data.sample";
 
 // --- 色彩與常數 ---
 const COLOR_LOW = "#22c55e";
@@ -23,6 +23,12 @@ const lerpColor = (fromHex, toHex, t) => {
   const c = a.clone().lerp(b, Math.max(0, Math.min(1, t)));
   return `#${c.getHexString()}`;
 };
+
+// --- helpers for KPI normalization ---
+const clamp01 = (x) => Math.max(0, Math.min(1, Number(x) || 0));
+const normalize = (x, minV, maxV) =>
+  clamp01(((Number(x) ?? minV) - minV) / Math.max(1e-9, maxV - minV));
+const normalizeInvert = (x, minV, maxV) => 1 - normalize(x, minV, maxV);
 
 // ---------- 經緯線 ----------
 const LatLines = React.memo(({ layers = 12, radius = 3, color = "#999", opacity = 0.6 }) => {
@@ -116,20 +122,65 @@ const HoverableTile = ({ item, pos, quaternion, tileWidth, tileHeight, fillColor
   );
 };
 
-// ---------- 產生格子與 layout ----------
-const LabeledGridShell = ({ data, radius = 3, rows = 12, cols = 12, focus, onLayout }) => {
+// ---------- 產生格子與 layout（能源版：單一集合 + KPI 上色） ----------
+const LabeledGridShell = ({
+  data,                   // energy_data.sample.js
+  radius = 3,
+  rows = 12,
+  cols = 12,
+  focus,                  // 保留，提供 FocusHalo/Links 用
+  onLayout,
+  mode = "price",         // "price" | "policy" | "usage" | "growth"
+  ranges = {
+    price: [1.5, 5.0],    // NT$/kWh
+    policy: [0, 1],
+    usage: [0, 1],
+    growth: [-0.10, 0.30] // 例：-10% ~ +30%
+  }
+}) => {
   const tiles = [];
   const layoutMap = {};
-  const symptoms = useMemo(() => data.filter((i) => i.code.startsWith("S")), [data]);
-  const drugs = useMemo(() => data.filter((i) => i.code.startsWith("H")), [data]);
+  const entities = useMemo(() => Array.isArray(data) ? data : [], [data]);
 
+  // 由中往外的行排序，視覺更平均
   const rowOrder = [];
   const mid = Math.floor(rows / 2);
   for (let i = 0; i < rows; i++) {
     const offset = Math.floor((i + 1) / 2);
     rowOrder.push(i % 2 === 0 ? mid - offset : mid + offset);
   }
-  let indexH = 0, indexS = 0;
+
+  // KPI → 色彩
+  const colorFromMode = (item) => {
+    const k = item?.kpi || {};
+    switch (mode) {
+      case "price": {
+        const [minP, maxP] = ranges.price || [1.5, 5.0];
+        const t = normalizeInvert(k.price, minP, maxP);  // 便宜→綠
+        return lerpColor(COLOR_LOW, COLOR_HIGH, t);
+      }
+      case "policy": {
+        const [minV, maxV] = ranges.policy || [0, 1];
+        const t = normalize(k.policy_index ?? 0, minV, maxV);
+        return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - t); // 政策強→偏紅（可調）
+      }
+      case "usage": {
+        const [minV, maxV] = ranges.usage || [0, 1];
+        const t = normalize(k.usage_match ?? 0, minV, maxV);
+        return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - t); // 高匹配→偏紅（可調）
+      }
+      case "growth": {
+        const g = Number(k.growth_rate ?? 0);
+        const [minG, maxG] = ranges.growth || [-0.1, 0.3];
+        const t = normalize(g, minG, maxG);
+        return lerpColor("#e2e8f0", COLOR_HIGH, t);     // 低→灰，高→紅
+      }
+      default:
+        return COLOR_NEUTRAL_S;
+    }
+  };
+
+  let idx = 0;
 
   for (const row of rowOrder) {
     const theta = ((row + 0.5) / rows) * Math.PI;
@@ -139,10 +190,8 @@ const LabeledGridShell = ({ data, radius = 3, rows = 12, cols = 12, focus, onLay
     const tileHeight = (Math.PI * radius / rows) * 0.98;
 
     for (let col = 0; col < cols; col++) {
-      let item = null;
-      if (row >= mid && indexH < drugs.length) item = drugs[indexH++];
-      else if (row < mid && indexS < symptoms.length) item = symptoms[indexS++];
-      if (!item) continue;
+      if (idx >= entities.length) break;
+      const item = entities[idx++];
 
       const phi = ((col + 0.5) / cols) * 2 * Math.PI;
       const r = radius;
@@ -157,17 +206,9 @@ const LabeledGridShell = ({ data, radius = 3, rows = 12, cols = 12, focus, onLay
         new THREE.Matrix4().lookAt(current, lookAt, new THREE.Vector3(0, 1, 0))
       );
 
-      const isS = item.code.startsWith("S");
-      let fillColor;
-      if (focus && ((isS && focus.type === "S") || (!isS && focus.type === "H"))) {
-        const raw = Number(item?.similarity?.[focus.code]) || 0;
-        const sim = Math.max(0, Math.min(1, raw));
-        fillColor = lerpColor(COLOR_LOW, COLOR_HIGH, sim);
-      } else {
-        fillColor = isS ? COLOR_NEUTRAL_S : COLOR_NEUTRAL_H;
-      }
+      const fillColor = colorFromMode(item);
 
-      layoutMap[item.code] = { pos, quaternion, isS, row, col, tileWidth, tileHeight };
+      layoutMap[item.code] = { pos, quaternion, row, col, tileWidth, tileHeight };
 
       tiles.push(
         <HoverableTile
@@ -193,8 +234,7 @@ const FocusLinks = ({ data, focus, layout, k = 12, radius = 3, opacity = 0.5 }) 
   const focusNode = layout[focus.code];
   if (!focusNode) return null;
 
-  const isSFocus = focus.code.startsWith("S");
-  const candidates = data.filter((d) => d.code !== focus.code && d.code.startsWith(isSFocus ? "S" : "H"));
+  const candidates = data.filter((d) => d.code !== focus.code && layout[d.code]);
   const sorted = [...candidates]
     .sort((a, b) => (Number(b?.similarity?.[focus.code]) || 0) - (Number(a?.similarity?.[focus.code]) || 0))
     .slice(0, k);
@@ -202,7 +242,7 @@ const FocusLinks = ({ data, focus, layout, k = 12, radius = 3, opacity = 0.5 }) 
   return (
     <group renderOrder={5}>
       {sorted.map((item) => {
-        const sim = Math.max(0, Math.min(1, Number(item?.similarity?.[focus.code]) || 0));
+        const sim = clamp01(Number(item?.similarity?.[focus.code]) || 0);
         const a = new THREE.Vector3(...focusNode.pos);
         const b = new THREE.Vector3(...(layout[item.code]?.pos || [0, 0, 0]));
         if (b.length() === 0) return null;
@@ -258,7 +298,7 @@ const ZoomHUD = () => {
 };
 
 // ---------- 場景（固定網格密度，不隨縮放變動） ----------
-const Scene = ({ layers, focus, topK, gridOpacity, rows, cols }) => {
+const Scene = ({ layers, focus, topK, gridOpacity, rows, cols, mode }) => {
   const layoutRef = useRef(null);
 
   return (
@@ -278,6 +318,8 @@ const Scene = ({ layers, focus, topK, gridOpacity, rows, cols }) => {
           cols={cols}
           focus={focus}
           onLayout={(m) => (layoutRef.current = m)}
+          mode={mode}
+          ranges={{ price: [1.5, 5.0], policy: [0, 1], usage: [0, 1], growth: [-0.1, 0.3] }}
         />
       )}
 
@@ -315,7 +357,7 @@ const useLocalStorage = (key, initial) => {
 const DraggableResizablePanel = ({
   title = "層級控制",
   children,
-  initial = { top: 12, left: 12, width: 360, height: 320 },
+  initial = { top: 12, left: 12, width: 360, height: 360 },
 }) => {
   const [rect, setRect] = useLocalStorage("globe_panel_rect", { ...initial });
   const [locked, setLocked] = useLocalStorage("globe_panel_locked", false);
@@ -559,13 +601,12 @@ const Globe = () => {
     () => data.map((d) => ({
       code: d.code,
       label: `${d.code} — ${d.zh || d.en || ""}`,
-      type: d.code.startsWith("S") ? "S" : "H",
     })), []
   );
 
   const defaultFocus = useMemo(() => {
-    const firstS = allCodes.find((c) => c.type === "S");
-    return firstS ? { code: firstS.code, type: "S" } : null;
+    const first = allCodes[0];
+    return first ? { code: first.code } : null;
   }, [allCodes]);
 
   const [focus, setFocus] = useState(defaultFocus);
@@ -578,9 +619,12 @@ const Globe = () => {
   const [topK, setTopK] = useState(12);
   const [gridOpacity, setGridOpacity] = useState(0.6);
 
-  // ✅ 固定網格：面板可調整，但不受縮放影響
+  // 固定網格：面板可調整，但不受縮放影響
   const [gridRows, setGridRows] = useState(12);
   const [gridCols, setGridCols] = useState(12);
+
+  // 新增：顯示模式
+  const [mode, setMode] = useState("price"); // "price" | "policy" | "usage" | "growth"
 
   const goToDetail = (newTab = true) => {
     if (!focus) return;
@@ -611,6 +655,25 @@ const Globe = () => {
           ))}
         </div>
 
+        {/* 模式切換 + 說明 */}
+        <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
+          <label style={{ fontSize: 12 }}>
+            顯示模式：
+            <select value={mode} onChange={(e) => setMode(e.target.value)} style={{ marginLeft: 8 }}>
+              <option value="price">Price (NT$/kWh)</option>
+              <option value="policy">Policy Strength</option>
+              <option value="usage">Usage Match</option>
+              <option value="growth">Growth Rate</option>
+            </select>
+          </label>
+          <div style={{ fontSize: 12, opacity: 0.8 }}>
+            色帶：{mode === "price" ? "便宜→綠；昂貴→紅" :
+                   mode === "policy" ? "政策弱→綠；政策強→紅（可反轉）" :
+                   mode === "usage" ? "低匹配→綠；高匹配→紅（可反轉）" :
+                   "低成長→灰；高成長→紅"}
+          </div>
+        </div>
+
         {/* 參數 */}
         <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
           <label style={{ fontSize: 12 }}>
@@ -627,7 +690,7 @@ const Globe = () => {
           </label>
         </div>
 
-        {/* ✅ 固定網格密度控制（與縮放無關） */}
+        {/* 固定網格密度控制 */}
         <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
           <label style={{ fontSize: 12 }}>
             Rows：{gridRows}
@@ -650,21 +713,13 @@ const Globe = () => {
             value={focus ? focus.code : ""}
             onChange={(e) => {
               const code = e.target.value;
-              const type = code.startsWith("S") ? "S" : "H";
-              setFocus({ code, type });
+              setFocus({ code });
             }}
             style={{ width: "auto", maxWidth: 320, padding: "6px 8px", borderRadius: 6, border: "1px solid #ddd" }}
           >
-            <optgroup label="症狀 (S)">
-              {allCodes.filter((c) => c.type === "S").map((c) => (
-                <option key={c.code} value={c.code}>{c.label}</option>
-              ))}
-            </optgroup>
-            <optgroup label="藥物 (H)">
-              {allCodes.filter((c) => c.type === "H").map((c) => (
-                <option key={c.code} value={c.code}>{c.label}</option>
-              ))}
-            </optgroup>
+            {allCodes.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
           </select>
 
           <button
@@ -681,7 +736,7 @@ const Globe = () => {
         </div>
 
         <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
-          網格密度固定；縮放只改大小不改密度。點擊球面任一格子可打開詳細頁。
+          球面只放 Energy@Region；P/U 進入 KPI 與事件。切換模式即可看不同維度。
         </div>
       </DraggableResizablePanel>
 
@@ -697,6 +752,7 @@ const Globe = () => {
           gridOpacity={gridOpacity}
           rows={gridRows}
           cols={gridCols}
+          mode={mode}
         />
       </Canvas>
     </>
