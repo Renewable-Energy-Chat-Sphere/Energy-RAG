@@ -1,760 +1,406 @@
 // GlobeVisualizer.jsx
-import React, { useMemo, useState, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Text, Html } from "@react-three/drei";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Canvas, useFrame } from "@react-three/fiber";            // ⚠️ 新增 useFrame
+import { OrbitControls, Text, Billboard } from "@react-three/drei"; // ⚠️ 新增 Billboard
 import * as THREE from "three";
-import { useSpring, animated } from "@react-spring/three";
-import data from "./energy_data.sample";
+import supplyData from "./energy_data.sample.js";
 
-// --- 色彩與常數 ---
+// ── 常數
+const R = 3;
+const R_INNER = R * 0.75;
 const COLOR_LOW = "#22c55e";
 const COLOR_HIGH = "#ef4444";
-const COLOR_NEUTRAL_S = "#dbeafe";
-const COLOR_NEUTRAL_H = "#ffe4e6";
-const TILE_OPACITY = 0.3;
 
-// 吸附設定
-const SNAP_PX = 20;
-const MARGIN_PX = 8;
-
-const lerpColor = (fromHex, toHex, t) => {
-  const a = new THREE.Color(fromHex);
-  const b = new THREE.Color(toHex);
-  const c = a.clone().lerp(b, Math.max(0, Math.min(1, t)));
-  return `#${c.getHexString()}`;
-};
-
-// --- helpers for KPI normalization ---
+// ── 小工具
 const clamp01 = (x) => Math.max(0, Math.min(1, Number(x) || 0));
-const normalize = (x, minV, maxV) =>
-  clamp01(((Number(x) ?? minV) - minV) / Math.max(1e-9, maxV - minV));
-const normalizeInvert = (x, minV, maxV) => 1 - normalize(x, minV, maxV);
+const lerpColor = (a, b, t) => {
+  const A = new THREE.Color(a), B = new THREE.Color(b);
+  return `#${A.clone().lerp(B, clamp01(t)).getHexString()}`;
+};
+const normalize = (x, a, b) => clamp01(((Number(x) ?? a) - a) / Math.max(1e-9, b - a));
+const normalizeInvert = (x, a, b) => 1 - normalize(x, a, b);
+const projectToSphere = (v, r) => v.clone().setLength(r || v.length() || 1);
 
-// ---------- 經緯線 ----------
-const LatLines = React.memo(({ layers = 12, radius = 3, color = "#999", opacity = 0.6 }) => {
-  const group = useMemo(() => {
-    const g = new THREE.Group();
-    for (let i = 1; i < layers; i++) {
-      const theta = (i / layers) * Math.PI;
-      const y = radius * Math.cos(theta);
-      const r = radius * Math.sin(theta);
-      const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI, false, 0);
-      const points = curve.getPoints(100);
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
-      const line = new THREE.LineLoop(geometry, material);
-      line.rotation.x = Math.PI / 2;
-      line.position.y = y;
-      g.add(line);
-    }
-    return g;
-  }, [layers, radius, color, opacity]);
-  return <primitive object={group} />;
-});
-
-const LonLines = React.memo(({ segments = 12, radius = 3, color = "#999", opacity = 0.6 }) => {
-  const group = useMemo(() => {
-    const g = new THREE.Group();
-    for (let i = 0; i < segments; i++) {
-      const lon = (i / segments) * 2 * Math.PI;
-      const points = [];
-      for (let j = 0; j <= 64; j++) {
-        const theta = (j / 64) * Math.PI;
-        const x = radius * Math.sin(theta) * Math.cos(lon);
-        const y = radius * Math.cos(theta);
-        const z = radius * Math.sin(theta) * Math.sin(lon);
-        points.push(new THREE.Vector3(x, y, z));
-      }
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
-      const line = new THREE.Line(geometry, material);
-      g.add(line);
-    }
-    return g;
-  }, [segments, radius, color, opacity]);
-  return <primitive object={group} />;
-});
-
-// ---------- 互動方塊（點擊 → 新分頁詳細頁） ----------
-const HoverableTile = ({ item, pos, quaternion, tileWidth, tileHeight, fillColor }) => {
-  const [hovered, setHovered] = useState(false);
-  const { scale } = useSpring({ scale: hovered ? 1.06 : 1, config: { tension: 220, friction: 18 } });
-
-  const fitText = (text, maxChars = 22) => {
-    if (!text) return "";
-    const s = String(text);
-    let l = 0, out = "";
-    for (let ch of s) {
-      l += /[^\x00-\xff]/.test(ch) ? 2 : 1;
-      if (l > maxChars) { out += "..."; break; }
-      out += ch;
-    }
-    return out;
+// ── Haptics：更順的觸覺回饋（節流＋分級）
+function createHaptics(enabled = true) {
+  const supports = typeof navigator !== "undefined" && "vibrate" in navigator;
+  const rm = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let last = 0;
+  const throttle = (fn) => (...args) => {
+    const now = performance.now();
+    if (now - last < 45) return; // 45ms 節流，避免抖動
+    last = now;
+    fn(...args);
   };
-
-  const openDetail = () => {
-    const path = `/focus/${encodeURIComponent(item.code)}`;
-    window.open(path, "_blank", "noopener,noreferrer");
+  const vibrate = (pat) => {
+    if (!enabled || rm || !supports) return;
+    try { navigator.vibrate(pat); } catch {}
   };
-
-  return (
-    <animated.group position={pos} quaternion={quaternion} scale={scale}>
-      <mesh
-        onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = "pointer"; }}
-        onPointerOut={(e) => { e.stopPropagation(); setHovered(false); document.body.style.cursor = "default"; }}
-        onClick={(e) => { e.stopPropagation(); openDetail(); }}
-      >
-        <planeGeometry args={[tileWidth, tileHeight]} />
-        <meshBasicMaterial color={fillColor} transparent opacity={TILE_OPACITY} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
-      <group renderOrder={10}>
-        <Text position={[0, tileHeight * 0.25, 0.01]} fontSize={tileHeight * 0.2} color="#000" anchorX="center" anchorY="middle">
-          {fitText(item.code, 12)}
-        </Text>
-        <Text position={[0, 0, 0.01]} fontSize={tileHeight * 0.16} color="#000" anchorX="center" anchorY="middle">
-          {fitText(item.zh, 18)}
-        </Text>
-        <Text position={[0, -tileHeight * 0.25, 0.01]} fontSize={tileHeight * 0.13} color="#333" anchorX="center" anchorY="middle">
-          {fitText(item.en, 22)}
-        </Text>
-      </group>
-    </animated.group>
-  );
-};
-
-// ---------- 產生格子與 layout（能源版：單一集合 + KPI 上色） ----------
-const LabeledGridShell = ({
-  data,                   // energy_data.sample.js
-  radius = 3,
-  rows = 12,
-  cols = 12,
-  focus,                  // 保留，提供 FocusHalo/Links 用
-  onLayout,
-  mode = "price",         // "price" | "policy" | "usage" | "growth"
-  ranges = {
-    price: [1.5, 5.0],    // NT$/kWh
-    policy: [0, 1],
-    usage: [0, 1],
-    growth: [-0.10, 0.30] // 例：-10% ~ +30%
-  }
-}) => {
-  const tiles = [];
-  const layoutMap = {};
-  const entities = useMemo(() => Array.isArray(data) ? data : [], [data]);
-
-  // 由中往外的行排序，視覺更平均
-  const rowOrder = [];
-  const mid = Math.floor(rows / 2);
-  for (let i = 0; i < rows; i++) {
-    const offset = Math.floor((i + 1) / 2);
-    rowOrder.push(i % 2 === 0 ? mid - offset : mid + offset);
-  }
-
-  // KPI → 色彩
-  const colorFromMode = (item) => {
-    const k = item?.kpi || {};
-    switch (mode) {
-      case "price": {
-        const [minP, maxP] = ranges.price || [1.5, 5.0];
-        const t = normalizeInvert(k.price, minP, maxP);  // 便宜→綠
-        return lerpColor(COLOR_LOW, COLOR_HIGH, t);
-      }
-      case "policy": {
-        const [minV, maxV] = ranges.policy || [0, 1];
-        const t = normalize(k.policy_index ?? 0, minV, maxV);
-        return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - t); // 政策強→偏紅（可調）
-      }
-      case "usage": {
-        const [minV, maxV] = ranges.usage || [0, 1];
-        const t = normalize(k.usage_match ?? 0, minV, maxV);
-        return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - t); // 高匹配→偏紅（可調）
-      }
-      case "growth": {
-        const g = Number(k.growth_rate ?? 0);
-        const [minG, maxG] = ranges.growth || [-0.1, 0.3];
-        const t = normalize(g, minG, maxG);
-        return lerpColor("#e2e8f0", COLOR_HIGH, t);     // 低→灰，高→紅
-      }
-      default:
-        return COLOR_NEUTRAL_S;
-    }
+  return {
+    tick: throttle(() => vibrate(8)),                 // 輕觸
+    press: throttle(() => vibrate([10, 25, 12])),     // 按下
+    success: throttle(() => vibrate([9, 18, 9, 18, 12])), // 完成
+    weight: throttle((w) => {                         // 依權重漸進
+      const d = Math.round(6 + 24 * clamp01(w));
+      vibrate([d, 12, d]);
+    }),
   };
+}
 
-  let idx = 0;
-
-  for (const row of rowOrder) {
-    const theta = ((row + 0.5) / rows) * Math.PI;
-    const sinTheta = Math.sin(theta);
-    const latCircumference = 2 * Math.PI * radius * sinTheta;
-    const tileWidth = (latCircumference / cols) * 0.98;
-    const tileHeight = (Math.PI * radius / rows) * 0.98;
-
-    for (let col = 0; col < cols; col++) {
-      if (idx >= entities.length) break;
-      const item = entities[idx++];
-
-      const phi = ((col + 0.5) / cols) * 2 * Math.PI;
-      const r = radius;
-      const x = r * Math.sin(theta) * Math.cos(phi);
-      const y = r * Math.cos(theta);
-      const z = r * Math.sin(theta) * Math.sin(phi);
-      const pos = [x, y, z];
-
-      const lookAt = new THREE.Vector3(0, 0, 0);
-      const current = new THREE.Vector3(x, y, z);
-      const quaternion = new THREE.Quaternion().setFromRotationMatrix(
-        new THREE.Matrix4().lookAt(current, lookAt, new THREE.Vector3(0, 1, 0))
-      );
-
-      const fillColor = colorFromMode(item);
-
-      layoutMap[item.code] = { pos, quaternion, row, col, tileWidth, tileHeight };
-
-      tiles.push(
-        <HoverableTile
-          key={`tile-${row}-${col}`}
-          item={item}
-          pos={pos}
-          quaternion={quaternion}
-          tileWidth={tileWidth}
-          tileHeight={tileHeight}
-          fillColor={fillColor}
-        />
-      );
-    }
+// ── Golden-Spiral 均勻分布
+function goldenSpiralPositions(n, radius) {
+  if (n <= 1) return [new THREE.Vector3(0, 1, 0).multiplyScalar(radius)];
+  const out = [];
+  const phi = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = phi * i;
+    const x = Math.cos(theta) * r;
+    const z = Math.sin(theta) * r;
+    out.push(new THREE.Vector3(x, y, z).multiplyScalar(radius));
   }
+  return out;
+}
 
-  onLayout && onLayout(layoutMap);
-  return <group>{tiles}</group>;
-};
+// ── 需求端 Demo
+const mockDemand = [
+  { code: "D_IND", zh: "工業部門", mix: { SOLAR_TW_utility: 0.10, WIND_TW_offshore: 0.15, HYDRO_TW: 0.05, BIOMASS_TW: 0.10, WIND_TW_onshore: 0.10, SOLAR_TW_rooftop: 0.05 }, value: 4200 },
+  { code: "D_TRA", zh: "運輸部門", mix: { SOLAR_TW_rooftop: 0.05, WIND_TW_onshore: 0.05, HYDRO_TW: 0.02 }, value: 3600 },
+  { code: "D_RES", zh: "住宅部門", mix: { SOLAR_TW_rooftop: 0.35, HYDRO_TW: 0.15, WIND_TW_onshore: 0.08 }, value: 1800 },
+  { code: "D_SER", zh: "服務業部門", mix: { SOLAR_TW_utility: 0.18, WIND_TW_offshore: 0.12, HYDRO_TW: 0.07, SOLAR_TW_rooftop: 0.12 }, value: 2600 },
+  { code: "D_AGR", zh: "農業部門", mix: { BIOMASS_TW: 0.30, SOLAR_TW_rooftop: 0.20, HYDRO_TW: 0.05 }, value: 900 },
+];
 
-// ---------- 相似度連線 & 焦點圈 ----------
-const FocusLinks = ({ data, focus, layout, k = 12, radius = 3, opacity = 0.5 }) => {
-  if (!focus || !layout) return null;
-  const focusNode = layout[focus.code];
-  if (!focusNode) return null;
+// ── 顏色/大小
+const colorByPrice = (price, [minP, maxP] = [1.5, 5.0]) =>
+  lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalizeInvert(price, minP, maxP));
+const nodeScale = (v, [mn, mx]) => 0.16 + 0.55 * Math.sqrt(normalize(v, mn, mx));
 
-  const candidates = data.filter((d) => d.code !== focus.code && layout[d.code]);
-  const sorted = [...candidates]
-    .sort((a, b) => (Number(b?.similarity?.[focus.code]) || 0) - (Number(a?.similarity?.[focus.code]) || 0))
-    .slice(0, k);
-
-  return (
-    <group renderOrder={5}>
-      {sorted.map((item) => {
-        const sim = clamp01(Number(item?.similarity?.[focus.code]) || 0);
-        const a = new THREE.Vector3(...focusNode.pos);
-        const b = new THREE.Vector3(...(layout[item.code]?.pos || [0, 0, 0]));
-        if (b.length() === 0) return null;
-
-        const mid = a.clone().add(b).multiplyScalar(0.5).setLength(radius * (1.15 + 0.25 * sim));
-        const curve = new THREE.CubicBezierCurve3(a, mid, mid, b);
-        const points = curve.getPoints(32);
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const color = lerpColor(COLOR_LOW, COLOR_HIGH, sim);
-        return (
-          <line key={`link-${focus.code}-${item.code}`} geometry={geometry}>
-            <lineBasicMaterial color={color} transparent opacity={opacity * (0.6 + 0.4 * sim)} />
-          </line>
-        );
-      })}
-    </group>
-  );
-};
-
-const FocusHalo = ({ layout, focus }) => {
-  if (!focus || !layout?.[focus.code]) return null;
-  const { pos } = layout[focus.code];
-  return (
-    <group position={pos} renderOrder={6}>
-      <mesh>
-        <ringGeometry args={[0.18, 0.22, 48]} />
-        <meshBasicMaterial transparent opacity={0.8} />
-      </mesh>
-    </group>
-  );
-};
-
-// ---------- Zoom HUD（只顯示縮放，網格固定） ----------
-const ZoomHUD = () => {
-  const { camera } = useThree();
-  const [d, setD] = useState(camera.position.length());
-  useFrame(() => {
-    const nd = Number(camera.position.length().toFixed(2));
-    setD((prev) => (prev === nd ? prev : nd));
-  });
-  return (
-    <Html fullscreen style={{ pointerEvents: "none" }}>
-      <div style={{
-        position: "absolute", top: 12, right: 12, zIndex: 9,
-        background: "rgba(0,0,0,0.5)", color: "#fff", padding: "6px 10px",
-        borderRadius: 8, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto", fontSize: 12,
-        pointerEvents: "none",
-      }}>
-        Zoom ≈ {d.toFixed(2)}　Fixed grid
-      </div>
-    </Html>
-  );
-};
-
-// ---------- 場景（固定網格密度，不隨縮放變動） ----------
-const Scene = ({ layers, focus, topK, gridOpacity, rows, cols, mode }) => {
-  const layoutRef = useRef(null);
-
+// ── 經緯線
+const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#999", opacity = 0.35 }) => {
+  const lat = new THREE.Group();
+  for (let i = 1; i < latN; i++) {
+    const th = (i / latN) * Math.PI;
+    const y = radius * Math.cos(th);
+    const r = radius * Math.sin(th);
+    const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI);
+    const pts = curve.getPoints(96);
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+    const line = new THREE.LineLoop(geo, mat);
+    line.rotation.x = Math.PI / 2;
+    line.position.y = y;
+    lat.add(line);
+  }
+  const lon = new THREE.Group();
+  for (let i = 0; i < lonN; i++) {
+    const L = (i / lonN) * 2 * Math.PI;
+    const pts = [];
+    for (let j = 0; j <= 96; j++) {
+      const th = (j / 96) * Math.PI;
+      const x = radius * Math.sin(th) * Math.cos(L);
+      const y = radius * Math.cos(th);
+      const z = radius * Math.sin(th) * Math.sin(L);
+      pts.push(new THREE.Vector3(x, y, z));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+    lon.add(new THREE.Line(geo, mat));
+  }
   return (
     <>
-      {layers.grid && (
-        <>
-          <LatLines layers={rows} radius={3} color="#888" opacity={gridOpacity} />
-          <LonLines segments={cols} radius={3} color="#888" opacity={gridOpacity} />
-        </>
-      )}
-
-      {layers.tiles && (
-        <LabeledGridShell
-          data={data}
-          radius={3}
-          rows={rows}
-          cols={cols}
-          focus={focus}
-          onLayout={(m) => (layoutRef.current = m)}
-          mode={mode}
-          ranges={{ price: [1.5, 5.0], policy: [0, 1], usage: [0, 1], growth: [-0.1, 0.3] }}
-        />
-      )}
-
-      {layers.focusHalo && <FocusHalo layout={layoutRef.current} focus={focus} />}
-
-      {layers.links && (
-        <FocusLinks
-          data={data}
-          focus={focus}
-          layout={layoutRef.current}
-          k={topK}
-          radius={3}
-          opacity={0.55}
-        />
-      )}
-
-      <ZoomHUD />
+      <primitive object={lat} />
+      <primitive object={lon} />
     </>
   );
 };
 
-// ---------- 小工具：localStorage ----------
-const useLocalStorage = (key, initial) => {
-  const [val, setVal] = useState(() => {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initial; }
-    catch { return initial; }
+// ── Label：永遠正向（面向相機、避免翻轉/鏡像、雙面可見）
+const Label = ({ position, text, fontSize = 0.13, color = "#111", anchorY = "bottom" }) => (
+  <Billboard follow={true} lockZ={true} position={position}>
+    <Text
+      fontSize={fontSize}
+      color={color}
+      anchorX="center"
+      anchorY={anchorY}
+      // 讓文字筆畫永遠朝向相機，避免從背面看鏡像
+      depthOffset={1}
+      outlineWidth={0.002}
+      outlineColor="#ffffff"
+      outlineOpacity={0.85}
+    >
+      {text}
+      {/* DoubleSide 確保任何角度可見但不鏡像（因為 Billboard 總是面向相機） */}
+      <meshBasicMaterial attach="material" side={THREE.DoubleSide} />
+    </Text>
+  </Billboard>
+);
+
+// ── Node（平滑放大 + 觸覺回饋）
+const NodeBillboard = ({ pos, size, color, top, bottom, onClick, haptics }) => {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const grp = useRef();
+  const target = useRef(1);
+
+  useEffect(() => { target.current = hovered ? 1.08 : 1; }, [hovered]);
+  useEffect(() => { if (pressed) target.current = 1.12; }, [pressed]);
+
+  // 平滑補間（比瞬間 scale 更像原生觸覺）
+  useFrame((_, dt) => {
+    if (!grp.current) return;
+    const s = grp.current.scale.x;
+    const next = THREE.MathUtils.damp(s, target.current, 8, dt); // 阻尼補間
+    grp.current.scale.setScalar(next);
   });
-  useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-  }, [key, val]);
-  return [val, setVal];
-};
-
-// ---------- 面板（拖曳/縮放 + 貼邊吸附 + 記象限 + 最小化 + 內容捲動） ----------
-const DraggableResizablePanel = ({
-  title = "層級控制",
-  children,
-  initial = { top: 12, left: 12, width: 360, height: 360 },
-}) => {
-  const [rect, setRect] = useLocalStorage("globe_panel_rect", { ...initial });
-  const [locked, setLocked] = useLocalStorage("globe_panel_locked", false);
-  const [anchor, setAnchor] = useLocalStorage("globe_panel_anchor", "tl");
-  const [minimized, setMinimized] = useLocalStorage("globe_panel_min", false);
-  const [lastSize, setLastSize] = useState({ width: rect.width, height: rect.height });
-
-  const panelRef = useRef(null);
-  const stateRef = useRef({ dragging: false, resizing: false, startX: 0, startY: 0, startLeft: 0, startTop: 0, startW: 360, startH: 0 });
-
-  const computeAnchor = (left, top, width, height) => {
-    const midX = window.innerWidth / 2;
-    const midY = window.innerHeight / 2;
-    const cx = left + width / 2;
-    const cy = top + (height || 200) / 2;
-    const horiz = cx < midX ? "l" : "r";
-    const vert  = cy < midY ? "t" : "b";
-    return vert + horiz;
-  };
-
-  const toggleMin = () => {
-    if (!minimized) {
-      setLastSize({ width: rect.width, height: rect.height });
-      setRect((r) => ({ ...r, height: 40 }));
-      setMinimized(true);
-    } else {
-      setRect((r) => ({ ...r, width: lastSize.width || r.width, height: lastSize.height || 320 }));
-      setMinimized(false);
-    }
-  };
-
-  const onPointerDownDrag = (e) => {
-    if (locked) return;
-    const r = panelRef.current.getBoundingClientRect();
-    stateRef.current = {
-      ...stateRef.current,
-      dragging: true, resizing: false,
-      startX: e.clientX ?? (e.touches?.[0]?.clientX),
-      startY: e.clientY ?? (e.touches?.[0]?.clientY),
-      startLeft: r.left, startTop: r.top,
-      startW: r.width, startH: r.height,
-    };
-    document.body.style.userSelect = "none";
-  };
-
-  const onPointerDownResize = (e) => {
-    if (locked || minimized) return;
-    e.stopPropagation();
-    const r = panelRef.current.getBoundingClientRect();
-    stateRef.current = {
-      ...stateRef.current,
-      dragging: false, resizing: true,
-      startX: e.clientX ?? (e.touches?.[0]?.clientX),
-      startY: e.clientY ?? (e.touches?.[0]?.clientY),
-      startLeft: r.left, startTop: r.top,
-      startW: r.width, startH: r.height,
-    };
-    document.body.style.userSelect = "none";
-  };
-
-  useEffect(() => {
-    const move = (e) => {
-      const s = stateRef.current;
-      if (!s.dragging && !s.resizing) return;
-      const x = e.clientX ?? (e.touches?.[0]?.clientX);
-      const y = e.clientY ?? (e.touches?.[0]?.clientY);
-      if (x == null || y == null) return;
-
-      if (s.dragging) {
-        let left = s.startLeft + (x - s.startX);
-        let top  = s.startTop  + (y - s.startY);
-        const w = panelRef.current?.offsetWidth || rect.width || 320;
-        const h = panelRef.current?.offsetHeight || rect.height || 200;
-        left = Math.max(MARGIN_PX, Math.min(left, window.innerWidth - w - MARGIN_PX));
-        top  = Math.max(MARGIN_PX, Math.min(top,  window.innerHeight - h - MARGIN_PX));
-        setRect((r) => ({ ...r, left, top }));
-      } else if (s.resizing) {
-        let newW = Math.max(260, s.startW + (x - s.startX));
-        let newH = Math.max(180, (s.startH || 0) + (y - s.startY));
-        newW = Math.min(newW, window.innerWidth - (rect.left || MARGIN_PX) - MARGIN_PX);
-        newH = Math.min(newH, window.innerHeight - (rect.top || MARGIN_PX) - MARGIN_PX);
-        setRect((r) => ({ ...r, width: newW, height: newH }));
-      }
-    };
-    const up = () => {
-      const s = stateRef.current;
-      if (!s.dragging && !s.resizing) return;
-      if (s.dragging) {
-        const el = panelRef.current;
-        const w = el?.offsetWidth || 320;
-        const h = el?.offsetHeight || 200;
-        let { left, top } = rect;
-        const rightGap  = window.innerWidth  - (left + w);
-        const bottomGap = window.innerHeight - (top + h);
-        if (left <= SNAP_PX) left = MARGIN_PX;
-        else if (rightGap <= SNAP_PX) left = window.innerWidth - w - MARGIN_PX;
-        if (top <= SNAP_PX) top = MARGIN_PX;
-        else if (bottomGap <= SNAP_PX) top = window.innerHeight - h - MARGIN_PX;
-
-        const anc = computeAnchor(left, top, w, h);
-        setAnchor(anc);
-        setRect((r) => ({ ...r, left, top }));
-      }
-      stateRef.current.dragging = false;
-      stateRef.current.resizing = false;
-      document.body.style.userSelect = "";
-    };
-
-    window.addEventListener("mousemove", move, { passive: false });
-    window.addEventListener("mouseup", up);
-    window.addEventListener("touchmove", move, { passive: false });
-    window.addEventListener("touchend", up);
-    return () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
-      window.removeEventListener("touchmove", move);
-      window.removeEventListener("touchend", up);
-    };
-  }, [rect, setRect, setAnchor]);
-
-  useEffect(() => {
-    const onResize = () => {
-      const el = panelRef.current;
-      if (!el) return;
-      const w = el.offsetWidth || rect.width || 320;
-      const h = el.offsetHeight || rect.height || 200;
-
-      let left = rect.left;
-      let top = rect.top;
-
-      if (anchor.includes("r")) {
-        const rightGap = Math.max(MARGIN_PX, window.innerWidth - (left + w));
-        left = window.innerWidth - w - rightGap;
-      } else {
-        left = Math.max(MARGIN_PX, Math.min(left, window.innerWidth - w - MARGIN_PX));
-      }
-      if (anchor.includes("b")) {
-        const bottomGap = Math.max(MARGIN_PX, window.innerHeight - (top + h));
-        top = window.innerHeight - h - bottomGap;
-      } else {
-        top = Math.max(MARGIN_PX, Math.min(top, window.innerHeight - h - MARGIN_PX));
-      }
-      setRect((r) => ({ ...r, left, top }));
-    };
-    window.addEventListener("resize", onResize);
-    onResize();
-    return () => window.removeEventListener("resize", onResize);
-  }, [anchor, rect.height, rect.width, rect.left, rect.top, setRect]);
 
   return (
-    <div
-      ref={panelRef}
-      style={{
-        position: "fixed",
-        top: rect.top, left: rect.left,
-        width: rect.width,
-        height: rect.height,
-        maxWidth: "min(92vw, 560px)",
-        zIndex: 10,
-        background: "rgba(255,255,255,0.94)",
-        borderRadius: 10,
-        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-        border: "1px solid rgba(0,0,0,0.06)",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        backdropFilter: "saturate(120%) blur(4px)",
-        pointerEvents: "auto",
-        touchAction: "none",
-      }}
+    <group
+      ref={grp}
+      position={pos}
+      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = "pointer"; haptics?.tick(); }}
+      onPointerOut={(e) => { e.stopPropagation(); setHovered(false); document.body.style.cursor = "default"; }}
+      onPointerDown={(e) => { e.stopPropagation(); setPressed(true); haptics?.press(); }}
+      onPointerUp={(e) => { e.stopPropagation(); setPressed(false); haptics?.success(); onClick && onClick(); }}
     >
-      {/* 標題列 */}
-      <div
-        onMouseDown={onPointerDownDrag}
-        onTouchStart={onPointerDownDrag}
-        onDoubleClick={toggleMin}
-        style={{
-          cursor: locked ? "default" : "move",
-          padding: "8px 10px",
-          fontSize: 14, fontWeight: 700,
-          display: "flex", alignItems: "center", gap: 8,
-          background: "linear-gradient(to bottom, #f8fafc, #eef2f7)",
-          borderBottom: "1px solid #e5e7eb",
-          userSelect: "none",
-          flex: "0 0 auto",
-        }}
-      >
-        {title}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); toggleMin(); }}
-            title={minimized ? "展開面板" : "最小化面板"}
-            style={{ fontSize: 12, padding: "4px 8px", borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" }}
-          >
-            {minimized ? "展開 +" : "收起 –"}
-          </button>
-          {!minimized && (
-            <>
-              <span style={{ fontSize: 12, opacity: 0.7 }}>位置：{anchor.toUpperCase()}</span>
-              <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={locked}
-                  onChange={(e) => setLocked(e.target.checked)}
-                  title="鎖定面板"
+      <mesh>
+        <sphereGeometry args={[size, 24, 24]} />
+        <meshStandardMaterial color={color} roughness={0.7} metalness={0.05} />
+      </mesh>
+      {top && <Label position={[0, size + 0.06, 0]} text={top} fontSize={0.14} color="#111" anchorY="bottom" />}
+      {bottom && <Label position={[0, -size - 0.06, 0]} text={bottom} fontSize={0.11} color="#333" anchorY="top" />}
+    </group>
+  );
+};
+
+const BezierLink = ({ a, b, bulge = 0.15, color = "#888", opacity = 0.45 }) => {
+  const av = new THREE.Vector3(...a);
+  const bv = new THREE.Vector3(...b);
+  const mid = av.clone().add(bv).multiplyScalar(0.5).setLength(R * (1 + bulge));
+  const curve = new THREE.CubicBezierCurve3(av, mid, mid, bv);
+  const points = curve.getPoints(64);
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  return (
+    <line geometry={geometry}>
+      <lineBasicMaterial color={color} transparent opacity={opacity} />
+    </line>
+  );
+};
+
+// ── 場景
+const Scene = ({ options }) => {
+  const {
+    showGrid, showSupply, showDemand, showLinks,
+    alpha, colorMode, linkOpacity, linkBulge,
+    supplyScale, demandScale, haptics: hapticsOn,        // ⚠️ 新增 haptics
+  } = options;
+
+  const innerR = R * alpha;
+  const S = useMemo(() => (Array.isArray(supplyData) ? supplyData : []), []);
+  const supplyPos = useMemo(() => {
+    const pts = goldenSpiralPositions(S.length, R);
+    const map = new Map();
+    S.forEach((s, i) => map.set(s.code, pts[i]));
+    return map;
+  }, [S]);
+
+  const demandPos = useMemo(() => {
+    const map = new Map();
+    for (const d of mockDemand) {
+      const vec = new THREE.Vector3(); let sum = 0;
+      for (const [code, w] of Object.entries(d.mix || {})) {
+        const p = supplyPos.get(code); if (!p) continue;
+        const wv = Math.max(0, Number(w) || 0);
+        vec.add(p.clone().multiplyScalar(wv)); sum += wv;
+      }
+      const pos = sum > 0 ? projectToSphere(vec.multiplyScalar(1 / sum), innerR)
+                          : new THREE.Vector3(0, 1, 0).multiplyScalar(innerR);
+      map.set(d.code, pos);
+    }
+    return map;
+  }, [supplyPos, innerR]);
+
+  const sVals = S.map((s) => (s.kpi?.capacity_installed || 0) + 0.3 * (s.kpi?.capacity_potential || 0));
+  const sRange = [Math.min(...sVals, 1), Math.max(...sVals, 10)];
+  const dVals = mockDemand.map((d) => d.value || 0);
+  const dRange = [Math.min(...dVals, 1), Math.max(...dVals, 10)];
+
+  const colorOfSupply = (s) => {
+    const k = s.kpi || {};
+    if (colorMode === "price")  return colorByPrice(k.price ?? 0, [1.5, 5.0]);
+    if (colorMode === "policy") return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalize(k.policy_index ?? 0, 0, 1));
+    if (colorMode === "usage")  return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalize(k.usage_match ?? 0, 0, 1));
+    return "#9ca3af";
+  };
+
+  const h = useMemo(() => createHaptics(hapticsOn), [hapticsOn]); // ⚠️ 建立 haptics
+
+  return (
+    <>
+      {showGrid && <GridLines radius={R} />}
+      {showGrid && <GridLines radius={innerR} color="#bbb" opacity={0.25} />}
+
+      {/* 供給節點 */}
+      {showSupply && S.map((s) => {
+        const p = supplyPos.get(s.code);
+        const base = (s.kpi?.capacity_installed || 0) + 0.3 * (s.kpi?.capacity_potential || 0);
+        const size = nodeScale(base, sRange) * supplyScale;
+        const color = colorOfSupply(s);
+        return (
+          <NodeBillboard
+            key={s.code}
+            pos={[p.x, p.y, p.z]}
+            size={size}
+            color={color}
+            top={s.code}
+            bottom={s.zh || s.en}
+            haptics={h}
+          />
+        );
+      })}
+
+      {/* 需求節點 + 連線 */}
+      {showDemand && mockDemand.map((d) => {
+        const p = demandPos.get(d.code);
+        const size = nodeScale(d.value || 0, dRange) * demandScale;
+        return (
+          <group key={d.code}>
+            {showLinks && Object.entries(d.mix || {}).map(([code, w]) => {
+              const sp = supplyPos.get(code);
+              if (!sp || w <= 0) return null;
+              const a = [p.x, p.y, p.z], b = [sp.x, sp.y, sp.z];
+              const c = lerpColor("#94a3b8", "#e11d48", clamp01(w));
+              return (
+                <BezierLink
+                  key={`${d.code}-${code}`}
+                  a={a} b={b}
+                  bulge={(0.12 + 0.12 * clamp01(w)) * linkBulge}
+                  color={c}
+                  opacity={(0.25 + 0.45 * clamp01(w)) * linkOpacity}
                 />
-                鎖定
-              </label>
-            </>
-          )}
-        </div>
+              );
+            })}
+            <NodeBillboard
+              pos={[p.x, p.y, p.z]}
+              size={size}
+              color="#2563eb"
+              top={d.code}
+              bottom={d.zh}
+              haptics={h}
+            />
+          </group>
+        );
+      })}
+    </>
+  );
+};
+
+// ── Portal
+const Portal = ({ children }) => {
+  const [el] = useState(() => document.createElement("div"));
+  useEffect(() => {
+    el.style.position = "relative";
+    el.style.zIndex = "2147483647";
+    document.body.appendChild(el);
+    return () => document.body.removeChild(el);
+  }, [el]);
+  return createPortal(children, el);
+};
+
+// ── 面板（+ 觸覺開關）
+const Panel = ({ options, setOptions }) => {
+  const on = (k) => (e) => setOptions((o) => ({ ...o, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  const onNum = (k) => (e) => setOptions((o) => ({ ...o, [k]: parseFloat(e.target.value) }));
+  return (
+    <div style={{
+      position:"fixed", top:12, left:12, zIndex:2147483647,
+      background:"rgba(255,255,255,0.94)", padding:12, borderRadius:10,
+      border:"1px solid #e5e7eb", boxShadow:"0 8px 24px rgba(0,0,0,0.18)",
+      width:300, fontSize:13, pointerEvents:"auto"
+    }}>
+      <b>Energy Sphere 控制台</b>
+      <div style={{marginTop:8}}>
+        <label>顏色模式：
+          <select value={options.colorMode} onChange={on("colorMode")} style={{marginLeft:8}}>
+            <option value="price">價格（便宜綠→昂貴紅）</option>
+            <option value="policy">政策（弱綠→強紅）</option>
+            <option value="usage">用電匹配（低綠→高紅）</option>
+          </select>
+        </label>
       </div>
-
-      {/* 內容（可捲動；最小化隱藏） */}
-      {!minimized && (
-        <div style={{ flex: "1 1 auto", overflow: "auto", padding: 10, minHeight: 0 }}>
-          {children}
-        </div>
-      )}
-
-      {/* 右下角 resize 把手 */}
-      {!minimized && (
-        <div
-          onMouseDown={onPointerDownResize}
-          onTouchStart={onPointerDownResize}
-          title={locked ? "" : "拖曳調整大小"}
-          style={{
-            position: "absolute", right: 6, bottom: 6, width: 14, height: 14,
-            borderRight: "2px solid #cbd5e1", borderBottom: "2px solid #cbd5e1",
-            cursor: locked ? "default" : "nwse-resize", opacity: 0.85,
-          }}
-        />
-      )}
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10}}>
+        <label><input type="checkbox" checked={options.showSupply} onChange={on("showSupply")} /> 顯示供給</label>
+        <label><input type="checkbox" checked={options.showDemand} onChange={on("showDemand")} /> 顯示需求</label>
+        <label><input type="checkbox" checked={options.showLinks}  onChange={on("showLinks")}  /> 顯示連線</label>
+        <label><input type="checkbox" checked={options.showGrid}   onChange={on("showGrid")}   /> 顯示網格</label>
+        <label><input type="checkbox" checked={options.haptics}   onChange={on("haptics")}    /> 觸覺回饋</label>
+      </div>
+      <div style={{marginTop:10}}>
+        內外層距離 α（R_INNER/R）：{options.alpha.toFixed(2)}
+        <input type="range" min={0.6} max={0.9} step={0.01} value={options.alpha} onChange={onNum("alpha")} style={{width:"100%"}} />
+      </div>
+      <div style={{marginTop:10}}>
+        連線透明度倍率：{options.linkOpacity.toFixed(2)}
+        <input type="range" min={0.2} max={1.5} step={0.05} value={options.linkOpacity} onChange={onNum("linkOpacity")} style={{width:"100%"}} />
+        連線鼓度倍率：{options.linkBulge.toFixed(2)}
+        <input type="range" min={0.5} max={2.0} step={0.05} value={options.linkBulge} onChange={onNum("linkBulge")} style={{width:"100%"}} />
+      </div>
+      <div style={{marginTop:10}}>
+        供給節點大小倍率：{options.supplyScale.toFixed(2)}
+        <input type="range" min={0.5} max={1.8} step={0.05} value={options.supplyScale} onChange={onNum("supplyScale")} style={{width:"100%"}} />
+        需求節點大小倍率：{options.demandScale.toFixed(2)}
+        <input type="range" min={0.5} max={1.8} step={0.05} value={options.demandScale} onChange={onNum("demandScale")} style={{width:"100%"}} />
+      </div>
+      <div style={{marginTop:8, color:"#475569"}}>
+        小撇步：按 <b>P</b> 顯示/隱藏面板。
+      </div>
     </div>
   );
 };
 
-// ---------- 主組件 ----------
 const Globe = () => {
-  const allCodes = useMemo(
-    () => data.map((d) => ({
-      code: d.code,
-      label: `${d.code} — ${d.zh || d.en || ""}`,
-    })), []
-  );
-
-  const defaultFocus = useMemo(() => {
-    const first = allCodes[0];
-    return first ? { code: first.code } : null;
-  }, [allCodes]);
-
-  const [focus, setFocus] = useState(defaultFocus);
-  const [layers, setLayers] = useState({
-    grid: true,
-    tiles: true,
-    links: true,
-    focusHalo: true,
+  const [showPanel, setShowPanel] = useState(true);
+  const [options, setOptions] = useState({
+    colorMode: "price",
+    showSupply: true,
+    showDemand: true,
+    showLinks:  true,
+    showGrid:   true,
+    haptics:    true,      // ⚠️ 新增：觸覺回饋開關
+    alpha: R_INNER / R,
+    linkOpacity: 1.0,
+    linkBulge:   1.0,
+    supplyScale: 1.0,
+    demandScale: 1.0,
   });
-  const [topK, setTopK] = useState(12);
-  const [gridOpacity, setGridOpacity] = useState(0.6);
 
-  // 固定網格：面板可調整，但不受縮放影響
-  const [gridRows, setGridRows] = useState(12);
-  const [gridCols, setGridCols] = useState(12);
-
-  // 新增：顯示模式
-  const [mode, setMode] = useState("price"); // "price" | "policy" | "usage" | "growth"
-
-  const goToDetail = (newTab = true) => {
-    if (!focus) return;
-    const path = `/focus/${encodeURIComponent(focus.code)}`;
-    if (newTab) window.open(path, "_blank", "noopener,noreferrer");
-    else window.location.href = path;
-  };
+  useEffect(() => {
+    const onKey = (e) => { if ((e.key || "").toLowerCase() === "p") setShowPanel((s) => !s); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <>
-      <DraggableResizablePanel title="層級控制">
-        {/* 層級開關 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6, marginBottom: 8 }}>
-          {[
-            ["grid", "經緯網格"],
-            ["tiles", "標籤方塊"],
-            ["links", "相似度連線"],
-            ["focusHalo", "焦點高亮"],
-          ].map(([key, label]) => (
-            <label key={key} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13 }}>
-              <input
-                type="checkbox"
-                checked={layers[key]}
-                onChange={(e) => setLayers((s) => ({ ...s, [key]: e.target.checked }))}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-
-        {/* 模式切換 + 說明 */}
-        <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
-          <label style={{ fontSize: 12 }}>
-            顯示模式：
-            <select value={mode} onChange={(e) => setMode(e.target.value)} style={{ marginLeft: 8 }}>
-              <option value="price">Price (NT$/kWh)</option>
-              <option value="policy">Policy Strength</option>
-              <option value="usage">Usage Match</option>
-              <option value="growth">Growth Rate</option>
-            </select>
-          </label>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>
-            色帶：{mode === "price" ? "便宜→綠；昂貴→紅" :
-                   mode === "policy" ? "政策弱→綠；政策強→紅（可反轉）" :
-                   mode === "usage" ? "低匹配→綠；高匹配→紅（可反轉）" :
-                   "低成長→灰；高成長→紅"}
-          </div>
-        </div>
-
-        {/* 參數 */}
-        <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
-          <label style={{ fontSize: 12 }}>
-            相似度連線 Top-K：{topK}
-            <input type="range" min={3} max={24} value={topK}
-              onChange={(e) => setTopK(parseInt(e.target.value))}
-              style={{ width: "100%" }} />
-          </label>
-          <label style={{ fontSize: 12 }}>
-            網格透明度：{gridOpacity.toFixed(2)}
-            <input type="range" min={0} max={1} step={0.05} value={gridOpacity}
-              onChange={(e) => setGridOpacity(parseFloat(e.target.value))}
-              style={{ width: "100%" }} />
-          </label>
-        </div>
-
-        {/* 固定網格密度控制 */}
-        <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
-          <label style={{ fontSize: 12 }}>
-            Rows：{gridRows}
-            <input type="range" min={6} max={36} step={1} value={gridRows}
-              onChange={(e) => setGridRows(parseInt(e.target.value))}
-              style={{ width: "100%" }} />
-          </label>
-          <label style={{ fontSize: 12 }}>
-            Cols：{gridCols}
-            <input type="range" min={6} max={36} step={1} value={gridCols}
-              onChange={(e) => setGridCols(parseInt(e.target.value))}
-              style={{ width: "100%" }} />
-          </label>
-        </div>
-
-        {/* 基準點選擇與前往 */}
-        <div style={{ fontSize: 14, marginBottom: 6, fontWeight: 600 }}>請選擇基準點</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <select
-            value={focus ? focus.code : ""}
-            onChange={(e) => {
-              const code = e.target.value;
-              setFocus({ code });
-            }}
-            style={{ width: "auto", maxWidth: 320, padding: "6px 8px", borderRadius: 6, border: "1px solid #ddd" }}
-          >
-            {allCodes.map((c) => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => goToDetail(true)}
-            disabled={!focus}
-            style={{
-              marginLeft: "auto", padding: "6px 10px", borderRadius: 6, border: "1px solid #ddd",
-              background: "#fff", cursor: focus ? "pointer" : "not-allowed", opacity: focus ? 1 : 0.5, whiteSpace: "nowrap",
-            }}
-            title="在新分頁開啟專屬頁"
-          >
-            前往專屬頁
-          </button>
-        </div>
-
-        <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
-          球面只放 Energy@Region；P/U 進入 KPI 與事件。切換模式即可看不同維度。
-        </div>
-      </DraggableResizablePanel>
-
-      {/* Canvas 區域 */}
-      <Canvas camera={{ position: [0, 0, 10], fov: 75 }} style={{ width: "100vw", height: "100vh" }}>
+      <Canvas camera={{ position: [0, 0, 9], fov: 70 }} style={{ width: "100vw", height: "100vh" }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <OrbitControls enablePan={false} enableZoom={true} />
-        <Scene
-          layers={layers}
-          focus={focus}
-          topK={topK}
-          gridOpacity={gridOpacity}
-          rows={gridRows}
-          cols={gridCols}
-          mode={mode}
-        />
+        <Scene options={options} />
       </Canvas>
+
+      <Portal>
+        <button
+          onClick={() => setShowPanel((s) => !s)}
+          title="切換控制面板 (P)"
+          style={{ position:"fixed", top:12, right:12, zIndex:2147483647, padding:"8px 10px", borderRadius:10, border:"1px solid #d1d5db", background:"#fff", cursor:"pointer", boxShadow:"0 6px 18px rgba(0,0,0,0.15)", fontSize:14 }}
+        >
+          ⚙️ 面板
+        </button>
+        {showPanel && <Panel options={options} setOptions={setOptions} />}
+      </Portal>
     </>
   );
 };
