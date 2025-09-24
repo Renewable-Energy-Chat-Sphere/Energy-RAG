@@ -1,18 +1,18 @@
 // GlobeVisualizer.jsx
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef, useContext } from "react";
 import { createPortal } from "react-dom";
-import { Canvas, useFrame } from "@react-three/fiber";            // ⚠️ 新增 useFrame
-import { OrbitControls, Text, Billboard } from "@react-three/drei"; // ⚠️ 新增 Billboard
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, Billboard, Text } from "@react-three/drei";
 import * as THREE from "three";
 import supplyData from "./energy_data.sample.js";
 
-// ── 常數
+/* =========================
+   常數 & 小工具
+========================= */
 const R = 3;
-const R_INNER = R * 0.75;
 const COLOR_LOW = "#22c55e";
 const COLOR_HIGH = "#ef4444";
 
-// ── 小工具
 const clamp01 = (x) => Math.max(0, Math.min(1, Number(x) || 0));
 const lerpColor = (a, b, t) => {
   const A = new THREE.Color(a), B = new THREE.Color(b);
@@ -20,35 +20,43 @@ const lerpColor = (a, b, t) => {
 };
 const normalize = (x, a, b) => clamp01(((Number(x) ?? a) - a) / Math.max(1e-9, b - a));
 const normalizeInvert = (x, a, b) => 1 - normalize(x, a, b);
-const projectToSphere = (v, r) => v.clone().setLength(r || v.length() || 1);
 
-// ── Haptics：更順的觸覺回饋（節流＋分級）
+// 讓彩色面板更柔和一點（基色→更亮）
+function lighten(hex, amt = 0.25) {
+  const c = new THREE.Color(hex);
+  const w = new THREE.Color("#ffffff");
+  return `#${c.clone().lerp(w, clamp01(amt)).getHexString()}`;
+}
+
+const shortZh = (zh) => (zh || "")
+  .replace(/（/g, " ").replace(/）/g, "")
+  .replace(/[()]/g, "").replace(/[、，]/g, " ")
+  .replace(/\s+/g, " ").trim();
+
+/* =========================
+   Haptics（可關）
+========================= */
 function createHaptics(enabled = true) {
   const supports = typeof navigator !== "undefined" && "vibrate" in navigator;
   const rm = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let last = 0;
   const throttle = (fn) => (...args) => {
     const now = performance.now();
-    if (now - last < 45) return; // 45ms 節流，避免抖動
+    if (now - last < 45) return;
     last = now;
     fn(...args);
   };
-  const vibrate = (pat) => {
-    if (!enabled || rm || !supports) return;
-    try { navigator.vibrate(pat); } catch {}
-  };
+  const vibrate = (pat) => { if (!enabled || rm || !supports) return; try { navigator.vibrate(pat); } catch {} };
   return {
-    tick: throttle(() => vibrate(8)),                 // 輕觸
-    press: throttle(() => vibrate([10, 25, 12])),     // 按下
-    success: throttle(() => vibrate([9, 18, 9, 18, 12])), // 完成
-    weight: throttle((w) => {                         // 依權重漸進
-      const d = Math.round(6 + 24 * clamp01(w));
-      vibrate([d, 12, d]);
-    }),
+    tick: throttle(() => vibrate(8)),
+    press: throttle(() => vibrate([10, 25, 12])),
+    success: throttle(() => vibrate([9, 18, 9, 18, 12])),
   };
 }
 
-// ── Golden-Spiral 均勻分布
+/* =========================
+   佈點：把面板貼在球體外 1.02R
+========================= */
 function goldenSpiralPositions(n, radius) {
   if (n <= 1) return [new THREE.Vector3(0, 1, 0).multiplyScalar(radius)];
   const out = [];
@@ -64,22 +72,294 @@ function goldenSpiralPositions(n, radius) {
   return out;
 }
 
-// ── 需求端 Demo
-const mockDemand = [
-  { code: "D_IND", zh: "工業部門", mix: { SOLAR_TW_utility: 0.10, WIND_TW_offshore: 0.15, HYDRO_TW: 0.05, BIOMASS_TW: 0.10, WIND_TW_onshore: 0.10, SOLAR_TW_rooftop: 0.05 }, value: 4200 },
-  { code: "D_TRA", zh: "運輸部門", mix: { SOLAR_TW_rooftop: 0.05, WIND_TW_onshore: 0.05, HYDRO_TW: 0.02 }, value: 3600 },
-  { code: "D_RES", zh: "住宅部門", mix: { SOLAR_TW_rooftop: 0.35, HYDRO_TW: 0.15, WIND_TW_onshore: 0.08 }, value: 1800 },
-  { code: "D_SER", zh: "服務業部門", mix: { SOLAR_TW_utility: 0.18, WIND_TW_offshore: 0.12, HYDRO_TW: 0.07, SOLAR_TW_rooftop: 0.12 }, value: 2600 },
-  { code: "D_AGR", zh: "農業部門", mix: { BIOMASS_TW: 0.30, SOLAR_TW_rooftop: 0.20, HYDRO_TW: 0.05 }, value: 900 },
-];
+/* =========================
+   LOD（有「遲滯」避免閃爍）
+========================= */
+const ZoomCtx = React.createContext({ dist: 8, level: "far" });
 
-// ── 顏色/大小
+function ZoomProvider({ children }) {
+  const { camera } = useThree();
+  const [level, setLevel] = useState("far");
+  const distRef = useRef(camera.position.length());
+
+  // 門檻 + 遲滯：避免在邊界反覆切換
+  const FAR_MID = 7.0, MID_NEAR = 4.6, HYST = 0.4;
+
+  useFrame(() => {
+    const d = camera.position.length();
+    distRef.current = d;
+    let next = level;
+    if (level === "far") {
+      if (d < FAR_MID - HYST) next = "mid";
+    } else if (level === "mid") {
+      if (d > FAR_MID + HYST) next = "far";
+      else if (d < MID_NEAR - HYST) next = "near";
+    } else { // near
+      if (d > MID_NEAR + HYST) next = "mid";
+    }
+    if (next !== level) setLevel(next);
+  });
+
+  const value = useMemo(() => ({ dist: distRef.current, level }), [level]);
+  return <ZoomCtx.Provider value={value}>{children}</ZoomCtx.Provider>;
+}
+function useZoom() { return useContext(ZoomCtx); }
+function ShowAt({ when = [], children }) {
+  const { level } = useZoom();
+  const ok = Array.isArray(when) ? when.includes(level) : when === level;
+  return ok ? children : null;
+}
+
+/* =========================
+   球體（半透明但非全透）
+========================= */
+function EarthSphere({ R = 3, baseOpacity = 0.45, color = "#77a6ff" }) {
+  return (
+    <mesh renderOrder={0}>
+      <sphereGeometry args={[R, 96, 96]} />
+      <meshStandardMaterial
+        color={color}
+        roughness={0.85}
+        metalness={0.0}
+        transparent
+        opacity={baseOpacity}
+        polygonOffset
+        polygonOffsetFactor={1}
+        polygonOffsetUnits={1}
+      />
+    </mesh>
+  );
+}
+
+/* =========================
+   顏色模式（沿用你原本邏輯）
+========================= */
 const colorByPrice = (price, [minP, maxP] = [1.5, 5.0]) =>
   lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalizeInvert(price, minP, maxP));
-const nodeScale = (v, [mn, mx]) => 0.16 + 0.55 * Math.sqrt(normalize(v, mn, mx));
+const colorByPolicy = (p) => lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalize(p ?? 0, 0, 1));
+const colorByUsage  = (u) => lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalize(u ?? 0, 0, 1));
 
-// ── 經緯線
-const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#999", opacity = 0.35 }) => {
+function colorOfSupply(s, mode) {
+  const k = s.kpi || {};
+  if (mode === "price")  return colorByPrice(k.price ?? 0, [1.5, 5.0]);
+  if (mode === "policy") return colorByPolicy(k.policy_index);
+  if (mode === "usage")  return colorByUsage(k.usage_match);
+  return "#9ca3af";
+}
+
+/* =========================
+   UI 元件：純文字／中面板／細節面板
+   （加上 renderOrder + depthWrite/DepthTest 以減少閃爍）
+========================= */
+const TextOnlyCard = ({ pos, title, subtitle = "", titleSize = 0.16, subSize = 0.11 }) => (
+  <Billboard follow lockZ position={pos}>
+    <group renderOrder={10}>
+      {!!title && (
+        <Text
+          fontSize={titleSize}
+          color="#111827"
+          anchorX="center"
+          anchorY="bottom"
+          outlineWidth={0.01}
+          outlineColor="#ffffff"
+          outlineOpacity={0.95}
+          depthOffset={2}
+        >
+          {title}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+      )}
+      {!!subtitle && (
+        <Text
+          position={[0, -0.14, 0]}
+          fontSize={subSize}
+          color="#4b5563"
+          anchorX="center"
+          anchorY="top"
+          outlineWidth={0.006}
+          outlineColor="#ffffff"
+          outlineOpacity={0.95}
+          depthOffset={2}
+        >
+          {subtitle}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+      )}
+    </group>
+  </Billboard>
+);
+
+function RoundedPanel({ w = 1, h = 0.6, r = 0.08, fill = "#ffffff", border = "#e5e7eb", opacity = 0.96, ro = 5 }) {
+  const shape = useMemo(() => {
+    const s = new THREE.Shape();
+    const hw = w / 2, hh = h / 2;
+    const rr = Math.min(r, hw, hh);
+    s.moveTo(-hw + rr, -hh);
+    s.lineTo(hw - rr, -hh); s.absarc(hw - rr, -hh + rr, rr, -Math.PI / 2, 0, false);
+    s.lineTo(hw, hh - rr);  s.absarc(hw - rr, hh - rr, rr, 0, Math.PI / 2, false);
+    s.lineTo(-hw + rr, hh); s.absarc(-hw + rr, hh - rr, rr, Math.PI / 2, Math.PI, false);
+    s.lineTo(-hw, -hh + rr);s.absarc(-hw + rr, -hh + rr, rr, Math.PI, (3 * Math.PI) / 2, false);
+    return s;
+  }, [w, h, r]);
+  const geo = useMemo(() => new THREE.ShapeGeometry(shape, 32), [shape]);
+  return (
+    <group renderOrder={ro}>
+      <mesh geometry={geo} position={[0, 0, 0.0005]}>
+        <meshStandardMaterial
+          color={fill}
+          transparent
+          opacity={opacity}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh geometry={geo} position={[0, 0, 0.0006]}>
+        <meshBasicMaterial color={border} transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function MidPanel({ pos, title, subtitle, baseColor }) {
+  const fill = lighten(baseColor, 0.65);
+  const border = lighten(baseColor, 0.45);
+  return (
+    <Billboard follow position={pos}>
+      <RoundedPanel w={1.2} h={0.62} r={0.1} fill={fill} border={border} opacity={0.96} ro={20} />
+      <group renderOrder={30}>
+        <Text position={[0, 0.12, 0]} fontSize={0.14} color="#0f172a" anchorX="center" anchorY="middle" depthOffset={3}>
+          {title}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+        {subtitle && (
+          <Text position={[0, -0.08, 0]} fontSize={0.1} color="#334155" anchorX="center" anchorY="middle" depthOffset={3}>
+            {subtitle}
+            <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+          </Text>
+        )}
+      </group>
+    </Billboard>
+  );
+}
+
+function DetailPanel({ pos, data, baseColor }) {
+  const k = data.kpi || {};
+  const title = data.zh || data.en || data.code;
+  const priceStr = (k.price ?? "-") + " NT$/kWh";
+  const capStr = `${k.capacity_installed ?? "-"} / ${k.capacity_potential ?? "-"} MW`;
+  const polStr = (k.policy_index ?? "-");
+  const useStr = (k.usage_match ?? "-");
+  const emiStr = (k.emissions_avoided ?? "-") + " MtCO2e/yr";
+  const events = Array.isArray(data.recent_events) ? data.recent_events.slice(0, 3) : [];
+
+  const fill = lighten(baseColor, 0.55);
+  const border = lighten(baseColor, 0.35);
+
+  return (
+    <Billboard follow position={pos}>
+      <RoundedPanel w={1.7} h={1.1} r={0.12} fill={fill} border={border} opacity={0.98} ro={40} />
+      <group renderOrder={50}>
+        <Text position={[0, 0.37, 0]} fontSize={0.16} color="#0f172a" anchorX="center" anchorY="middle" depthOffset={4}>
+          {title}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+
+        <Text position={[-0.74, 0.14, 0]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle" depthOffset={4}>
+          價格：{priceStr}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+        <Text position={[-0.74, 0.02, 0]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle" depthOffset={4}>
+          裝置/潛力：{capStr}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+        <Text position={[-0.74, -0.10, 0]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle" depthOffset={4}>
+          政策指數：{polStr}　契合度：{useStr}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+        <Text position={[-0.74, -0.22, 0]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle" depthOffset={4}>
+          減排：{emiStr}
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+
+        <Text position={[-0.74, -0.40, 0]} fontSize={0.1} color="#334155" anchorX="left" anchorY="middle" depthOffset={4}>
+          近期事件：
+          <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+        </Text>
+        {events.map((ev, idx) => (
+          <Text key={ev.id || idx} position={[-0.74, -0.52 - idx * 0.12, 0]} fontSize={0.092} color="#475569" anchorX="left" anchorY="middle" depthOffset={4}>
+            {`${ev.ts || ""} ｜ ${ev.type || ""}`}
+            <meshBasicMaterial attach="material" depthTest={false} depthWrite={false} toneMapped={false} />
+          </Text>
+        ))}
+      </group>
+    </Billboard>
+  );
+}
+
+/* =========================
+   供給 LOD 包裝（遠→中→近）
+========================= */
+function SupplyBlockLOD({ pos, data, haptics, colorMode }) {
+  const k = data.kpi || {};
+  const baseColor = colorOfSupply(data, colorMode);
+  const farTitle = shortZh(data.zh) || data.code;
+  const midTitle = farTitle;
+  const midSub = data.en || "";
+
+  return (
+    <>
+      <ShowAt when={["far"]}>
+        <TextOnlyCard pos={pos} title={farTitle} subtitle={""} />
+      </ShowAt>
+
+      <ShowAt when={["mid"]}>
+        <MidPanel pos={pos} title={midTitle} subtitle={midSub} baseColor={baseColor} />
+      </ShowAt>
+
+      <ShowAt when={["near"]}>
+        <DetailPanel pos={pos} data={data} baseColor={baseColor} />
+      </ShowAt>
+    </>
+  );
+}
+
+/* =========================
+   場景
+========================= */
+const Scene = ({ options }) => {
+  const { haptics: hapticsOn, colorMode, showGrid } = options;
+
+  const S = useMemo(() => (Array.isArray(supplyData) ? supplyData : []), []);
+  const positions = useMemo(() => {
+    // 貼著球面外緣，卡片位置在 1.02R
+    const pts = goldenSpiralPositions(S.length, R * 1.02);
+    return pts.map((v) => [v.x, v.y, v.z]);
+  }, [S.length]);
+
+  const h = useMemo(() => createHaptics(hapticsOn), [hapticsOn]);
+
+  return (
+    <>
+      {/* 球體（非全透明） */}
+      <EarthSphere R={R} baseOpacity={0.45} color="#77a6ff" />
+
+      {/* （可選）經緯線，想要就打開 */}
+      {showGrid && <GridLines radius={R} />}
+
+      {/* 供給資料卡 */}
+      {S.map((s, i) => (
+        <SupplyBlockLOD key={s.code || i} pos={positions[i]} data={s} haptics={h} colorMode={colorMode} />
+      ))}
+    </>
+  );
+};
+
+/* =========================
+   經緯線（簡版）
+========================= */
+const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#cbd5e1", opacity = 0.5 }) => {
   const lat = new THREE.Group();
   for (let i = 1; i < latN; i++) {
     const th = (i / latN) * Math.PI;
@@ -88,7 +368,7 @@ const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#999", opacity =
     const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI);
     const pts = curve.getPoints(96);
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
     const line = new THREE.LineLoop(geo, mat);
     line.rotation.x = Math.PI / 2;
     line.position.y = y;
@@ -106,198 +386,15 @@ const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#999", opacity =
       pts.push(new THREE.Vector3(x, y, z));
     }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
     lon.add(new THREE.Line(geo, mat));
   }
-  return (
-    <>
-      <primitive object={lat} />
-      <primitive object={lon} />
-    </>
-  );
+  return (<><primitive object={lat} /><primitive object={lon} /></>);
 };
 
-// ── Label：永遠正向（面向相機、避免翻轉/鏡像、雙面可見）
-const Label = ({ position, text, fontSize = 0.13, color = "#111", anchorY = "bottom" }) => (
-  <Billboard follow={true} lockZ={true} position={position}>
-    <Text
-      fontSize={fontSize}
-      color={color}
-      anchorX="center"
-      anchorY={anchorY}
-      // 讓文字筆畫永遠朝向相機，避免從背面看鏡像
-      depthOffset={1}
-      outlineWidth={0.002}
-      outlineColor="#ffffff"
-      outlineOpacity={0.85}
-    >
-      {text}
-      {/* DoubleSide 確保任何角度可見但不鏡像（因為 Billboard 總是面向相機） */}
-      <meshBasicMaterial attach="material" side={THREE.DoubleSide} />
-    </Text>
-  </Billboard>
-);
-
-// ── Node（平滑放大 + 觸覺回饋）
-const NodeBillboard = ({ pos, size, color, top, bottom, onClick, haptics }) => {
-  const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
-  const grp = useRef();
-  const target = useRef(1);
-
-  useEffect(() => { target.current = hovered ? 1.08 : 1; }, [hovered]);
-  useEffect(() => { if (pressed) target.current = 1.12; }, [pressed]);
-
-  // 平滑補間（比瞬間 scale 更像原生觸覺）
-  useFrame((_, dt) => {
-    if (!grp.current) return;
-    const s = grp.current.scale.x;
-    const next = THREE.MathUtils.damp(s, target.current, 8, dt); // 阻尼補間
-    grp.current.scale.setScalar(next);
-  });
-
-  return (
-    <group
-      ref={grp}
-      position={pos}
-      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = "pointer"; haptics?.tick(); }}
-      onPointerOut={(e) => { e.stopPropagation(); setHovered(false); document.body.style.cursor = "default"; }}
-      onPointerDown={(e) => { e.stopPropagation(); setPressed(true); haptics?.press(); }}
-      onPointerUp={(e) => { e.stopPropagation(); setPressed(false); haptics?.success(); onClick && onClick(); }}
-    >
-      <mesh>
-        <sphereGeometry args={[size, 24, 24]} />
-        <meshStandardMaterial color={color} roughness={0.7} metalness={0.05} />
-      </mesh>
-      {top && <Label position={[0, size + 0.06, 0]} text={top} fontSize={0.14} color="#111" anchorY="bottom" />}
-      {bottom && <Label position={[0, -size - 0.06, 0]} text={bottom} fontSize={0.11} color="#333" anchorY="top" />}
-    </group>
-  );
-};
-
-const BezierLink = ({ a, b, bulge = 0.15, color = "#888", opacity = 0.45 }) => {
-  const av = new THREE.Vector3(...a);
-  const bv = new THREE.Vector3(...b);
-  const mid = av.clone().add(bv).multiplyScalar(0.5).setLength(R * (1 + bulge));
-  const curve = new THREE.CubicBezierCurve3(av, mid, mid, bv);
-  const points = curve.getPoints(64);
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  return (
-    <line geometry={geometry}>
-      <lineBasicMaterial color={color} transparent opacity={opacity} />
-    </line>
-  );
-};
-
-// ── 場景
-const Scene = ({ options }) => {
-  const {
-    showGrid, showSupply, showDemand, showLinks,
-    alpha, colorMode, linkOpacity, linkBulge,
-    supplyScale, demandScale, haptics: hapticsOn,        // ⚠️ 新增 haptics
-  } = options;
-
-  const innerR = R * alpha;
-  const S = useMemo(() => (Array.isArray(supplyData) ? supplyData : []), []);
-  const supplyPos = useMemo(() => {
-    const pts = goldenSpiralPositions(S.length, R);
-    const map = new Map();
-    S.forEach((s, i) => map.set(s.code, pts[i]));
-    return map;
-  }, [S]);
-
-  const demandPos = useMemo(() => {
-    const map = new Map();
-    for (const d of mockDemand) {
-      const vec = new THREE.Vector3(); let sum = 0;
-      for (const [code, w] of Object.entries(d.mix || {})) {
-        const p = supplyPos.get(code); if (!p) continue;
-        const wv = Math.max(0, Number(w) || 0);
-        vec.add(p.clone().multiplyScalar(wv)); sum += wv;
-      }
-      const pos = sum > 0 ? projectToSphere(vec.multiplyScalar(1 / sum), innerR)
-                          : new THREE.Vector3(0, 1, 0).multiplyScalar(innerR);
-      map.set(d.code, pos);
-    }
-    return map;
-  }, [supplyPos, innerR]);
-
-  const sVals = S.map((s) => (s.kpi?.capacity_installed || 0) + 0.3 * (s.kpi?.capacity_potential || 0));
-  const sRange = [Math.min(...sVals, 1), Math.max(...sVals, 10)];
-  const dVals = mockDemand.map((d) => d.value || 0);
-  const dRange = [Math.min(...dVals, 1), Math.max(...dVals, 10)];
-
-  const colorOfSupply = (s) => {
-    const k = s.kpi || {};
-    if (colorMode === "price")  return colorByPrice(k.price ?? 0, [1.5, 5.0]);
-    if (colorMode === "policy") return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalize(k.policy_index ?? 0, 0, 1));
-    if (colorMode === "usage")  return lerpColor(COLOR_LOW, COLOR_HIGH, 1 - normalize(k.usage_match ?? 0, 0, 1));
-    return "#9ca3af";
-  };
-
-  const h = useMemo(() => createHaptics(hapticsOn), [hapticsOn]); // ⚠️ 建立 haptics
-
-  return (
-    <>
-      {showGrid && <GridLines radius={R} />}
-      {showGrid && <GridLines radius={innerR} color="#bbb" opacity={0.25} />}
-
-      {/* 供給節點 */}
-      {showSupply && S.map((s) => {
-        const p = supplyPos.get(s.code);
-        const base = (s.kpi?.capacity_installed || 0) + 0.3 * (s.kpi?.capacity_potential || 0);
-        const size = nodeScale(base, sRange) * supplyScale;
-        const color = colorOfSupply(s);
-        return (
-          <NodeBillboard
-            key={s.code}
-            pos={[p.x, p.y, p.z]}
-            size={size}
-            color={color}
-            top={s.code}
-            bottom={s.zh || s.en}
-            haptics={h}
-          />
-        );
-      })}
-
-      {/* 需求節點 + 連線 */}
-      {showDemand && mockDemand.map((d) => {
-        const p = demandPos.get(d.code);
-        const size = nodeScale(d.value || 0, dRange) * demandScale;
-        return (
-          <group key={d.code}>
-            {showLinks && Object.entries(d.mix || {}).map(([code, w]) => {
-              const sp = supplyPos.get(code);
-              if (!sp || w <= 0) return null;
-              const a = [p.x, p.y, p.z], b = [sp.x, sp.y, sp.z];
-              const c = lerpColor("#94a3b8", "#e11d48", clamp01(w));
-              return (
-                <BezierLink
-                  key={`${d.code}-${code}`}
-                  a={a} b={b}
-                  bulge={(0.12 + 0.12 * clamp01(w)) * linkBulge}
-                  color={c}
-                  opacity={(0.25 + 0.45 * clamp01(w)) * linkOpacity}
-                />
-              );
-            })}
-            <NodeBillboard
-              pos={[p.x, p.y, p.z]}
-              size={size}
-              color="#2563eb"
-              top={d.code}
-              bottom={d.zh}
-              haptics={h}
-            />
-          </group>
-        );
-      })}
-    </>
-  );
-};
-
-// ── Portal
+/* =========================
+   Portal & 面板
+========================= */
 const Portal = ({ children }) => {
   const [el] = useState(() => document.createElement("div"));
   useEffect(() => {
@@ -309,7 +406,6 @@ const Portal = ({ children }) => {
   return createPortal(children, el);
 };
 
-// ── 面板（+ 觸覺開關）
 const Panel = ({ options, setOptions }) => {
   const on = (k) => (e) => setOptions((o) => ({ ...o, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
   const onNum = (k) => (e) => setOptions((o) => ({ ...o, [k]: parseFloat(e.target.value) }));
@@ -320,7 +416,7 @@ const Panel = ({ options, setOptions }) => {
       border:"1px solid #e5e7eb", boxShadow:"0 8px 24px rgba(0,0,0,0.18)",
       width:300, fontSize:13, pointerEvents:"auto"
     }}>
-      <b>Energy Sphere 控制台</b>
+      <b>Energy Cards 控制台（球體＋顏色 LOD）</b>
       <div style={{marginTop:8}}>
         <label>顏色模式：
           <select value={options.colorMode} onChange={on("colorMode")} style={{marginLeft:8}}>
@@ -331,49 +427,25 @@ const Panel = ({ options, setOptions }) => {
         </label>
       </div>
       <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10}}>
-        <label><input type="checkbox" checked={options.showSupply} onChange={on("showSupply")} /> 顯示供給</label>
-        <label><input type="checkbox" checked={options.showDemand} onChange={on("showDemand")} /> 顯示需求</label>
-        <label><input type="checkbox" checked={options.showLinks}  onChange={on("showLinks")}  /> 顯示連線</label>
-        <label><input type="checkbox" checked={options.showGrid}   onChange={on("showGrid")}   /> 顯示網格</label>
-        <label><input type="checkbox" checked={options.haptics}   onChange={on("haptics")}    /> 觸覺回饋</label>
-      </div>
-      <div style={{marginTop:10}}>
-        內外層距離 α（R_INNER/R）：{options.alpha.toFixed(2)}
-        <input type="range" min={0.6} max={0.9} step={0.01} value={options.alpha} onChange={onNum("alpha")} style={{width:"100%"}} />
-      </div>
-      <div style={{marginTop:10}}>
-        連線透明度倍率：{options.linkOpacity.toFixed(2)}
-        <input type="range" min={0.2} max={1.5} step={0.05} value={options.linkOpacity} onChange={onNum("linkOpacity")} style={{width:"100%"}} />
-        連線鼓度倍率：{options.linkBulge.toFixed(2)}
-        <input type="range" min={0.5} max={2.0} step={0.05} value={options.linkBulge} onChange={onNum("linkBulge")} style={{width:"100%"}} />
-      </div>
-      <div style={{marginTop:10}}>
-        供給節點大小倍率：{options.supplyScale.toFixed(2)}
-        <input type="range" min={0.5} max={1.8} step={0.05} value={options.supplyScale} onChange={onNum("supplyScale")} style={{width:"100%"}} />
-        需求節點大小倍率：{options.demandScale.toFixed(2)}
-        <input type="range" min={0.5} max={1.8} step={0.05} value={options.demandScale} onChange={onNum("demandScale")} style={{width:"100%"}} />
+        <label><input type="checkbox" checked={options.showGrid} onChange={on("showGrid")} /> 顯示經緯線</label>
+        <label><input type="checkbox" checked={options.haptics} onChange={on("haptics")} /> 觸覺回饋</label>
       </div>
       <div style={{marginTop:8, color:"#475569"}}>
-        小撇步：按 <b>P</b> 顯示/隱藏面板。
+        小撇步：縮放切換層級；遠＝只文字、中＝小面板、近＝詳細卡片。
       </div>
     </div>
   );
 };
 
+/* =========================
+   主組件
+========================= */
 const Globe = () => {
   const [showPanel, setShowPanel] = useState(true);
   const [options, setOptions] = useState({
     colorMode: "price",
-    showSupply: true,
-    showDemand: true,
-    showLinks:  true,
-    showGrid:   true,
-    haptics:    true,      // ⚠️ 新增：觸覺回饋開關
-    alpha: R_INNER / R,
-    linkOpacity: 1.0,
-    linkBulge:   1.0,
-    supplyScale: 1.0,
-    demandScale: 1.0,
+    showGrid: true,
+    haptics: true,
   });
 
   useEffect(() => {
@@ -384,11 +456,16 @@ const Globe = () => {
 
   return (
     <>
-      <Canvas camera={{ position: [0, 0, 9], fov: 70 }} style={{ width: "100vw", height: "100vh" }}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
-        <OrbitControls enablePan={false} enableZoom={true} />
-        <Scene options={options} />
+      <Canvas
+        camera={{ position: [0, 0, 8], fov: 70 }}
+        style={{ width: "100vw", height: "100vh", background: "#ffffff" }}
+      >
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[5, 5, 6]} intensity={0.9} />
+        <OrbitControls enablePan={false} enableZoom makeDefault />
+        <ZoomProvider>
+          <Scene options={options} />
+        </ZoomProvider>
       </Canvas>
 
       <Portal>
