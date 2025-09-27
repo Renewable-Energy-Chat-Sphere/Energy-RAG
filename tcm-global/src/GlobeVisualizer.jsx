@@ -111,6 +111,24 @@ function ShowAt({ when = [], children }) {
 }
 
 /* =========================
+   ★ 防卡入：依卡片大小自動抬升（沿球面法線）
+========================= */
+// 讓卡片沿法線從球面「再抬高」一點，避免與球體相交
+function posWithLift(pos, lift) {
+  const v = Array.isArray(pos) ? new THREE.Vector3(pos[0], pos[1], pos[2]) : pos.clone();
+  const u = v.clone().normalize(); // 球心→該點的法線方向
+  return [u.x * (R + Math.max(0, lift)), u.y * (R + Math.max(0, lift)), u.z * (R + Math.max(0, lift))];
+}
+// 依卡片尺寸估算所需抬升量（對角線越大，抬越高）
+const liftBySize = (w, h, base = 0.01, k = 0.2) => base + Math.sqrt(w * w + h * h) * k;
+// 給三種 LOD 使用的抬升設定（對應你的 MidPanel/DetailPanel 尺寸）
+const LIFTS = {
+  far: 0.18,                       // 只有文字，小幅抬升即可
+  mid: liftBySize(1.2, 0.62),      // <MidPanel w=1.2 h=0.62>
+  near: liftBySize(1.7, 1.1),      // <DetailPanel w=1.7 h=1.1>
+};
+
+/* =========================
    球體（半透明但非全透）
 ========================= */
 function EarthSphere({ R = 3, baseOpacity = 0.45, color = "#77a6ff" }) {
@@ -124,8 +142,8 @@ function EarthSphere({ R = 3, baseOpacity = 0.45, color = "#77a6ff" }) {
         transparent
         opacity={baseOpacity}
         polygonOffset
-        polygonOffsetFactor={1}
-        polygonOffsetUnits={1}
+        polygonOffsetFactor={2}   // ← 稍微加大，讓球體在深度上更往後
+        polygonOffsetUnits={2}
       />
     </mesh>
   );
@@ -302,24 +320,28 @@ function DetailPanel({ pos, data, baseColor }) {
    供給 LOD 包裝（遠→中→近）
 ========================= */
 function SupplyBlockLOD({ pos, data, haptics, colorMode }) {
-  const k = data.kpi || {};
   const baseColor = colorOfSupply(data, colorMode);
   const farTitle = shortZh(data.zh) || data.code;
   const midTitle = farTitle;
   const midSub = data.en || "";
 
+  // ★ 依 LOD 尺寸把卡片沿法線往外推，避免卡進球面
+  const farPos  = React.useMemo(() => posWithLift(pos, LIFTS.far), [pos]);
+  const midPos  = React.useMemo(() => posWithLift(pos, LIFTS.mid), [pos]);
+  const nearPos = React.useMemo(() => posWithLift(pos, LIFTS.near), [pos]);
+
   return (
     <>
       <ShowAt when={["far"]}>
-        <TextOnlyCard pos={pos} title={farTitle} subtitle={""} />
+        <TextOnlyCard pos={farPos} title={farTitle} subtitle={""} />
       </ShowAt>
 
       <ShowAt when={["mid"]}>
-        <MidPanel pos={pos} title={midTitle} subtitle={midSub} baseColor={baseColor} />
+        <MidPanel pos={midPos} title={midTitle} subtitle={midSub} baseColor={baseColor} />
       </ShowAt>
 
       <ShowAt when={["near"]}>
-        <DetailPanel pos={pos} data={data} baseColor={baseColor} />
+        <DetailPanel pos={nearPos} data={data} baseColor={baseColor} />
       </ShowAt>
     </>
   );
@@ -333,7 +355,7 @@ const Scene = ({ options }) => {
 
   const S = useMemo(() => (Array.isArray(supplyData) ? supplyData : []), []);
   const positions = useMemo(() => {
-    // 貼著球面外緣，卡片位置在 1.02R
+    // 貼著球面外緣，卡片原始錨點在 1.02R（之後還會依 LOD 再抬升）
     const pts = goldenSpiralPositions(S.length, R * 1.02);
     return pts.map((v) => [v.x, v.y, v.z]);
   }, [S.length]);
@@ -356,9 +378,7 @@ const Scene = ({ options }) => {
   );
 };
 
-/* =========================
-   經緯線（簡版）
-========================= */
+/* =========================經緯線（簡版）========================= */
 const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#cbd5e1", opacity = 0.5 }) => {
   const lat = new THREE.Group();
   for (let i = 1; i < latN; i++) {
