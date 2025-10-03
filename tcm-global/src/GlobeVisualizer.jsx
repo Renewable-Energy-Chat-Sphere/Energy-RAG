@@ -10,15 +10,17 @@ import supplyData from "./energy_data.sample.js";
    常數 & 小工具
 ========================= */
 const R = 3;
-const COLOR_LOW = "#22c55e";  // 便宜 = 綠
+const COLOR_LOW = "#22c55e"; // 便宜 = 綠
 const COLOR_HIGH = "#ef4444"; // 昂貴 = 紅
 
 const clamp01 = (x) => Math.max(0, Math.min(1, Number(x) || 0));
 const lerpColor = (a, b, t) => {
-  const A = new THREE.Color(a), B = new THREE.Color(b);
+  const A = new THREE.Color(a),
+    B = new THREE.Color(b);
   return `#${A.clone().lerp(B, clamp01(t)).getHexString()}`;
 };
-const normalize = (x, a, b) => clamp01(((Number(x) ?? a) - a) / Math.max(1e-9, b - a));
+const normalize = (x, a, b) =>
+  clamp01(((Number(x) ?? a) - a) / Math.max(1e-9, b - a));
 
 function lighten(hex, amt = 0.25) {
   const c = new THREE.Color(hex);
@@ -26,10 +28,14 @@ function lighten(hex, amt = 0.25) {
   return `#${c.clone().lerp(w, clamp01(amt)).getHexString()}`;
 }
 
-const shortZh = (zh) => (zh || "")
-  .replace(/（/g, " ").replace(/）/g, "")
-  .replace(/[()]/g, "").replace(/[、，]/g, " ")
-  .replace(/\s+/g, " ").trim();
+const shortZh = (zh) =>
+  (zh || "")
+    .replace(/（/g, " ")
+    .replace(/）/g, "")
+    .replace(/[()]/g, "")
+    .replace(/[、，]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 /* =========================
    佈點：golden spiral（初始卡片錨點）
@@ -53,15 +59,17 @@ function goldenSpiralPositions(n, radius) {
    防卡入：沿球面法線抬升
 ========================= */
 function posWithLift(pos, lift) {
-  const v = Array.isArray(pos) ? new THREE.Vector3(pos[0], pos[1], pos[2]) : pos.clone();
+  const v = Array.isArray(pos)
+    ? new THREE.Vector3(pos[0], pos[1], pos[2])
+    : pos.clone();
   const u = v.clone().normalize();
   const rr = R + Math.max(0, lift);
   return [u.x * rr, u.y * rr, u.z * rr];
 }
 const LIFTS = {
-  far: 0.10,
-  mid: 0.20,
-  near: 0.30,
+  far: 0.1,
+  mid: 0.2,
+  near: 0.3,
 };
 
 /* =========================
@@ -111,14 +119,16 @@ function EarthSphere({ R = 3, opacity = 0.45, color = "#77a6ff" }) {
 ========================= */
 const colorByPrice = (price, [minP, maxP] = [1.5, 5.0]) =>
   lerpColor(COLOR_LOW, COLOR_HIGH, normalize(price, minP, maxP)); // 低價→0(綠)，高價→1(紅)
-const colorByPolicy = (p) => lerpColor(COLOR_LOW, COLOR_HIGH, normalize(p ?? 0, 0, 1));
-const colorByUsage  = (u) => lerpColor(COLOR_LOW, COLOR_HIGH, normalize(u ?? 0, 0, 1));
+const colorByPolicy = (p) =>
+  lerpColor(COLOR_LOW, COLOR_HIGH, normalize(p ?? 0, 0, 1));
+const colorByUsage = (u) =>
+  lerpColor(COLOR_LOW, COLOR_HIGH, normalize(u ?? 0, 0, 1));
 
 function colorOfSupply(s, mode) {
   const k = s.kpi || {};
-  if (mode === "price")  return colorByPrice(k.price ?? 0);
+  if (mode === "price") return colorByPrice(k.price ?? 0);
   if (mode === "policy") return colorByPolicy(k.policy_index);
-  if (mode === "usage")  return colorByUsage(k.usage_match);
+  if (mode === "usage") return colorByUsage(k.usage_match);
   return "#9ca3af";
 }
 
@@ -132,7 +142,13 @@ const TextOnlyCard = ({ pos, title, subtitle = "" }) => (
         {title}
       </Text>
       {!!subtitle && (
-        <Text position={[0, -0.14, 0]} fontSize={0.11} color="#475569" anchorX="center" anchorY="top">
+        <Text
+          position={[0, -0.14, 0]}
+          fontSize={0.11}
+          color="#475569"
+          anchorX="center"
+          anchorY="top"
+        >
           {subtitle}
         </Text>
       )}
@@ -140,16 +156,28 @@ const TextOnlyCard = ({ pos, title, subtitle = "" }) => (
   </Billboard>
 );
 
-function RoundedPanel({ w = 1, h = 0.6, r = 0.08, fill = "#ffffff", border = "#e5e7eb", opacity = 0.96 }) {
+function RoundedPanel({
+  w = 1,
+  h = 0.6,
+  r = 0.08,
+  fill = "#ffffff",
+  border = "#e5e7eb",
+  opacity = 0.96,
+}) {
   const shape = useMemo(() => {
     const s = new THREE.Shape();
-    const hw = w / 2, hh = h / 2;
+    const hw = w / 2,
+      hh = h / 2;
     const rr = Math.min(r, hw, hh);
     s.moveTo(-hw + rr, -hh);
-    s.lineTo(hw - rr, -hh); s.absarc(hw - rr, -hh + rr, rr, -Math.PI / 2, 0, false);
-    s.lineTo(hw, hh - rr);  s.absarc(hw - rr, hh - rr, rr, 0, Math.PI / 2, false);
-    s.lineTo(-hw + rr, hh); s.absarc(-hw + rr, hh - rr, rr, Math.PI / 2, Math.PI, false);
-    s.lineTo(-hw, -hh + rr);s.absarc(-hw + rr, -hh + rr, rr, Math.PI, (3 * Math.PI) / 2, false);
+    s.lineTo(hw - rr, -hh);
+    s.absarc(hw - rr, -hh + rr, rr, -Math.PI / 2, 0, false);
+    s.lineTo(hw, hh - rr);
+    s.absarc(hw - rr, hh - rr, rr, 0, Math.PI / 2, false);
+    s.lineTo(-hw + rr, hh);
+    s.absarc(-hw + rr, hh - rr, rr, Math.PI / 2, Math.PI, false);
+    s.lineTo(-hw, -hh + rr);
+    s.absarc(-hw + rr, -hh + rr, rr, Math.PI, (3 * Math.PI) / 2, false);
     return s;
   }, [w, h, r]);
   const geo = useMemo(() => new THREE.ShapeGeometry(shape, 32), [shape]);
@@ -157,11 +185,21 @@ function RoundedPanel({ w = 1, h = 0.6, r = 0.08, fill = "#ffffff", border = "#e
     <group>
       {/* 背板 */}
       <mesh geometry={geo} position={[0, 0, 0.001]}>
-        <meshStandardMaterial color={fill} transparent opacity={opacity} depthWrite={false} />
+        <meshStandardMaterial
+          color={fill}
+          transparent
+          opacity={opacity}
+          depthWrite={false}
+        />
       </mesh>
       {/* 邊框 */}
       <mesh geometry={geo} position={[0, 0, 0.002]}>
-        <meshBasicMaterial color={border} transparent opacity={0.9} depthWrite={false} />
+        <meshBasicMaterial
+          color={border}
+          transparent
+          opacity={0.9}
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );
@@ -172,13 +210,32 @@ function MidPanel({ pos, title, subtitle, baseColor }) {
   const border = lighten(baseColor, 0.45);
   return (
     <Billboard follow position={pos}>
-      <RoundedPanel w={1.2} h={0.62} r={0.1} fill={fill} border={border} opacity={0.97} />
+      <RoundedPanel
+        w={1.2}
+        h={0.62}
+        r={0.1}
+        fill={fill}
+        border={border}
+        opacity={0.97}
+      />
       <group renderOrder={30}>
-        <Text position={[0, 0.12, 0.01]} fontSize={0.14} color="#0f172a" anchorX="center" anchorY="middle">
+        <Text
+          position={[0, 0.12, 0.01]}
+          fontSize={0.14}
+          color="#0f172a"
+          anchorX="center"
+          anchorY="middle"
+        >
           {title}
         </Text>
         {subtitle && (
-          <Text position={[0, -0.08, 0.01]} fontSize={0.1} color="#334155" anchorX="center" anchorY="middle">
+          <Text
+            position={[0, -0.08, 0.01]}
+            fontSize={0.1}
+            color="#334155"
+            anchorX="center"
+            anchorY="middle"
+          >
             {subtitle}
           </Text>
         )}
@@ -191,41 +248,95 @@ function DetailPanel({ pos, data, baseColor }) {
   const k = data.kpi || {};
   const title = data.zh || data.en || data.code;
   const priceStr = (k.price ?? "-") + " NT$/kWh";
-  const capStr = `${k.capacity_installed ?? "-"} / ${k.capacity_potential ?? "-"} MW`;
-  const polStr = (k.policy_index ?? "-");
-  const useStr = (k.usage_match ?? "-");
+  const capStr = `${k.capacity_installed ?? "-"} / ${
+    k.capacity_potential ?? "-"
+  } MW`;
+  const polStr = k.policy_index ?? "-";
+  const useStr = k.usage_match ?? "-";
   const emiStr = (k.emissions_avoided ?? "-") + " MtCO2e/yr";
-  const events = Array.isArray(data.recent_events) ? data.recent_events.slice(0, 3) : [];
+  const events = Array.isArray(data.recent_events)
+    ? data.recent_events.slice(0, 3)
+    : [];
 
   const fill = lighten(baseColor, 0.55);
   const border = lighten(baseColor, 0.35);
 
   return (
     <Billboard follow position={pos}>
-      <RoundedPanel w={1.7} h={1.1} r={0.12} fill={fill} border={border} opacity={0.985} />
+      <RoundedPanel
+        w={1.7}
+        h={1.1}
+        r={0.12}
+        fill={fill}
+        border={border}
+        opacity={0.985}
+      />
       <group renderOrder={50}>
-        <Text position={[0, 0.37, 0.01]} fontSize={0.16} color="#0f172a" anchorX="center" anchorY="middle">
+        <Text
+          position={[0, 0.37, 0.01]}
+          fontSize={0.16}
+          color="#0f172a"
+          anchorX="center"
+          anchorY="middle"
+        >
           {title}
         </Text>
 
-        <Text position={[-0.74, 0.14, 0.01]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle">
+        <Text
+          position={[-0.74, 0.14, 0.01]}
+          fontSize={0.1}
+          color="#111827"
+          anchorX="left"
+          anchorY="middle"
+        >
           價格：{priceStr}
         </Text>
-        <Text position={[-0.74, 0.02, 0.01]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle">
+        <Text
+          position={[-0.74, 0.02, 0.01]}
+          fontSize={0.1}
+          color="#111827"
+          anchorX="left"
+          anchorY="middle"
+        >
           裝置/潛力：{capStr}
         </Text>
-        <Text position={[-0.74, -0.10, 0.01]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle">
+        <Text
+          position={[-0.74, -0.1, 0.01]}
+          fontSize={0.1}
+          color="#111827"
+          anchorX="left"
+          anchorY="middle"
+        >
           政策指數：{polStr}　契合度：{useStr}
         </Text>
-        <Text position={[-0.74, -0.22, 0.01]} fontSize={0.1} color="#111827" anchorX="left" anchorY="middle">
+        <Text
+          position={[-0.74, -0.22, 0.01]}
+          fontSize={0.1}
+          color="#111827"
+          anchorX="left"
+          anchorY="middle"
+        >
           減排：{emiStr}
         </Text>
 
-        <Text position={[-0.74, -0.40, 0.01]} fontSize={0.1} color="#334155" anchorX="left" anchorY="middle">
+        <Text
+          position={[-0.74, -0.4, 0.01]}
+          fontSize={0.1}
+          color="#334155"
+          anchorX="left"
+          anchorY="middle"
+        >
           近期事件：
         </Text>
         {events.map((ev, idx) => (
-          <Text key={ev.id || idx} position={[-0.74, -0.52 - idx * 0.12, 0.01]} fontSize={0.092} color="#475569" anchorX="left" anchorY="middle">
+          <Text
+            key={ev.id || idx}
+            position={[-0.74, -0.52 - idx * 0.12, 0.01]}
+            fontSize={0.092}
+            color="#475569"
+            anchorX="left"
+            anchorY="middle"
+          >
             {`${ev.ts || ""} ｜ ${ev.type || ""}`}
           </Text>
         ))}
@@ -247,12 +358,23 @@ function SupplyBlockLOD({ posBase, data, colorMode }) {
     <CardLOD pos={posBase}>
       {(level) => {
         const pos =
-          level === "far" ? posWithLift(posBase, LIFTS.far) :
-          level === "mid" ? posWithLift(posBase, LIFTS.mid) :
-                            posWithLift(posBase, LIFTS.near);
+          level === "far"
+            ? posWithLift(posBase, LIFTS.far)
+            : level === "mid"
+            ? posWithLift(posBase, LIFTS.mid)
+            : posWithLift(posBase, LIFTS.near);
 
-        if (level === "far") return <TextOnlyCard pos={pos} title={farTitle} subtitle={""} />;
-        if (level === "mid") return <MidPanel pos={pos} title={midTitle} subtitle={midSub} baseColor={baseColor} />;
+        if (level === "far")
+          return <TextOnlyCard pos={pos} title={farTitle} subtitle={""} />;
+        if (level === "mid")
+          return (
+            <MidPanel
+              pos={pos}
+              title={midTitle}
+              subtitle={midSub}
+              baseColor={baseColor}
+            />
+          );
         return <DetailPanel pos={pos} data={data} baseColor={baseColor} />;
       }}
     </CardLOD>
@@ -277,7 +399,12 @@ const Scene = ({ options }) => {
       {showGrid && <GridLines radius={R} />}
 
       {S.map((s, i) => (
-        <SupplyBlockLOD key={s.code || i} posBase={positions[i]} data={s} colorMode={colorMode} />
+        <SupplyBlockLOD
+          key={s.code || i}
+          posBase={positions[i]}
+          data={s}
+          colorMode={colorMode}
+        />
       ))}
     </>
   );
@@ -286,7 +413,13 @@ const Scene = ({ options }) => {
 /* =========================
    經緯線（簡版）
 ========================= */
-const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#cbd5e1", opacity = 0.5 }) => {
+const GridLines = ({
+  radius = R,
+  latN = 12,
+  lonN = 12,
+  color = "#cbd5e1",
+  opacity = 0.5,
+}) => {
   const lat = new THREE.Group();
   for (let i = 1; i < latN; i++) {
     const th = (i / latN) * Math.PI;
@@ -295,7 +428,12 @@ const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#cbd5e1", opacit
     const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI);
     const pts = curve.getPoints(96);
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+    const mat = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    });
     const line = new THREE.LineLoop(geo, mat);
     line.rotation.x = Math.PI / 2;
     line.position.y = y;
@@ -313,10 +451,20 @@ const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#cbd5e1", opacit
       pts.push(new THREE.Vector3(x, y, z));
     }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+    const mat = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    });
     lon.add(new THREE.Line(geo, mat));
   }
-  return (<><primitive object={lat} /><primitive object={lon} /></>);
+  return (
+    <>
+      <primitive object={lat} />
+      <primitive object={lon} />
+    </>
+  );
 };
 
 /* =========================
@@ -343,29 +491,69 @@ const Panel = ({ options, setOptions }) => {
     setOptions((o) => ({ ...o, [k]: parseFloat(e.target.value) }));
 
   return (
-    <div style={{
-      position:"fixed", top:12, left:12, zIndex:2147483647,
-      background:"rgba(255,255,255,0.94)", padding:12, borderRadius:10,
-      border:"1px solid #e5e7eb", boxShadow:"0 8px 24px rgba(0,0,0,0.18)",
-      width:320, fontSize:13, pointerEvents:"auto"
-    }}>
+    <div
+      style={{
+        position: "fixed",
+        top: 12,
+        left: 12,
+        zIndex: 2147483647,
+        background: "rgba(255,255,255,0.94)",
+        padding: 12,
+        borderRadius: 10,
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+        width: 320,
+        fontSize: 13,
+        pointerEvents: "auto",
+      }}
+    >
       <b>Energy Cards 控制台</b>
-      <div style={{marginTop:8}}>
-        <label>顏色模式：
-          <select value={options.colorMode} onChange={on("colorMode")} style={{marginLeft:8}}>
+      <div style={{ marginTop: 8 }}>
+        <label>
+          顏色模式：
+          <select
+            value={options.colorMode}
+            onChange={on("colorMode")}
+            style={{ marginLeft: 8 }}
+          >
             <option value="price">價格（便宜綠→昂貴紅）</option>
             <option value="policy">政策（弱綠→強紅）</option>
             <option value="usage">用電匹配（低綠→高紅）</option>
           </select>
         </label>
       </div>
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:10}}>
-        <label><input type="checkbox" checked={options.showGrid} onChange={on("showGrid")} /> 顯示經緯線</label>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          marginTop: 10,
+        }}
+      >
+        <label>
+          <input
+            type="checkbox"
+            checked={options.showGrid}
+            onChange={on("showGrid")}
+          />{" "}
+          顯示經緯線
+        </label>
       </div>
-      <div style={{marginTop:10}}>
-        <label>球體透明度：
-          <input type="range" min="0.1" max="1" step="0.05" value={options.sphereOpacity} onChange={onNum("sphereOpacity")} style={{marginLeft:8}} />
-          <span style={{marginLeft:8}}>{options.sphereOpacity.toFixed(2)}</span>
+      <div style={{ marginTop: 10 }}>
+        <label>
+          球體透明度：
+          <input
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.05"
+            value={options.sphereOpacity}
+            onChange={onNum("sphereOpacity")}
+            style={{ marginLeft: 8 }}
+          />
+          <span style={{ marginLeft: 8 }}>
+            {options.sphereOpacity.toFixed(2)}
+          </span>
         </label>
       </div>
     </div>
@@ -384,14 +572,19 @@ const Globe = () => {
   });
 
   useEffect(() => {
-    const onKey = (e) => { if ((e.key || "").toLowerCase() === "p") setShowPanel((s) => !s); };
+    const onKey = (e) => {
+      if ((e.key || "").toLowerCase() === "p") setShowPanel((s) => !s);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
     <>
-      <Canvas camera={{ position: [0, 0, 8], fov: 70 }} style={{ width: "100vw", height: "100vh", background: "#ffffff" }}>
+      <Canvas
+        camera={{ position: [0, 0, 8], fov: 70 }}
+        style={{ width: "100vw", height: "100vh", background: "#ffffff" }}
+      >
         <ambientLight intensity={0.85} />
         <directionalLight position={[5, 5, 6]} intensity={1.0} />
         <OrbitControls enablePan={false} enableZoom makeDefault />
@@ -402,7 +595,19 @@ const Globe = () => {
         <button
           onClick={() => setShowPanel((s) => !s)}
           title="切換控制面板 (P)"
-          style={{ position:"fixed", top:12, right:12, zIndex:2147483647, padding:"8px 10px", borderRadius:10, border:"1px solid #d1d5db", background:"#fff", cursor:"pointer", boxShadow:"0 6px 18px rgba(0,0,0,0.15)", fontSize:14 }}
+          style={{
+            position: "fixed",
+            top: 12,
+            right: 12,
+            zIndex: 2147483647,
+            padding: "8px 10px",
+            borderRadius: 10,
+            border: "1px solid #d1d5db",
+            background: "#fff",
+            cursor: "pointer",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+            fontSize: 14,
+          }}
         >
           ⚙️ 面板
         </button>
