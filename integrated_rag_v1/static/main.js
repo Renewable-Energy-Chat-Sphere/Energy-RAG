@@ -12,9 +12,45 @@ tabs.forEach(t => t.addEventListener('click', () => {
 function renderMD(target, text) {
   target.innerHTML = marked.parse(text || '');
 }
+
+// ✅ 升級：同時支援字串陣列、物件陣列（表格 sources）、或一般物件
 function renderSources(target, sources) {
-  if (!sources || !sources.length) { target.textContent = ''; return; }
-  target.innerHTML = '<b>Sources:</b> ' + sources.map(s => `<code>${s}</code>`).join(' · ');
+  if (!sources || (Array.isArray(sources) && sources.length === 0)) {
+    target.textContent = '';
+    return;
+  }
+
+  if (typeof sources === 'string') {
+    target.innerHTML = '<b>Sources:</b> <code>' + sources + '</code>';
+    return;
+  }
+
+  if (Array.isArray(sources)) {
+    // 字串清單（原行為）
+    if (sources.every(s => typeof s === 'string')) {
+      target.innerHTML = '<b>Sources:</b> ' + sources.map(s => `<code>${s}</code>`).join(' · ');
+      return;
+    }
+    // 物件清單（Table 回傳的 sheet / shape / columns_sample）
+    const html = sources.map(s => {
+      if (s && typeof s === 'object') {
+        const sheet = s.sheet ?? '(Sheet)';
+        const shape = Array.isArray(s.shape) ? `${s.shape[0]}×${s.shape[1]}` : '';
+        const cols = Array.isArray(s.columns_sample) ? s.columns_sample.join(', ') : '';
+        return `<div style="margin:4px 0;">
+          <b>${sheet}</b> <small>${shape}</small><br/>
+          <code>${cols}</code>
+        </div>`;
+      }
+      return `<code>${String(s)}</code>`;
+    }).join('');
+    target.innerHTML = '<b>Sources:</b><br/>' + html;
+    return;
+  }
+
+  // 其他型態 → JSON 顯示
+  target.innerHTML = '<b>Sources:</b><pre style="margin:4px 0;">' +
+    JSON.stringify(sources, null, 2) + '</pre>';
 }
 
 // Web
@@ -69,3 +105,26 @@ formAv.addEventListener('submit', async (e) => {
   renderMD(outAv, data.answer);
   renderSources(srcAv, data.sources);
 });
+
+// ✅ Table
+const formTable = document.getElementById('form-table');
+if (formTable) {
+  const outTable = document.getElementById('out-table');
+  const srcTable = document.getElementById('src-table');
+
+  formTable.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(formTable);
+    outTable.textContent = '⏳ Parsing table...';
+    srcTable.textContent = '';
+    try {
+      const res = await fetch('/ask_table', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+      renderMD(outTable, data.answer);
+      renderSources(srcTable, data.sources);
+    } catch (err) {
+      outTable.textContent = '❌ ' + err.message;
+    }
+  });
+}
