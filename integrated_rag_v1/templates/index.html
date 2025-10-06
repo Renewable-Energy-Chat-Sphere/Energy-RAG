@@ -1,109 +1,479 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Integrated RAG</title>
-    <link rel="stylesheet" href="https://unpkg.com/mvp.css" />
-    <style>
-      .tabs {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 8px;
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Energy RAG · Integrated Retrieval</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;750&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-soft: #0f172a;
+      /* slate-900 */
+      --panel: #0b132a80;
+      /* glass */
+      --card: #111827cc;
+      /* glass card */
+      --border: #1f2937;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --brand: #10b981;
+      /* emerald */
+      --brand-2: #22d3ee;
+      /* cyan */
+      --accent: #38bdf8;
+      /* sky */
+      --danger: #ef4444;
+      --ok: #22c55e;
+      --ring: 0 0 0 3px #10b98140;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgb(0 0 0 / 25%);
+      --shadow-soft: 0 6px 18px rgb(0 0 0 / 18%);
+      --glass: blur(8px) saturate(140%);
+      --maxw: 1100px;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f9fc;
+        --bg-soft: #f2f6fb;
+        --panel: #ffffffb3;
+        --card: #ffffffd6;
+        --border: #e5e7eb;
+        --text: #0f172a;
+        --muted: #475569;
+        --shadow: 0 10px 30px rgb(2 6 23 / 10%);
+        --shadow-soft: 0 6px 18px rgb(2 6 23 / 8%);
       }
-      .tab {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        cursor: pointer;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 800px at 10% -10%, #10b98122, transparent 70%),
+        radial-gradient(1000px 600px at 100% 0%, #22d3ee1c, transparent 70%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none
+    }
+
+    a:hover {
+      text-decoration: underline
+    }
+
+    .container {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header.hero {
+      position: relative;
+      margin: 20px auto 18px;
+      padding: 28px 24px;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px);
+      background: linear-gradient(135deg, #0ea5e980 0%, #10b98166 100%), var(--panel);
+      backdrop-filter: var(--glass);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 4vw, 34px);
+      letter-spacing: 0.2px;
+      font-weight: 750;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--text);
+      opacity: .9;
+    }
+
+    .hero .badges {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #0ea5e94d;
+      border: 1px solid #38bdf866;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .2px;
+    }
+
+    .badge.alt {
+      background: #10b98140;
+      border-color: #10b98166
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 22px 0 14px;
+    }
+
+    .tab {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: linear-gradient(#ffffff05, #00000010), var(--panel);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+    }
+
+    .tab:hover {
+      transform: translateY(-1px)
+    }
+
+    .tab.active {
+      border-color: #22d3ee99;
+      background: linear-gradient(180deg, #22d3ee33, #10b98126);
+      box-shadow: inset 0 0 0 1px #22d3ee55, 0 6px 16px #22d3ee1a;
+    }
+
+    .panel {
+      display: none
+    }
+
+    .panel.active {
+      display: block
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--card);
+      backdrop-filter: var(--glass);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      padding: 18px;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+      border: 1px dashed var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff06, transparent);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input:not([type]),
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      outline: none;
+      font-size: 15px;
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    input:focus,
+    textarea:focus {
+      box-shadow: var(--ring);
+      border-color: #10b98180
+    }
+
+    button[type="submit"] {
+      justify-self: start;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #16a34a80;
+      background: linear-gradient(180deg, #34d39966, #10b98166);
+      color: #062015;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .06s ease, filter .2s ease, box-shadow .2s ease;
+      box-shadow: 0 8px 18px #10b9812d;
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-1px)
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(0) scale(.98)
+    }
+
+    article h3 {
+      margin: 14px 0 8px;
+      font-size: 18px;
+      letter-spacing: .2px
+    }
+
+    .answer {
+      min-height: 80px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .src {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px dashed var(--border);
+      padding-top: 10px;
+    }
+
+    /* 小提示區 */
+    .tips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px
+    }
+
+    .tip {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: linear-gradient(#ffffff06, #00000008);
+    }
+
+    /* Loading 狀態可供 main.js 切換 */
+    .loading .answer::before {
+      content: "⏳ 正在分析文件…";
+      display: inline-block;
+      margin-bottom: 6px;
+      opacity: .8;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: .5
       }
-      .tab.active {
-        background: #f4f4f4;
+
+      50% {
+        opacity: 1
       }
-      .panel {
-        display: none;
+
+      100% {
+        opacity: .5
       }
-      .panel.active {
-        display: block;
+    }
+
+    footer {
+      margin: 60px 0 30px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center
+    }
+
+    /* RWD */
+    @media (min-width: 860px) {
+      .grid-2 {
+        display: grid;
+        gap: 16px
       }
-      .answer {
-        white-space: pre-wrap;
-      }
-      .src {
-        font-size: 0.9em;
-        opacity: 0.8;
-      }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  </head>
-  <body>
-    <header>
-      <h1>Integrated RAG 🧠</h1>
-      <p>Web ⎯ PDF ⎯ Audio/Video（Markdown 回答）</p>
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header class="hero">
+      <h1>Energy RAG</h1>
+      <p>Web · PDF · Audio/Video · Table — 專為能源資料檢索與決策支援打造的 RAG 介面</p>
+      <div class="badges">
+        <span class="badge">LangChain · FAISS</span>
+        <span class="badge alt">OpenAI GPT</span>
+        <span class="badge">Clean Energy UI</span>
+      </div>
     </header>
 
-    <section class="tabs">
-      <button class="tab active" data-target="#web">Web</button>
-      <button class="tab" data-target="#pdf">PDF</button>
-      <button class="tab" data-target="#av">Audio/Video</button>
-      <button class="tab" data-target="#table">Table</button>
-    </section>
+    <nav class="tabs" role="tablist" aria-label="資料來源">
+      <button class="tab active" data-target="#web" role="tab" aria-selected="true" aria-controls="web">Web</button>
+      <button class="tab" data-target="#pdf" role="tab" aria-selected="false" aria-controls="pdf">PDF</button>
+      <button class="tab" data-target="#av" role="tab" aria-selected="false" aria-controls="av">Audio/Video</button>
+      <button class="tab" data-target="#table" role="tab" aria-selected="false" aria-controls="table">Table</button>
+    </nav>
 
-    <main>
-      <section id="web" class="panel active">
-        <form id="form-web">
-          <label>問題<input required name="question" placeholder="想問什麼？" /></label>
-          <label>（可選）URL<input name="url" placeholder="https://..." /></label>
-          <button type="submit">送出</button>
-        </form>
-        <article>
-          <h3>回答</h3>
-          <div id="out-web" class="answer"></div>
-          <div id="src-web" class="src"></div>
-        </article>
+    <main class="grid-2">
+      <!-- Web -->
+      <section id="web" class="panel active" role="tabpanel" aria-labelledby="tab-web">
+        <div class="card">
+          <form id="form-web">
+            <label>問題
+              <input required name="question" placeholder="想問什麼？例如：2024 台灣再生能源佔比" />
+            </label>
+            <label>（可選）URL
+              <input name="url" placeholder="https://..." inputmode="url" />
+            </label>
+            <button type="submit">送出</button>
+            <div class="tips">
+              <span class="tip">支援中文/英文</span>
+              <span class="tip">可指定單一文章 URL</span>
+            </div>
+          </form>
+
+          <article>
+            <h3>回答</h3>
+            <div id="out-web" class="answer"></div>
+            <div id="src-web" class="src"></div>
+          </article>
+        </div>
       </section>
 
-      <section id="pdf" class="panel">
-        <form id="form-pdf">
-          <label>問題<input required name="question" placeholder="針對 PDF 想問什麼？" /></label>
-          <label>上傳 PDF<input required type="file" name="file" accept="application/pdf" /></label>
-          <button type="submit">送出</button>
-        </form>
-        <article>
-          <h3>回答</h3>
-          <div id="out-pdf" class="answer"></div>
-          <div id="src-pdf" class="src"></div>
-        </article>
+      <!-- PDF -->
+      <section id="pdf" class="panel" role="tabpanel" aria-labelledby="tab-pdf">
+        <div class="card">
+          <form id="form-pdf">
+            <label>問題
+              <input required name="question" placeholder="針對 PDF 想問什麼？例如：摘要重點 / 表格中的數字" />
+            </label>
+            <label>上傳 PDF
+              <input required type="file" name="file" accept="application/pdf" />
+            </label>
+            <button type="submit">送出</button>
+            <div class="tips">
+              <span class="tip">支援掃描件（若後端啟用 OCR）</span>
+              <span class="tip">大型 PDF 會自動分段</span>
+            </div>
+          </form>
+
+          <article>
+            <h3>回答</h3>
+            <div id="out-pdf" class="answer"></div>
+            <div id="src-pdf" class="src"></div>
+          </article>
+        </div>
       </section>
 
-      <section id="av" class="panel">
-        <form id="form-av">
-          <label>問題<input required name="question" placeholder="想從影音內容找什麼？" /></label>
-          <label>上傳影音<input required type="file" name="file" accept="audio/*,video/*" /></label>
-          <button type="submit">送出</button>
-        </form>
-        <article>
-          <h3>回答</h3>
-          <div id="out-av" class="answer"></div>
-          <div id="src-av" class="src"></div>
-        </article>
+      <!-- AV -->
+      <section id="av" class="panel" role="tabpanel" aria-labelledby="tab-av">
+        <div class="card">
+          <form id="form-av">
+            <label>問題
+              <input required name="question" placeholder="想從影音內容找什麼？" />
+            </label>
+            <label>上傳影音
+              <input required type="file" name="file" accept="audio/*,video/*" />
+            </label>
+            <button type="submit">送出</button>
+            <div class="tips">
+              <span class="tip">支援 mp3/mp4/mov 等</span>
+              <span class="tip">會先進行轉寫再檢索</span>
+            </div>
+          </form>
+
+          <article>
+            <h3>回答</h3>
+            <div id="out-av" class="answer"></div>
+            <div id="src-av" class="src"></div>
+          </article>
+        </div>
       </section>
 
-      <!-- ✅ 新增 Table 分頁 -->
-      <section id="table" class="panel">
-        <form id="form-table">
-          <label>問題<input required name="question" placeholder="想從表格裡找什麼？例如：2024 總銷售額是多少？" /></label>
-          <label>上傳表格<input required type="file" name="file" accept=".xlsx,.xls,.csv,.tsv,.txt" /></label>
-          <button type="submit">送出</button>
-        </form>
-        <article>
-          <h3>回答</h3>
-          <div id="out-table" class="answer"></div>
-          <div id="src-table" class="src"></div>
-        </article>
+      <!-- Table -->
+      <section id="table" class="panel" role="tabpanel" aria-labelledby="tab-table">
+        <div class="card">
+          <form id="form-table">
+            <label>問題
+              <input required name="question" placeholder="想從表格裡找什麼？例如：2024 總發電量是多少？" />
+            </label>
+            <label>上傳表格
+              <input required type="file" name="file" accept=".xlsx,.xls,.csv,.tsv,.txt" />
+            </label>
+            <button type="submit">送出</button>
+            <div class="tips">
+              <span class="tip">自動偵測 Excel/CSV/TSV</span>
+              <span class="tip">自動生成 Markdown 表格摘要</span>
+            </div>
+          </form>
+
+          <article>
+            <h3>回答</h3>
+            <div id="out-table" class="answer"></div>
+            <div id="src-table" class="src"></div>
+          </article>
+        </div>
       </section>
     </main>
 
-    <script src="/static/main.js"></script>
-  </body>
+    <footer>
+      © 2025 Energy RAG · Clean Energy Decision Support
+    </footer>
+  </div>
+
+  <!-- 你的原本 main.js 可以直接沿用 -->
+  <script src="/static/main.js"></script>
+
+  <!-- 輕量級 tabs 互動保險（若 main.js 已有就忽略，不會衝突） -->
+  <script>
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab");
+      if (!btn) return;
+      const target = btn.getAttribute("data-target");
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      const panel = document.querySelector(target);
+      if (panel) panel.classList.add("active");
+    });
+
+    // 給答案區支援 Markdown（若 main.js 已處理可移除）
+    const mdTargets = [
+      ["#out-web", "#src-web"],
+      ["#out-pdf", "#src-pdf"],
+      ["#out-av", "#src-av"],
+      ["#out-table", "#src-table"],
+    ];
+    // 只有你 main.js 在 set innerText 時，換成 innerHTML + marked.parse 才會生效。
+    // 這段不覆蓋你的 main.js，只是提醒你可用：
+    // el.innerHTML = marked.parse(text);
+  </script>
+</body>
+
 </html>
