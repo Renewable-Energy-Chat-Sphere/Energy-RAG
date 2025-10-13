@@ -1,8 +1,8 @@
 // GlobeVisualizer.jsx（修正版：語法校對、框架對齊）
 import React, { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 import supplyData from "./energy_data.sample.js";
 
@@ -101,7 +101,7 @@ const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#64748b", opacit
 /* =========================
    單一格 Tile（文字正立、自動適應、顏色透明）
 ========================= */
-function TileOnSphere({ cell, data, color }) {
+function TileOnSphere({ cell, data, color, showText = true, onPick }) {
   const { lat0, lat1, lon0, lon1 } = cell;
   const geo = useMemo(() => sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r: R + 0.02, seg: 6 }), [lat0, lat1, lon0, lon1]);
 
@@ -134,9 +134,20 @@ function TileOnSphere({ cell, data, color }) {
   const maxChars = Math.max(1, Math.floor(maxW / (fontSize * 0.55)));
   const textShown = title.length > maxChars ? title.slice(0, Math.max(0, maxChars - 1)) + "…" : title;
 
+  const handlePointerOver = () => { document.body.style.cursor = 'pointer'; };
+  const handlePointerOut = () => { document.body.style.cursor = 'auto'; };
+  const handleClick = () => { onPick && onPick({ cell, data, center }); };
+
   return (
     <group>
-      <mesh geometry={geo} renderOrder={4}>
+      {/* 可點擊的填色格 */}
+      <mesh
+        geometry={geo}
+        renderOrder={4}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+        onClick={handleClick}
+      >
         <meshBasicMaterial
           color={color}
           transparent
@@ -149,14 +160,19 @@ function TileOnSphere({ cell, data, color }) {
           polygonOffsetUnits={-2}
         />
       </mesh>
-      <group position={center} quaternion={uprightQuat}>
-        <group position={[0, 0, 0.003]}>
-          <Text fontSize={fontSize} color="#0f172a" anchorX="center" anchorY="middle">{textShown}</Text>
+
+      {/* 中央文字：外層模式才顯示 */}
+      {showText && (
+        <group position={center} quaternion={uprightQuat}>
+          <group position={[0, 0, 0.003]}>
+            <Text fontSize={fontSize} color="#0f172a" anchorX="center" anchorY="middle">{textShown}</Text>
+          </group>
         </group>
-      </group>
+      )}
     </group>
   );
 }
+
 
 /* =========================
    大氣層（美化）
@@ -275,14 +291,56 @@ const Panel = ({ options, setOptions }) => {
 /* =========================
    場景（赤道帶排布、電價單色上色）
 ========================= */
+// 簡單的相機動畫器：在外層/內層間平滑切換
+const CameraRig = ({ active, targetDir }) => {
+  const { camera } = useThree();
+  useFrame((_, dt) => {
+    if (!active) return; // Hook 始終掛著，但未啟動時不動作
+    const speed = 4;
+    const targetRadius = R - 0.6; // 進內部視距
+    const dir = (targetDir && targetDir.clone().normalize()) || new THREE.Vector3(0, 0, 1);
+    const targetPos = dir.clone().multiplyScalar(targetRadius);
+    camera.position.lerp(targetPos, 1 - Math.exp(-speed * dt));
+    camera.lookAt(0, 0, 0);
+  });
+  return null;
+};
+
+const InnerLayer = ({ selection }) => {
+  if (!selection) return null;
+  const { data, cell } = selection;
+  // 內層：僅顯示一個淡色內殼 + 標題（示意）
+  return (
+    <group>
+      <mesh renderOrder={1}>
+        <sphereGeometry args={[R * 0.985, 64, 64]} />
+        <meshBasicMaterial color="#e6fbf3" transparent opacity={0.12} depthWrite={false} />
+      </mesh>
+      {/* 中心立體文字（面向中心） */}
+      <Text position={[0,0,0]} fontSize={0.3} color="#0f172a" anchorX="center" anchorY="middle">
+        {shortZh(data.zh)}
+      </Text>
+    </group>
+  );
+};
+
 const Scene = ({ options }) => {
   const { sphereOpacity, gridLatN = 12, gridLonN = 12 } = options;
+  const [mode, setMode] = useState('outer'); // 'outer' | 'inner'
+  const [selection, setSelection] = useState(null); // {data, cell, center}
   const S = useMemo(() => (Array.isArray(supplyData) ? supplyData : []), []);
+
+  // ESC 返回外層
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setMode('outer'); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const priceToColor = (price, minP = 1.5, maxP = 5.0) => {
     const t = Math.max(0, Math.min(1, ((Number(price) || 0) - minP) / Math.max(1e-6, maxP - minP)));
-    const a = new THREE.Color("#22c55e");
-    const b = new THREE.Color("#ef4444");
+    const a = new THREE.Color('#22c55e');
+    const b = new THREE.Color('#ef4444');
     return `#${a.clone().lerp(b, t).getHexString()}`;
   };
 
@@ -307,14 +365,17 @@ const Scene = ({ options }) => {
 
   const equatorBand = useMemo(() => cells.filter((c) => c.lat0 <= 0 && 0 < c.lat1), [cells]);
 
+  const handlePick = ({ cell, data, center }) => { setSelection({ cell, data, center }); setMode('inner'); };
+  const targetDir = selection?.center?.clone().normalize() || new THREE.Vector3(0, 0, 1);
+
   return (
     <>
-      {/* 極簡乾淨能源風格：淡色半透明球體 + 輕大氣 */}
+      {/* 球體與氛圍 */}
       <mesh renderOrder={0}>
         <sphereGeometry args={[R, 128, 128]} />
         <meshPhysicalMaterial
-          color="#f8fbff"         /* 珍珠白主色 */
-          roughness={0.6}          /* 更有高光層次 */
+          color="#f8fbff"
+          roughness={0.6}
           metalness={0.05}
           clearcoat={0.6}
           clearcoatRoughness={0.35}
@@ -328,12 +389,37 @@ const Scene = ({ options }) => {
       <Atmosphere r={R} opacity={0.07} color="#a7f3d0" />
       <GridLines radius={R} latN={latBands} lonN={lonBands} />
 
+      {/* 外層 tiles（文字只在 outer 顯示） */}
       {S.map((s, i) => {
         const cell = equatorBand[i % equatorBand.length];
         const price = s?.kpi?.price ?? 0;
-        const color = priceToColor(price);
-        return <TileOnSphere key={s.code || i} cell={cell} data={{ zh: shortZh(s.zh) }} color={color} />;
+        const color = `#${new THREE.Color('#22c55e').lerp(new THREE.Color('#ef4444'), Math.max(0, Math.min(1, ((Number(price)||0) - 1.5)/3.5))).getHexString()}`;
+        return (
+          <TileOnSphere
+            key={s.code || i}
+            cell={cell}
+            data={{ zh: shortZh(s.zh) }}
+            color={color}
+            showText={mode === 'outer'}
+            onPick={handlePick}
+          />
+        );
       })}
+
+      {/* 內層：只有進入後才顯示 */}
+      {mode === 'inner' && <InnerLayer selection={selection} />}
+
+      {/* 返回外層按鈕（只有內層顯示） */}
+      {mode === 'inner' && (
+        <Html fullscreen>
+          <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 2147483647 }}>
+            <button onClick={() => setMode('outer')} style={{ padding: '8px 12px', borderRadius: 10, border: '1px solid #d1d5db', background: '#ffffff', boxShadow: '0 6px 18px rgba(0,0,0,0.15)', cursor: 'pointer' }}>← 返回外層 (Esc)</button>
+          </div>
+        </Html>
+      )}
+
+      {/* 相機動畫器（外層時不接管相機） */}
+      <CameraRig active={mode === 'inner'} targetDir={targetDir} />
     </>
   );
 };
