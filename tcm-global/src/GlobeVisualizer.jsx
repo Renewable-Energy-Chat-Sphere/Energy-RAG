@@ -279,7 +279,7 @@ const InsideLayer = ({ selection, onBack }) => {
         </mesh>
 
         {/* HTML 內容：標題 + 台灣 SVG + 站點 */}
-        <Html transform position={[0, 0, 0.02]} distanceFactor={8}>
+        <Html transform position={[0, 0, 0.02]} distanceFactor={4.5}>
           <div style={{ width: `${W * 140}px`, height: `${H * 140}px`, position: "relative", pointerEvents: "auto" }}>
             {/* 左上角低調返回（只保留這顆；一按就退回外層並跑退出動畫） */}
             <button
@@ -324,26 +324,48 @@ const InsideLayer = ({ selection, onBack }) => {
 /* =========================
    相機動畫器：只在進/出時接管
 ========================= */
+// =========================
+// 相機動畫器：自動匹配視野，進入就看全台灣
+// =========================
+// =========================
+// 相機動畫器：穩定距離版（不再誇張放大）
+// =========================
 const CameraRig = ({ phase, targetDir, onArrive }) => {
   const { camera } = useThree();
+
   useFrame((_, dt) => {
-    if (phase === 'idle') return; // 平常不動相機
-    const speed = phase === 'toInner' ? 5.5 : 7.5;
-    const epsilon = 0.02;
-    const targetPos = phase === 'toInner'
-      ? (targetDir?.clone().normalize().multiplyScalar(R - 0.6) || new THREE.Vector3(0,0,R - 0.6))
-      : new THREE.Vector3(0, 0, 8);
+    if (phase === "idle") return;
+
+    const speed = phase === "toInner" ? 4.8 : 6.8;
+    const epsilon = 0.03;
+
+    // 外層相機位置固定
+    const outerPos = new THREE.Vector3(0, 0, 8);
+
+    // 內層板子距球心距離（和 InsideLayer 一致）
+    const plateR = R - 1.0;
+    // 相機距板子預留距離，確保能看到整張台灣地圖（越大越遠）
+    const offset = 2.2;
+
+    // 計算相機目標位置：沿著該 tile 方向退後 offset
+    const dir = targetDir?.clone().normalize() || new THREE.Vector3(0, 0, 1);
+    const targetPos =
+      phase === "toInner"
+        ? dir.clone().multiplyScalar(plateR + offset) // ←這裡加 offset，而非減距離
+        : outerPos;
 
     camera.position.lerp(targetPos, 1 - Math.exp(-speed * dt));
-    camera.lookAt(0,0,0);
+    camera.lookAt(0, 0, 0);
 
     if (camera.position.distanceTo(targetPos) < epsilon) {
       camera.position.copy(targetPos);
       onArrive && onArrive(phase);
     }
   });
+
   return null;
 };
+
 
 /* =========================
    Portal & 控制面板
@@ -531,8 +553,16 @@ const Scene = ({ options }) => {
         }}
       />
 
+
       {/* Controls 放在 Scene，才能被上面的 effect 控制 enabled */}
-      <OrbitControls enablePan={false} enableZoom makeDefault />
+      <OrbitControls
+        enablePan={false}
+        enableZoom
+        minDistance={2.5}   // 防止太近
+        maxDistance={12}    // 防止太遠
+        makeDefault
+      />
+
     </>
   );
 };
