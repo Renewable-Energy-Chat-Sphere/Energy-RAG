@@ -1,17 +1,39 @@
-// GlobeVisualizer.jsx — 進/出內層、小平台正向、內層滾輪不出殼、平台左上角返回
+// GlobeVisualizer.jsx — 最終整合版（外/內層切換、點擊進入、立即返回、內層3D平台、珍珠白風格）
 import React, { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Text, Html } from "@react-three/drei";
+import { OrbitControls, Text, Html } from "@react-three/drei"; // controls + 2D HUD
 import * as THREE from "three";
 import supplyData from "./energy_data.sample.js";
+
+// --- Region registry（之後要擴國家就加在這裡）---
+const REGION_REGISTRY = {
+  TW: {
+    name: "台灣",
+    viewBox: "0 0 256 256",
+    // 簡化的台灣外框（可換更精細的 path）
+    svgPath:
+      "M 180 20 L 200 40 L 210 70 L 205 100 L 190 130 L 170 150 L 150 165 L 130 170 L 110 160 L 95 140 L 90 120 L 95 95 L 110 70 L 130 50 L 155 35 Z",
+    // Demo 站點（座標是 SVG 平面座標；之後可用真實站點轉換）
+    sites: [
+      { id: "hydro-01", label: "德基",     x: 150, y: 110, cap: 200 },
+      { id: "hydro-02", label: "日月潭",   x: 130, y: 130, cap: 1000 },
+      { id: "hydro-03", label: "谷關",     x: 160, y: 120, cap: 150 },
+    ],
+  },
+};
+
+// 依 code 判定區域（先用 *_TW* 規則；之後可擴充）
+function inferRegionFromCode(code = "") {
+  if (/_TW/i.test(code)) return "TW";
+  return null;
+}
 
 /* =========================
    常數 & 小工具
 ========================= */
 const R = 3;
-const shortZh = (zh) =>
-  (zh || "").replace(/[（）()、，]/g, " ").replace(/\s+/g, " ").trim();
+const shortZh = (zh) => (zh || "").replace(/[（）()、，]/g, " ").replace(/\s+/g, " ").trim();
 
 function ll2xyz(latDeg, lonDeg, r = R) {
   const lat = (latDeg * Math.PI) / 180;
@@ -58,13 +80,7 @@ function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r = R, seg = 6 }) {
 /* =========================
    經緯線（固定顯示）
 ========================= */
-const GridLines = ({
-  radius = R,
-  latN = 12,
-  lonN = 12,
-  color = "#64748b",
-  opacity = 0.9,
-}) => {
+const GridLines = ({ radius = R, latN = 12, lonN = 12, color = "#64748b", opacity = 0.9 }) => {
   const latGroup = new THREE.Group();
   for (let i = 1; i < latN; i++) {
     const th = (i / latN) * Math.PI;
@@ -73,13 +89,7 @@ const GridLines = ({
     const curve = new THREE.EllipseCurve(0, 0, r, r, 0, 2 * Math.PI);
     const pts = curve.getPoints(128);
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({
-      color,
-      transparent: true,
-      opacity,
-      depthTest: true,
-      depthWrite: false,
-    });
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthTest: true, depthWrite: false });
     const line = new THREE.LineLoop(geo, mat);
     line.rotation.x = Math.PI / 2;
     line.position.y = y;
@@ -98,13 +108,7 @@ const GridLines = ({
       pts.push(new THREE.Vector3(x, y, z));
     }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({
-      color,
-      transparent: true,
-      opacity,
-      depthTest: true,
-      depthWrite: false,
-    });
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthTest: true, depthWrite: false });
     const line = new THREE.Line(geo, mat);
     line.renderOrder = 20;
     lonGroup.add(line);
@@ -122,29 +126,13 @@ const GridLines = ({
 ========================= */
 function TileOnSphere({ cell, data, color, showText = true, onPick }) {
   const { lat0, lat1, lon0, lon1 } = cell;
-  const geo = useMemo(
-    () =>
-      sphericalQuadGeometry({
-        lat0,
-        lat1,
-        lon0,
-        lon1,
-        r: R + 0.02,
-        seg: 6,
-      }),
-    [lat0, lat1, lon0, lon1]
-  );
+  const geo = useMemo(() => sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r: R + 0.02, seg: 6 }), [lat0, lat1, lon0, lon1]);
 
-  const center = useMemo(
-    () => ll2xyz((lat0 + lat1) / 2, (lon0 + lon1) / 2, R + 0.022),
-    [lat0, lat1, lon0, lon1]
-  );
+  const center = useMemo(() => ll2xyz((lat0 + lat1) / 2, (lon0 + lon1) / 2, R + 0.022), [lat0, lat1, lon0, lon1]);
   const uprightQuat = useMemo(() => {
     const n = center.clone().normalize();
     const worldUp = new THREE.Vector3(0, 1, 0);
-    const yDir = worldUp
-      .clone()
-      .sub(n.clone().multiplyScalar(worldUp.dot(n)));
+    const yDir = worldUp.clone().sub(n.clone().multiplyScalar(worldUp.dot(n)));
     if (yDir.lengthSq() < 1e-6) yDir.set(0, 0, 1);
     yDir.normalize();
     const xDir = new THREE.Vector3().crossVectors(yDir, n).normalize();
@@ -156,9 +144,9 @@ function TileOnSphere({ cell, data, color, showText = true, onPick }) {
   }, [center]);
 
   const title = shortZh(data.zh) || "";
-  const latMid = ((lat0 + lat1) / 2) * (Math.PI / 180);
-  const dLatRad = Math.abs(lat1 - lat0) * (Math.PI / 180);
-  const dLonRad = Math.abs(lon1 - lon0) * (Math.PI / 180);
+  const latMid = ((lat0 + lat1) / 2) * Math.PI / 180;
+  const dLatRad = Math.abs(lat1 - lat0) * Math.PI / 180;
+  const dLonRad = Math.abs(lon1 - lon0) * Math.PI / 180;
   const height = R * dLatRad;
   const width = R * Math.cos(latMid) * dLonRad;
   const pad = 0.02;
@@ -167,20 +155,11 @@ function TileOnSphere({ cell, data, color, showText = true, onPick }) {
   let fontSize = Math.min(maxH, maxW / Math.max(1, title.length * 0.55));
   fontSize = Math.max(0.06, Math.min(fontSize, 0.25));
   const maxChars = Math.max(1, Math.floor(maxW / (fontSize * 0.55)));
-  const textShown =
-    title.length > maxChars
-      ? title.slice(0, Math.max(0, maxChars - 1)) + "…"
-      : title;
+  const textShown = title.length > maxChars ? title.slice(0, Math.max(0, maxChars - 1)) + "…" : title;
 
-  const handlePointerOver = () => {
-    document.body.style.cursor = "pointer";
-  };
-  const handlePointerOut = () => {
-    document.body.style.cursor = "auto";
-  };
-  const handleClick = () => {
-    onPick && onPick({ cell, data, center });
-  };
+  const handlePointerOver = () => { document.body.style.cursor = 'pointer'; };
+  const handlePointerOut = () => { document.body.style.cursor = 'auto'; };
+  const handleClick = () => { onPick && onPick({ cell, data, center }); };
 
   return (
     <group>
@@ -209,14 +188,7 @@ function TileOnSphere({ cell, data, color, showText = true, onPick }) {
       {showText && (
         <group position={center} quaternion={uprightQuat}>
           <group position={[0, 0, 0.003]}>
-            <Text
-              fontSize={fontSize}
-              color="#0f172a"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {textShown}
-            </Text>
+            <Text fontSize={fontSize} color="#0f172a" anchorX="center" anchorY="middle">{textShown}</Text>
           </group>
         </group>
       )}
@@ -230,199 +202,140 @@ function TileOnSphere({ cell, data, color, showText = true, onPick }) {
 const Atmosphere = ({ r = R, opacity = 0.07, color = "#a7f3d0" }) => (
   <mesh renderOrder={1}>
     <sphereGeometry args={[r * 1.02, 64, 64]} />
-    <meshBasicMaterial
-      color={color}
-      transparent
-      opacity={opacity}
-      blending={THREE.AdditiveBlending}
-      depthWrite={false}
-    />
+    <meshBasicMaterial color={color} transparent opacity={opacity} blending={THREE.AdditiveBlending} depthWrite={false} />
   </mesh>
 );
 
 /* =========================
-   內層 小平台（正向、厚度+陰影+KPI 條、左上角返回）
+   內層 3D 平台（有厚度+陰影+KPI 條）
 ========================= */
-const InnerPlatform = ({ selection, onBack }) => {
-  // 幾何 Hooks 需無條件宣告
-  const W = 1.8,
-    H = 1.05,
-    Rr = 0.12,
-    DEPTH = 0.06;
-  const shape = useMemo(() => {
-    const s = new THREE.Shape();
-    const hw = W / 2,
-      hh = H / 2;
-    s.moveTo(-hw + Rr, -hh);
-    s.lineTo(hw - Rr, -hh);
-    s.absarc(hw - Rr, -hh + Rr, Rr, -Math.PI / 2, 0, false);
-    s.lineTo(hw, hh - Rr);
-    s.absarc(hw - Rr, hh - Rr, Rr, 0, Math.PI / 2, false);
-    s.lineTo(-hw + Rr, hh);
-    s.absarc(-hw + Rr, hh - Rr, Rr, Math.PI / 2, Math.PI, false);
-    s.lineTo(-hw, -hh + Rr);
-    s.absarc(-hw + Rr, -hh + Rr, Rr, Math.PI, 1.5 * Math.PI, false);
-    return s;
-  }, []);
-  const extrude = useMemo(
-    () =>
-      new THREE.ExtrudeGeometry(shape, {
-        depth: DEPTH,
-        bevelEnabled: false,
-        curveSegments: 32,
-      }),
-    [shape]
+// =========================
+// 內層：地區地圖（像 Google Earth 進層）
+// =========================
+const InsideLayer = ({ selection, onBack }) => {
+  // 內殼：使用 BackSide，讓你確定身在球內，但看不到外層格線
+  const Shell = () => (
+    <mesh renderOrder={1}>
+      <sphereGeometry args={[R * 0.985, 64, 64]} />
+      <meshBasicMaterial
+        color="#e6fbf3"
+        transparent
+        opacity={0.12}
+        depthWrite={false}
+        side={THREE.BackSide}
+      />
+    </mesh>
   );
-  const faceZ = DEPTH / 2;
 
   if (!selection) return null;
   const { data, center } = selection;
+  const regionKey = inferRegionFromCode(data.code);
+  const region = REGION_REGISTRY[regionKey];
 
-  // 取向：法線=dir，上方=世界Y在該平面的投影 → 永遠正向可讀
+  // 沒對應地圖時的保護：給提示 + 返回
+  if (!region) {
+    return (
+      <group>
+        <Shell />
+        <Html center>
+          <div style={{ padding: 12, background: "rgba(255,255,255,0.9)", border: "1px solid #e5e7eb", borderRadius: 10 }}>
+            目前此能源沒有地區地圖。<button onClick={onBack} style={{ marginLeft: 8 }}>⤴ 回外層</button>
+          </div>
+        </Html>
+      </group>
+    );
+  }
+
+  // 地圖板定位：貼著內殼、上方對齊世界Y → 文字不傾斜
   const dir = center.clone().normalize();
   const plateR = R - 1.0;
   const pos = dir.clone().multiplyScalar(plateR);
-  const upWorld = new THREE.Vector3(0, 1, 0);
-  let yDir = upWorld.clone().sub(dir.clone().multiplyScalar(upWorld.dot(dir)));
+  const up = new THREE.Vector3(0, 1, 0);
+  let yDir = up.clone().sub(dir.clone().multiplyScalar(up.dot(dir)));
   if (yDir.lengthSq() < 1e-6) yDir = new THREE.Vector3(0, 0, 1);
   yDir.normalize();
   const xDir = new THREE.Vector3().crossVectors(yDir, dir).normalize();
   const basis = new THREE.Matrix4().makeBasis(xDir, yDir, dir);
   const quat = new THREE.Quaternion().setFromRotationMatrix(basis);
 
-  const k = data.kpi || {};
-  const rows = [
-    { label: "價格 (NT$/kWh)", val: k.price ?? "-" },
-    { label: "政策指數", val: k.policy_index ?? "-" },
-    { label: "用電契合", val: k.usage_match ?? "-" },
-    {
-      label: "裝置/潛力 (MW)",
-      val: `${k.capacity_installed ?? "-"} / ${
-        k.capacity_potential ?? "-"
-      }`,
-    },
-    { label: "減排 (MtCO2e/yr)", val: k.emissions_avoided ?? "-" },
-  ];
-  const tPolicy = Number(k.policy_index) || 0;
-  const tUsage = Number(k.usage_match) || 0;
-
-  const Bar = ({ x, y, t }) => (
-    <group position={[x, y, 0.02]}>
-      <mesh>
-        <planeGeometry args={[1.0, 0.08]} />
-        <meshBasicMaterial color="#e2e8f0" transparent opacity={0.9} />
-      </mesh>
-      <mesh position={[(-1.0 / 2 + (1.0 * t) / 2), 0, 0.001]}>
-        <planeGeometry args={[1.0 * Math.max(0, Math.min(1, t)), 0.08]} />
-        <meshBasicMaterial color="#34d399" transparent opacity={0.9} />
-      </mesh>
-    </group>
-  );
+  const W = 2.6, H = 1.8; // 地圖板尺寸（可調）
 
   return (
-    <group position={pos} quaternion={quat}>
-      {/* 假陰影 */}
-      <mesh position={[0, 0, -0.02]} renderOrder={39}>
-        <shapeGeometry args={[shape]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.08} />
-      </mesh>
+    <group>
+      <Shell />
+      <group position={pos} quaternion={quat}>
+        {/* 板面 + 假陰影 */}
+        <mesh position={[0, 0, -0.02]} renderOrder={39}>
+          <planeGeometry args={[W, H]} />
+          <meshBasicMaterial color="#000" transparent opacity={0.08} />
+        </mesh>
+        <mesh renderOrder={40}>
+          <planeGeometry args={[W, H]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.08} />
+        </mesh>
+        <mesh renderOrder={41}>
+          <planeGeometry args={[W, H]} />
+          <meshBasicMaterial color="#e5e7eb" wireframe />
+        </mesh>
 
-      {/* 立體面板 */}
-      <mesh geometry={extrude} position={[0, 0, -faceZ]} renderOrder={40}>
-        <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.08} />
-      </mesh>
-      <mesh geometry={extrude} position={[0, 0, -faceZ]} renderOrder={41}>
-        <meshBasicMaterial color="#e5e7eb" />
-      </mesh>
+        {/* HTML 內容：標題 + 台灣 SVG + 站點 */}
+        <Html transform position={[0, 0, 0.02]} distanceFactor={8}>
+          <div style={{ width: `${W * 140}px`, height: `${H * 140}px`, position: "relative", pointerEvents: "auto" }}>
+            {/* 左上角低調返回（只保留這顆；一按就退回外層並跑退出動畫） */}
+            <button
+              onClick={onBack}
+              style={{ position: "absolute", left: 8, top: 8, zIndex: 5, padding: "6px 8px", borderRadius: 8,
+                       border: "1px solid #d1d5db", background: "#fff",
+                       boxShadow: "0 4px 12px rgba(0,0,0,0.12)", fontSize: 12, opacity: 0.9 }}
+            >
+              ⤴ 回外層
+            </button>
 
-      {/* 返回外層（平台左上角，低調） */}
-      <Html
-        transform
-        position={[-W / 2 + 0.12, H / 2 - 0.12, 0.07]}
-        distanceFactor={8}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            padding: "6px 8px",
-            borderRadius: 8,
-            border: "1px solid #d1d5db",
-            background: "#ffffff",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-            cursor: "pointer",
-            fontSize: 12,
-            opacity: 0.9,
-          }}
-        >
-          ⤴ 回外層
-        </button>
-      </Html>
+            {/* 標題 */}
+            <div style={{ position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)",
+                          fontWeight: 700, color: "#0f172a" }}>
+              {region.name}｜{shortZh(data.zh) || data.en || data.code}
+            </div>
 
-      {/* 內容 */}
-      <group position={[0, 0, 0.03]} renderOrder={42}>
-        <Text
-          position={[0, 0.38, 0]}
-          fontSize={0.14}
-          color="#0f172a"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {shortZh(data.zh) || data.en || data.code}
-        </Text>
-        <Bar x={-0.15} y={0.16} t={tPolicy} />
-        <Text
-          position={[-0.95, 0.16, 0.02]}
-          fontSize={0.09}
-          color="#334155"
-          anchorX="left"
-          anchorY="middle"
-        >
-          政策
-        </Text>
-        <Bar x={-0.15} y={-0.02} t={tUsage} />
-        <Text
-          position={[-0.95, -0.02, 0.02]}
-          fontSize={0.09}
-          color="#334155"
-          anchorX="left"
-          anchorY="middle"
-        >
-          契合
-        </Text>
-        {rows.map((r, i) => (
-          <Text
-            key={i}
-            position={[-0.9, -0.28 - i * 0.18, 0.02]}
-            fontSize={0.09}
-            color="#475569"
-            anchorX="left"
-            anchorY="middle"
-          >
-            {`${r.label}：${r.val}`}
-          </Text>
-        ))}
+            {/* 台灣地圖 + 站點 */}
+            <svg viewBox={region.viewBox} style={{ width: "100%", height: "100%" }}>
+              <defs>
+                <linearGradient id="twFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#e6fff7" />
+                  <stop offset="100%" stopColor="#d6f5ff" />
+                </linearGradient>
+              </defs>
+              <path d={region.svgPath} fill="url(#twFill)" stroke="#94a3b8" strokeWidth="2" />
+              {region.sites.map(s => (
+                <g key={s.id} transform={`translate(${s.x}, ${s.y})`}>
+                  <circle r="6" fill="#22c55e" stroke="#0f766e" strokeWidth="2" />
+                  <text x="8" y="4" fill="#0f172a" fontSize="11">{s.label}</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </Html>
       </group>
     </group>
   );
 };
 
+
 /* =========================
    相機動畫器：只在進/出時接管
 ========================= */
 const CameraRig = ({ phase, targetDir, onArrive }) => {
-  const camera = useThree((s) => s.camera);
+  const { camera } = useThree();
   useFrame((_, dt) => {
-    if (phase === "idle") return; // 平常不動相機
-    const speed = phase === "toInner" ? 5.5 : 7.5;
+    if (phase === 'idle') return; // 平常不動相機
+    const speed = phase === 'toInner' ? 5.5 : 7.5;
     const epsilon = 0.02;
-    const targetPos =
-      phase === "toInner"
-        ? targetDir?.clone().normalize().multiplyScalar(R - 0.6) ||
-          new THREE.Vector3(0, 0, R - 0.6)
-        : new THREE.Vector3(0, 0, 8);
+    const targetPos = phase === 'toInner'
+      ? (targetDir?.clone().normalize().multiplyScalar(R - 0.6) || new THREE.Vector3(0,0,R - 0.6))
+      : new THREE.Vector3(0, 0, 8);
 
     camera.position.lerp(targetPos, 1 - Math.exp(-speed * dt));
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(0,0,0);
 
     if (camera.position.distanceTo(targetPos) < epsilon) {
       camera.position.copy(targetPos);
@@ -447,84 +360,25 @@ const Portal = ({ children }) => {
 };
 
 const Panel = ({ options, setOptions }) => {
-  const onNum = (k) => (e) =>
-    setOptions((o) => ({ ...o, [k]: parseFloat(e.target.value) }));
+  const onNum = (k) => (e) => setOptions((o) => ({ ...o, [k]: parseFloat(e.target.value) }));
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 12,
-        left: 12,
-        zIndex: 2147483647,
-        background: "rgba(255,255,255,0.94)",
-        padding: 12,
-        borderRadius: 10,
-        border: "1px solid #e5e7eb",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-        width: 360,
-        fontSize: 13,
-        pointerEvents: "auto",
-      }}
-    >
+    <div style={{ position: "fixed", top: 12, left: 12, zIndex: 2147483647, background: "rgba(255,255,255,0.94)", padding: 12, borderRadius: 10, border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.18)", width: 360, fontSize: 13, pointerEvents: "auto" }}>
       <b>Energy Cards 控制台</b>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          marginTop: 10,
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
         <label>
           緯向格數：
-          <input
-            type="number"
-            min={2}
-            max={90}
-            step={1}
-            value={options.gridLatN}
-            onChange={(e) =>
-              setOptions((o) => ({
-                ...o,
-                gridLatN: Math.max(2, parseInt(e.target.value) || 12),
-              }))
-            }
-            style={{ width: 80, marginLeft: 8 }}
-          />
+          <input type="number" min={2} max={90} step={1} value={options.gridLatN} onChange={(e) => setOptions((o) => ({ ...o, gridLatN: Math.max(2, parseInt(e.target.value) || 12) }))} style={{ width: 80, marginLeft: 8 }} />
         </label>
         <label>
           經向格數：
-          <input
-            type="number"
-            min={2}
-            max={360}
-            step={1}
-            value={options.gridLonN}
-            onChange={(e) =>
-              setOptions((o) => ({
-                ...o,
-                gridLonN: Math.max(2, parseInt(e.target.value) || 12),
-              }))
-            }
-            style={{ width: 80, marginLeft: 8 }}
-          />
+          <input type="number" min={2} max={360} step={1} value={options.gridLonN} onChange={(e) => setOptions((o) => ({ ...o, gridLonN: Math.max(2, parseInt(e.target.value) || 12) }))} style={{ width: 80, marginLeft: 8 }} />
         </label>
       </div>
       <div style={{ marginTop: 10 }}>
         <label>
           球體透明度：
-          <input
-            type="range"
-            min="0.1"
-            max="1"
-            step="0.05"
-            value={options.sphereOpacity}
-            onChange={onNum("sphereOpacity")}
-            style={{ marginLeft: 8 }}
-          />
-          <span style={{ marginLeft: 8 }}>
-            {options.sphereOpacity.toFixed(2)}
-          </span>
+          <input type="range" min="0.1" max="1" step="0.05" value={options.sphereOpacity} onChange={onNum("sphereOpacity")} style={{ marginLeft: 8 }} />
+          <span style={{ marginLeft: 8 }}>{options.sphereOpacity.toFixed(2)}</span>
         </label>
       </div>
       <div style={{ marginTop: 6, color: "#475569" }}>經緯線固定顯示中</div>
@@ -539,44 +393,27 @@ const Scene = ({ options }) => {
   const { sphereOpacity, gridLatN = 12, gridLonN = 12 } = options;
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
-  const [mode, setMode] = useState("outer"); // 'outer' | 'inner'
-  const [phase, setPhase] = useState("idle"); // 'idle' | 'toInner' | 'toOuter'
+  const [mode, setMode] = useState('outer'); // 'outer' | 'inner'
+  const [phase, setPhase] = useState('idle'); // 'idle' | 'toInner' | 'toOuter'
   const [selection, setSelection] = useState(null); // {data, cell, center}
   const S = useMemo(() => (Array.isArray(supplyData) ? supplyData : []), []);
 
-  // 控制 OrbitControls：動畫時停用；內層限制距離，避免滾輪出殼
+  // 控制 OrbitControls 啟停（動畫時暫停，抵達後開啟）
   useEffect(() => {
-    if (!controls) return;
-    controls.enabled = phase === "idle";
-    if (mode === "inner") {
-      controls.minDistance = R - 1.6; // 近看平台
-      controls.maxDistance = R - 0.45; // 不會跑出球外
-    } else {
-      controls.minDistance = 2.0;
-      controls.maxDistance = 20.0;
-    }
-    controls.update?.();
-  }, [phase, mode, controls]);
+    if (controls) controls.enabled = (phase === 'idle');
+  }, [phase, controls]);
 
   // Esc：動畫返回外層
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        setMode("outer");
-        setPhase("toOuter");
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const onKey = (e) => { if (e.key === 'Escape') { setMode('outer'); setPhase('toOuter'); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const priceToColor = (price, minP = 1.5, maxP = 5.0) => {
-    const t = Math.max(
-      0,
-      Math.min(1, ((Number(price) || 0) - minP) / Math.max(1e-6, maxP - minP))
-    );
-    const a = new THREE.Color("#22c55e");
-    const b = new THREE.Color("#ef4444");
+    const t = Math.max(0, Math.min(1, ((Number(price) || 0) - minP) / Math.max(1e-6, maxP - minP)));
+    const a = new THREE.Color('#22c55e');
+    const b = new THREE.Color('#ef4444');
     return `#${a.clone().lerp(b, t).getHexString()}`;
   };
 
@@ -599,46 +436,40 @@ const Scene = ({ options }) => {
     return out;
   }, [latBands, lonBands, dLat, dLon]);
 
-  const equatorBand = useMemo(
-    () => cells.filter((c) => c.lat0 <= 0 && 0 < c.lat1),
-    [cells]
-  );
+  const equatorBand = useMemo(() => cells.filter((c) => c.lat0 <= 0 && 0 < c.lat1), [cells]);
 
   const handlePick = ({ cell, data, center }) => {
     setSelection({ cell, data, center });
-    setMode("inner");
-    setPhase("toInner");
+    setMode('inner');
+    setPhase('toInner');
   };
 
-  const targetDir =
-    selection?.center?.clone().normalize() || new THREE.Vector3(0, 0, 1);
+  const targetDir = selection?.center?.clone().normalize() || new THREE.Vector3(0, 0, 1);
 
   // 立刻回外層（無動畫）
   const instantBackToOuter = () => {
-    setMode("outer");
-    setPhase("idle");
+    setMode('outer');
+    setPhase('idle');
     setSelection(null);
-    camera.position.set(0, 0, 8);
-    camera.lookAt(0, 0, 0);
-    if (controls) {
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
+    camera.position.set(0,0,8);
+    camera.lookAt(0,0,0);
+    if (controls) { controls.target.set(0,0,0); controls.update(); }
   };
 
   return (
     <>
       {/* 球體（珍珠白） */}
+      <group visible={mode === 'outer'}>
       <mesh renderOrder={0}>
         <sphereGeometry args={[R, 128, 128]} />
         <meshPhysicalMaterial
-          color="#f8fbff"
+          color="#f8fbff" // 珍珠白主色
           roughness={0.6}
           metalness={0.05}
           clearcoat={0.6}
           clearcoatRoughness={0.35}
           sheen={0.35}
-          sheenColor={new THREE.Color("#ffffff")}
+          sheenColor={new THREE.Color('#ffffff')}
           sheenRoughness={0.6}
           transparent
           opacity={sphereOpacity}
@@ -646,55 +477,61 @@ const Scene = ({ options }) => {
       </mesh>
       <Atmosphere r={R} />
       <GridLines radius={R} latN={latBands} lonN={lonBands} />
+      </group>
 
-      {/* 外層 tiles（文字只在 outer 顯示） */}
-      {S.map((s, i) => {
-        const cell = equatorBand[i % equatorBand.length];
-        const price = s?.kpi?.price ?? 0;
-        const color = priceToColor(price);
-        return (
-          <TileOnSphere
-            key={s.code || i}
-            cell={cell}
-            data={{ zh: shortZh(s.zh), ...s }}
-            color={color}
-            showText={mode === "outer"}
-            onPick={handlePick}
-          />
-        );
-      })}
-
-      {/* 內層：進入後才顯示 */}
-      {mode === "inner" && (
-        <group>
-          {/* 內殼（空間感） */}
-          <mesh renderOrder={1}>
-            <sphereGeometry args={[R * 0.985, 64, 64]} />
-            <meshBasicMaterial
-              color="#e6fbf3"
-              transparent
-              opacity={0.12}
-              depthWrite={false}
+      {mode === 'outer' && (
+        <>
+          {/* 球體（珍珠白）+ 大氣層 + 經緯線 */}
+          <mesh renderOrder={0}>
+            <sphereGeometry args={[R, 128, 128]} />
+            <meshPhysicalMaterial
+              color="#f8fbff" roughness={0.6} metalness={0.05}
+              clearcoat={0.6} clearcoatRoughness={0.35}
+              sheen={0.35} sheenColor={new THREE.Color('#ffffff')} sheenRoughness={0.6}
+              transparent opacity={sphereOpacity}
             />
           </mesh>
-          <InnerPlatform selection={selection} onBack={instantBackToOuter} />
-        </group>
+          <Atmosphere r={R} />
+          <GridLines radius={R} latN={latBands} lonN={lonBands} />
+
+          {/* tiles */}
+          {S.map((s, i) => {
+            const cell = equatorBand[i % equatorBand.length];
+            const price = s?.kpi?.price ?? 0;
+            const color = priceToColor(price);
+            return (
+              <TileOnSphere
+                key={s.code || i}
+                cell={cell}
+                data={{ zh: shortZh(s.zh), ...s }}
+                color={color}
+                showText
+                onPick={handlePick}
+              />
+            );
+          })}
+        </>
       )}
+
+      {mode === 'inner' && (
+        <InsideLayer
+          selection={selection}
+          onBack={() => { setMode('outer'); setPhase('toOuter'); }} // 一按→退出動畫
+        />
+      )}
+
 
       {/* 相機動畫（只在進/出時接管） */}
       <CameraRig
         phase={phase}
         targetDir={targetDir}
         onArrive={(p) => {
-          if (p === "toInner") setPhase("idle");
-          if (p === "toOuter") {
-            setPhase("idle");
-            setSelection(null);
-          }
+          if (p === 'toInner') setPhase('idle');
+          if (p === 'toOuter') { setPhase('idle'); setSelection(null); }
         }}
       />
 
-      {/* Controls 放在 Scene，才能被 effect 控制 enabled / distance */}
+      {/* Controls 放在 Scene，才能被上面的 effect 控制 enabled */}
       <OrbitControls enablePan={false} enableZoom makeDefault />
     </>
   );
@@ -705,60 +542,25 @@ const Scene = ({ options }) => {
 ========================= */
 const Globe = () => {
   const [showPanel, setShowPanel] = useState(true);
-  const [options, setOptions] = useState({
-    sphereOpacity: 0.45,
-    gridLatN: 12,
-    gridLonN: 12,
-  });
+  const [options, setOptions] = useState({ sphereOpacity: 0.45, gridLatN: 12, gridLonN: 12 });
 
   useEffect(() => {
-    const onKey = (e) => {
-      if ((e.key || "").toLowerCase() === "p") setShowPanel((s) => !s);
-    };
+    const onKey = (e) => { if ((e.key || "").toLowerCase() === "p") setShowPanel((s) => !s); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
     <>
-      <Canvas
-        camera={{ position: [0, 0, 8], fov: 70 }}
-        style={{
-          width: "100vw",
-          height: "100vh",
-          background: "linear-gradient(#ffffff,#f2fbff)",
-        }}
-      >
+      <Canvas camera={{ position: [0, 0, 8], fov: 70 }} style={{ width: "100vw", height: "100vh", background: "linear-gradient(#ffffff,#f2fbff)" }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[6, 7, 8]} intensity={0.8} color="#e6fbff" />
-        <directionalLight
-          position={[-5, -3, -4]}
-          intensity={0.3}
-          color="#ccf0ff"
-        />
+        <directionalLight position={[-5, -3, -4]} intensity={0.3} color="#ccf0ff" />
         <Scene options={options} />
       </Canvas>
 
       <Portal>
-        <button
-          onClick={() => setShowPanel((s) => !s)}
-          title="切換控制面板 (P)"
-          style={{
-            position: "fixed",
-            top: 12,
-            right: 12,
-            zIndex: 2147483647,
-            padding: "8px 10px",
-            borderRadius: 10,
-            border: "1px solid #d1d5db",
-            background: "#fff",
-            cursor: "pointer",
-            boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
-            fontSize: 14,
-          }}
-        >
-          ⚙️ 面板
-        </button>
+        <button onClick={() => setShowPanel((s) => !s)} title="切換控制面板 (P)" style={{ position: "fixed", top: 12, right: 12, zIndex: 2147483647, padding: "8px 10px", borderRadius: 10, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer", boxShadow: "0 6px 18px rgba(0,0,0,0.15)", fontSize: 14 }}>⚙️ 面板</button>
         {showPanel && <Panel options={options} setOptions={setOptions} />}
       </Portal>
     </>
