@@ -1,5 +1,5 @@
 import React from 'react';
-import Globe from './GlobeVisualizer.jsx';
+import Globe from './GlobeVisualizer1.jsx';
 
 
 function App() {
