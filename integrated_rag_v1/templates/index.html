@@ -13,20 +13,14 @@
     :root {
       --bg: #0b1020;
       --bg-soft: #0f172a;
-      /* slate-900 */
       --panel: #0b132a80;
-      /* glass */
       --card: #111827cc;
-      /* glass card */
       --border: #1f2937;
       --text: #e5e7eb;
       --muted: #94a3b8;
       --brand: #10b981;
-      /* emerald */
       --brand-2: #22d3ee;
-      /* cyan */
       --accent: #38bdf8;
-      /* sky */
       --danger: #ef4444;
       --ok: #22c55e;
       --ring: 0 0 0 3px #10b98140;
@@ -100,7 +94,7 @@
     .hero h1 {
       margin: 0 0 8px;
       font-size: clamp(24px, 4vw, 34px);
-      letter-spacing: 0.2px;
+      letter-spacing: .2px;
       font-weight: 750;
     }
 
@@ -264,7 +258,6 @@
       padding-top: 10px;
     }
 
-    /* 小提示區 */
     .tips {
       display: flex;
       gap: 10px;
@@ -281,7 +274,6 @@
       background: linear-gradient(#ffffff06, #00000008);
     }
 
-    /* Loading 狀態可供 main.js 切換 */
     .loading .answer::before {
       content: "⏳ 正在分析文件…";
       display: inline-block;
@@ -311,12 +303,17 @@
       text-align: center
     }
 
-    /* RWD */
     @media (min-width: 860px) {
       .grid-2 {
         display: grid;
         gap: 16px
       }
+    }
+
+    /* 讓 Chat 的來源區塊在 RAG 時更明顯（可選） */
+    #chat .src {
+      border-top-style: solid;
+      border-top-color: #22d3ee55;
     }
   </style>
 </head>
@@ -334,10 +331,12 @@
     </header>
 
     <nav class="tabs" role="tablist" aria-label="資料來源">
+      <button class="tab" data-target="#chat" role="tab" aria-selected="false" aria-controls="chat">Chat</button>
       <button class="tab active" data-target="#web" role="tab" aria-selected="true" aria-controls="web">Web</button>
       <button class="tab" data-target="#pdf" role="tab" aria-selected="false" aria-controls="pdf">PDF</button>
       <button class="tab" data-target="#av" role="tab" aria-selected="false" aria-controls="av">Audio/Video</button>
       <button class="tab" data-target="#table" role="tab" aria-selected="false" aria-controls="table">Table</button>
+
     </nav>
 
     <main class="grid-2">
@@ -357,7 +356,6 @@
               <span class="tip">可指定單一文章 URL</span>
             </div>
           </form>
-
           <article>
             <h3>回答</h3>
             <div id="out-web" class="answer"></div>
@@ -382,7 +380,6 @@
               <span class="tip">大型 PDF 會自動分段</span>
             </div>
           </form>
-
           <article>
             <h3>回答</h3>
             <div id="out-pdf" class="answer"></div>
@@ -407,7 +404,6 @@
               <span class="tip">會先進行轉寫再檢索</span>
             </div>
           </form>
-
           <article>
             <h3>回答</h3>
             <div id="out-av" class="answer"></div>
@@ -432,11 +428,43 @@
               <span class="tip">自動生成 Markdown 表格摘要</span>
             </div>
           </form>
-
           <article>
             <h3>回答</h3>
             <div id="out-table" class="answer"></div>
             <div id="src-table" class="src"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ✅ Chat -->
+      <section id="chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
+        <div class="card">
+          <form id="form-chat">
+            <label>訊息
+              <input required name="user" placeholder="輸入你的問題、或直接貼上網址（自動啟用 RAG Web）" />
+            </label>
+            <label>（可選）系統提示 System
+              <input name="system" placeholder="例如：你是嚴謹的助教，回答限制 100 字" />
+            </label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <label style="flex:1; min-width:220px;">Session ID
+                <input name="session_id" placeholder="web-ui 或任意字串" value="web-ui" />
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" name="rag_auto" checked />
+                自動偵測網址 → RAG Web
+              </label>
+            </div>
+            <button type="submit">送出</button>
+            <div class="tips">
+              <span class="tip">保留歷史：同一個 Session ID</span>
+              <span class="tip">可搭配 System 指令扮演角色</span>
+            </div>
+          </form>
+          <article>
+            <h3>回答</h3>
+            <div id="out-chat" class="answer"></div>
+            <div id="src-chat" class="src"></div>
           </article>
         </div>
       </section>
@@ -446,8 +474,9 @@
   <!-- 你的原本 main.js 可以直接沿用 -->
   <script src="/static/main.js"></script>
 
-  <!-- 輕量級 tabs 互動保險（若 main.js 已有就忽略，不會衝突） -->
+  <!-- Tabs 與 Chat 腳本（不會與你 main.js 衝突） -->
   <script>
+    // Tabs
     document.addEventListener("click", (e) => {
       const btn = e.target.closest(".tab");
       if (!btn) return;
@@ -459,16 +488,62 @@
       if (panel) panel.classList.add("active");
     });
 
-    // 給答案區支援 Markdown（若 main.js 已處理可移除）
-    const mdTargets = [
-      ["#out-web", "#src-web"],
-      ["#out-pdf", "#src-pdf"],
-      ["#out-av", "#src-av"],
-      ["#out-table", "#src-table"],
-    ];
-    // 只有你 main.js 在 set innerText 時，換成 innerHTML + marked.parse 才會生效。
-    // 這段不覆蓋你的 main.js，只是提醒你可用：
-    // el.innerHTML = marked.parse(text);
+    // Web/PDF/AV/Table 的答案若要支援 Markdown，請在 main.js 以 marked.parse() 轉出
+    // 這裡只處理 Chat 分頁
+    (function () {
+      const form = document.getElementById('form-chat');
+      if (!form) return;
+      const out = document.getElementById('out-chat');
+      const src = document.getElementById('src-chat');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const payload = {
+          user: (fd.get('user') || '').toString(),
+          system: (fd.get('system') || '').toString(),
+          session_id: (fd.get('session_id') || 'web-ui').toString(),
+          rag_auto: !!fd.get('rag_auto'),
+          model: 'gpt-4o-mini'
+        };
+        if (!payload.user.trim()) return;
+
+        const card = form.closest('.card');
+        card?.classList.add('loading');
+        out.textContent = '';
+        src.textContent = '';
+
+        try {
+          const res = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          const answer = data.answer || data.error || '(無回應)';
+          try {
+            out.innerHTML = window.marked ? marked.parse(answer) : answer;
+          } catch { out.textContent = answer; }
+
+          if (Array.isArray(data.sources) && data.sources.length) {
+            const lines = data.sources.map((s, i) => {
+              if (typeof s === 'string') return `• ${s}`;
+              try { return `• ${JSON.stringify(s)}` } catch { return `• [source ${i + 1}]`; }
+            });
+            src.textContent = `來源（${data.sources.length}）\n` + lines.join('\n');
+          } else if (data.model === 'rag_web') {
+            src.textContent = '來源：已使用 RAG Web（/ask_web）解析貼文網址';
+          } else {
+            src.textContent = '';
+          }
+        } catch (err) {
+          out.textContent = `發生錯誤：${err}`;
+          src.textContent = '';
+        } finally {
+          card?.classList.remove('loading');
+        }
+      });
+    })();
   </script>
 </body>
 

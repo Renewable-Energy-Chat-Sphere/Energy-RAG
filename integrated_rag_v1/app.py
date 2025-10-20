@@ -1,5 +1,8 @@
 import os
 import io
+import re
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
@@ -29,6 +32,9 @@ def index():
     return render_template("index.html")
 
 
+# =========================
+# RAG routes
+# =========================
 @app.route("/ask_web", methods=["POST"])
 def ask_web():
     data = request.get_json(force=True)
@@ -67,8 +73,6 @@ def ask_av():
 # =========================
 # ✅ Table Support
 # =========================
-
-
 def df_to_markdown(df: pd.DataFrame, max_rows=30, max_cols=15):
     df2 = df.copy()
     if df2.shape[0] > max_rows:
@@ -154,6 +158,7 @@ def ask_table():
     file = request.files.get("file")
     if not question:
         return jsonify({"error": "question is required"}), 400
+
     if not file:
         return jsonify({"error": "table file is required"}), 400
 
@@ -176,6 +181,125 @@ def ask_table():
         return jsonify({"answer": answer, "sources": stats})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# =========================
+# 🤖 Generic Chatbot + 輕量智慧路由（含網址自動改用 /ask_web）
+# =========================
+
+# 對話歷史（多 session），僅在單機開發時使用；正式環境請改為 DB / Redis
+CHAT_MAX_MESSAGES = 30
+CHAT_SESSIONS: dict[str, deque] = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
+
+# 偵測訊息中是否含 URL
+URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
+
+
+def _build_messages(session_id: str, user_text: str, system_prompt: str | None = None):
+    msgs = []
+    if system_prompt:
+        msgs.append({"role": "system", "content": system_prompt})
+    for role, content in CHAT_SESSIONS[session_id]:
+        msgs.append({"role": role, "content": content})
+    msgs.append({"role": "user", "content": user_text})
+    return msgs
+
+
+def _store_turn(session_id: str, user_text: str, assistant_text: str):
+    CHAT_SESSIONS[session_id].append(("user", user_text))
+    CHAT_SESSIONS[session_id].append(("assistant", assistant_text))
+
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    """
+    JSON body:
+    {
+      "session_id": "abc123",        # 可選，預設 "default"
+      "user": "你的問題文字",           # 必填
+      "system": "你是助教…",            # 可選
+      "model": "gpt-4o-mini",        # 可選
+      "rag_auto": true               # 可選；true 時若偵測到 URL 會改走 qa_over_web
+    }
+    """
+    data = request.get_json(force=True, silent=False) or {}
+    session_id = (data.get("session_id") or "default").strip() or "default"
+    user_text = (data.get("user") or "").strip()
+    system_prompt = (data.get("system") or "").strip() or None
+    model = (data.get("model") or "gpt-4o-mini").strip() or "gpt-4o-mini"
+    rag_auto = bool(data.get("rag_auto", True))
+
+    if not user_text:
+        return jsonify({"error": "user is required"}), 400
+
+    # 1) 輕量智慧路由：訊息含 URL → 用你現成的 RAG Web
+    if rag_auto:
+        m = URL_RE.search(user_text)
+        if m:
+            url = m.group(1)
+            # 從原始訊息拿掉 url，當成 question
+            question_only = user_text.replace(url, "").strip() or "請根據網址內容回答。"
+            try:
+                answer, sources = qa_over_web(question_only, url=url)
+                _store_turn(session_id, user_text, answer)
+                return jsonify(
+                    {
+                        "answer": answer,
+                        "sources": sources,
+                        "session_id": session_id,
+                        "model": "rag_web",
+                        "uses_openai": (
+                            False if not openai_client else True
+                        ),  # RAG 裡面若也用到 LLM，則仍可能 True
+                    }
+                )
+            except Exception as e:
+                # 不中斷：改走一般聊天
+                fallback_note = f"(網址處理失敗，改用一般聊天) {e}\n\n"
+                user_text = (
+                    fallback_note + user_text
+                )  # 帶入訊息中，讓模型知道剛剛發生什麼
+
+    # 2) 一般聊天：有 OpenAI 就用，沒有就離線 fallback
+    if openai_client:
+        try:
+            messages = _build_messages(session_id, user_text, system_prompt)
+            resp = openai_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.3,
+            )
+            assistant_text = (resp.choices[0].message.content or "").strip()
+            if not assistant_text:
+                assistant_text = "（模型沒有回傳內容）"
+        except Exception as e:
+            assistant_text = (
+                f"(LLM 失敗，改用離線回覆) {e}\n\n"
+                f"你剛才說：{user_text}\n"
+                f"暫時建議：確認 OPENAI_API_KEY 設定或稍後再試。"
+            )
+    else:
+        ts = time.strftime("%Y-%m-%d %H:%M:%S")
+        assistant_text = (
+            "（離線模式）我目前無法存取雲端模型，但我已收到你的訊息。\n"
+            f"時間：{ts}\n\n"
+            f"你說的是：{user_text}\n"
+            "可以嘗試：\n"
+            "1) 設定 OPENAI_API_KEY 後重試；\n"
+            "2) 若要針對網址或檔案提問，改用 /ask_web、/ask_pdf、/ask_av、/ask_table。"
+        )
+
+    _store_turn(session_id, user_text, assistant_text)
+
+    return jsonify(
+        {
+            "answer": assistant_text,
+            "session_id": session_id,
+            "history_len": len(CHAT_SESSIONS[session_id]),
+            "model": model,
+            "uses_openai": bool(openai_client),
+        }
+    )
 
 
 # =========================
