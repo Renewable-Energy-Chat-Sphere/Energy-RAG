@@ -315,6 +315,11 @@
       border-top-style: solid;
       border-top-color: #22d3ee55;
     }
+
+    /* ✅ Chat 泡泡微樣式 */
+    .chat-bubble {
+      border-radius: 14px;
+    }
   </style>
 </head>
 
@@ -336,7 +341,6 @@
       <button class="tab" data-target="#pdf" role="tab" aria-selected="false" aria-controls="pdf">PDF</button>
       <button class="tab" data-target="#av" role="tab" aria-selected="false" aria-controls="av">Audio/Video</button>
       <button class="tab" data-target="#table" role="tab" aria-selected="false" aria-controls="table">Table</button>
-
     </nav>
 
     <main class="grid-2">
@@ -441,7 +445,10 @@
         <div class="card">
           <form id="form-chat">
             <label>訊息
-              <input required name="user" placeholder="輸入你的問題、或直接貼上網址（自動啟用 RAG Web）" />
+              <!-- ✅ 改成會自動長高的 textarea -->
+              <textarea required name="user" rows="1" placeholder="輸入你的問題、或直接貼上網址（自動啟用 RAG Web）" style="resize:none; overflow:hidden; min-height:44px; line-height:1.55;
+                       padding:10px 14px; border-radius:10px; border:1px solid var(--border);
+                       background:transparent; color:var(--text); font-size:15px; font-family:inherit;"></textarea>
             </label>
             <label>（可選）系統提示 System
               <input name="system" placeholder="例如：你是嚴謹的助教，回答限制 100 字" />
@@ -462,8 +469,11 @@
             </div>
           </form>
           <article>
-            <h3>回答</h3>
-            <div id="out-chat" class="answer"></div>
+            <h3>對話</h3>
+            <!-- ✅ 對話紀錄區（泡泡） -->
+            <div id="chat-log"
+              style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow:auto; padding:6px 2px; border:1px dashed var(--border); border-radius:12px;">
+            </div>
             <div id="src-chat" class="src"></div>
           </article>
         </div>
@@ -488,30 +498,91 @@
       if (panel) panel.classList.add("active");
     });
 
-    // Web/PDF/AV/Table 的答案若要支援 Markdown，請在 main.js 以 marked.parse() 轉出
-    // 這裡只處理 Chat 分頁
+    // === Chat：GPT 風格輸入框 + 對話泡泡 ===
     (function () {
       const form = document.getElementById('form-chat');
       if (!form) return;
-      const out = document.getElementById('out-chat');
-      const src = document.getElementById('src-chat');
+
+      const inputUser = form.querySelector('textarea[name="user"]'); // ← textarea
+      const inputSystem = form.querySelector('input[name="system"]');
+      const inputSid = form.querySelector('input[name="session_id"]');
+      const inputRag = form.querySelector('input[name="rag_auto"]');
+      const chatLog = document.getElementById('chat-log');
+      const srcBox = document.getElementById('src-chat');
+
+      // ✅ 自動撐高（像 ChatGPT）
+      const resetHeight = () => {
+        inputUser.style.height = 'auto';
+        inputUser.style.height = inputUser.scrollHeight + 'px';
+      };
+      inputUser.addEventListener('input', resetHeight);
+      // 初始也跑一次
+      requestAnimationFrame(resetHeight);
+
+      // Enter 送出（Shift+Enter 換行）
+      inputUser.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      const bubble = (role, html) => {
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.justifyContent = (role === 'user') ? 'flex-end' : 'flex-start';
+
+        const b = document.createElement('div');
+        b.className = 'chat-bubble';
+        b.style.maxWidth = '78%';
+        b.style.padding = '10px 12px';
+        b.style.borderRadius = '14px';
+        b.style.boxShadow = 'var(--shadow-soft)';
+        b.style.whiteSpace = 'pre-wrap';
+        b.style.lineHeight = '1.55';
+        b.style.border = '1px solid var(--border)';
+        if (role === 'user') {
+          b.style.background = 'linear-gradient(180deg, #34d39966, #10b98133)';
+          b.style.color = '#062015';
+        } else {
+          b.style.background = 'var(--card)';
+          b.style.color = 'var(--text)';
+        }
+        try { b.innerHTML = window.marked ? marked.parse(html) : html; }
+        catch { b.textContent = html; }
+
+        wrap.appendChild(b);
+        chatLog.appendChild(wrap);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      };
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fd = new FormData(form);
+        const userText = (inputUser.value || '').trim();
+        if (!userText) return;
+
         const payload = {
-          user: (fd.get('user') || '').toString(),
-          system: (fd.get('system') || '').toString(),
-          session_id: (fd.get('session_id') || 'web-ui').toString(),
-          rag_auto: !!fd.get('rag_auto'),
+          user: userText,
+          system: (inputSystem.value || '').toString(),
+          session_id: (inputSid.value || 'web-ui').toString(),
+          rag_auto: !!inputRag.checked,
           model: 'gpt-4o-mini'
         };
-        if (!payload.user.trim()) return;
 
+        // 1) 先顯示自己的泡泡，清空輸入框並恢復初始高度
+        bubble('user', userText);
+        inputUser.value = '';
+        inputUser.style.height = '44px'; // 回到單行高度
+        srcBox.textContent = '';
+
+        // 2) 插入「思考中…」暫位
+        bubble('assistant', '思考中…');
+
+        // 3) 鎖定表單、顯示 loading
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn?.setAttribute('disabled', 'disabled');
         const card = form.closest('.card');
         card?.classList.add('loading');
-        out.textContent = '';
-        src.textContent = '';
 
         try {
           const res = await fetch('/chat', {
@@ -520,27 +591,35 @@
             body: JSON.stringify(payload)
           });
           const data = await res.json();
+
+          // 移除「思考中…」
+          const lastWrap = chatLog.lastElementChild;
+          if (lastWrap) lastWrap.remove();
+
           const answer = data.answer || data.error || '(無回應)';
-          try {
-            out.innerHTML = window.marked ? marked.parse(answer) : answer;
-          } catch { out.textContent = answer; }
+          bubble('assistant', answer);
 
           if (Array.isArray(data.sources) && data.sources.length) {
             const lines = data.sources.map((s, i) => {
               if (typeof s === 'string') return `• ${s}`;
               try { return `• ${JSON.stringify(s)}` } catch { return `• [source ${i + 1}]`; }
             });
-            src.textContent = `來源（${data.sources.length}）\n` + lines.join('\n');
+            srcBox.textContent = `來源（${data.sources.length}）\n` + lines.join('\n');
           } else if (data.model === 'rag_web') {
-            src.textContent = '來源：已使用 RAG Web（/ask_web）解析貼文網址';
+            srcBox.textContent = '來源：已使用 RAG Web（/ask_web）解析貼文網址';
           } else {
-            src.textContent = '';
+            srcBox.textContent = '';
           }
         } catch (err) {
-          out.textContent = `發生錯誤：${err}`;
-          src.textContent = '';
+          const lastWrap = chatLog.lastElementChild;
+          if (lastWrap) lastWrap.remove();
+          bubble('assistant', `發生錯誤：${err}`);
+          srcBox.textContent = '';
         } finally {
+          submitBtn?.removeAttribute('disabled');
           card?.classList.remove('loading');
+          inputUser.focus();
+          resetHeight(); // 重新計算高度（保持單行）
         }
       });
     })();
