@@ -1,42 +1,23 @@
+// GlobeVisualizer.jsx — Five Sectors Full-Cover Wedges (2025-10-22, front-only billboard labels)
 import React, { useMemo, useRef, useEffect, useState, Suspense } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Text } from "@react-three/drei";
+import { OrbitControls, Html, Text, Billboard } from "@react-three/drei";
 
-// =====================
-// Energy Globe (LOD + Soft Shading)
-// - 背景全白
-// - 透明球體 + 柔光地球陰影（day–night terminator）
-// - LOD：遠=貼齊表面的能源環帶、中文類別；中=國家級泡泡；近=設施點
-// =====================
-
+// ===================== 基本設定 =====================
 const RADIUS = 3.0;
 const BG = 0xffffff; // 全白背景
 
-const CATEGORY_COLORS = {
-  Coal: 0x8b6cff,
-  Oil: 0xffa15a,
-  Gas: 0x5fbef2,
-  Hydro: 0x48d99a,
-  Solar: 0xffd35a,
-  Wind: 0x6fd3ff,
-  Nuclear: 0xff6f9d,
-  Biomass: 0xa7ff7b,
-};
+// 五大部門
+const SECTORS = [
+  { key: "agri",    name: "農業",  color: 0x48d99a },
+  { key: "ind",     name: "工業",  color: 0xffa15a },
+  { key: "trans",   name: "運輸",  color: 0x5fbef2 },
+  { key: "service", name: "服務",  color: 0x8b6cff },
+  { key: "res",     name: "住宅",  color: 0xff6f9d },
+];
 
-// 類別中文顯示
-const TYPE_ZH = {
-  Coal: "煤炭",
-  Oil: "石油",
-  Gas: "天然氣",
-  Hydro: "水力",
-  Solar: "太陽能",
-  Wind: "風力",
-  Nuclear: "核能",
-  Biomass: "生質能",
-};
-
-// —— DEMO 假資料 ——
+// 模擬（保留中/近 LOD）
 const COUNTRIES = [
   {
     name: "Taiwan",
@@ -52,35 +33,20 @@ const COUNTRIES = [
       { name: "Offshore Wind", type: "Wind" },
     ],
   },
-  {
-    name: "Japan",
-    lon: 138.0,
-    lat: 36.0,
-    mix: { Coal: 32, Gas: 36, Nuclear: 6, Hydro: 8, Solar: 12, Wind: 2 },
-    sites: [
-      { name: "Hekinan Coal", type: "Coal" },
-      { name: "Futtsu Gas", type: "Gas" },
-      { name: "Kashiwazaki-Kariwa", type: "Nuclear" },
-      { name: "Kurobe Hydro", type: "Hydro" },
-      { name: "Mega Solar", type: "Solar" },
-      { name: "Hokkaido Wind", type: "Wind" },
-    ],
-  },
 ];
 
-// 環帶用的全球占比（demo）
-const GLOBAL_SHARE = [
-  { type: "Coal", value: 27 },
-  { type: "Oil", value: 31 },
-  { type: "Gas", value: 23 },
-  { type: "Hydro", value: 6 },
-  { type: "Nuclear", value: 5 },
-  { type: "Wind", value: 4 },
-  { type: "Solar", value: 3 },
-  { type: "Biomass", value: 1 },
-];
+const CATEGORY_COLORS = {
+  Coal: 0x8b6cff,
+  Oil: 0xffa15a,
+  Gas: 0x5fbef2,
+  Hydro: 0x48d99a,
+  Solar: 0xffd35a,
+  Wind: 0x6fd3ff,
+  Nuclear: 0xff6f9d,
+  Biomass: 0xa7ff7b,
+};
 
-// ===================== 共用工具 =====================
+// ===================== 工具函式 =====================
 function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
   const lon = THREE.MathUtils.degToRad(lonDeg);
   const lat = THREE.MathUtils.degToRad(latDeg);
@@ -89,6 +55,41 @@ function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
     (r + lift) * Math.sin(lat),
     (r + lift) * Math.cos(lat) * Math.sin(lon)
   );
+}
+
+// 將經緯度矩形投到球面；seg 越高越平滑
+function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r = RADIUS, seg = 48 }) {
+  const positions = [];
+  const normals = [];
+  const indices = [];
+  for (let i = 0; i <= seg; i++) {
+    const t = i / seg;
+    const lat = lat0 * (1 - t) + lat1 * t;
+    for (let j = 0; j <= seg; j++) {
+      const s = j / seg;
+      const lon = lon0 * (1 - s) + lon1 * s;
+      const p = lonLatToVec3(lon, lat, r);
+      positions.push(p.x, p.y, p.z);
+      const n = p.clone().normalize();
+      normals.push(n.x, n.y, n.z);
+    }
+  }
+  const row = seg + 1;
+  for (let i = 0; i < seg; i++) {
+    for (let j = 0; j < seg; j++) {
+      const a = i * row + j;
+      const b = a + 1;
+      const c = a + row;
+      const d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+  geo.setIndex(indices);
+  geo.computeBoundingSphere();
+  return geo;
 }
 
 function raySphereIntersection(eye, dir, center, radius) {
@@ -118,6 +119,46 @@ function useZoomLevel() {
   return level;
 }
 
+// ===================== 只在前半球顯示的看板文字 =====================
+function FrontBillboardLabel({
+  position = [0, 0, 0],
+  children,
+  groupProps = {},
+  threshold = 0.02, // >0 在前半球；小緩衝避免邊緣閃爍
+  // Text props 直接往下傳
+  ...textProps
+}) {
+  const { camera } = useThree();
+  const [visible, setVisible] = useState(true);
+  const grp = useRef();
+
+  useFrame(() => {
+    if (!grp.current) return;
+    // 以世界座標做判斷，支援巢狀 group
+    const wp = new THREE.Vector3();
+    grp.current.getWorldPosition(wp);
+    const dp = wp.clone().normalize().dot(camera.position.clone().normalize());
+    const isFront = dp > threshold;
+    if (visible !== isFront) setVisible(isFront);
+  });
+
+  return (
+    <group ref={grp} visible={visible} position={position} {...groupProps}>
+      <Billboard follow>
+        <Text
+          // 讓文字被前景合理遮擋，但不寫入深度以減少半透明排序問題
+          material-depthTest
+          material-depthWrite={false}
+          renderOrder={10}
+          {...textProps}
+        >
+          {children}
+        </Text>
+      </Billboard>
+    </group>
+  );
+}
+
 // ===================== 視覺：球體 + 柔光陰影 =====================
 function TransparentGlobe() {
   const matRef = useRef();
@@ -126,7 +167,7 @@ function TransparentGlobe() {
     const d = camera.position.length();
     const near = RADIUS * 1.1, far = RADIUS * 5.0;
     const t = THREE.MathUtils.clamp((d - near) / (far - near), 0, 1);
-    const opacity = THREE.MathUtils.lerp(0.22, 0.32, t); // 白底→球厚一點
+    const opacity = THREE.MathUtils.lerp(0.22, 0.32, t);
     if (matRef.current) matRef.current.opacity = opacity;
   });
   return (
@@ -145,7 +186,6 @@ function TransparentGlobe() {
   );
 }
 
-// 柔光 terminator：以太陽方向做暗部覆蓋
 function SoftTerminator({ strength = 0.55, sunDir = new THREE.Vector3(1, 0.4, 0.2).normalize() }) {
   const uniforms = useMemo(() => ({
     sun: { value: sunDir },
@@ -163,14 +203,15 @@ function SoftTerminator({ strength = 0.55, sunDir = new THREE.Vector3(1, 0.4, 0.
         uniforms={uniforms}
         vertexShader={`
           varying vec3 vPos; varying vec3 vNormal;
-          void main(){ vPos = position; vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+          void main(){ vPos = position; vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
         `}
         fragmentShader={`
           uniform vec3 sun; uniform float strength; varying vec3 vNormal;
           void main(){
             float nd = dot(normalize(vNormal), normalize(sun));
-            float shade = smoothstep(-0.4, 0.2, nd); // 0 夜 1 日
-            float alpha = (1.0 - shade) * strength; // 夜側變暗
+            float shade = smoothstep(-0.4, 0.2, nd);
+            float alpha = (1.0 - shade) * strength;
             gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
           }
         `}
@@ -188,50 +229,73 @@ function Atmosphere() {
   );
 }
 
-// ===================== LOD 0：貼齊表面的能源「環帶」 =====================
-function SurfaceEnergyBands({ shares = GLOBAL_SHARE }) {
-  // 轉比例 → 角度範圍（固定在球體座標系，不再跟著相機旋轉）
-  const slices = useMemo(() => {
-    const total = shares.reduce((s, d) => s + (d.value || 0), 0) || 1;
-    let acc = 0;
-    return shares.map((d) => {
-      const ratio = (d.value || 0) / total;
-      const a0 = acc * Math.PI * 2; acc += ratio; const a1 = acc * Math.PI * 2;
-      return { type: d.type, a0, a1, color: CATEGORY_COLORS[d.type] ?? 0x999999 };
-    });
-  }, [shares]);
+// ===================== LOD 0：五楔形滿版 =====================
+// 將經度分成 5 個連續扇區（每個 72°），覆蓋整顆球（緯度 -90~90）。
+function FullCoverSectors() {
+  const bands = useMemo(() => {
+    const out = [];
+    for (let i = 0; i < 5; i++) {
+      const lon0 = -180 + i * 72;       // 5 等分經度
+      const lon1 = lon0 + 72;
+      const s = SECTORS[i % SECTORS.length];
+      out.push({ lon0, lon1, lat0: -90, lat1: 90, sector: s });
+    }
+    return out;
+  }, []);
 
-  const thickness = 0.08; // 環帶厚度
-  const lift = 0.004;     // 離表面極小距離，避免 Z-fighting
+  // 材質快取（半透明 + 不寫深度，避免互切；polygonOffset 避免貼殼抖動）
+  const matCache = useMemo(() => {
+    const m = new Map();
+    for (const s of SECTORS) {
+      m.set(
+        s.key,
+        new THREE.MeshStandardMaterial({
+          color: s.color,
+          roughness: 0.85,
+          metalness: 0.0,
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1,
+        })
+      );
+    }
+    return m;
+  }, []);
 
   return (
-    // 固定在赤道平面（與球一起旋轉），不再面向相機
-    <group rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      {slices.map((s, i) => (
-        <mesh key={i}>
-          <ringGeometry args={[RADIUS - thickness - 0.002, RADIUS + lift, 256, 1, s.a0, s.a1 - s.a0]} />
-          <meshBasicMaterial color={s.color} transparent opacity={0.9} side={THREE.DoubleSide} />
-        </mesh>
-      ))}
-      {/* 中文標籤：只讓文字 billboard 面向相機，環帶本身不跟相機 */}
-      {slices.map((s, i) => {
-        const mid = (s.a0 + s.a1) / 2;
-        const r = RADIUS + 0.02;
-        const x = r * Math.cos(mid);
-        const y = 0.05;
-        const z = r * Math.sin(mid);
+    <group>
+      {bands.map((b, i) => {
+        const geo = sphericalQuadGeometry({
+          lat0: b.lat0,
+          lat1: b.lat1,
+          lon0: b.lon0,
+          lon1: b.lon1,
+          r: RADIUS + 0.003,  // 緊貼球面外側
+          seg: 64,            // 平滑
+        });
+
+        // 標籤放扇區中心（經度中點、緯度 0）
+        const midLon = (b.lon0 + b.lon1) / 2;
+        const labelPos = lonLatToVec3(midLon, 0, RADIUS + 0.01).toArray();
+
         return (
-          <Text
-            key={`t-${i}`}
-            position={[x, y, z]}
-            fontSize={0.16}
-            color={`#${s.color.toString(16)}`}
-            anchorX="center"
-            anchorY="middle"
-            billboard
-          >
-            {TYPE_ZH[s.type] ?? s.type}
-          </Text>
+          <group key={i}>
+            <mesh geometry={geo} material={matCache.get(b.sector.key)} />
+            <FrontBillboardLabel
+              position={labelPos}
+              fontSize={0.26}
+              color="#111111"
+              outlineWidth={0.006}
+              outlineColor="#ffffff"
+              anchorX="center"
+              anchorY="middle"
+            >
+              {b.sector.name}
+            </FrontBillboardLabel>
+          </group>
         );
       })}
     </group>
@@ -252,7 +316,15 @@ function CountryBubbles() {
               <circleGeometry args={[size, 48]} />
               <meshBasicMaterial color={0x000000} transparent opacity={0.08} />
             </mesh>
-            <Text position={[0, size * 1.6, 0]} fontSize={0.12} color="#333" anchorX="center" anchorY="middle">{c.name}</Text>
+            <FrontBillboardLabel
+              position={[0, size * 1.6, 0]}
+              fontSize={0.12}
+              color="#333"
+              anchorX="center"
+              anchorY="middle"
+            >
+              {c.name}
+            </FrontBillboardLabel>
           </group>
         );
       })}
@@ -287,7 +359,15 @@ function FacilityDots() {
             <sphereGeometry args={[0.02, 16, 16]} />
             <meshBasicMaterial color={CATEGORY_COLORS[p.type] ?? 0x888888} />
           </mesh>
-          <Text position={[0, 0.06, 0]} fontSize={0.08} color="#333" anchorX="center" anchorY="bottom">{p.name}</Text>
+          <FrontBillboardLabel
+            position={[0, 0.06, 0]}
+            fontSize={0.08}
+            color="#333"
+            anchorX="center"
+            anchorY="bottom"
+          >
+            {p.name}
+          </FrontBillboardLabel>
         </group>
       ))}
     </group>
@@ -317,12 +397,12 @@ function randomOnSphereCap(centerVec3, angleDeg) {
     .multiplyScalar(RADIUS + 0.02);
 }
 
-// ===================== 場景與 LOD 切換 =====================
+// ===================== LOD 切換 =====================
 function EnergyGlobeLOD() {
   const level = useZoomLevel(); // 0=遠 1=中 2=近
   return (
     <group>
-      {level === 0 && <SurfaceEnergyBands />}
+      {level === 0 && <FullCoverSectors />}
       {level >= 1 && <CountryBubbles />}
       {level >= 2 && <FacilityDots />}
     </group>
@@ -346,7 +426,7 @@ function Scene() {
 
       <Html position={[0, RADIUS * 1.55, 0]} transform center>
         <div style={{padding:"8px 12px", background:"rgba(0,0,0,0.55)", borderRadius:12, color:"#fff", fontSize:12, backdropFilter:"blur(6px)"}}>
-          Energy Globe — LOD demo
+          Energy Globe — Five Wedges LOD
         </div>
       </Html>
 
@@ -357,7 +437,12 @@ function Scene() {
 
 export default function GlobeVisualizer() {
   return (
-    <Canvas style={{ position: 'fixed', inset: 0 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} dpr={[1, 2]} camera={{ fov: 45, near: 0.1, far: 1000 }}>
+    <Canvas
+      style={{ position: 'fixed', inset: 0 }}
+      gl={{ antialias: true, logarithmicDepthBuffer: true }}
+      dpr={[1, 2]}
+      camera={{ fov: 45, near: 0.1, far: 1000 }}
+    >
       <Suspense fallback={<Html center style={{ color: '#333' }}>Loading…</Html>}>
         <Scene />
       </Suspense>
