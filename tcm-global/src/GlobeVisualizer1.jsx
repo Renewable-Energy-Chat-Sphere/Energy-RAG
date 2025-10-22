@@ -1,4 +1,4 @@
-// GlobeVisualizer.jsx — Five Sectors Full-Cover Wedges (2025-10-22, front-only billboard labels)
+// GlobeVisualizer.jsx — Five Sectors → Industries LOD (2025-10-22, front-only billboard labels)
 import React, { useMemo, useRef, useEffect, useState, Suspense } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -8,7 +8,7 @@ import { OrbitControls, Html, Text, Billboard } from "@react-three/drei";
 const RADIUS = 3.0;
 const BG = 0xffffff; // 全白背景
 
-// 五大部門
+// 五大部門（LOD0 的五個楔形）
 const SECTORS = [
   { key: "agri",    name: "農業",  color: 0x48d99a },
   { key: "ind",     name: "工業",  color: 0xffa15a },
@@ -17,23 +17,24 @@ const SECTORS = [
   { key: "res",     name: "住宅",  color: 0xff6f9d },
 ];
 
-// 模擬（保留中/近 LOD）
-const COUNTRIES = [
-  {
-    name: "Taiwan",
-    lon: 121.0,
-    lat: 23.8,
-    mix: { Coal: 45, Gas: 35, Nuclear: 7, Hydro: 2, Solar: 9, Wind: 2 },
-    sites: [
-      { name: "Taichung Coal", type: "Coal" },
-      { name: "Tatan Gas", type: "Gas" },
-      { name: "Maanshan Nuke", type: "Nuclear" },
-      { name: "Zengwen Hydro", type: "Hydro" },
-      { name: "Tainan Solar", type: "Solar" },
-      { name: "Offshore Wind", type: "Wind" },
-    ],
-  },
-];
+// 第二層：各部門底下的產業（可依你的資料再擴充/改名）
+const INDUSTRIES = {
+  agri: [
+    "農作物與畜牧", "林業與木材", "漁業與水產", "食品初級加工"
+  ],
+  ind: [
+    "砂石產品", "食品飲料及菸草製造業", "化學材料與製品", "金屬製品", "機械與設備"
+  ],
+  trans: [
+    "公路運輸", "鐵路運輸", "海運與港務", "航空運輸", "倉儲與物流"
+  ],
+  service: [
+    "批發零售", "餐飲旅宿", "資訊與通訊", "金融保險", "教育與醫療"
+  ],
+  res: [
+    "住宅用電", "住宅燃氣", "住宅熱能", "家用再生能源"
+  ],
+};
 
 const CATEGORY_COLORS = {
   Coal: 0x8b6cff,
@@ -106,6 +107,23 @@ function raySphereIntersection(eye, dir, center, radius) {
   return eye.clone().add(dir.clone().multiplyScalar(t));
 }
 
+// 把 3D 向量轉回經緯度（度）
+function vec3ToLonLat(v) {
+  const n = v.clone().normalize();
+  const lat = THREE.MathUtils.radToDeg(Math.asin(n.y));
+  const lon = THREE.MathUtils.radToDeg(Math.atan2(n.z, n.x));
+  return { lon, lat };
+}
+
+// 判斷「視線所指的經度」屬於哪個部門楔形（每 72° 一區）
+function sectorIndexFromLon(lonDeg) {
+  let lon = lonDeg;
+  // 正規化到 [-180, 180)
+  lon = ((lon + 180) % 360 + 360) % 360 - 180;
+  const idx = Math.floor((lon + 180) / 72) % 5; // 0..4
+  return idx;
+}
+
 function useZoomLevel() {
   const { camera } = useThree();
   const [level, setLevel] = useState(0);
@@ -125,7 +143,6 @@ function FrontBillboardLabel({
   children,
   groupProps = {},
   threshold = 0.02, // >0 在前半球；小緩衝避免邊緣閃爍
-  // Text props 直接往下傳
   ...textProps
 }) {
   const { camera } = useThree();
@@ -134,7 +151,6 @@ function FrontBillboardLabel({
 
   useFrame(() => {
     if (!grp.current) return;
-    // 以世界座標做判斷，支援巢狀 group
     const wp = new THREE.Vector3();
     grp.current.getWorldPosition(wp);
     const dp = wp.clone().normalize().dot(camera.position.clone().normalize());
@@ -146,7 +162,6 @@ function FrontBillboardLabel({
     <group ref={grp} visible={visible} position={position} {...groupProps}>
       <Billboard follow>
         <Text
-          // 讓文字被前景合理遮擋，但不寫入深度以減少半透明排序問題
           material-depthTest
           material-depthWrite={false}
           renderOrder={10}
@@ -243,7 +258,7 @@ function FullCoverSectors() {
     return out;
   }, []);
 
-  // 材質快取（半透明 + 不寫深度，避免互切；polygonOffset 避免貼殼抖動）
+  // 材質快取（半透明 + 不寫深度；polygonOffset 避免貼殼抖動）
   const matCache = useMemo(() => {
     const m = new Map();
     for (const s of SECTORS) {
@@ -273,8 +288,8 @@ function FullCoverSectors() {
           lat1: b.lat1,
           lon0: b.lon0,
           lon1: b.lon1,
-          r: RADIUS + 0.003,  // 緊貼球面外側
-          seg: 64,            // 平滑
+          r: RADIUS + 0.003,
+          seg: 64,
         });
 
         // 標籤放扇區中心（經度中點、緯度 0）
@@ -302,28 +317,65 @@ function FullCoverSectors() {
   );
 }
 
-// ===================== LOD 1：國家級泡泡 =====================
-function CountryBubbles() {
+// ===================== LOD 1：部門 → 產業（顯示在該部門「正後方」） =====================
+// 依視線撞擊點的經度，決定目前正對的部門；再把該部門的產業泡泡沿著該部門中心經線、略「浮在楔形外側」排一列。
+function SectorIndustryBubbles() {
+  const { camera } = useThree();
+  const [activeIndex, setActiveIndex] = useState(0); // 目前相機正對的部門索引 0..4
+
+  // 每幀根據視線判定目前正對的部門
+  useFrame(() => {
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+    const hit = raySphereIntersection(camera.position, dir, new THREE.Vector3(0, 0, 0), RADIUS);
+    if (!hit) return;
+    const { lon } = vec3ToLonLat(hit);
+    const idx = sectorIndexFromLon(lon);
+    if (idx !== activeIndex) setActiveIndex(idx);
+  });
+
+  // 取出目前部門與其中心經度
+  const currentSector = SECTORS[activeIndex];
+  const lon0 = -180 + activeIndex * 72;
+  const lon1 = lon0 + 72;
+  const midLon = (lon0 + lon1) / 2;
+
+  // 產業資料
+  const items = INDUSTRIES[currentSector.key] ?? [];
+
+  // 在該部門「正後方」：半徑略外推 + 沿中心經線作多個緯度點位
+  const baseR = RADIUS + 0.04; // 外推一點，確保在楔形表面「外側/後方」
+  const lats = useMemo(() => {
+    // 依項目數自動分佈緯度（由北到南均分，但留邊界）
+    const n = Math.max(1, items.length);
+    const margin = 22; // 避免太貼兩極
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+      const t = n === 1 ? 0.5 : i / (n - 1); // 0..1
+      const lat = THREE.MathUtils.lerp(90 - margin, -90 + margin, t);
+      arr.push(lat);
+    }
+    return arr;
+  }, [items.length]);
+
   return (
     <group>
-      {COUNTRIES.map((c) => {
-        const pos = lonLatToVec3(c.lon, c.lat, RADIUS, 0.01);
-        const total = Object.values(c.mix).reduce((s, v) => s + v, 0);
-        const size = THREE.MathUtils.lerp(0.08, 0.24, Math.min(1, total / 120));
+      {items.map((name, i) => {
+        const p = lonLatToVec3(midLon, lats[i], baseR);
+        const size = 0.12; // 圓片大小可依需求調
         return (
-          <group key={c.name} position={pos.toArray()}>
+          <group key={name} position={p.toArray()}>
             <mesh>
               <circleGeometry args={[size, 48]} />
               <meshBasicMaterial color={0x000000} transparent opacity={0.08} />
             </mesh>
             <FrontBillboardLabel
-              position={[0, size * 1.6, 0]}
+              position={[0, size * 1.2, 0]}
               fontSize={0.12}
               color="#333"
               anchorX="center"
               anchorY="middle"
             >
-              {c.name}
+              {name}
             </FrontBillboardLabel>
           </group>
         );
@@ -332,69 +384,10 @@ function CountryBubbles() {
   );
 }
 
-// ===================== LOD 2：設施點 =====================
-function FacilityDots() {
-  const { camera } = useThree();
-  const look = useRef({ country: COUNTRIES[0] });
-  useFrame(() => {
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-    const hit = raySphereIntersection(camera.position, dir, new THREE.Vector3(0, 0, 0), RADIUS);
-    if (!hit) return;
-    let best = null; let bestAng = Infinity;
-    for (const c of COUNTRIES) {
-      const p = lonLatToVec3(c.lon, c.lat, RADIUS);
-      const ang = p.angleTo(hit);
-      if (ang < bestAng) { bestAng = ang; best = c; }
-    }
-    if (best) look.current.country = best;
-  });
-  const c = look.current.country;
-  const base = lonLatToVec3(c.lon, c.lat, RADIUS, 0.01);
-  const points = useMemo(() => c.sites.map((s) => ({ ...s, pos: randomOnSphereCap(base, 6) })), [c]);
-  return (
-    <group>
-      {points.map((p, i) => (
-        <group key={i} position={p.pos.toArray()}>
-          <mesh>
-            <sphereGeometry args={[0.02, 16, 16]} />
-            <meshBasicMaterial color={CATEGORY_COLORS[p.type] ?? 0x888888} />
-          </mesh>
-          <FrontBillboardLabel
-            position={[0, 0.06, 0]}
-            fontSize={0.08}
-            color="#333"
-            anchorX="center"
-            anchorY="bottom"
-          >
-            {p.name}
-          </FrontBillboardLabel>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-function randomOnSphereCap(centerVec3, angleDeg) {
-  const axis = centerVec3.clone().normalize();
-  const angle = THREE.MathUtils.degToRad(angleDeg);
-  const u = Math.random();
-  const v = Math.random();
-  const theta = 2 * Math.PI * u;
-  const phi = Math.acos(1 - v * (1 - Math.cos(angle)));
-  const local = new THREE.Vector3(
-    Math.sin(phi) * Math.cos(theta),
-    Math.cos(phi),
-    Math.sin(phi) * Math.sin(theta)
-  );
-  const y = axis;
-  const x = new THREE.Vector3(0, 1, 0).cross(y).normalize();
-  if (x.lengthSq() < 1e-6) x.set(1, 0, 0);
-  const z = y.clone().cross(x).normalize();
-  return new THREE.Vector3()
-    .addScaledVector(x, local.x)
-    .addScaledVector(y, local.y)
-    .addScaledVector(z, local.z)
-    .multiplyScalar(RADIUS + 0.02);
+// ===================== （選配）LOD 2：設施點 Demo（保留，之後可改成針對選到的產業顯示） =====================
+function FacilityDotsDemo() {
+  // 先保留一個簡單 demo；未指定資料前不顯示
+  return null;
 }
 
 // ===================== LOD 切換 =====================
@@ -403,8 +396,8 @@ function EnergyGlobeLOD() {
   return (
     <group>
       {level === 0 && <FullCoverSectors />}
-      {level >= 1 && <CountryBubbles />}
-      {level >= 2 && <FacilityDots />}
+      {level >= 1 && <SectorIndustryBubbles />}   {/* ← 已改為部門→產業 */}
+      {level >= 2 && <FacilityDotsDemo />}
     </group>
   );
 }
@@ -426,7 +419,7 @@ function Scene() {
 
       <Html position={[0, RADIUS * 1.55, 0]} transform center>
         <div style={{padding:"8px 12px", background:"rgba(0,0,0,0.55)", borderRadius:12, color:"#fff", fontSize:12, backdropFilter:"blur(6px)"}}>
-          Energy Globe — Five Wedges LOD
+          Energy Globe — Sectors → Industries
         </div>
       </Html>
 
