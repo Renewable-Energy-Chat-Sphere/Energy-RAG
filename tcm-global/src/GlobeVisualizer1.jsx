@@ -1,5 +1,7 @@
-// GlobeVisualizer.jsx — LOD1: All blocks rendered (no magnification) + Overlays only on active sector
+// GlobeVisualizer.jsx — LOD1: All blocks rendered (no magnification) + overlays only on active sector
+// + Right-side Info Panel with click selection (placeholder "尚無資料")
 // 2025-10-23
+
 import React, { useMemo, useRef, useEffect, useState, Suspense } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -186,7 +188,7 @@ function Atmosphere() {
 }
 
 // ===================== LOD 0：五楔形（淡出＋標籤） =====================
-function FullCoverSectors({ fade01 = 0 }) {
+function FullCoverSectors({ fade01 = 0, onSelect }) {
   const bands = useMemo(() => {
     const out = [];
     for (let i = 0; i < 5; i++) {
@@ -210,7 +212,13 @@ function FullCoverSectors({ fade01 = 0 }) {
 
         return (
           <group key={i}>
-            <mesh geometry={geo} material={mat} />
+            <mesh
+              geometry={geo}
+              material={mat}
+              onPointerOver={(e)=>{document.body.style.cursor='pointer';}}
+              onPointerOut ={(e)=>{document.body.style.cursor='auto';}}
+              onClick={(e)=>{ e.stopPropagation(); onSelect?.({ type:'sector', key:b.sector.key, name:b.sector.name }); }}
+            />
             {labelAlpha > 0 && (
               <FrontBillboardLabel
                 position={labelPos}
@@ -233,7 +241,7 @@ function FullCoverSectors({ fade01 = 0 }) {
 }
 
 // ===================== LOD 1：所有區塊都渲染；只有正對部門顯示資訊 =====================
-function SectorIndustryBubbles({ blend01 = 0 }) {
+function SectorIndustryBubbles({ blend01 = 0, onSelect }) {
   const { camera } = useThree();
 
   // 取得相機正對點 → 對應部門索引
@@ -249,9 +257,7 @@ function SectorIndustryBubbles({ blend01 = 0 }) {
 
   const in01 = smoothstep(0.0, 1.0, blend01);
   const alpha = in01;
-
-  // 固定外推量：移除放大錯覺
-  const layerR = RADIUS + 0.08;
+  const layerR = RADIUS + 0.08; // 固定外推量（移除放大錯覺）
 
   const all = [];
   for (let si = 0; si < SECTORS.length; si++) {
@@ -300,7 +306,14 @@ function SectorIndustryBubbles({ blend01 = 0 }) {
 
       all.push(
         <group key={`${si}-${k}`}>
-          <mesh geometry={subGeo} material={lightMat} renderOrder={50} />
+          <mesh
+            geometry={subGeo}
+            material={lightMat}
+            renderOrder={50}
+            onPointerOver={(e)=>{document.body.style.cursor='pointer';}}
+            onPointerOut ={(e)=>{document.body.style.cursor='auto';}}
+            onClick={(e)=>{ e.stopPropagation(); onSelect?.({ type:'industry', parentKey: parent.key, parentName: parent.name, name: items[k] }); }}
+          />
           {divider && <mesh geometry={divider} material={dividerMat} renderOrder={55} />}
           {showOverlay && (
             <FrontBillboardLabel
@@ -324,18 +337,91 @@ function SectorIndustryBubbles({ blend01 = 0 }) {
   return <group>{all}</group>;
 }
 
-// ===================== LOD 切換 =====================
-function EnergyGlobeLOD() {
+// ===================== LOD 切換（把 onSelect 往下傳） =====================
+function EnergyGlobeLOD({ onSelect }) {
   const { blend01 } = useZoomBlend();
   return (
     <group>
-      <FullCoverSectors fade01={blend01} />
-      <SectorIndustryBubbles blend01={blend01} />
+      <FullCoverSectors fade01={blend01} onSelect={onSelect} />
+      <SectorIndustryBubbles blend01={blend01} onSelect={onSelect} />
     </group>
   );
 }
 
-function Scene() {
+// ===================== 右側資訊欄 =====================
+function SidePanel({ selection, onClear }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        right: 16,
+        top: 16,
+        bottom: 16,
+        width: 320,
+        background: "#ffffff",
+        borderRadius: 12,
+        boxShadow:
+          "0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)",
+        padding: 16,
+        overflow: "auto",
+        pointerEvents: "auto", // 讓面板可互動
+        border: "1px solid rgba(0,0,0,0.06)",
+        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>詳細資訊</div>
+        {selection && (
+          <button
+            onClick={onClear}
+            style={{
+              marginLeft: "auto",
+              border: "none",
+              background: "rgba(0,0,0,0.06)",
+              padding: "6px 10px",
+              borderRadius: 8,
+              cursor: "pointer",
+            }}
+          >
+            清除
+          </button>
+        )}
+      </div>
+
+      {!selection && (
+        <div style={{ color: "#666", lineHeight: 1.6 }}>
+          點擊球面上的
+          <b> 部門或子項目</b>
+          ，這裡會顯示對應的能源資訊（目前為框架示意）。
+        </div>
+      )}
+
+      {selection?.type === "sector" && (
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>
+            {selection.name}
+          </div>
+          <div style={{ color: "#666" }}>（部門）</div>
+          <div style={{ marginTop: 12, color: "#444" }}>尚無資料</div>
+        </div>
+      )}
+
+      {selection?.type === "industry" && (
+        <div>
+          <div style={{ fontSize: 12, color: "#888" }}>{selection.parentName}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>
+            {selection.name}
+          </div>
+          <div style={{ color: "#666" }}>（子項目）</div>
+          <div style={{ marginTop: 12, color: "#444" }}>尚無資料</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===================== 場景 =====================
+function Scene({ onSelect }) {
   const { camera } = useThree();
   useEffect(() => { camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6); }, [camera]);
   return (
@@ -348,13 +434,7 @@ function Scene() {
       <SoftTerminator strength={0.5} />
       <Atmosphere />
 
-      <EnergyGlobeLOD />
-
-      <Html position={[0, RADIUS * 1.55, 0]} transform center>
-        <div style={{padding:"8px 12px", background:"rgba(0,0,0,0.55)", borderRadius:12, color:"#fff", fontSize:12, backdropFilter:"blur(6px)"}}>
-          Energy Globe — LOD1 blocks everywhere, overlays on active sector
-        </div>
-      </Html>
+      <EnergyGlobeLOD onSelect={onSelect} />
 
       <OrbitControls
         enablePan={false}
@@ -369,17 +449,25 @@ function Scene() {
   );
 }
 
+// ===================== Root：把選取狀態提升 + 側欄 =====================
 export default function GlobeVisualizer() {
+  const [selection, setSelection] = useState(null);
+
   return (
-    <Canvas
-      style={{ position: 'fixed', inset: 0 }}
-      gl={{ antialias: true, logarithmicDepthBuffer: true }}
-      dpr={[1, 2]}
-      camera={{ fov: 45, near: 0.1, far: 1000 }}
-    >
-      <Suspense fallback={<Html center style={{ color: '#333' }}>Loading…</Html>}>
-        <Scene />
-      </Suspense>
-    </Canvas>
+    <>
+      <Canvas
+        style={{ position: 'fixed', inset: 0 }}
+        gl={{ antialias: true, logarithmicDepthBuffer: true }}
+        dpr={[1, 2]}
+        camera={{ fov: 45, near: 0.1, far: 1000 }}
+      >
+        <Suspense fallback={<Html center style={{ color: '#333' }}>Loading…</Html>}>
+          <Scene onSelect={setSelection} />
+        </Suspense>
+      </Canvas>
+
+      {/* 右側資訊欄（Canvas 外層固定定位，不影響 3D 互動） */}
+      <SidePanel selection={selection} onClear={() => setSelection(null)} />
+    </>
   );
 }
