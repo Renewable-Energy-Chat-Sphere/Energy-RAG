@@ -1,5 +1,5 @@
-// GlobeVisualizer.jsx — Sectors Blend to Industries (smooth LOD0→LOD1, front-only labels)
-// 2025-10-22
+// GlobeVisualizer.jsx — Sectors → Vertical Sub-Wedges (LOD1 lighter tint, full cover, with dividers)
+// 2025-10-23
 import React, { useMemo, useRef, useEffect, useState, Suspense } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -18,16 +18,16 @@ const SECTORS = [
   { key: "res",     name: "住宅",  color: 0xff6f9d },
 ];
 
-// 第二層：各部門底下的產業（示例，可改成你的正式清單）
+// 第二層：各部門的小項目（以「緯度」垂直切分，整區同色但更淡）
 const INDUSTRIES = {
-  agri: ["農作物與畜牧","林業與木材","漁業與水產","食品初級加工"],
+  agri: ["農作物與畜牧","林業與木材","漁業與水產","食品初級加工","農機服務"],
   ind: ["砂石產品","食品飲料及菸草製造業","化學材料與製品","金屬製品","機械與設備"],
   trans: ["公路運輸","鐵路運輸","海運與港務","航空運輸","倉儲與物流"],
   service: ["批發零售","餐飲旅宿","資訊與通訊","金融保險","教育與醫療"],
   res: ["住宅用電","住宅燃氣","住宅熱能","家用再生能源"],
 };
 
-// ===================== 工具函式 =====================
+// ====== 小工具 ======
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const smoothstep = (a, b, x) => {
   const t = clamp01((x - a) / (b - a));
@@ -35,6 +35,7 @@ const smoothstep = (a, b, x) => {
 };
 const lerp = (a, b, t) => a + (b - a) * t;
 
+// ===================== 幾何/座標工具 =====================
 function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
   const lon = THREE.MathUtils.degToRad(lonDeg);
   const lat = THREE.MathUtils.degToRad(latDeg);
@@ -45,8 +46,7 @@ function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
   );
 }
 
-// 將經緯度矩形投到球面；seg 越高越平滑
-function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r = RADIUS, seg = 48 }) {
+function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r = RADIUS, seg = 64 }) {
   const positions = [];
   const normals = [];
   const indices = [];
@@ -116,17 +116,13 @@ function useZoomBlend() {
 
   useFrame(() => {
     const d = camera.position.length();
-    // 這三個門檻可以依你的手感微調
-    const FAR = RADIUS * 3.0;   // 遠端（LOD0 最清楚、LOD1 不顯）
-    const MID = RADIUS * 2.3;   // 中距開始出現 LOD1
-    const NEAR = RADIUS * 1.55; // 很近（可觸發 LOD2）
+    const FAR = RADIUS * 3.0;
+    const MID = RADIUS * 2.3;
+    const NEAR = RADIUS * 1.55;
 
-    // 當距離從 FAR 漸近到 MID，blend01 從 0 漸近到 1
-    // 因為 d 越小越近，所以用反向 smoothstep
     const t = 1 - smoothstep(MID, FAR, d);
     if (Math.abs(t - blend01) > 1e-3) setBlend01(t);
 
-    // 近距離層級（可控制 LOD2 啟用）
     const L = d < NEAR ? 2 : d < MID ? 1 : 0;
     if (L !== nearLevel) setNearLevel(L);
   });
@@ -134,12 +130,14 @@ function useZoomBlend() {
   return { blend01, nearLevel };
 }
 
-// ===================== 只在前半球顯示的看板文字 =====================
+// ===================== 只在前半球顯示的看板文字（可控 depthTest） =====================
 function FrontBillboardLabel({
   position = [0, 0, 0],
   children,
   groupProps = {},
   threshold = 0.02,
+  depthTest = true,
+  renderOrder = 10,
   ...textProps
 }) {
   const { camera } = useThree();
@@ -156,7 +154,12 @@ function FrontBillboardLabel({
   return (
     <group ref={grp} visible={visible} position={position} {...groupProps}>
       <Billboard follow>
-        <Text material-depthTest material-depthWrite={false} renderOrder={10} {...textProps}>
+        <Text
+          material-depthTest={depthTest}
+          material-depthWrite={false}
+          renderOrder={renderOrder}
+          {...textProps}
+        >
           {children}
         </Text>
       </Billboard>
@@ -186,6 +189,7 @@ function TransparentGlobe() {
         shininess={90}
         transparent
         opacity={0.3}
+        depthWrite={false}
       />
     </mesh>
   );
@@ -226,16 +230,22 @@ function SoftTerminator({ strength = 0.55, sunDir = new THREE.Vector3(1, 0.4, 0.
 
 function Atmosphere() {
   return (
-    <mesh>
+    <mesh renderOrder={-20}>
       <sphereGeometry args={[RADIUS * 1.04, 64, 64]} />
-      <meshBasicMaterial color={0x3ea0ff} transparent opacity={0.06} side={THREE.BackSide} />
+      <meshBasicMaterial
+        color={0x3ea0ff}
+        transparent
+        opacity={0.06}
+        side={THREE.BackSide}
+        depthWrite={false}
+        depthTest={false}
+      />
     </mesh>
   );
 }
 
-// ===================== LOD 0：五楔形滿版（支援淡出） =====================
+// ===================== LOD 0：五楔形滿版（支援淡出＋文字到門檻隱藏） =====================
 function FullCoverSectors({ fade01 = 0 }) {
-  // fade01: 0 → 原本不淡；1 → 淡很多
   const bands = useMemo(() => {
     const out = [];
     for (let i = 0; i < 5; i++) {
@@ -247,7 +257,6 @@ function FullCoverSectors({ fade01 = 0 }) {
     return out;
   }, []);
 
-  // 材質快取
   const matCache = useMemo(() => {
     const m = new Map();
     for (const s of SECTORS) {
@@ -281,14 +290,15 @@ function FullCoverSectors({ fade01 = 0 }) {
         });
 
         const midLon = (b.lon0 + b.lon1) / 2;
-        const labelPos = lonLatToVec3(midLon, 0, RADIUS + 0.01).toArray();
+        const labelPos = lonLatToVec3(midLon, 0, RADIUS + 0.015).toArray();
         const mat = matCache.get(b.sector.key);
-        // 動態調整透明度（淡出）
+
+        // 面的透明度：淡出
         mat.opacity = lerp(0.9, 0.25, fade01);
-        // 文字透明度：先淡出，進到第二層後直接隱藏
-        const labelAlpha = (fade01 < 0.85)
-          ? 1.0 - smoothstep(0.2, 0.85, fade01)  // 0→0.85 之間平滑淡出
-          : 0.0;                                 // 進到第二層就隱藏
+
+        // 文字透明度：先淡出；到第二層門檻後直接隱藏
+        const labelAlpha =
+          fade01 < 0.85 ? 1.0 - smoothstep(0.2, 0.85, fade01) : 0.0;
 
         return (
           <group key={i}>
@@ -302,9 +312,8 @@ function FullCoverSectors({ fade01 = 0 }) {
                 outlineColor="#ffffff"
                 anchorX="center"
                 anchorY="middle"
-                material-transparent
-                fillOpacity={labelAlpha}
-                outlineOpacity={labelAlpha}
+                depthTest={false}
+                renderOrder={100}
               >
                 {b.sector.name}
               </FrontBillboardLabel>
@@ -316,12 +325,12 @@ function FullCoverSectors({ fade01 = 0 }) {
   );
 }
 
-// ===================== LOD 1：部門 → 產業（沿該部門中心經線；外推半徑隨 blend 增加） =====================
+// ===================== LOD 1：第二層（父色變淡、垂直切分、完整覆蓋、含分隔帶） =====================
 function SectorIndustryBubbles({ blend01 = 0 }) {
   const { camera } = useThree();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // 依視線所落點計算目前正對的部門
+  // 依視線落點決定目前正對的部門
   useFrame(() => {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
     const hit = raySphereIntersection(camera.position, dir, new THREE.Vector3(0, 0, 0), RADIUS);
@@ -331,65 +340,115 @@ function SectorIndustryBubbles({ blend01 = 0 }) {
     if (idx !== activeIndex) setActiveIndex(idx);
   });
 
+  // 父楔形經度範圍（固定 72°），改「緯度」做垂直切分，覆蓋到兩極
   const lon0 = -180 + activeIndex * 72;
   const lon1 = lon0 + 72;
-  const midLon = (lon0 + lon1) / 2;
-  const currentSector = SECTORS[activeIndex];
-  const items = INDUSTRIES[currentSector.key] ?? [];
 
-  // 視覺距離：由遠到近，將 LOD1 的半徑外推更多，並給一點縮放感
-  const baseR = RADIUS + lerp(0.05, 0.16, blend01); // 讓第二層離第一層「更遠」
-  const rowScale = lerp(0.98, 1.04, blend01);
+  const parent = SECTORS[activeIndex];
+  const items = INDUSTRIES[parent.key] ?? [];
+  const n = Math.max(1, items.length);
 
-  const lats = useMemo(() => {
-    const n = Math.max(1, items.length);
-    const margin = 22;
-    const arr = [];
-    for (let i = 0; i < n; i++) {
-      const t = n === 1 ? 0.5 : i / (n - 1);
-      const lat = THREE.MathUtils.lerp(90 - margin, -90 + margin, t);
-      arr.push(lat);
+  // LOD1 放到球殼外側，避免邊緣露白；同時與 LOD0 拉開距離
+  const layerR = RADIUS + lerp(0.02, 0.12, blend01);
+  const alpha = lerp(0.0, 1.0, blend01); // 整體淡入
+
+  // 單一「淡色版」父色材質（整層一致變淡），透明度隨 blend 提升
+  const lightMat = useMemo(() => {
+    const c = new THREE.Color(parent.color);
+    // 讓顏色更淡：往白色插值
+    const lighter = c.clone().lerp(new THREE.Color(0xffffff), 0.32); // 0.32 可調
+    return new THREE.MeshStandardMaterial({
+      color: lighter,
+      roughness: 0.85,
+      metalness: 0.0,
+      transparent: true,
+      opacity: alpha * 0.95,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parent.color, alpha]);
+
+  // 分隔帶材質（同色系偏深、半透明、很薄的緯向條）
+  const dividerMat = useMemo(() => {
+    const c = new THREE.Color(parent.color).lerp(new THREE.Color(0x000000), 0.25);
+    return new THREE.MeshBasicMaterial({
+      color: c,
+      transparent: true,
+      opacity: alpha * 0.35,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parent.color, alpha]);
+
+  // 垂直切分（緯度帶）
+  const latTopMax = 90;
+  const latBotMin = -90;
+
+  const groups = [];
+  for (let k = 0; k < n; k++) {
+    // 緯度帶：由上到下均分
+    const t0 = k / n;
+    const t1 = (k + 1) / n;
+    const lat1 = THREE.MathUtils.lerp(latTopMax, latBotMin, t0); // 北側(較大)
+    const lat0 = THREE.MathUtils.lerp(latTopMax, latBotMin, t1); // 南側(較小)
+
+    // 主帶（淡色）
+    const subGeo = sphericalQuadGeometry({
+      lat0, lat1, lon0, lon1, r: layerR, seg: 64,
+    });
+
+    // 分隔帶：在每條帶的「上邊界」放一條非常薄的緯向條（除 k=0）
+    // 取 0.25° 厚度；你可改 0.2～0.5 視覺更明顯
+    let divider = null;
+    if (k > 0) {
+      const dth = 0.25;
+      divider = sphericalQuadGeometry({
+        lat0: lat1 - dth, lat1: lat1, lon0, lon1, r: layerR + 0.0005, seg: 48,
+      });
     }
-    return arr;
-  }, [items.length]);
 
-  // 透明度隨 blend01 漸入
-  const alpha = lerp(0.0, 1.0, blend01);
+    // 標籤位置：該帶中心
+    const midLat = (lat0 + lat1) / 2;
+    const midLon = (lon0 + lon1) / 2;
+    const labelPos = lonLatToVec3(midLon, midLat, layerR + 0.012).toArray();
 
-  return (
-    <group>
-      {items.map((name, i) => {
-        const p = lonLatToVec3(midLon, lats[i], baseR);
-        const size = 0.12 * rowScale;
-        return (
-          <group key={name} position={p.toArray()} scale={[rowScale, rowScale, rowScale]}>
-            <mesh>
-              <circleGeometry args={[size, 48]} />
-              <meshBasicMaterial color={0x000000} transparent opacity={0.08 * alpha} />
-            </mesh>
-            <FrontBillboardLabel
-              position={[0, size * 1.2, 0]}
-              fontSize={0.12 * rowScale}
-              color="#333"
-              anchorX="center"
-              anchorY="middle"
-              // 讓文字也一起淡入
-              material-transparent
-              fillOpacity={alpha}
-            >
-              {name}
-            </FrontBillboardLabel>
-          </group>
-        );
-      })}
-    </group>
-  );
+    groups.push(
+      <group key={k}>
+        <mesh geometry={subGeo} material={lightMat} renderOrder={50} />
+        {divider && <mesh geometry={divider} material={dividerMat} renderOrder={55} />}
+
+        {alpha > 0 && (
+          <FrontBillboardLabel
+            position={labelPos}
+            fontSize={lerp(0.16, 0.18, blend01)}
+            color="#111111"
+            outlineWidth={0.004}
+            outlineColor="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+            depthTest={false}
+            renderOrder={90}
+          >
+            {items[k]}
+          </FrontBillboardLabel>
+        )}
+      </group>
+    );
+  }
+
+  return <group>{groups}</group>;
 }
 
-// ===================== LOD 2（預留；仍靠近時才顯示） =====================
+// ===================== LOD 2（預留） =====================
 function FacilityDotsDemo() { return null; }
 
-// ===================== LOD 切換（連續 0↔1，近距離觸發 2） =====================
+// ===================== LOD 切換 =====================
 function EnergyGlobeLOD() {
   const { blend01, nearLevel } = useZoomBlend(); // blend01: 0..1
   return (
@@ -418,7 +477,7 @@ function Scene() {
 
       <Html position={[0, RADIUS * 1.55, 0]} transform center>
         <div style={{padding:"8px 12px", background:"rgba(0,0,0,0.55)", borderRadius:12, color:"#fff", fontSize:12, backdropFilter:"blur(6px)"}}>
-          Energy Globe — Smooth LOD0→LOD1
+          Energy Globe — LOD1 Lighter, Full Cover
         </div>
       </Html>
 
