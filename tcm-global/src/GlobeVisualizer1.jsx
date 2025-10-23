@@ -1,6 +1,6 @@
 // GlobeVisualizer.jsx — LOD1: All blocks rendered (no magnification) + overlays only on active sector
 // + Right-side Info Panel with click selection (placeholder "尚無資料")
-// 2025-10-23
+// 2025-10-23 — 版本：Layers 控制點擊（LOD0=Layer1, LOD1=Layer2），並確保相機也渲染 Layer 1/2
 
 import React, { useMemo, useRef, useEffect, useState, Suspense } from "react";
 import * as THREE from "three";
@@ -10,6 +10,8 @@ import { OrbitControls, Html, Text, Billboard } from "@react-three/drei";
 // ===================== 基本設定 =====================
 const RADIUS = 3.0;
 const BG = 0xffffff; // 全白
+const LAYER_LOD0 = 1; // 用於 LOD0 點擊
+const LAYER_LOD1 = 2; // 用於 LOD1 點擊
 
 // 五大部門（LOD0）
 const SECTORS = [
@@ -103,6 +105,16 @@ function useZoomBlend() {
     setBlend01(1 - smoothstep(MID, FAR, d));
   });
   return { blend01 };
+}
+
+// ============== 控制 raycaster 只命中某一 Layer ==============
+function RaycastLayerController({ activeLayer }) {
+  const { raycaster } = useThree();
+  useEffect(() => {
+    raycaster.layers.disableAll();
+    raycaster.layers.enable(activeLayer);
+  }, [activeLayer, raycaster]);
+  return null;
 }
 
 // ===================== 只在前半球顯示的看板文字 =====================
@@ -215,6 +227,7 @@ function FullCoverSectors({ fade01 = 0, onSelect }) {
             <mesh
               geometry={geo}
               material={mat}
+              onUpdate={(m)=>m.layers.set(LAYER_LOD0)} // ← LOD0 點擊層：Layer 1
               onPointerOver={(e)=>{document.body.style.cursor='pointer';}}
               onPointerOut ={(e)=>{document.body.style.cursor='auto';}}
               onClick={(e)=>{ e.stopPropagation(); onSelect?.({ type:'sector', key:b.sector.key, name:b.sector.name }); }}
@@ -310,11 +323,12 @@ function SectorIndustryBubbles({ blend01 = 0, onSelect }) {
             geometry={subGeo}
             material={lightMat}
             renderOrder={50}
+            onUpdate={(m)=>m.layers.set(LAYER_LOD1)} // ← LOD1 點擊層：Layer 2
             onPointerOver={(e)=>{document.body.style.cursor='pointer';}}
             onPointerOut ={(e)=>{document.body.style.cursor='auto';}}
             onClick={(e)=>{ e.stopPropagation(); onSelect?.({ type:'industry', parentKey: parent.key, parentName: parent.name, name: items[k] }); }}
           />
-          {divider && <mesh geometry={divider} material={dividerMat} renderOrder={55} />}
+          {divider && <mesh geometry={divider} material={dividerMat} renderOrder={55} onUpdate={(m)=>m.layers.set(LAYER_LOD1)} />}
           {showOverlay && (
             <FrontBillboardLabel
               position={labelPos}
@@ -340,9 +354,26 @@ function SectorIndustryBubbles({ blend01 = 0, onSelect }) {
 // ===================== LOD 切換（把 onSelect 往下傳） =====================
 function EnergyGlobeLOD({ onSelect }) {
   const { blend01 } = useZoomBlend();
+
+  // 滯回：>=0.60 進入 LOD1 點擊層（Layer 2）；<=0.45 回到 LOD0（Layer 1）
+  const [activeLayer, setActiveLayer] = useState(LAYER_LOD0);
+  useEffect(() => {
+    setActiveLayer((prev) => {
+      if (prev !== LAYER_LOD1 && blend01 >= 0.60) return LAYER_LOD1;
+      if (prev !== LAYER_LOD0 && blend01 <= 0.45) return LAYER_LOD0;
+      return prev;
+    });
+  }, [blend01]);
+
   return (
     <group>
+      {/* 控制 raycaster 僅命中某層 */}
+      <RaycastLayerController activeLayer={activeLayer} />
+
+      {/* LOD0：照常淡出（顯示與否不影響可點層，真正可點由 raycaster 的 layer 決定） */}
       <FullCoverSectors fade01={blend01} onSelect={onSelect} />
+
+      {/* LOD1：全部渲染；只有正對部門顯示標籤 */}
       <SectorIndustryBubbles blend01={blend01} onSelect={onSelect} />
     </group>
   );
@@ -364,7 +395,7 @@ function SidePanel({ selection, onClear }) {
           "0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)",
         padding: 16,
         overflow: "auto",
-        pointerEvents: "auto", // 讓面板可互動
+        pointerEvents: "auto",
         border: "1px solid rgba(0,0,0,0.06)",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif",
       }}
@@ -423,7 +454,14 @@ function SidePanel({ selection, onClear }) {
 // ===================== 場景 =====================
 function Scene({ onSelect }) {
   const { camera } = useThree();
-  useEffect(() => { camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6); }, [camera]);
+
+  useEffect(() => {
+    camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6);
+    // ★★★ 重點修正：相機也渲染 Layer 1 與 Layer 2（否則顏色整個看不到）
+    camera.layers.enable(LAYER_LOD0);
+    camera.layers.enable(LAYER_LOD1);
+  }, [camera]);
+
   return (
     <>
       <color attach="background" args={[BG]} />
