@@ -336,8 +336,8 @@
     </header>
 
     <nav class="tabs" role="tablist" aria-label="資料來源">
-      <button class="tab" data-target="#chat" role="tab" aria-selected="false" aria-controls="chat">Chat</button>
-      <button class="tab active" data-target="#web" role="tab" aria-selected="true" aria-controls="web">Web</button>
+      <button class="tab active" data-target="#chat" role="tab" aria-selected="false" aria-controls="chat">Chat</button>
+      <button class="tab" data-target="#web" role="tab" aria-selected="true" aria-controls="web">Web</button>
       <button class="tab" data-target="#pdf" role="tab" aria-selected="false" aria-controls="pdf">PDF</button>
       <button class="tab" data-target="#av" role="tab" aria-selected="false" aria-controls="av">Audio/Video</button>
       <button class="tab" data-target="#table" role="tab" aria-selected="false" aria-controls="table">Table</button>
@@ -345,10 +345,11 @@
 
     <main class="grid-2">
       <!-- Web -->
-      <section id="web" class="panel active" role="tabpanel" aria-labelledby="tab-web">
+      <section id="web" class="panel" role="tabpanel" aria-labelledby="tab-web">
         <div class="card">
+          <h3>問題</h3>
           <form id="form-web">
-            <label>問題
+            <label>
               <input required name="question" placeholder="想問什麼？例如：2024 台灣再生能源佔比" />
             </label>
             <label>（可選）URL
@@ -371,8 +372,9 @@
       <!-- PDF -->
       <section id="pdf" class="panel" role="tabpanel" aria-labelledby="tab-pdf">
         <div class="card">
+          <h3>問題</h3>
           <form id="form-pdf">
-            <label>問題
+            <label>
               <input required name="question" placeholder="針對 PDF 想問什麼？例如：摘要重點 / 表格中的數字" />
             </label>
             <label>上傳 PDF
@@ -395,8 +397,9 @@
       <!-- AV -->
       <section id="av" class="panel" role="tabpanel" aria-labelledby="tab-av">
         <div class="card">
+          <h3>問題</h3>
           <form id="form-av">
-            <label>問題
+            <label>
               <input required name="question" placeholder="想從影音內容找什麼？" />
             </label>
             <label>上傳影音
@@ -419,8 +422,9 @@
       <!-- Table -->
       <section id="table" class="panel" role="tabpanel" aria-labelledby="tab-table">
         <div class="card">
+          <h3>問題</h3>
           <form id="form-table">
-            <label>問題
+            <label>
               <input required name="question" placeholder="想從表格裡找什麼？例如：2024 總發電量是多少？" />
             </label>
             <label>上傳表格
@@ -441,21 +445,22 @@
       </section>
 
       <!-- ✅ Chat -->
-      <section id="chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
+      <section id="chat" class="panel active" role="tabpanel" aria-labelledby="tab-chat">
         <div class="card">
+          <h3>訊息</h3>
           <form id="form-chat">
-            <label>訊息
+            <label>
               <!-- ✅ 改成會自動長高的 textarea -->
               <textarea required name="user" rows="1" placeholder="輸入你的問題、或直接貼上網址（自動啟用 RAG Web）" style="resize:none; overflow:hidden; min-height:44px; line-height:1.55;
                        padding:10px 14px; border-radius:10px; border:1px solid var(--border);
                        background:transparent; color:var(--text); font-size:15px; font-family:inherit;"></textarea>
             </label>
             <label>（可選）系統提示 System
-              <input name="system" placeholder="例如：你是嚴謹的助教，回答限制 100 字" />
+              <input name="system" placeholder="例如：你是專業的私人助理" />
             </label>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
               <label style="flex:1; min-width:220px;">Session ID
-                <input name="session_id" placeholder="web-ui 或任意字串" value="web-ui" />
+                <input name="session_id" placeholder="web網址或任意字串" />
               </label>
               <label style="display:flex; align-items:center; gap:8px;">
                 <input type="checkbox" name="rag_auto" checked />

@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, current_app
 tables_bp = Blueprint("tables", __name__)
 
 
+# === 將 DataFrame 轉成 Markdown (限制列數與欄數，防止太長) ===
 def df_to_markdown(df: pd.DataFrame, max_rows=30, max_cols=15):
     df2 = df.copy()
     if df2.shape[0] > max_rows:
@@ -16,29 +17,54 @@ def df_to_markdown(df: pd.DataFrame, max_rows=30, max_cols=15):
     return df2.to_markdown(index=False)
 
 
+# === 改進：允許空值與模糊字的表格讀取 ===
 def read_table_file(file_storage):
     content = file_storage.read()
     bio = io.BytesIO(content)
     name = (file_storage.filename or "").lower()
 
+    # 嘗試判斷檔案格式
     if name.endswith((".xlsx", ".xlsm", ".xltx", ".xltm", ".xls")):
         xls = pd.ExcelFile(bio)
-        return {sheet: xls.parse(sheet) for sheet in xls.sheet_names}
+        sheets = {sheet: xls.parse(sheet) for sheet in xls.sheet_names}
     elif name.endswith(".csv") or name.endswith(".txt"):
-        return {"Sheet1": pd.read_csv(bio, encoding="utf-8", engine="python")}
+        sheets = {"Sheet1": pd.read_csv(bio, encoding="utf-8", engine="python")}
     elif name.endswith((".tsv", ".tab")):
-        return {"Sheet1": pd.read_csv(bio, sep="\t", encoding="utf-8", engine="python")}
+        sheets = {
+            "Sheet1": pd.read_csv(bio, sep="\t", encoding="utf-8", engine="python")
+        }
     else:
         try:
-            return {"Sheet1": pd.read_csv(bio, engine="python")}
+            sheets = {"Sheet1": pd.read_csv(bio, engine="python")}
         except Exception:
             raise ValueError("不支援的檔案格式，請上傳 .xlsx/.xls/.csv/.tsv")
 
+    # ✅ 自動清理：將空值與模糊文字視為空白
+    cleaned_sheets = {}
+    for name, df in sheets.items():
+        # 先轉換成字串，避免 pd.NA 比對錯誤
+        df = df.astype(str)
 
+        # 移除或替換模糊空值（nan、none、—、無、空 等）
+        df = df.replace(
+            to_replace=r"(?i)^(nan|na|n/a|none|null|\?|—|-|無|空|missing|blank)$",
+            value="",
+            regex=True,
+        )
+
+        cleaned_sheets[name] = df
+
+    return cleaned_sheets
+
+
+# === 將多張表格組成 markdown context（給 LLM 用） ===
 def build_context_markdown(sheets: dict, max_chars=12000):
     parts = []
     for name, df in sheets.items():
-        md = df_to_markdown(df)
+        try:
+            md = df_to_markdown(df)
+        except Exception as e:
+            md = f"(無法轉換表格：{e})"
         parts.append(f"### Sheet: {name}\n\n{md}\n")
     ctx = "\n\n".join(parts)
     if len(ctx) > max_chars:
@@ -46,6 +72,7 @@ def build_context_markdown(sheets: dict, max_chars=12000):
     return ctx
 
 
+# === 提供簡要統計資訊 ===
 def simple_stats(sheets: dict):
     info = []
     for name, df in sheets.items():
@@ -60,10 +87,12 @@ def simple_stats(sheets: dict):
     return info
 
 
+# === 用 LLM 從表格回答問題 ===
 def llm_answer_from_tables(question: str, ctx_md: str, openai_client):
     if not openai_client:
         return None
     prompt = f"""根據下方表格內容（Markdown），回答使用者的問題。
+若資料有空白、缺失或模糊項，請盡力根據可用資訊推論，必要時可回答「資料不足」。
 表格內容：
 {ctx_md}
 
@@ -81,6 +110,7 @@ def llm_answer_from_tables(question: str, ctx_md: str, openai_client):
         return f"(LLM 回答失敗) {e}"
 
 
+# === Flask 路由：處理表格問答 ===
 @tables_bp.route("/ask_table", methods=["POST"])
 def ask_table():
     question = (request.form.get("question") or "").strip()
@@ -97,6 +127,8 @@ def ask_table():
 
         openai_client = current_app.config.get("OPENAI_CLIENT")
         answer = llm_answer_from_tables(question, ctx_md, openai_client)
+
+        # 若未設定 API 金鑰，回傳摘要
         if not answer:
             md_list = []
             for name, df in sheets.items():
