@@ -491,6 +491,25 @@ function Scene({ onSelect }) {
 export default function GlobeVisualizer() {
   const [selection, setSelection] = useState(null);
 
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("http://localhost:3001/selected.json", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // ✅ 修正這裡的 key
+        if (data && data.selection) {
+          setSelection({ type: "sector", name: data.selection });
+        }
+      } catch (err) {
+        console.warn("❌ 無法從伺服器取得選擇資料", err);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <Canvas
@@ -509,3 +528,4 @@ export default function GlobeVisualizer() {
     </>
   );
 }
+

@@ -1,4 +1,4 @@
-import os, json, math, time
+import os, json, math, time,requests
 from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -54,11 +54,29 @@ def tool_calculator(expression: str):
         return str(result)
     except Exception as e:
         return f"calc error: {e}"
+import os
+FRONTEND_API = os.getenv("FRONTEND_API", "http://localhost:3001/api/select")
+
+def tool_select_globe_item(item_name: str):
+    try:
+        res = requests.post(
+            FRONTEND_API,
+            json={"name": item_name},
+            timeout=5
+        )
+        if res.status_code == 200:
+            return f"✅ 已通知網站選擇「{item_name}」部門"
+        else:
+            return f"⚠️ 網站回應異常：{res.status_code}"
+    except Exception as e:
+        return f"❌ 發送請求失敗：{e}"
+
 
 TOOLS = {
     "search": tool_search,
     "today": tool_today,
     "calculator": tool_calculator,
+    "select_globe_item": tool_select_globe_item,
 }
 
 # --- 提示詞（更嚴格） ---------------------------------------
@@ -68,19 +86,19 @@ SYSTEM_PROMPT = """
 - search：查詢最新新聞/網路資訊/不確定的事實
 - today：取得目前日期時間（例如「今天幾月幾號」、「現在幾點」）
 - calculator：數學計算（四則、括號、百分比）
+- select_globe_item：讓網站上的 3D 地球選取指定的部門（參數 item_name）
 
-規則（很重要）：
-1) 問「今天幾月幾號、現在幾點、今天星期幾」→ 必須用 today。
-2) 問新聞/時事/近期是否正確的資訊 → 必須用 search。
-3) 需要運算的題目 → 必須用 calculator。
-4) 其餘一般知識、常識 → 直接回答。
-5) 僅輸出以下其中一種 JSON：
-   需要工具時：
+規則：
+1) 使用者要求選擇、切換、打開、查看某個部門或產業 → 必須用 select_globe_item。
+2) 問時間 → 用 today。
+3) 問新聞/時事 → 用 search。
+4) 要計算 → 用 calculator。
+5) 其餘一般知識、常識 → 直接回答。
+6) 輸出格式固定：
+   若需工具：
      {"tool":"<tool_name>","args":{...}}
-   不需要工具時：
+   若不需工具：
      {"final_answer":"你的中文回答"}
-
-務必使用中文，務必只輸出 JSON。
 """
 
 def ask_llm(user_input: str) -> str:
