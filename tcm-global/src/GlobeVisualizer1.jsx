@@ -490,6 +490,7 @@ function Scene({ onSelect }) {
 // ===================== Root：把選取狀態提升 + 側欄 =====================
 export default function GlobeVisualizer() {
   const [selection, setSelection] = useState(null);
+  const [lastAiSelection, setLastAiSelection] = useState(null); // 紀錄上次AI結果
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -498,9 +499,11 @@ export default function GlobeVisualizer() {
         if (!res.ok) return;
         const data = await res.json();
 
-        // ✅ 修正這裡的 key
-        if (data && data.selection) {
+        // ✅ 若有新的 AI 指令（內容與上次不同），才套用一次
+        if (data && data.selection && data.selection !== lastAiSelection) {
           setSelection({ type: "sector", name: data.selection });
+          setLastAiSelection(data.selection);
+          console.log("⚡ AI selection updated:", data.selection);
         }
       } catch (err) {
         console.warn("❌ 無法從伺服器取得選擇資料", err);
@@ -508,7 +511,7 @@ export default function GlobeVisualizer() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [lastAiSelection]);
 
   return (
     <>
@@ -523,9 +526,9 @@ export default function GlobeVisualizer() {
         </Suspense>
       </Canvas>
 
-      {/* 右側資訊欄（Canvas 外層固定定位，不影響 3D 互動） */}
       <SidePanel selection={selection} onClear={() => setSelection(null)} />
     </>
   );
 }
+
 
