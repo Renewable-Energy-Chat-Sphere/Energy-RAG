@@ -15,12 +15,13 @@ const LAYER_LOD1 = 2; // 用於 LOD1 點擊
 
 // 五大部門（LOD0）
 const SECTORS = [
-  { key: "agri",    name: "農業",  color: 0x48d99a },
-  { key: "ind",     name: "工業",  color: 0xffa15a },
-  { key: "trans",   name: "運輸",  color: 0x5fbef2 },
-  { key: "service", name: "服務",  color: 0x8b6cff },
-  { key: "res",     name: "住宅",  color: 0xff6f9d },
+  { key: "agri",    name: "農業",  color: 0xdbeaf0 },
+  { key: "ind",     name: "工業",  color: 0xdfedf3 },
+  { key: "trans",   name: "運輸",  color: 0xe3f0f5 },
+  { key: "service", name: "服務",  color: 0xe7f3f7 },
+  { key: "res",     name: "住宅",  color: 0xebf6f9 },
 ];
+
 
 // 第二層：各部門子項目（緯度垂直切分）
 const INDUSTRIES = {
@@ -163,8 +164,8 @@ function TransparentGlobe() {
       <sphereGeometry args={[RADIUS, 96, 96]} />
       <meshPhongMaterial
         ref={matRef}
-        color={0x9eb6d8}
-        emissive={0xaac6ff}
+        color={0xeef7ff}
+        emissive={0xb7d4e6}
         specular={0xffffff}
         shininess={90}
         transparent
@@ -184,7 +185,7 @@ function SoftTerminator({ strength = 0.55, sunDir = new THREE.Vector3(1,0.4,0.2)
         transparent blending={THREE.NormalBlending} depthWrite={false}
         uniforms={uniforms}
         vertexShader={`varying vec3 vNormal; void main(){ vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`}
-        fragmentShader={`uniform vec3 sun; uniform float strength; varying vec3 vNormal; void main(){ float nd=dot(normalize(vNormal), normalize(sun)); float shade=smoothstep(-0.4,0.2,nd); float a=(1.0-shade)*strength; gl_FragColor=vec4(0.0,0.0,0.0,a); }`}
+        fragmentShader={`uniform vec3 sun; uniform float strength; varying vec3 vNormal; void main(){ float nd=dot(normalize(vNormal), normalize(sun)); float shade=smoothstep(-0.4,0.2,nd); float a=(1.0-shade)*strength; gl_FragColor = vec4(0.4,0.5,0.6,a * 0.6); }`}
       />
     </mesh>
   );
@@ -215,7 +216,7 @@ function FullCoverSectors({ fade01 = 0, onSelect }) {
         const geo = sphericalQuadGeometry({ ...b, r: RADIUS + 0.003, seg: 64 });
         const mat = new THREE.MeshStandardMaterial({
           color: b.sector.color, roughness: 0.85, metalness: 0, transparent: true,
-          opacity: lerp(0.9, 0.25, fade01), depthWrite: false, polygonOffset: true,
+          opacity: lerp(0.22, 0.04, fade01), depthWrite: false, polygonOffset: true,
           polygonOffsetFactor: -1, polygonOffsetUnits: -1,
         });
         const midLon = (b.lon0 + b.lon1) / 2;
