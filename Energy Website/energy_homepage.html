@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Energy Sphere · 智慧能源決策平台</title>
+
+    <!-- 正確引用 favicon（放在 /images/favicon.png） -->
+    <link rel="shortcut icon" href="images/logo.png" type="image/png">
+    <link rel="icon" href="images/favicon.png" type="image/png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* -----------------------------
+   Global Reset + Variables
+------------------------------*/
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, sans-serif;
+        }
+
+        :root {
+            --blue: #0d2c6e;
+            /* EnerSphere 藍（深、穩、專業） */
+            --blue-light: #3b82f6;
+            /* 輔助藍 */
+            --orange: #f97316;
+            /* EnerSphere 橘（主色） */
+            --gray-100: #f7f9fc;
+            /* 卡片背景 */
+            --gray-200: #e5e7eb;
+            /* 邊框 */
+            --gray-500: #6b7280;
+            /* 次要文字 */
+            --text-dark: #0f172a;
+            /* 主文字 */
+            --white: #ffffff;
+        }
+
+        body {
+            background: var(--white);
+            color: var(--text-dark);
+            line-height: 2;
+        }
+
+        /* -------------------------------------
+   Header (BP / IEA 白底乾淨風格)
+--------------------------------------*/
+        header {
+            width: 100%;
+            padding: 16px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-200);
+            background: #0d2c6e;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--blue);
+            letter-spacing: 0.5px;
+        }
+
+        nav a {
+            margin-left: 32px;
+            text-decoration: none;
+            font-weight: 500;
+            color: #ffffff;
+            transition: 0.2s ease;
+        }
+
+        nav a:hover {
+            color: var(--orange);
+        }
+
+        /* -------------------------------------
+   Hero Section（IEA / Electricity Map 風）
+--------------------------------------*/
+        .hero {
+            padding: 160px 20px 120px;
+            text-align: center;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .hero h1 {
+            font-size: 46px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, var(--blue), var(--orange));
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--gray-500);
+            margin-bottom: 32px;
+        }
+
+        .hero button {
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            background: var(--orange);
+            color: white;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .hero button:hover {
+            opacity: 0.85;
+        }
+
+        /* -------------------------------------
+   Section Wrappers（BP 白底乾淨 cards）
+--------------------------------------*/
+        .section {
+            max-width: 1200px;
+            margin: auto;
+            padding: 80px 40px;
+        }
+
+        .section h2 {
+            font-size: 32px;
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 48px;
+        }
+
+        /* -------------------------------------
+   Cards (IEA 資料圖表平台風格)
+--------------------------------------*/
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .card {
+            background: #fcf2eb;
+            padding: 32px;
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+            transition: 0.25s ease;
+        }
+
+        .card:hover {
+            background: #f6decb;
+            /* 柔和橘色 hover，不是白色 */
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: var(--gray-500);
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <div class="logo" style="display:flex; align-items:center; gap:14px;">
+        <img src="images/logo.png" 
+             alt="EnerSphere TW Logo" 
+             style="height:70px; width:auto;">  <!-- ✔ 放大到 70px -->
+        <span style="font-size:26px; font-weight:700; color:#f97316;">
+            EnerSphere TW
+        </span>
+    </div>
+
+    <nav>
+        <a href="#features">系統特色</a>
+        <a href="#viz">能源視覺化</a>
+        <a href="#rag">智慧查詢</a>
+        <a href="#contact">聯絡我們</a>
+    </nav>
+</header>
+
+
+    <!-- ============================
+     HERO BANNER 像 BP 的版本
+============================= -->
+    <section class="hero-banner"
+        style="position:relative; width:100%; height:340px; background:url('https://images.unsplash.com/photo-1509395176047-4a66953fd231?auto=format&fit=crop&w=1600&q=60') center/cover no-repeat; margin-top:70px;">
+        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.45);"></div>
+
+        <div style="position:absolute; bottom:40px; left:60px; color:white; max-width:600px;">
+            <h1 style="font-size:42px; font-weight:700; margin-bottom:10px;">多模態視覺能源球 · 智慧代理系統</h1>
+            <p style="font-size:18px; opacity:.9;">結合能源資料、三維視覺化與 AI RAG 的新一代能源決策平台。</p>
+        </div>
+    </section>
+
+    <section class="hero">
+        <h1>多模態視覺能源球 · 智慧代理系統</h1>
+        <p>適用一般民眾、能源管理單位與研究人員的智慧能源決策平台。</p>
+        <button>登入/註冊</button>
+    </section>
+
+    <section id="features" class="section">
+        <h2 style="font-size:32px; font-weight:600; text-align:center;">系統特色</h2>
+        <div class="cards">
+            <div class="card">
+                <h3 style="color:var(--brand-blue);">3D 能源視覺球</h3>
+                <p>以 Google Earth 風格呈現能源供給、需求與轉換，讓一般民眾也能快速理解全局狀況。</p>
+            </div>
+            <div class="card">
+                <h3 style="color:var(--brand-orange);">智慧 RAG 查詢</h3>
+                <p>整合能源平衡表、氣象資料、電力統計，研究人員可直接用自然語言取得深度數據分析。</p>
+            </div>
+            <div class="card">
+                <h3 style="color:var(--brand-green);">決策輔助分析</h3>
+                <p>能源管理單位可透過趨勢分析、供需異常預警與區域比較，提升治理效率。</p>
+            </div>
+        </div>
+    </section>
+
+    <footer style="width:100%; background:#0a2359; color:white; padding:40px 60px; margin-top:60px;">
+        <div style="max-width:1200px; margin:auto; display:flex; justify-content:space-between; flex-wrap:wrap;">
+            <div style="width:250px;">
+                <h3 style="font-size:20px; font-weight:700; margin-bottom:12px;">EnerSphere TW</h3>
+                <p style="font-size:14px; opacity:.8; line-height:1.6;">多模態視覺能源球系統，提供能源資料查詢、三維視覺化與智慧代理決策輔助。</p>
+            </div>
+
+            <div>
+                <h4 style="font-size:16px; margin-bottom:10px;">快速連結</h4>
+                <p><a href="#features" style="color:white; text-decoration:none; opacity:.85;">系統特色</a></p>
+                <p><a href="#viz" style="color:white; text-decoration:none; opacity:.85;">能源視覺化</a></p>
+                <p><a href="#rag" style="color:white; text-decoration:none; opacity:.85;">智慧查詢</a></p>
+            </div>
+
+            <div>
+                <h4 style="font-size:16px; margin-bottom:10px;">聯絡資訊</h4>
+                <p style="opacity:.85;">E-mail：support@enersphere.tw</p>
+                <p style="opacity:.85;">地址：Taiwan</p>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:30px; font-size:14px; opacity:.6;">© 2025 EnerSphere TW. All rights
+            reserved.</div>
+    </footer>
+
+</body>
+
+</html>
