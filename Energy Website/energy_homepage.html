@@ -11,7 +11,6 @@
     <link rel="icon" href="images/favicon.png" type="image/png">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <style>
         /* -----------------------------
    Global Reset + Variables
@@ -25,30 +24,64 @@
 
         :root {
             --blue: #0d2c6e;
-            /* EnerSphere 藍（深、穩、專業） */
             --blue-light: #3b82f6;
-            /* 輔助藍 */
             --orange: #f97316;
-            /* EnerSphere 橘（主色） */
             --gray-100: #f7f9fc;
-            /* 卡片背景 */
             --gray-200: #e5e7eb;
-            /* 邊框 */
             --gray-500: #6b7280;
-            /* 次要文字 */
             --text-dark: #0f172a;
-            /* 主文字 */
             --white: #ffffff;
         }
 
         body {
-            background: var(--white);
-            color: var(--text-dark);
+            background: var(--bg);
+            color: var(--text);
             line-height: 2;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 暗色模式柔順動畫 */
+        body,
+        header,
+        footer,
+        .card,
+        .hero-banner,
+        .section {
+            transition: background-color 0.35s ease,
+                color 0.35s ease,
+                border-color 0.35s ease,
+                box-shadow 0.35s ease;
+        }
+
+        #themeToggle {
+            transition: transform 0.3s ease,
+                background-color 0.3s ease,
+                color 0.3s ease;
+        }
+
+        #themeToggle:active {
+            transform: scale(0.8);
+        }
+
+        body.dark,
+        body {
+            transition: background 0.35s ease,
+                color 0.35s ease;
+        }
+
+
+        body.dark {
+            --bg: #1f2937;
+            --text: #e5e7eb;
+            --gray-500: #cbd5e1;
+            --card-bg: #374151;
+            --card-border: #4b5563;
+            --footer-bg: #0f172a;
         }
 
         /* -------------------------------------
-   Header (BP / IEA 白底乾淨風格)
+   Header
 --------------------------------------*/
         header {
             width: 100%;
@@ -61,7 +94,13 @@
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 10;
+            z-index: 100;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        header.scrolled {
+            background-color: #081c44;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
         }
 
         .logo {
@@ -71,20 +110,178 @@
             letter-spacing: 0.5px;
         }
 
-        nav a {
-            margin-left: 32px;
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        nav a,
+        nav .dropdown-btn {
             text-decoration: none;
             font-weight: 500;
             color: #ffffff;
-            transition: 0.2s ease;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            position: relative;
+            padding: 4px 0;
+            user-select: none;
         }
 
-        nav a:hover {
+        nav a:hover,
+        nav .dropdown-btn:hover {
             color: var(--orange);
         }
 
+        /* 下拉選單 */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 110%;
+            left: 0;
+            background: #0d2c6e;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            min-width: 180px;
+            z-index: 150;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .dropdown.show .dropdown-content {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .dropdown-content a {
+            display: block;
+            padding: 12px 20px;
+            color: white;
+            font-weight: 400;
+            white-space: nowrap;
+            transition: background-color 0.25s ease;
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--orange);
+            color: white;
+        }
+
         /* -------------------------------------
-   Hero Section（IEA / Electricity Map 風）
+   漢堡選單
+--------------------------------------*/
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 28px;
+            height: 22px;
+            cursor: pointer;
+            z-index: 200;
+        }
+
+        .hamburger div {
+            width: 100%;
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger.active div:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active div:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active div:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* 手機版 nav */
+        @media (max-width: 768px) {
+            nav {
+                position: fixed;
+                top: 70px;
+                right: 0;
+                background: rgba(13, 44, 110, 0.95);
+                height: calc(100vh - 70px);
+                width: 260px;
+                flex-direction: column;
+                padding: 40px 24px;
+                gap: 24px;
+                transform: translateX(100%);
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: -6px 0 24px rgba(0, 0, 0, 0.3);
+                border-radius: 0 0 0 16px;
+            }
+
+            nav.open {
+                transform: translateX(0);
+            }
+
+            nav a,
+            nav .dropdown-btn {
+                font-size: 18px;
+                margin-left: 0;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            /* 下拉選單內容手機版調整 */
+            .dropdown-content {
+                position: relative;
+                top: 0;
+                left: 0;
+                box-shadow: none;
+                background: transparent;
+                opacity: 1 !important;
+                transform: none !important;
+                pointer-events: auto !important;
+                min-width: auto;
+                padding-left: 16px;
+                display: none;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .dropdown.show .dropdown-content {
+                display: flex;
+            }
+        }
+
+        /* 漢堡選單遮罩 */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 150;
+        }
+
+        #overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* -------------------------------------
+   Hero Section
 --------------------------------------*/
         .hero {
             padding: 160px 20px 120px;
@@ -117,15 +314,43 @@
             background: var(--orange);
             color: white;
             cursor: pointer;
-            transition: 0.2s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            outline: none;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
         }
 
         .hero button:hover {
-            opacity: 0.85;
+            transform: scale(1.07);
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.8);
+        }
+
+        /* 點擊波紋 */
+        .hero button:active::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            transform: translate(-50%, -50%) scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
         }
 
         /* -------------------------------------
-   Section Wrappers（BP 白底乾淨 cards）
+   Section Wrappers
 --------------------------------------*/
         .section {
             max-width: 1200px;
@@ -141,7 +366,7 @@
         }
 
         /* -------------------------------------
-   Cards (IEA 資料圖表平台風格)
+   Cards
 --------------------------------------*/
         .cards {
             display: grid;
@@ -154,53 +379,266 @@
             padding: 32px;
             border-radius: 16px;
             border: 1px solid var(--gray-200);
-            transition: 0.25s ease;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s ease,
+                background-color 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+            cursor: default;
+            will-change: transform, opacity;
+        }
+
+        .card.active {
+            opacity: 1;
+            transform: translateY(0);
+            animation: bounceIn 0.6s ease forwards;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: translateY(30px);
+            }
+
+            60% {
+                transform: translateY(-10px);
+            }
+
+            80% {
+                transform: translateY(5px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
         }
 
         .card:hover {
             background: #f6decb;
-            /* 柔和橘色 hover，不是白色 */
-            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 12px 28px rgba(249, 115, 22, 0.3);
+            transform: translateY(-6px);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
         }
 
+        /* 卡片標題懸浮 */
         .card h3 {
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 12px;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+            cursor: default;
+            user-select: none;
+        }
+
+        .card h3:hover {
+            transform: scale(1.15);
+            text-shadow: 0 0 12px rgba(249, 115, 22, 0.9);
+            color: var(--orange);
         }
 
         .card p {
             color: var(--gray-500);
             font-size: 15px;
         }
+
+        /* Accordion */
+        .accordion {
+            cursor: pointer;
+            padding: 12px 0;
+            font-weight: 600;
+            color: var(--blue);
+            border-bottom: 1px solid var(--gray-200);
+            transition: color 0.3s ease;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .accordion:hover {
+            color: var(--orange);
+        }
+
+        .accordion::after {
+            content: "▼";
+            font-size: 14px;
+            transition: transform 0.3s ease;
+            color: var(--orange);
+            margin-left: 8px;
+        }
+
+        .accordion.active::after {
+            transform: rotate(-180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+            color: var(--gray-500);
+            font-size: 14px;
+            padding-left: 12px;
+            margin-bottom: 0;
+        }
+
+        .accordion-content.open {
+            max-height: 300px;
+            padding-top: 12px;
+            margin-bottom: 16px;
+        }
+
+        /* -------------------------------------
+   Footer
+--------------------------------------*/
+        footer {
+            width: 100%;
+            background: #0a2359;
+            color: white;
+            padding: 40px 60px;
+            margin-top: 60px;
+        }
+
+        footer div {
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        footer h3,
+        footer h4 {
+            margin-bottom: 12px;
+        }
+
+        footer p,
+        footer a {
+            font-size: 14px;
+            opacity: 0.85;
+            line-height: 1.6;
+            color: white;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        footer .copyright {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+
+        /* -------------------------------------
+   回到頂部按鈕
+--------------------------------------*/
+        #scrollTopBtn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: var(--orange);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(249, 115, 22, 0.7);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        #scrollTopBtn.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #scrollTopBtn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 10px 28px rgba(249, 115, 22, 0.9);
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 900px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 16px 20px;
+            }
+
+            footer {
+                padding: 40px 20px;
+            }
+
+            footer div {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
     </style>
 </head>
 
 <body>
-<header>
-    <div class="logo" style="display:flex; align-items:center; gap:14px;">
-        <img src="images/logo.png" 
-             alt="EnerSphere TW Logo" 
-             style="height:70px; width:auto;">  <!-- ✔ 放大到 70px -->
-        <span style="font-size:26px; font-weight:700; color:#f97316;">
-            EnerSphere TW
-        </span>
-    </div>
+    <header>
+        <div class="logo" style="display:flex; align-items:center; gap:14px;">
+            <img src="images/logo.png" alt="EnerSphere TW Logo" style="height:70px; width:auto;">
+            <span style="font-size:26px; font-weight:700; color:#f97316;">
+                EnerSphere TW
+            </span>
+        </div>
 
-    <nav>
-        <a href="#features">系統特色</a>
-        <a href="#viz">能源視覺化</a>
-        <a href="#rag">智慧查詢</a>
-        <a href="#contact">聯絡我們</a>
-    </nav>
-</header>
+        <div class="hamburger" aria-label="開啟選單" tabindex="0" role="button">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
 
+        <nav>
+            <a href="#features">系統特色</a>
 
-    <!-- ============================
-     HERO BANNER 像 BP 的版本
-============================= -->
+            <div class="dropdown">
+                <div class="dropdown-btn" tabindex="0">能源視覺化 ▼</div>
+                <div class="dropdown-content">
+                    <a href="#viz">視覺化總覽</a>
+                    <a href="#viz-detail1">視覺化細節1</a>
+                    <a href="#viz-detail2">視覺化細節2</a>
+                </div>
+            </div>
+
+            <a href="#rag">智慧查詢</a>
+            <a href="#contact">聯絡我們</a>
+        </nav>
+        <!-- ✨ 深色模式切換按鈕 -->
+        <div id="themeToggle">🌙</div>
+    </header>
+
+    <!-- 漢堡選單遮罩 -->
+    <div id="overlay"></div>
+
+    <!-- HERO BANNER -->
     <section class="hero-banner"
-        style="position:relative; width:100%; height:340px; background:url('https://images.unsplash.com/photo-1509395176047-4a66953fd231?auto=format&fit=crop&w=1600&q=60') center/cover no-repeat; margin-top:70px;">
+        style="position:relative; width:100%; height:340px; background:url('https://tse4.mm.bing.net/th/id/OIP.xBTpZMfmXk8z6uNbQHNZUgHaE8?rs=1&pid=ImgDetMain&o=7&rm=3') center/cover no-repeat; margin-top:70px;">
         <div style="position:absolute; inset:0; background:rgba(0,0,0,0.45);"></div>
 
         <div style="position:absolute; bottom:40px; left:60px; color:white; max-width:600px;">
@@ -221,20 +659,57 @@
             <div class="card">
                 <h3 style="color:var(--brand-blue);">3D 能源視覺球</h3>
                 <p>以 Google Earth 風格呈現能源供給、需求與轉換，讓一般民眾也能快速理解全局狀況。</p>
+                <div class="accordion">更多細節說明</div>
+                <div class="accordion-content">
+                    <p>3D 能源視覺球使用最新三維技術，結合實時數據，提供沉浸式體驗。</p>
+                </div>
             </div>
             <div class="card">
                 <h3 style="color:var(--brand-orange);">智慧 RAG 查詢</h3>
                 <p>整合能源平衡表、氣象資料、電力統計，研究人員可直接用自然語言取得深度數據分析。</p>
+                <div class="accordion">更多細節說明</div>
+                <div class="accordion-content">
+                    <p>智慧 RAG 查詢結合多源資料，提供即時且精準的分析結果。</p>
+                </div>
             </div>
             <div class="card">
                 <h3 style="color:var(--brand-green);">決策輔助分析</h3>
                 <p>能源管理單位可透過趨勢分析、供需異常預警與區域比較，提升治理效率。</p>
+                <div class="accordion">更多細節說明</div>
+                <div class="accordion-content">
+                    <p>決策輔助分析提供多維度數據視覺化，幫助快速判斷與決策。</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <footer style="width:100%; background:#0a2359; color:white; padding:40px 60px; margin-top:60px;">
-        <div style="max-width:1200px; margin:auto; display:flex; justify-content:space-between; flex-wrap:wrap;">
+    <section id="viz" class="section">
+        <h2>能源視覺化總覽</h2>
+        <p style="text-align:center; color:var(--gray-500);">這裡是能源視覺化總覽內容。</p>
+    </section>
+
+    <section id="viz-detail1" class="section">
+        <h2>視覺化細節 1</h2>
+        <p style="text-align:center; color:var(--gray-500);">視覺化細節 1 的說明文字。</p>
+    </section>
+
+    <section id="viz-detail2" class="section">
+        <h2>視覺化細節 2</h2>
+        <p style="text-align:center; color:var(--gray-500);">視覺化細節 2 的說明文字。</p>
+    </section>
+
+    <section id="rag" class="section">
+        <h2>智慧查詢</h2>
+        <p style="text-align:center; color:var(--gray-500);">智慧查詢功能介紹。</p>
+    </section>
+
+    <section id="contact" class="section">
+        <h2>聯絡我們</h2>
+        <p style="text-align:center; color:var(--gray-500);">歡迎透過以下方式聯絡我們。</p>
+    </section>
+
+    <footer>
+        <div>
             <div style="width:250px;">
                 <h3 style="font-size:20px; font-weight:700; margin-bottom:12px;">EnerSphere TW</h3>
                 <p style="font-size:14px; opacity:.8; line-height:1.6;">多模態視覺能源球系統，提供能源資料查詢、三維視覺化與智慧代理決策輔助。</p>
@@ -242,9 +717,9 @@
 
             <div>
                 <h4 style="font-size:16px; margin-bottom:10px;">快速連結</h4>
-                <p><a href="#features" style="color:white; text-decoration:none; opacity:.85;">系統特色</a></p>
-                <p><a href="#viz" style="color:white; text-decoration:none; opacity:.85;">能源視覺化</a></p>
-                <p><a href="#rag" style="color:white; text-decoration:none; opacity:.85;">智慧查詢</a></p>
+                <p><a href="#features">系統特色</a></p>
+                <p><a href="#viz">能源視覺化</a></p>
+                <p><a href="#rag">智慧查詢</a></p>
             </div>
 
             <div>
@@ -253,10 +728,173 @@
                 <p style="opacity:.85;">地址：Taiwan</p>
             </div>
         </div>
-        <div style="text-align:center; margin-top:30px; font-size:14px; opacity:.6;">© 2025 EnerSphere TW. All rights
-            reserved.</div>
+        <div class="copyright">© 2025 EnerSphere TW. All rights reserved.</div>
     </footer>
+
+    <!-- 回到頂部按鈕 -->
+    <button id="scrollTopBtn" aria-label="回到頂部">↑</button>
+
+    <script>
+        // header 滾動變色
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // 漢堡選單開關
+        const hamburger = document.querySelector('.hamburger');
+        const nav = document.querySelector('nav');
+        const overlay = document.getElementById('overlay');
+
+        function closeMenu() {
+            hamburger.classList.remove('active');
+            nav.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+
+        hamburger.addEventListener('click', () => {
+            const isActive = hamburger.classList.toggle('active');
+            nav.classList.toggle('open');
+            overlay.classList.toggle('active', isActive);
+        });
+
+        hamburger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const isActive = hamburger.classList.toggle('active');
+                nav.classList.toggle('open');
+                overlay.classList.toggle('active', isActive);
+            }
+        });
+
+        overlay.addEventListener('click', closeMenu);
+
+        // 下拉選單切換
+        const dropdown = document.querySelector('.dropdown');
+        const dropdownBtn = dropdown.querySelector('.dropdown-btn');
+
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+
+        window.addEventListener('click', () => {
+            dropdown.classList.remove('show');
+        });
+
+        dropdownBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                dropdown.classList.toggle('show');
+            }
+        });
+
+        // footer 快速連結平滑滾動
+        document.querySelectorAll('footer a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+                // 手機版點選後關閉漢堡選單
+                if (nav.classList.contains('open')) {
+                    closeMenu();
+                }
+            });
+        });
+
+        // 使用 Intersection Observer 監聽 .card 元素是否進入視窗，觸發滑動動畫
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+
+        // Accordion 展開收合
+        document.querySelectorAll('.accordion').forEach(acc => {
+            acc.addEventListener('click', () => {
+                const content = acc.nextElementSibling;
+                const isOpen = content.classList.contains('open');
+                if (isOpen) {
+                    content.classList.remove('open');
+                    acc.classList.remove('active');
+                } else {
+                    content.classList.add('open');
+                    acc.classList.add('active');
+                }
+            });
+        });
+
+        // 回到頂部按鈕
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollTopBtn.classList.add('show');
+            } else {
+                scrollTopBtn.classList.remove('show');
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+    </script>
+    <script>
+        // ✨ Dark Mode JS 放在這裡（建議所有 JS 的最上方或最下方）
+
+        const themeToggle = document.getElementById("themeToggle");
+        const body = document.body;
+
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+            body.classList.add("dark");
+            themeToggle.textContent = "☀️";
+        } else if (savedTheme === "light") {
+            body.classList.remove("dark");
+            themeToggle.textContent = "🌙";
+        } else {
+            if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                body.classList.add("dark");
+                themeToggle.textContent = "☀️";
+            }
+        }
+
+        themeToggle.addEventListener("click", () => {
+            body.classList.toggle("dark");
+            if (body.classList.contains("dark")) {
+                themeToggle.textContent = "☀️";
+                localStorage.setItem("theme", "dark");
+            } else {
+                themeToggle.textContent = "🌙";
+                localStorage.setItem("theme", "light");
+            }
+        });
+    </script>
 
 </body>
 
-</html>
+</html>變成這樣後 但是底色沒變
