@@ -218,6 +218,90 @@
 
             flex: 1;   /* ⭐ 讓主區塊自動填滿剩餘空間 */
         }
+        /*Energy Sphere 科技展示區*/
+        .sphere-section {
+            width: 100%;
+            margin: 100px auto;
+            padding: 40px 28px;
+            text-align: center;
+        }
+
+        .sphere-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            background: linear-gradient(to right, #3b82f6, #f97316);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        /* 科技感展示面板 */
+        .sphere-panel {
+            max-width: 1080px;
+            height: 600px;
+            margin: 0 auto;
+            border-radius: 20px;
+            padding: 12px;
+
+            background: rgba(13, 44, 110, 0.55); /* 深藍透明感 */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            position: relative;
+            overflow: hidden;
+
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* glow 邊框科技感 */
+        .sphere-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.6), rgba(249,115,22,0.6));
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+                    mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* 球體容器（給你的 Canvas 放置區） */
+        #sphere-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        /* 說明文字 */
+        .sphere-hint {
+            margin-top: 18px;
+            font-size: 15px;
+            opacity: 0.85;
+            color: var(--gray-500);
+        }
+
+        /* 深色模式特化 */
+        body.dark .sphere-panel {
+            background: rgba(55, 65, 81, 0.45);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        body.dark .sphere-hint {
+            color: #cbd5e1;
+        }
+
 
         /* -------------------------------------
    漢堡選單
@@ -489,6 +573,17 @@
         <!-- 漢堡選單遮罩 -->
         <div id="overlay"></div>
 
+        <section id="energy-sphere-section" class="sphere-section">
+            <h2 class="sphere-title">能源視覺化 · Energy Sphere</h2>
+
+            <div class="sphere-panel">
+                <!-- ⭐ 你未來放 Three.js、R3F、<canvas> 的位置 ⭐ -->
+                <div id="sphere-container"></div>
+            </div>
+
+            <p class="sphere-hint">此區域將展示多模態能源視覺化之互動球體模型。</p>
+        </section>
+
         
     </main>
     
@@ -611,7 +706,7 @@
                 }
             });
         });
-        
+
         // 使用 Intersection Observer 監聽 .card 元素是否進入視窗，觸發滑動動畫
         document.addEventListener('DOMContentLoaded', () => {
             const cards = document.querySelectorAll('.card');
