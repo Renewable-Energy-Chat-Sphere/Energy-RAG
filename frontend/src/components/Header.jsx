@@ -127,7 +127,8 @@ export default function Header() {
         <div className="nav-right">
 
           <nav>
-            <Link to="/">系統特色</Link>
+            
+            <a href="#features">系統特色</a>
 
             {/* Dropdown */}
             <div className="dropdown">
@@ -144,6 +145,7 @@ export default function Header() {
             <Link to="/rag">智慧查詢</Link>
             <a href="#contact">聯絡我們</a>
           </nav>
+
 
           {/* 深色模式 */}
           <div id="themeToggle">🌙</div>
