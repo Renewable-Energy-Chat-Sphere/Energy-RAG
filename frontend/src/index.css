@@ -1,6 +1,9 @@
 /* -----------------------------
    Global Reset + Variables
 ------------------------------*/
+/* -----------------------------
+   Global Reset + Variables
+------------------------------*/
 * {
     margin: 0;
     padding: 0;
@@ -20,6 +23,8 @@
     --text-dark: #0f172a;
     --white: #ffffff;
 
+    /* ⭐ Header 高度 */
+    --header-h: 80px;/* 你的主 header */
     /* ⭐⭐ 淺色主題預設 ⭐⭐ */
     --bg: #ffffff;
     --text: #0f172a;
@@ -80,10 +85,15 @@ footer,
     width: 100%;
     flex: 1;
     position: relative;
+    margin-top: 100px;
+    /* ⭐⭐ 最終問題的重點：撐滿畫面剩餘空間 ⭐⭐ */
+    min-height: calc(100vh - var(--header-h));
+
     background: var(--bg);
     color: var(--text);
     transition: background 0.35s ease, color 0.35s ease;
 }
+
 
 /* -----------------------------
    Header
