@@ -1,8 +1,38 @@
 import { useEffect } from "react";
 
+// =============================
+// 返回頂部按鈕（⇧）
+// =============================
+function BackToTopButton() {
+  useEffect(() => {
+    const btn = document.querySelector(".back-to-top");
+
+    const onScroll = () => {
+      if (window.scrollY > 300) {
+        btn.classList.add("show");
+      } else {
+        btn.classList.remove("show");
+      }
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <button className="back-to-top" onClick={scrollToTop}>
+      ↑
+    </button>
+  );
+}
+
 export default function Home() {
   useEffect(() => {
-    // ⭐ 卡片進場動畫
+    // 卡片進場動畫
     const cards = document.querySelectorAll(".card");
     const observerOptions = { root: null, threshold: 0.15 };
 
@@ -17,7 +47,7 @@ export default function Home() {
 
     cards.forEach((c) => observer.observe(c));
 
-    // ⭐ Accordion
+    // Accordion
     document.querySelectorAll(".accordion").forEach((acc) => {
       acc.addEventListener("click", () => {
         const content = acc.nextElementSibling;
@@ -41,10 +71,25 @@ export default function Home() {
           marginTop: "70px",
         }}
       >
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }}></div>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+          }}
+        ></div>
 
-        <div style={{ position: "absolute", bottom: "40px", left: "60px", color: "white" }}>
-          <h1 style={{ fontSize: "40px", fontWeight: 700, marginBottom: "40px" }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: "40px",
+            left: "60px",
+            color: "white",
+          }}
+        >
+          <h1
+            style={{ fontSize: "40px", fontWeight: 700, marginBottom: "40px" }}
+          >
             多模態視覺能源球 · 智慧代理系統
           </h1>
           <p style={{ fontSize: "18px", opacity: 0.9 }}>
@@ -62,7 +107,9 @@ export default function Home() {
 
       {/* FEATURES */}
       <section id="features" className="section">
-        <h2 style={{ fontSize: "32px", fontWeight: 600, textAlign: "center" }}>系統特色</h2>
+        <h2 style={{ fontSize: "32px", fontWeight: 600, textAlign: "center" }}>
+          系統特色
+        </h2>
 
         <div className="cards">
           {/* Card 1 */}
@@ -132,6 +179,9 @@ export default function Home() {
           歡迎透過以下方式聯絡我們。
         </p>
       </section>
+
+      {/* ✔ 返回頂部按鈕 */}
+      <BackToTopButton />
     </>
   );
 }
