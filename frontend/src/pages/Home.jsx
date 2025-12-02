@@ -28,7 +28,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main id="main-content">
+    <>
       {/* HERO BANNER */}
       <section
         className="hero-banner"
@@ -132,6 +132,6 @@ export default function Home() {
           歡迎透過以下方式聯絡我們。
         </p>
       </section>
-    </main>
+    </>
   );
 }
