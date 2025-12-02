@@ -385,20 +385,16 @@ function SidePanel({ selection, onClear }) {
   return (
     <div
       style={{
-        position: "fixed",
-        right: 16,
-        top: 16,
-        bottom: 16,
-        width: 320,
+        position: "relative",
+        width: "100%",
         background: "#ffffff",
         borderRadius: 12,
         boxShadow:
-          "0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)",
+          "0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
         padding: 16,
         overflow: "auto",
-        pointerEvents: "auto",
+        fontFamily: "system-ui",
         border: "1px solid rgba(0,0,0,0.06)",
-        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
@@ -515,21 +511,34 @@ export default function GlobeVisualizer() {
   }, [lastAiSelection]);
 
   return (
-    <>
+    <div style={{ width: "100%", height: "100%", display: "flex" }}>
+        
+        {/* 左側 Globe 區域 */}
+        <div style={{ flex: 1, height: "100%", position: "relative" }}>
         <Canvas
-            style={{ width: "100%", height: "100%", position: "absolute" }}
+            style={{ width: "100%", height: "100%" }}
             gl={{ antialias: true, logarithmicDepthBuffer: true }}
             dpr={[1, 2]}
             camera={{ fov: 45, near: 0.1, far: 1000 }}
+        >
+            <Suspense
+            fallback={<Html center style={{ color: "#333" }}>Loading…</Html>}
             >
-            <Suspense fallback={<Html center style={{ color: '#333' }}>Loading…</Html>}>
-                <Scene onSelect={setSelection} />
+            <Scene onSelect={setSelection} />
             </Suspense>
         </Canvas>
+        </div>
 
-      <SidePanel selection={selection} onClear={() => setSelection(null)} />
-    </>
-  );
+        {/* 右側資訊欄 */}
+        <div style={{ width: 320, paddingLeft: 20 }}>
+        <SidePanel
+            selection={selection}
+            onClear={() => setSelection(null)}
+        />
+        </div>
+        
+    </div>
+    );
 }
 
 
