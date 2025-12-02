@@ -183,7 +183,8 @@ nav .dropdown-btn:hover {
 }
 
 .dropdown-content a:hover {
-  background-color: var(--orange);
+  background-color: var(--orange-transparent);
+
 }
 
 /* 右側 nav + 深色模式 */
