@@ -1,0 +1,418 @@
+/* -----------------------------
+   Global Reset + Variables
+------------------------------*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Inter, sans-serif;
+}
+
+:root {
+    --blue: #0d2c6e;
+    --blue-light: #3b82f6;
+    --orange: #f97316;
+
+    --gray-100: #f7f9fc;
+    --gray-200: #e5e7eb;
+    --gray-500: #6b7280;
+
+    --text-dark: #0f172a;
+    --white: #ffffff;
+
+    /* ⭐⭐ 淺色主題預設 ⭐⭐ */
+    --bg: #ffffff;
+    --text: #0f172a;
+
+    --card-bg: #fcf2eb;
+    --card-border: var(--gray-200);
+
+    --footer-bg: #0a2359;
+}
+
+/* -----------------------------
+   Body
+------------------------------*/
+body {
+    background: var(--bg);
+    color: var(--text);
+    line-height: 2;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+body,
+header,
+footer,
+.card,
+.hero,
+.hero-banner,
+.section {
+    transition: background-color 0.35s ease,
+        color 0.35s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease;
+}
+
+/* -----------------------------
+   深色模式（套用在 main-content）
+------------------------------*/
+#main-content.dark {
+    --bg: #1f2937;
+    --text: #e5e7eb;
+
+    --gray-500: #cbd5e1;
+
+    --card-bg: #374151;
+    --card-border: #4b5563;
+
+    --footer-bg: #0f172a;
+}
+
+/* -----------------------------
+   Main content container
+------------------------------*/
+#main-content {
+    width: 100%;
+    flex: 1;
+    position: relative;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.35s ease, color 0.35s ease;
+}
+
+/* -----------------------------
+   Header
+------------------------------*/
+header {
+    width: 100%;
+    padding: 16px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--gray-200);
+    background: #0d2c6e;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+header.scrolled {
+    background-color: #081c44;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--white);
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    position: relative;
+}
+
+nav a,
+nav .dropdown-btn {
+    text-decoration: none;
+    font-weight: 500;
+    color: #ffffff;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 4px 0;
+    user-select: none;
+}
+
+nav a:hover,
+nav .dropdown-btn:hover {
+    color: var(--orange);
+}
+
+/* 下拉選單 */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 110%;
+    left: 0;
+    background: #0d2c6e;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    min-width: 180px;
+    z-index: 150;
+
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+.dropdown.show .dropdown-content {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.dropdown-content a {
+    padding: 12px 20px;
+    display: block;
+    white-space: nowrap;
+    color: white;
+    transition: background-color 0.25s ease;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--orange);
+}
+
+/* 右側 nav + 深色模式 */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+/* 深色模式按鈕 */
+#themeToggle {
+    font-size: 22px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: 0.25s ease;
+}
+
+#themeToggle:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.18);
+}
+
+#themeToggle:active {
+    transform: scale(0.85);
+}
+
+/* -----------------------------
+   Hero Section
+------------------------------*/
+.hero {
+    padding: 160px 20px 120px;
+    text-align: center;
+    max-width: 900px;
+    margin: auto;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.hero h1 {
+    font-size: 46px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    background: linear-gradient(to right, var(--blue), var(--orange));
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.hero p {
+    font-size: 18px;
+    color: var(--gray-500);
+    margin-bottom: 32px;
+}
+
+.hero button {
+    padding: 14px 32px;
+    font-size: 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    background: var(--orange);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
+    transition: 0.3s ease;
+}
+
+/* -----------------------------
+   Sections
+------------------------------*/
+.section {
+    max-width: 1200px;
+    margin: auto;
+    padding: 80px 40px;
+
+    background: var(--bg);
+    color: var(--text);
+}
+
+.section h2 {
+    font-size: 32px;
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 48px;
+}
+
+/* -----------------------------
+   Cards
+------------------------------*/
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 0 0 transparent;
+
+    opacity: 0;
+    transform: translateY(30px);
+    transition: 0.6s ease;
+}
+
+.card.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.card:hover {
+    box-shadow: 0 12px 28px rgba(249, 115, 22, 0.3);
+    background: #f6decb;
+}
+
+.card h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+/* 深色模式卡片 */
+#main-content.dark .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+}
+
+#main-content.dark .card:hover {
+    background: #35404f;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+/* -----------------------------
+   Accordion
+------------------------------*/
+.accordion {
+    cursor: pointer;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-200);
+    font-weight: 600;
+    color: var(--blue);
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.accordion::after {
+    content: "▼";
+    font-size: 14px;
+    margin-left: 8px;
+    color: var(--orange);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: 0.4s ease;
+    color: var(--gray-500);
+}
+
+.accordion-content.open {
+    max-height: 300px;
+    margin-top: 12px;
+}
+
+/* 深色模式 accordion */
+#main-content.dark .accordion {
+    color: #fbbf24;
+    border-bottom-color: #4b5563;
+}
+
+#main-content.dark .accordion::after {
+    color: #fbbf24;
+}
+
+/* -----------------------------
+   Footer
+------------------------------*/
+footer {
+    width: 100%;
+    height: 280px;
+    background: var(--footer-bg);
+    color: white;
+
+    padding: 60px 40px 40px;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1200px;
+    margin: auto;
+    gap: 40px;
+}
+
+.footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.footer-copy {
+    text-align: center;
+    margin-top: 40px;
+    opacity: 0.7;
+}
+
+/* -----------------------------
+   Hamburger menu
+------------------------------*/
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 28px;
+    height: 22px;
+    cursor: pointer;
+}
+
+/* -----------------------------
+   Responsive
+------------------------------*/
+@media (max-width: 900px) {
+    .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 16px 20px;
+    }
+}
