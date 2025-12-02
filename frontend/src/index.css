@@ -122,6 +122,11 @@ header.scrolled {
   color: var(--white);
 }
 
+a, .logo-link {
+  text-decoration: none !important;
+}
+
+
 nav {
   display: flex;
   align-items: center;

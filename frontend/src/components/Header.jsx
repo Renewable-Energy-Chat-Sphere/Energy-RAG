@@ -116,12 +116,16 @@ export default function Header() {
       <header>
 
         {/* 左邊 LOGO */}
-        <div className="logo" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <Link to="/" className="logo-link">
+          <div className="logo" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <img src="/images/logo.png" alt="EnerSphere TW Logo" style={{ height: "70px" }} />
           <span style={{ fontSize: "26px", fontWeight: "700", color: "#f97316" }}>
             EnerSphere TW
           </span>
-        </div>
+          </div>
+        </Link>
+
+        
 
         {/* 右邊導航 */}
         <div className="nav-right">
