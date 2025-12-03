@@ -485,9 +485,9 @@ function Scene({ onSelect }) {
 }
 
 // ===================== Root：把選取狀態提升 + 側欄 =====================
-export default function GlobeVisualizer() {
+export default function GlobeVisualizer({ onSelect }) {
   const [selection, setSelection] = useState(null);
-  const [lastAiSelection, setLastAiSelection] = useState(null); // 紀錄上次AI結果
+  const [lastAiSelection, setLastAiSelection] = useState(null);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -496,11 +496,13 @@ export default function GlobeVisualizer() {
         if (!res.ok) return;
         const data = await res.json();
 
-        // ✅ 若有新的 AI 指令（內容與上次不同），才套用一次
         if (data && data.selection && data.selection !== lastAiSelection) {
-          setSelection({ type: "sector", name: data.selection });
+          const newSel = { type: "sector", name: data.selection };
+
+          setSelection(newSel);
+          onSelect?.(newSel);   // ★ 也傳給 Global.jsx
+
           setLastAiSelection(data.selection);
-          console.log("⚡ AI selection updated:", data.selection);
         }
       } catch (err) {
         console.warn("❌ 無法從伺服器取得選擇資料", err);
@@ -512,33 +514,26 @@ export default function GlobeVisualizer() {
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex" }}>
-        
-        {/* 左側 Globe 區域 */}
-        <div style={{ flex: 1, height: "100%", position: "relative" }}>
+      <div style={{ flex: 1, height: "100%", position: "relative" }}>
         <Canvas
-            style={{ width: "100%", height: "100%" }}
-            gl={{ antialias: true, logarithmicDepthBuffer: true }}
-            dpr={[1, 2]}
-            camera={{ fov: 45, near: 0.1, far: 1000 }}
+          style={{ width: "100%", height: "100%" }}
+          gl={{ antialias: true, logarithmicDepthBuffer: true }}
+          dpr={[1, 2]}
+          camera={{ fov: 45, near: 0.1, far: 1000 }}
         >
-            <Suspense
-            fallback={<Html center style={{ color: "#333" }}>Loading…</Html>}
-            >
-            <Scene onSelect={setSelection} />
-            </Suspense>
+          <Suspense fallback={<Html center>Loading…</Html>}>
+            <Scene
+              onSelect={(v) => {
+                setSelection(v);   // 自己更新
+                onSelect?.(v);      // ★ 傳給 Global.jsx
+              }}
+            />
+          </Suspense>
         </Canvas>
-        </div>
-
-        {/* 右側資訊欄 */}
-        <div style={{ width: 320, paddingLeft: 20 }}>
-        <SidePanel
-            selection={selection}
-            onClear={() => setSelection(null)}
-        />
-        </div>
-        
+      </div>
     </div>
-    );
+  );
 }
+
 
 
