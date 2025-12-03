@@ -7,6 +7,7 @@ import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Global from "./pages/Global";
 import Rag from "./pages/Rag";
+import Contact from "./pages/Contact";
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/global", element: <Global /> },
       { path: "/rag", element: <Rag /> },
+      { path: "/contact", element: <Contact /> },
     ],
   },
 ]);

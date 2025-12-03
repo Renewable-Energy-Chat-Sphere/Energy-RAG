@@ -132,7 +132,7 @@ export default function Header() {
 
           <nav>
             
-            <a href="#features">系統特色</a>
+            <Link to="/">首頁</Link>
 
             {/* Dropdown */}
             <div className="dropdown">
@@ -141,13 +141,13 @@ export default function Header() {
               </div>
               <div className="dropdown-content">
                 <Link to="/global">視覺化總覽</Link>
-                <a href="#viz-detail1">視覺化細節1</a>
-                <a href="#viz-detail2">視覺化細節2</a>
+                <Link to="/global">視覺化細節1</Link>
+                <Link to="/global">視覺化細節2</Link>
               </div>
             </div>
 
             <Link to="/rag">智慧查詢</Link>
-            <a href="#contact">聯絡我們</a>
+            <Link to="/contact">聯絡我們</Link>
           </nav>
 
 
