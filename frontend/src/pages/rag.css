@@ -1,0 +1,258 @@
+/* ============================= */
+/*  RAG PAGE — 作用域包在 rag-page  */
+/* ============================= */
+
+.rag-page {
+    --bg: #f6f9fc;
+    --bg-soft: #f2f6fb;
+    --panel: #ffffffb3;
+    --card: #ffffffd6;
+    --border: #e5e7eb;
+    --text: #0f172a;
+    --muted: #475569;
+    --shadow: 0 10px 30px rgb(2 6 23 / 10%);
+    --shadow-soft: 0 6px 18px rgb(2 6 23 / 8%);
+    --brand: #10b981;
+    --brand-2: #22d3ee;
+    --accent: #38bdf8;
+    --danger: #ef4444;
+    --ok: #22c55e;
+    --ring: 0 0 0 3px #10b98140;
+    --radius: 16px;
+    --shadow: 0 10px 30px rgb(0 0 0 / 25%);
+    --shadow-soft: 0 6px 18px rgb(0 0 0 / 18%);
+    --glass: blur(8px) saturate(140%);
+    --maxw: 1100px;
+    
+    min-height: auto;
+    padding-bottom: 40px;
+
+    background:
+        radial-gradient(1200px 800px at 10% -10%, #10b98122, transparent 70%),
+        radial-gradient(1000px 600px at 100% 0%, #22d3ee1c, transparent 70%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+    color: var(--text);
+}
+
+/* ---------------- container ---------------- */
+.rag-page .rag-container {
+  max-width: 1100px;
+  min-width: 1;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ---------------- hero ---------------- */
+.rag-page .rag-hero {
+  position: relative;
+  margin: 20px auto 18px;
+  padding: 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  background: linear-gradient(135deg, #0ea5e980 0%, #10b98166 100%), var(--panel);
+  backdrop-filter: var(--glass);
+  box-shadow: var(--shadow);
+}
+
+.rag-page .rag-hero h1 {
+  margin: 0 0 8px;
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: 0.2px;
+  font-weight: 750;
+}
+
+.rag-page .rag-hero p {
+  margin: 0;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.rag-page .rag-badges {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rag-page .rag-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #0ea5e94d;
+  border: 1px solid #38bdf866;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rag-page .rag-badge.alt {
+  background: #10b98140;
+  border-color: #10b98166;
+}
+
+/* ---------------- tabs ---------------- */
+.rag-page .rag-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 22px 0 14px;
+}
+
+.rag-page .rag-tab {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: linear-gradient(#ffffff05, #00000010), var(--panel);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.08s ease, background 0.2s ease;
+}
+
+.rag-page .rag-tab:hover {
+  transform: translateY(-1px);
+}
+
+.rag-page .rag-tab.active {
+  border-color: #22d3ee99;
+  background: linear-gradient(180deg, #22d3ee33, #10b98126);
+  box-shadow: inset 0 0 0 1px #22d3ee55, 0 6px 16px #22d3ee1a;
+}
+
+/* ---------------- panels ---------------- */
+.rag-page .rag-panel {
+  display: none;
+}
+
+.rag-page .rag-panel.active {
+  display: block;
+}
+
+/* ---------------- card ---------------- */
+.rag-page .rag-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  backdrop-filter: var(--glass);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 18px;
+}
+
+/* ---------------- form ---------------- */
+.rag-page .rag-form {
+  display: grid;
+  gap: 12px;
+  border: 1px dashed var(--border);
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff06, transparent);
+}
+
+.rag-page label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.rag-page textarea,
+.rag-page input[type="text"],
+.rag-page input[type="url"],
+.rag-page input:not([type]) {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-size: 15px;
+}
+
+.rag-page input:focus,
+.rag-page textarea:focus {
+  box-shadow: var(--ring);
+  border-color: #10b98180;
+}
+
+/* row */
+.rag-page .rag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* button */
+.rag-page button[type="submit"] {
+  justify-self: start;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #16a34a80;
+  background: linear-gradient(180deg, #34d39966, #10b98166);
+  color: #062015;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.06s ease;
+  box-shadow: 0 8px 18px #10b9812d;
+}
+
+.rag-page button[type="submit"]:hover {
+  transform: translateY(-1px);
+}
+
+.rag-page button[type="submit"]:active {
+  transform: scale(0.97);
+}
+
+/* ---------------- chat bubbles ---------------- */
+.rag-page .rag-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 420px;
+  overflow: auto;
+  padding: 6px 2px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.rag-page .rag-bubble-wrap {
+  display: flex;
+}
+
+.rag-page .rag-bubble-wrap.left {
+  justify-content: flex-start;
+}
+
+.rag-page .rag-bubble-wrap.right {
+  justify-content: flex-end;
+}
+
+.rag-page .rag-bubble {
+  max-width: 78%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.rag-page .rag-user {
+  background: linear-gradient(180deg, #34d39966, #10b98133);
+  color: #062015;
+}
+
+.rag-page .rag-assistant {
+  background: var(--card);
+  color: var(--text);
+}
+
+/* ---------------- source box ---------------- */
+.rag-page .rag-src {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
