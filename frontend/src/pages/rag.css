@@ -10,39 +10,37 @@
   --border: #e5e7eb;
   --text: #0f172a;
   --muted: #475569;
-  --shadow: 0 10px 30px rgb(2 6 23 / 10%);
-  --shadow-soft: 0 6px 18px rgb(2 6 23 / 8%);
+  --shadow: 0 10px 30px rgb(0 0 0 / 25%);
+  --shadow-soft: 0 6px 18px rgb(0 0 0 / 18%);
   --brand: #10b981;
   --brand-2: #22d3ee;
   --accent: #38bdf8;
   --danger: #ef4444;
   --ok: #22c55e;
-  --ring: 0 0 0 3px #10b98140;
+  --ring: 0 0 0 3px #109db940;
   --radius: 16px;
-  --shadow: 0 10px 30px rgb(0 0 0 / 25%);
-  --shadow-soft: 0 6px 18px rgb(0 0 0 / 18%);
   --glass: blur(8px) saturate(140%);
   --maxw: 1100px;
 
   min-height: auto;
   padding-bottom: 40px;
+}
 
-  :root {
-    --bg: #ffffff;
-    --bg-soft: #f1f5f9;
-    --text: #0f172a;
-  }
+/* ============================= */
+/*  ⭐⭐ 深色模式（自動覆蓋 rag-page） */
+/* ============================= */
 
-  /* ⭐ 深色模式 */
-  .dark #main-content {
-    background: transparent !important;
-  }
-
-  #main-content {
-    background: radial-gradient(1200px 800px at 10% -10%, #ffffff00),
-      radial-gradient(1000px 600px at 100% 0%, #ffffff00),
-      linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
-  }
+.dark .rag-page {
+  --bg: #0b1020;
+  --bg-soft: #0f172a;
+  --panel: #0b132a80;
+  --card: #111827cc;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --shadow: 0 10px 30px rgb(0 0 0 / 55%);
+  --shadow-soft: 0 6px 18px rgb(0 0 0 / 35%);
+  --glass: blur(10px) saturate(180%);
 }
 
 /* ---------------- container ---------------- */
@@ -61,9 +59,14 @@
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) + 4px);
   background: linear-gradient(135deg, #023b69 0%, #229ed3 100%), var(--panel);
-
   backdrop-filter: var(--glass);
   box-shadow: var(--shadow);
+}
+
+/* 深色 hero */
+.dark .rag-page .rag-hero {
+  background: linear-gradient(135deg, #021a33 0%, #165a8a 100%), var(--panel);
+  border-color: #1e293b;
 }
 
 .rag-page .rag-hero h1 {
@@ -71,15 +74,16 @@
   font-size: clamp(24px, 4vw, 34px);
   letter-spacing: 0.2px;
   font-weight: 750;
-  color: #ffffff; /* ← 變成白色 */
+  color: #ffffff;
 }
 
 .rag-page .rag-hero p {
   margin: 0;
-  color: #ffffff; /* ← 變成白色 */
-  opacity: 0.95; /* 可以保留一點透明或改 1 看你要不要 */
+  color: #ffffff;
+  opacity: 0.95;
 }
 
+/* ---------------- badges ---------------- */
 .rag-page .rag-badges {
   margin-top: 14px;
   display: flex;
@@ -97,9 +101,10 @@
   color: #ffffff;
 }
 
-.rag-page .rag-badge.alt {
-  background: #44d4fc8a;
-  border-color: #008fbe;
+/* 深色 badge */
+.dark .rag-page .rag-badge {
+  background: #0ea5e99c;
+  border-color: #0284c7;
 }
 
 /* ---------------- tabs ---------------- */
@@ -122,6 +127,13 @@
   transition: transform 0.08s ease, background 0.2s ease;
 }
 
+/* 深色 tab */
+.dark .rag-page .rag-tab {
+  background: linear-gradient(#172554, #0f172a);
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
 .rag-page .rag-tab:hover {
   transform: translateY(-1px);
 }
@@ -129,6 +141,14 @@
 .rag-page .rag-tab.active {
   border: 1px solid #69cdff;
   background: linear-gradient(180deg, #69cdff8c, #065ec4);
+  color: white;
+}
+
+/* 深色 active tab */
+.dark .rag-page .rag-tab.active {
+  background: linear-gradient(180deg, #1e40af, #1e3a8a);
+  border-color: #3b82f6;
+  color: #ffffff;
 }
 
 /* ---------------- panels ---------------- */
@@ -160,6 +180,10 @@
   background: linear-gradient(180deg, #ffffff06, transparent);
 }
 
+.dark .rag-page .rag-form {
+  background: linear-gradient(180deg, #ffffff03, transparent);
+}
+
 .rag-page label {
   display: grid;
   gap: 6px;
@@ -182,20 +206,27 @@
   font-size: 15px;
 }
 
+/* 深色 input */
+.dark .rag-page textarea,
+.dark .rag-page input {
+  background: #1e293b80;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
 .rag-page input:focus,
 .rag-page textarea:focus {
   box-shadow: var(--ring);
-  border-color: #10b98180;
+  border-color: #73ccff80;
 }
 
-/* row */
 .rag-page .rag-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* button */
+/* ---------------- button ---------------- */
 .rag-page button[type="submit"] {
   justify-self: start;
   padding: 10px 14px;
@@ -206,6 +237,11 @@
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.06s ease;
+}
+
+.dark .rag-page button[type="submit"] {
+  border-color: #3b82f6;
+  background: linear-gradient(180deg, #1e40af, #1e3a8a);
 }
 
 .rag-page button[type="submit"]:hover {
@@ -255,6 +291,12 @@
   color: #062015;
 }
 
+/* 深色 user bubble */
+.dark .rag-page .rag-user {
+  background: linear-gradient(180deg, #166534bb, #0d4f3bbb);
+  color: #d1fae5;
+}
+
 .rag-page .rag-assistant {
   background: var(--card);
   color: var(--text);
@@ -267,4 +309,61 @@
   color: var(--muted);
   border-top: 1px dashed var(--border);
   padding-top: 10px;
+}
+/* ============================= */
+/*  圓形返回頂部按鈕（⇧）         */
+/* ============================= */
+
+.back-to-top {
+  position: fixed;
+  right: 26px;
+  bottom: 26px;
+  width: 48px;
+  height: 48px;
+
+  border-radius: 50%;
+  border: none;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+
+  opacity: 0;
+  pointer-events: none;
+
+  background: #ff9100; /* 淺色模式 */
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* 顯示時 */
+.back-to-top.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* hover */
+.back-to-top:hover {
+  transform: scale(1.1);
+}
+
+/* active */
+.back-to-top:active {
+  transform: scale(0.92);
+}
+
+/* ============================= */
+/*  深色模式 → 自動配色           */
+/* ============================= */
+.dark .back-to-top {
+  background: rgba(0, 100, 231, 0.85); /* 深色：#1e293b */
+  color: #ff9100;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }

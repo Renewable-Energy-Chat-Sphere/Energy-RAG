@@ -1,22 +1,25 @@
 import { useEffect } from "react";
-import "./rag.css"; // ← 匯入 Scoped CSS
+import "./rag.css";
 
 export default function Rag() {
-
+  /* =============================
+     (1) Tabs 切換邏輯
+  ============================= */
   useEffect(() => {
-    // =============================
-    //  (1) Tabs 切換邏輯
-    // =============================
     const onClick = (e) => {
       const btn = e.target.closest(".rag-tab");
       if (!btn) return;
 
       const target = btn.dataset.target;
 
-      document.querySelectorAll(".rag-tab").forEach(t => t.classList.remove("active"));
+      document
+        .querySelectorAll(".rag-tab")
+        .forEach((t) => t.classList.remove("active"));
       btn.classList.add("active");
 
-      document.querySelectorAll(".rag-panel").forEach(p => p.classList.remove("active"));
+      document
+        .querySelectorAll(".rag-panel")
+        .forEach((p) => p.classList.remove("active"));
       document.querySelector(target)?.classList.add("active");
     };
 
@@ -24,26 +27,33 @@ export default function Rag() {
     return () => document.removeEventListener("click", onClick);
   }, []);
 
-
+  /* =============================
+     (2) Chat 送出 + 自動撐高 + 泡泡
+  ============================= */
   useEffect(() => {
-    // =============================
-    //  (2) Chat 送出邏輯（經簡化但完全保留功能）
-    // =============================
     const form = document.getElementById("rag-form-chat");
     if (!form) return;
 
     const inputUser = form.querySelector("textarea[name='user']");
+    const inputSystem = form.querySelector("input[name='system']");
+    const inputSid = form.querySelector("input[name='session_id']");
+    const inputRag = form.querySelector("input[name='rag_auto']");
+    const chatLog = document.getElementById("rag-chat-log");
+    const srcBox = document.getElementById("rag-src-chat");
     const INPUT_MIN_HEIGHT = 44;
 
-    // 自動撐高 textarea
-    const autoGrow = () => {
+    /* -------- textarea 自動撐高 -------- */
+    const resetHeight = () => {
       inputUser.style.height = "auto";
-      inputUser.style.height = `${Math.max(inputUser.scrollHeight, INPUT_MIN_HEIGHT)}px`;
+      inputUser.style.height = `${Math.max(
+        inputUser.scrollHeight,
+        INPUT_MIN_HEIGHT
+      )}px`;
     };
-    inputUser.addEventListener("input", autoGrow);
-    autoGrow();
+    inputUser.addEventListener("input", resetHeight);
+    requestAnimationFrame(resetHeight);
 
-    // Enter 送出（Shift + Enter = 換行）
+    /* -------- Enter 送出（Shift+Enter 換行） -------- */
     inputUser.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -51,29 +61,71 @@ export default function Rag() {
       }
     });
 
+    /* -------- 泡泡 UI -------- */
+    const bubble = (role, html) => {
+      const wrap = document.createElement("div");
+      wrap.style.display = "flex";
+      wrap.style.justifyContent = role === "user" ? "flex-end" : "flex-start";
+
+      const b = document.createElement("div");
+      b.className = "chat-bubble";
+      b.style.maxWidth = "78%";
+      b.style.padding = "10px 12px";
+      b.style.borderRadius = "14px";
+      b.style.boxShadow = "var(--shadow-soft)";
+      b.style.whiteSpace = "pre-wrap";
+      b.style.lineHeight = "1.55";
+      b.style.border = "1px solid var(--border)";
+
+      const isDark = document.documentElement.classList.contains("dark");
+
+      if (role === "user") {
+        b.style.background = "linear-gradient(180deg, #34a1d33f, #33a9f2ce)";
+        b.style.color = isDark ? "#ffffff" : "var(--text)";
+      } else {
+        b.style.background = "linear-gradient(180deg, #d389343f, #e78121ce)";
+        b.style.color = isDark ? "#ffffff" : "var(--text)";
+      }
+
+      try {
+        b.innerHTML = window.marked ? marked.parse(html) : html;
+      } catch {
+        b.textContent = html;
+      }
+
+      wrap.appendChild(b);
+      chatLog.appendChild(wrap);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    };
+
+    /* -------- 送出表單 -------- */
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const chatLog = document.getElementById("rag-chat-log");
-      const srcBox = document.getElementById("rag-src-chat");
 
       const userText = inputUser.value.trim();
       if (!userText) return;
 
-      // 使用者訊息泡泡
-      addBubble(chatLog, "user", userText);
+      const submitBtn = form.querySelector("button[type='submit']");
+      const card = form.closest(".rag-card");
 
+      // 使用者泡泡
+      bubble("user", userText);
       inputUser.value = "";
-      inputUser.style.height = INPUT_MIN_HEIGHT + "px";
+      resetHeight();
+      srcBox.textContent = "";
 
-      // 思考中...
-      const thinking = addBubble(chatLog, "assistant", "思考中…");
+      // 加入「思考中…」
+      bubble("assistant", "思考中…");
+
+      submitBtn?.setAttribute("disabled", "disabled");
+      card?.classList.add("loading");
 
       const payload = {
         user: userText,
-        system: form.system.value || "",
-        session_id: form.session_id.value || "web-ui",
-        rag_auto: form.rag_auto.checked,
-        model: "gpt-4o-mini"
+        system: inputSystem.value || "",
+        session_id: inputSid.value || "web-ui",
+        rag_auto: !!inputRag.checked,
+        model: "gpt-4o-mini",
       };
 
       try {
@@ -84,45 +136,47 @@ export default function Rag() {
         });
 
         const data = await res.json();
-        thinking.remove();
 
-        addBubble(chatLog, "assistant", data.answer || data.error || "（無回應）");
+        const last = chatLog.lastElementChild;
+        if (last) last.remove();
 
-        if (Array.isArray(data.sources) && data.sources.length) {
-          srcBox.textContent = "來源：\n" + data.sources.map(s => `• ${s}`).join("\n");
+        bubble("assistant", data.answer || data.error || "（無回應）");
+
+        if (Array.isArray(data.sources) && data.sources.length > 0) {
+          const lines = data.sources.map((s) =>
+            typeof s === "string" ? `• ${s}` : `• ${JSON.stringify(s)}`
+          );
+          srcBox.textContent = `來源（${data.sources.length}）\n${lines.join(
+            "\n"
+          )}`;
         } else {
           srcBox.textContent = "";
         }
-
       } catch (err) {
-        thinking.remove();
-        addBubble(chatLog, "assistant", "發生錯誤：" + err.message);
+        const last = chatLog.lastElementChild;
+        if (last) last.remove();
+        bubble("assistant", `發生錯誤：${err.message}`);
+        srcBox.textContent = "";
+      } finally {
+        submitBtn?.removeAttribute("disabled");
+        card?.classList.remove("loading");
       }
     });
-
-    function addBubble(parent, role, text) {
-      const wrap = document.createElement("div");
-      wrap.className = "rag-bubble-wrap " + (role === "user" ? "right" : "left");
-
-      const bubble = document.createElement("div");
-      bubble.className = "rag-bubble rag-" + role;
-      bubble.textContent = text;
-
-      wrap.appendChild(bubble);
-      parent.appendChild(wrap);
-      parent.scrollTop = parent.scrollHeight;
-      return wrap;
-    }
   }, []);
 
+  /* =============================
+     JSX UI
+  ============================= */
   return (
     <div className="rag-page">
       <div className="rag-container">
-
-        {/* ---------------- HERO ---------------- */}
+        {/* HERO */}
         <div className="rag-hero">
           <h1>Energy RAG</h1>
-          <p>Web · PDF · Audio/Video · Table — 專為能源資料檢索與決策支援打造的 RAG 介面</p>
+          <p>
+            Web · PDF · Audio/Video · Table — 專為能源資料檢索與決策支援打造的
+            RAG 介面
+          </p>
 
           <div className="rag-badges">
             <span className="rag-badge">LangChain · FAISS</span>
@@ -131,18 +185,27 @@ export default function Rag() {
           </div>
         </div>
 
-        {/* ---------------- Tabs ---------------- */}
+        {/* Tabs */}
         <nav className="rag-tabs">
-          <button className="rag-tab active" data-target="#rag-chat">Chat</button>
-          <button className="rag-tab" data-target="#rag-web">Web</button>
-          <button className="rag-tab" data-target="#rag-pdf">PDF</button>
-          <button className="rag-tab" data-target="#rag-av">Audio/Video</button>
-          <button className="rag-tab" data-target="#rag-table">Table</button>
+          <button className="rag-tab active" data-target="#rag-chat">
+            Chat
+          </button>
+          <button className="rag-tab" data-target="#rag-web">
+            Web
+          </button>
+          <button className="rag-tab" data-target="#rag-pdf">
+            PDF
+          </button>
+          <button className="rag-tab" data-target="#rag-av">
+            Audio/Video
+          </button>
+          <button className="rag-tab" data-target="#rag-table">
+            Table
+          </button>
         </nav>
 
+        {/* Panels */}
         <main className="rag-grid">
-
-          {/* =============== Chat Panel =============== */}
           <section id="rag-chat" className="rag-panel active">
             <div className="rag-card">
               <h3>訊息</h3>
@@ -157,11 +220,13 @@ export default function Rag() {
                   />
                 </label>
 
-                <label>（可選）系統提示 System
+                <label>
+                  （可選）系統提示 System
                   <input name="system" placeholder="例如：你是專業的私人助理" />
                 </label>
 
-                <label>Session ID
+                <label>
+                  Session ID
                   <input name="session_id" placeholder="自訂字串或網址" />
                 </label>
 
@@ -181,15 +246,41 @@ export default function Rag() {
             </div>
           </section>
 
-          {/* =============== 其他四種 RAG Panel（略） =============== */}
-          {["web", "pdf", "av", "table"].map(id => (
+          {["web", "pdf", "av", "table"].map((id) => (
             <section key={id} id={`rag-${id}`} className="rag-panel">
               <div className="rag-card">（未實作 UI，可自行加入）</div>
             </section>
           ))}
-
         </main>
       </div>
+
+      {/* ⭐⭐ 返回頂部按鈕 */}
+      <BackToTopButton />
     </div>
+  );
+}
+
+/* =============================
+   返回頂部按鈕 Component
+============================= */
+function BackToTopButton() {
+  useEffect(() => {
+    const btn = document.querySelector(".back-to-top");
+
+    const onScroll = () => {
+      if (window.scrollY > 300) btn.classList.add("show");
+      else btn.classList.remove("show");
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  return (
+    <button className="back-to-top" onClick={scrollToTop}>
+      ⬆︎
+    </button>
   );
 }
