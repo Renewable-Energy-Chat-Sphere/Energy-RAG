@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
+
 
 // =============================
 // 返回頂部按鈕（⇧）
@@ -101,13 +103,21 @@ export default function Home() {
       {/* HERO TITLE */}
       <section className="hero">
         <h1>多模態視覺能源球 · 智慧代理系統</h1>
+
         <p>本平台由「多模態視覺能源球模型與智慧能源代理系統」研究團隊開發，</p>
         <p>整合能源資料、3D 視覺化、AI Agent、RAG，</p>
         <p>
           旨在協助一般民眾、能源管理單位與研究人員理解能源資訊並支援專業決策。
         </p>
 
-        <button>登入/註冊</button>
+        <Link
+          to="/login"
+          className="hero-login-btn"
+          style={{ textDecoration: "none" }} // 去除底線
+        >
+          <button className="login-btn">登入 / 註冊</button>
+        </Link>
+
       </section>
 
       {/* FEATURES */}

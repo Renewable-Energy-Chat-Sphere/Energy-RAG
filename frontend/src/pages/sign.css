@@ -1,0 +1,109 @@
+/* ------------------------------
+   Global Reset
+------------------------------ */
+/* ------------------------------
+   Wrapper
+------------------------------ */
+.register-wrapper {
+  background: #fff;
+  width: 500px;
+  max-width: 700px;
+  margin-top: 90px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 40px;
+  border-radius: 40px;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.2s ease-in-out;
+}
+
+.register-wrapper:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.register-wrapper h2 {
+  margin-bottom: 20px;
+  font-weight: 750;
+  color: #333;
+}
+
+/* ------------------------------
+   Input Box
+------------------------------ */
+.input-box {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-box input {
+  width: 100%;
+  padding: 12px 40px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.input-box input:focus {
+  border-color: rgb(173, 231, 248);
+  box-shadow: 0 0 8px rgba(93, 101, 72, 0.88);
+}
+
+.input-box .icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #666;
+}
+
+/* 顯示/隱藏密碼按鈕 */
+.show-password-btn {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  cursor: pointer;
+  color: #666;
+}
+
+/* ------------------------------
+   Button
+------------------------------ */
+.btn {
+  width: 100%;
+  padding: 12px;
+  background: rgb(147, 188, 205);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background: rgb(108, 141, 173);
+}
+
+/* ------------------------------
+   已有帳號連結
+------------------------------ */
+.login-register {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.login-register a {
+  margin-left: 5px;
+  color: rgb(47, 158, 46);
+  text-decoration: none;
+  font-weight: bold;
+}

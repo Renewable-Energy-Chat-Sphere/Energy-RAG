@@ -6,6 +6,8 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Global from "./pages/Global";
 import Rag from "./pages/Rag";
+import Login from "./pages/Login";
+import Sign from "./pages/Sign";
 
 function App() {
   return (
@@ -28,3 +30,4 @@ function App() {
 }
 
 export default App;
+
