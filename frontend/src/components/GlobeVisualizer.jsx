@@ -9,7 +9,6 @@ import { OrbitControls, Html, Text, Billboard } from "@react-three/drei";
 
 // ===================== 基本設定 =====================
 const RADIUS = 3.0;
-const BG = 0xffffff; // 全白
 const LAYER_LOD0 = 1; // 用於 LOD0 點擊
 const LAYER_LOD1 = 2; // 用於 LOD1 點擊
 
@@ -382,18 +381,20 @@ function EnergyGlobeLOD({ onSelect }) {
 
 // ===================== 場景 =====================
 function Scene({ onSelect }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
 
   useEffect(() => {
     camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6);
-    // ★★★ 重點修正：相機也渲染 Layer 1 與 Layer 2（否則顏色整個看不到）
     camera.layers.enable(LAYER_LOD0);
     camera.layers.enable(LAYER_LOD1);
-  }, [camera]);
+
+    // 🟥 必須加這行，否則 WebGL 背景永遠是白色
+    gl.setClearColor(0x000000, 0);
+  }, [camera, gl]);
 
   return (
     <>
-      <color attach="background" args={[BG]} />
+      <color attach="background" args={["transparent"]} />/*透明背景 */
       <ambientLight intensity={1.25} />
       <directionalLight position={[5,5,5]} intensity={1.6} color={0xffffff} />
 
@@ -449,7 +450,7 @@ export default function GlobeVisualizer({ onSelect }) {
       <div style={{ flex: 1, height: "100%", position: "relative" }}>
         <Canvas
           style={{ width: "100%", height: "100%" }}
-          gl={{ antialias: true, logarithmicDepthBuffer: true }}
+          gl={{ antialias: true, logarithmicDepthBuffer: true, alpha: true }}
           dpr={[1, 2]}
           camera={{ fov: 45, near: 0.1, far: 1000 }}
         >

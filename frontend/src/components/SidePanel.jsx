@@ -6,7 +6,6 @@ export default function SidePanel({ selection, onClear }) {
       style={{
         width: "100%",
         height: "100%",
-        background: "#ffffff",
         borderRadius: 12,
         boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
         padding: 16,
@@ -24,7 +23,7 @@ export default function SidePanel({ selection, onClear }) {
             style={{
               marginLeft: "auto",
               border: "none",
-              background: "rgba(0,0,0,0.06)",
+              background: "hsla(0, 0%, 100%, 1.00)",
               padding: "6px 10px",
               borderRadius: 8,
               cursor: "pointer"
