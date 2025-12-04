@@ -1,7 +1,7 @@
 import { useState } from "react";
 import GlobeVisualizer from "../components/GlobeVisualizer";
 import SidePanel from "../components/SidePanel";
-import "./Global.css";
+import "./global.css";
 
 export default function Global() {
   const [selection, setSelection] = useState(null);

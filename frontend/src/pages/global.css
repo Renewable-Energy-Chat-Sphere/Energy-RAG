@@ -1,35 +1,46 @@
-.globe-area * {
+/* 整個頁面透明（最重要！！！） */
+.global-page,
+.global-main {
   background: transparent !important;
 }
-/* 整個頁面是兩欄 */
+
+/* 兩欄布局 */
 .global-layout {
   display: flex;
   gap: 20px;
   width: 100%;
   padding: 20px;
-  margin-top: 80px; /* 確保不會蓋到 header */
-  background: transparent;
+  margin-top: 80px;
+  background: transparent !important;
 }
 
-/* 球體容器 */
+/* 左邊球體容器 */
 .globe-area {
   flex: 1;
   max-width: 1200px;
   height: 720px;
-  background: transparent;
+  background: transparent !important;
   border-radius: 14px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+
+  /* 如果你想讓四周陰影消失才加 */
+  /* box-shadow: none !important; */
 }
 
-/* 右側資訊欄容器 */
+/* Canvas 元素本身也要透明 */
+.globe-area canvas {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 右側資訊欄 */
 .side-area {
   width: 340px;
-  background: transparent;
+  background: transparent !important;
 }
 
-/* 手機自動 RWD（可保留） */
+/* RWD */
 @media (max-width: 1024px) {
   .global-layout {
     flex-direction: column;
@@ -41,5 +52,3 @@
     height: 600px;
   }
 }
-
-
