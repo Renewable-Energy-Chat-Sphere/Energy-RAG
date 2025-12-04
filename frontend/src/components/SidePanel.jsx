@@ -1,58 +1,45 @@
-// SidePanel.jsx — Clean Standalone Component
-
+// SidePanel.jsx — Clean & Beautiful Info Panel
 export default function SidePanel({ selection, onClear }) {
-  return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        padding: 16,
-        overflowY: "auto",
-        fontFamily: "system-ui",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontSize: 16, fontWeight: 700 }}>詳細資訊</div>
+  // 預設圖片（放在 public/images/energy-default.svg）
+  const imageUrl = selection?.imageUrl
+    ? selection.imageUrl
+    : "/images/energy-default.svg";
 
-        {selection && (
-          <button
-            onClick={onClear}
-            style={{
-              marginLeft: "auto",
-              border: "none",
-              background: "hsla(0, 0%, 100%, 1.00)",
-              padding: "6px 10px",
-              borderRadius: 8,
-              cursor: "pointer"
-            }}
-          >
-            清除
-          </button>
-        )}
+  // 描述（目前沒資料 → 顯示暫無）
+  const description = selection
+    ? "暫無詳細資料。"
+    : "";
+
+  return (
+    <div className="side-panel-container">
+
+      {/* 標題：如果沒有選擇 → 顯示提示 */}
+      <div className="panel-title">
+        {selection ? selection.name : "點擊球體查看詳細資訊"}
       </div>
 
-      {!selection && (
-        <div style={{ color: "#666" }}>
-          點擊球面上的<b>部門或子項目</b>，這裡會顯示資訊。
-        </div>
+      {/* 清除按鈕（只有選擇後才出現） */}
+      {selection && (
+        <button className="clear-btn" onClick={onClear}>
+          清除
+        </button>
       )}
 
-      {selection?.type === "sector" && (
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>{selection.name}</div>
-          <div style={{ color: "#666" }}>（部門）</div>
-          <div style={{ marginTop: 12 }}>尚無資料</div>
-        </div>
+      {/* 如果有選擇 → 顯示內容 */}
+      {selection && (
+        <>
+          {/* 🟦 圖片卡片（玻璃特效） */}
+          <div className="info-card image-card">
+            <img src={imageUrl} alt={selection.name} />
+          </div>
+
+          {/* 🟨 描述區（純文字，不是卡片） */}
+          <div className="description-section">
+            {description}
+          </div>
+        </>
       )}
 
-      {selection?.type === "industry" && (
-        <div>
-          <div style={{ fontSize: 12, color: "#888" }}>{selection.parentName}</div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>{selection.name}</div>
-          <div style={{ color: "#666" }}>（子項目）</div>
-          <div style={{ marginTop: 12 }}>尚無資料</div>
-        </div>
-      )}
     </div>
   );
 }
