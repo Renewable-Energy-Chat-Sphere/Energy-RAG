@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="footer-col">
           <h4>聯絡資訊</h4>
           <p>E-mail：support@enersphere.tw</p>
-          <p>地址：Taiwan</p>
+          <p>地址：新北市新莊區中正路 510 號 天主教輔仁大學</p>
         </div>
 
       </div>
