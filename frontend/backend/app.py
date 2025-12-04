@@ -1,12 +1,13 @@
 # app.py
 import os
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # === 載入環境變數 ===
 load_dotenv()
 
-# === （可選）載入 OpenAI Client ===
+# === 載入 OpenAI Client ===
 try:
     from openai import OpenAI
 
@@ -15,20 +16,22 @@ try:
 except Exception:
     openai_client = None
 
-# === 載入 RAG 管線 ===
+# === 載入 RAG pipeline ===
 from pipelines.rag_web import qa_over_web
 from pipelines.rag_pdf import qa_over_pdf
 from pipelines.rag_av import qa_over_av
 
-# === 載入其他藍圖（Blueprint） ===
+# === 藍圖 ===
 from chat import chat_bp
 from tables import tables_bp
 
-# === 建立 Flask 應用程式 ===
+# === 建立 Flask ===
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 允許最大上傳 512MB
+CORS(app)  # ★ 允許前端 http://localhost:5173 呼叫
 
-# 將共用依賴放入 app.config，讓各 Blueprint 可使用 current_app 存取
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
+
+# 將 pipeline 放入 config
 app.config.update(
     OPENAI_CLIENT=openai_client,
     QA_OVER_WEB=qa_over_web,
@@ -36,23 +39,14 @@ app.config.update(
     QA_OVER_AV=qa_over_av,
 )
 
-# === 註冊各功能模組（Blueprint） ===
+# === Blueprint ===
 app.register_blueprint(chat_bp)  # /chat
 app.register_blueprint(tables_bp)  # /ask_table
 
 
-# === 首頁 ===
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
-# =========================
-# 🔹 RAG 問答路由（Web / PDF / AV）
-# =========================
-
-
-# ---- 1️⃣ 網頁內容問答 ----
+# ====================================
+# 1. Web 問答
+# ====================================
 @app.route("/ask_web", methods=["POST"])
 def ask_web():
     data = request.get_json(force=True)
@@ -66,7 +60,9 @@ def ask_web():
     return jsonify({"answer": answer, "sources": sources})
 
 
-# ---- 2️⃣ PDF 問答 ----
+# ====================================
+# 2. PDF 問答
+# ====================================
 @app.route("/ask_pdf", methods=["POST"])
 def ask_pdf():
     question = (request.form.get("question") or "").strip()
@@ -81,7 +77,9 @@ def ask_pdf():
     return jsonify({"answer": answer, "sources": sources})
 
 
-# ---- 3️⃣ 音訊 / 影片 問答 ----
+# ====================================
+# 3. 音訊 / 影片 問答
+# ====================================
 @app.route("/ask_av", methods=["POST"])
 def ask_av():
     question = (request.form.get("question") or "").strip()
@@ -96,10 +94,10 @@ def ask_av():
     return jsonify({"answer": answer, "sources": sources})
 
 
-# =========================
-# 🚀 主程式入口
-# =========================
+# ====================================
+# 入口
+# ====================================
 if __name__ == "__main__":
-    print("伺服器啟動中：http://127.0.0.1:8000")
-    print("可用 API：/ask_web, /ask_pdf, /ask_av, /ask_table, /chat")
+    print("🚀 Flask 啟動：http://127.0.0.1:8000")
+    print("📌 API 可用：/chat /ask_web /ask_pdf /ask_av /ask_table")
     app.run(host="127.0.0.1", port=8000, debug=True)
