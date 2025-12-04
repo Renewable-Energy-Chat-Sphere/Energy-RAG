@@ -1,106 +1,79 @@
-/* ==========================
-   主頁面背景保持透明
-========================== */
+/* ================================================================
+   全域：背景保持透明（你的球體背景會從 body or page 繼承）
+================================================================ */
 .global-page,
 .global-main,
 .global-layout {
   background: transparent !important;
 }
 
-/* ==========================
-   進場動畫（漂亮的玻璃卡片浮現）
-========================== */
+
+
+/* ================================================================
+   進場動畫：玻璃卡片浮現
+================================================================ */
 @keyframes glassEnter {
   0% {
     opacity: 0;
     transform: translateY(20px) scale(0.97);
-    filter: blur(12px);
+    filter: blur(14px);
   }
   60% {
     opacity: 0.85;
     transform: translateY(0px) scale(1);
-    filter: blur(3px);
+    filter: blur(4px);
   }
   100% {
     opacity: 1;
     filter: blur(0px);
   }
 }
-/* 共用玻璃風格 */
-.globe-area,
-.side-area {
-  animation: glassEnter 0.8s ease-out forwards;
-  position: relative;
+
+
+
+/* ================================================================
+   流動邊框動畫（沿著邊框跑的光線）
+================================================================ */
+@keyframes borderRun {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 400% 0%;
+  }
 }
 
-/* ==========================
-   左側：球體區塊（Glass Panel）
-========================== */
-.globe-area {
-  flex: 1;
-  max-width: 1200px;
-  height: 720px;
+
+
+/* ================================================================
+   左側 globe-area & 右側 side-area 共用效果
+================================================================ */
+.globe-area,
+.side-area {
+  position: relative;
+  animation: glassEnter 0.2s ease-out forwards;
+
+  border-radius: 24px;
   overflow: hidden;
 
+  /* 玻璃質感（淺色） */
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
 
-  border-radius: 24px;
-  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(200,225,255,0.45);
 
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-
-  background: rgba(255,255,255,0.04);
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.08),
+    inset 0 0 14px rgba(255,255,255,0.22);
 }
 
-/* 球體的 Canvas 也保持透明 */
-.globe-area canvas {
-  background: transparent !important;
-}
 
-/* ⭐ 左側流動邊框 */
-.globe-area::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2px;
-  pointer-events: none;
 
-  background: linear-gradient(
-    120deg,
-    rgba(255,255,255,0) 0%,
-    rgba(120,170,255,0.35) 35%,
-    rgba(120,170,255,0) 70%
-  );
-
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-
-  animation: borderFlow 5s linear infinite;
-}
-
-/* ==========================
-   右側資訊面板（Glass Panel）
-========================== */
-.side-area {
-  width: 340px;
-  padding: 20px;
-
-  backdrop-filter: blur(24px) saturate(1.25);
-  -webkit-backdrop-filter: blur(24px) saturate(1.25);
-
-  border-radius: 24px;
-  border: 1px solid rgba(255,255,255,0.2);
-
-  background: rgba(255,255,255,0.06);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-}
-
-/* ⭐ 右側流動邊框 */
+/* ================================================================
+   流動邊框 (沿著邊框跑光) — 淺色模式
+================================================================ */
+.globe-area::after,
 .side-area::after {
   content: "";
   position: absolute;
@@ -109,12 +82,16 @@
   padding: 2px;
   pointer-events: none;
 
+  /* ⭐ 跑動光線（四倍寬可繞一圈） */
   background: linear-gradient(
-    120deg,
-    rgba(255,255,255,0) 0%,
-    #5694fe59 35%,
-    rgba(255,255,255,0) 70%
-  );
+      120deg,
+      rgba(255,255,255,0) 0%,
+      rgba(150,190,255,0.9) 18%,
+      rgba(255,255,255,0) 38%,
+      rgba(150,190,255,0.9) 58%,
+      rgba(255,255,255,0) 78%
+    )
+    0 0 / 400% 100%;
 
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -122,32 +99,72 @@
   -webkit-mask-composite: xor;
           mask-composite: exclude;
 
-  animation: borderFlow 5s linear infinite;
+  animation: borderRun 17s linear infinite;
 }
 
-/* ==========================
-   深色模式微調
-========================== */
+
+
+/* ================================================================
+   Globe Canvas 必須透明
+================================================================ */
+.globe-area canvas {
+  background: transparent !important;
+}
+
+
+
+/* ================================================================
+   深色模式：更強烈的科幻光 + 冷藍邊框
+================================================================ */
 .dark .globe-area,
 .dark .side-area {
-  background: rgba(20,25,35,0.35);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  background: rgba(20,25,35,0.45);
+  border: 1px solid rgba(255,255,255,0.12);
+
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.55),
+    inset 0 0 12px rgba(255,255,255,0.08);
 }
 
 .dark .globe-area::after,
 .dark .side-area::after {
   background: linear-gradient(
-    120deg,
-    rgba(60,120,255,0) 0%,
-    rgba(60,120,255,0.65) 55%,
-    rgba(60,120,255,0) 70%
-  );
+      120deg,
+      rgba(60,120,255,0) 0%,
+      rgba(60,130,255,0.9) 22%,
+      rgba(60,120,255,0) 42%,
+      rgba(60,130,255,0.9) 62%,
+      rgba(60,120,255,0) 82%
+    )
+    0 0 / 400% 100%;
 }
 
-/* ==========================
-   主 layout
-========================== */
+
+
+/* ================================================================
+   左邊球體容器
+================================================================ */
+.globe-area {
+  flex: 1;
+  max-width: 1200px;
+  height: 720px;
+}
+
+
+
+/* ================================================================
+   右側資訊欄
+================================================================ */
+.side-area {
+  width: 340px;
+  padding: 20px;
+}
+
+
+
+/* ================================================================
+   Layout（你的兩欄配置）
+================================================================ */
 .global-layout {
   display: flex;
   gap: 24px;
@@ -155,9 +172,11 @@
   margin-top: 80px;
 }
 
-/* ==========================
-   RWD
-========================== */
+
+
+/* ================================================================
+   RWD 響應式
+================================================================ */
 @media (max-width: 1024px) {
   .global-layout {
     flex-direction: column;
@@ -171,3 +190,5 @@
     height: 600px;
   }
 }
+
+
