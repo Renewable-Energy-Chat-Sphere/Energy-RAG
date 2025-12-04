@@ -6,12 +6,9 @@ export default function SidePanel({ selection, onClear }) {
       style={{
         width: "100%",
         height: "100%",
-        borderRadius: 12,
-        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
         padding: 16,
         overflowY: "auto",
         fontFamily: "system-ui",
-        border: "1px solid rgba(0,0,0,0.06)"
       }}
     >
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>

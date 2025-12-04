@@ -619,9 +619,6 @@ function Scene({ onSelect }) {
 
   return (
     <>
-      {/* ⭐ drei Background 設透明（配合 autoClear=false 才有效） */}
-      <color attach="background" args={["transparent"]} />
-
       {/* ===== 光源 ===== */}
       <ambientLight intensity={1.25} />
       <directionalLight
