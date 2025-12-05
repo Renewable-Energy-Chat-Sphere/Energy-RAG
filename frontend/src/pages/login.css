@@ -6,6 +6,16 @@
 /* ------------------------------
    Wrapper
 ------------------------------ */
+/* 整頁垂直置中背景 */
+.login-page {
+  min-height: 100vh;         /* 讓高度至少等於滿版，不會擠 */
+  display: flex;
+  justify-content: center;   /* 水平置中 */
+  align-items: center;       /* 垂直置中 */
+  background: #f3f5f7;       /* 淡灰背景讓白框凸顯 */
+  padding: 40px 0;           /* 保留上下空間避免太貼邊 */
+}
+
 .login-wrapper {
   background: #fff;
   width: 400px;
@@ -98,18 +108,32 @@
 /* ------------------------------
    Register Link
 ------------------------------ */
-.login-register {
-  margin-top: 30px;
-}
-
-.login-register p {
-  margin: 0.5rem;
+/* Link 版按鈕（讓 Link 看起來像按鈕） */
+.login-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background: rgb(147, 188, 205);
+  color: #fff !important;
+  border-radius: 20px;
+  font-weight: 750;
   font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-decoration: none;
 }
 
-.login-register a {
+.login-btn:hover {
+  background: rgb(108, 141, 173);
+}
+
+.login-register a.text-link {
   color: rgb(47, 158, 46);
   text-decoration: none;
   font-weight: bold;
-  border: none;
+}
+
+
+/* 避免 login-btn 被上面覆蓋 */
+.login-register .login-btn {
+  color: #fff !important;
 }
