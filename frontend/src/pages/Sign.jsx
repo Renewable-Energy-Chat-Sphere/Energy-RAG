@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./sign.css"; 
+import BackToTopButton from "../components/BackToTopButton";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faEnvelope } from "@fortawesome/free-regular-svg-icons";
@@ -94,6 +95,7 @@ export default function Register() {
           </form>
         </div>
       </div>
+      <BackToTopButton />
     </div>
     
   );

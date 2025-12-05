@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./rag.css";
+import BackToTopButton from "../components/BackToTopButton";
 
 export default function Rag() {
   const [tab, setTab] = useState("chat");
@@ -516,29 +517,5 @@ export default function Rag() {
 
       <BackToTopButton />
     </div>
-  );
-}
-
-/* =========================================================
-   返回頂部按鈕
-========================================================= */
-function BackToTopButton() {
-  useEffect(() => {
-    const btn = document.querySelector(".back-to-top");
-    const onScroll = () => {
-      if (window.scrollY > 300) btn.classList.add("show");
-      else btn.classList.remove("show");
-    };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  return (
-    <button
-      className="back-to-top"
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-    >
-      ⬆︎
-    </button>
   );
 }

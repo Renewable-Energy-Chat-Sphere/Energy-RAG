@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSchool, faPeopleGroup } from "@fortawesome/free-solid-svg-icons";
+import BackToTopButton from "../components/BackToTopButton";
 
 export default function Contact() {
   return (
@@ -173,7 +174,7 @@ export default function Contact() {
           }
         }
       `}</style>
-      
+    <BackToTopButton />
     </section>
   );
 }

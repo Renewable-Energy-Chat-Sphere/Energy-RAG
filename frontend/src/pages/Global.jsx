@@ -3,6 +3,7 @@ import GlobeVisualizer from "../components/GlobeVisualizer";
 import SidePanel from "../components/SidePanel";
 import "./global.css";
 import "./SidePanel.css";
+import BackToTopButton from "../components/BackToTopButton";
 
 export default function Global() {
   const [selection, setSelection] = useState(null);
@@ -22,7 +23,7 @@ export default function Global() {
           onClear={() => setSelection(null)}
         />
       </div>
-
+      <BackToTopButton />
     </div>
   );
 }

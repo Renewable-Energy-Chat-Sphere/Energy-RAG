@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faEnvelope } from "@fortawesome/free-regular-svg-icons";
 import { faKey,faEye } from "@fortawesome/free-solid-svg-icons";
-
+import BackToTopButton from "../components/BackToTopButton";
 
 export default function Login() {
   const [passwordShown, setPasswordShown] = useState(false);
@@ -65,6 +65,7 @@ export default function Login() {
         </form>
 
       </div>
+      <BackToTopButton />
     </div>
     
   );

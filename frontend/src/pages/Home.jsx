@@ -1,36 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import BackToTopButton from "../components/BackToTopButton";
 
-
-// =============================
-// 返回頂部按鈕（⇧）
-// =============================
-function BackToTopButton() {
-  useEffect(() => {
-    const btn = document.querySelector(".back-to-top");
-
-    const onScroll = () => {
-      if (window.scrollY > 300) {
-        btn.classList.add("show");
-      } else {
-        btn.classList.remove("show");
-      }
-    };
-
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  return (
-    <button className="back-to-top" onClick={scrollToTop}>
-      ⬆︎
-    </button>
-  );
-}
 
 export default function Home() {
   useEffect(() => {
@@ -115,7 +86,7 @@ export default function Home() {
           className="hero-login-btn"
           style={{ textDecoration: "none" }} // 去除底線
         >
-          <button className="login-btn">登入 / 註冊</button>
+          <button className="hero button">登入 / 註冊</button>
         </Link>
 
       </section>
@@ -186,4 +157,3 @@ export default function Home() {
     </>
   );
 }
-
