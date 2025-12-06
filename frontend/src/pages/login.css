@@ -12,24 +12,26 @@
   display: flex;
   justify-content: center;   /* 水平置中 */
   align-items: center;       /* 垂直置中 */
-  background: #f3f5f7;       /* 淡灰背景讓白框凸顯 */
+  background: var(--bg-soft); 
   padding: 40px 0;           /* 保留上下空間避免太貼邊 */
 }
 
+
 .login-wrapper {
-  background: #fff;
   width: 400px;
   max-width: 700px;
-  margin-top: 120px;
   margin-left: auto;
   margin-right: auto;
   padding: 40px;
   border-radius: 40px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
   text-align: center;
   transition: transform 0.2s ease-in-out;
+  background: var(--card);     /* ⭐ 用變數 */
+  color: var(--text);          /* ⭐ 用變數 */
 }
+
 
 .login-wrapper:hover {
   transform: scale(1.02);
@@ -39,7 +41,7 @@
 .login-wrapper h2 {
   margin-bottom: 20px;
   font-weight: 750;
-  color: #333;
+  color: var(--text);
 }
 
 /* ------------------------------
@@ -53,16 +55,18 @@
 .input-box input {
   width: 100%;
   padding: 12px 40px 12px 40px;
-  border: 1px solid #ddd;
+  background: var(--bg);
+  color: var(--text);
   border-radius: 10px;
   outline: none;
   font-size: 14px;
   transition: 0.3s;
+  border: 1px solid var(--border);
 }
 
 .input-box input:focus {
-  border-color: rgb(173, 231, 248);
-  box-shadow: 0 0 8px rgba(70, 117, 141, 0.88);
+  border-color: rgba(255, 117, 18, 0.854);
+  box-shadow: 0 0 8px rgba(226, 94, 0, 0.87);
 }
 
 .input-box .icon {
@@ -91,7 +95,7 @@
 .btn {
   width: 100%;
   padding: 12px;
-  background: rgb(147, 188, 205);
+  background: var(--orange);
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -102,7 +106,7 @@
 }
 
 .btn:hover {
-  background: rgb(108, 141, 173);
+  background: rgb(226, 94, 0);
 }
 
 /* ------------------------------
@@ -127,7 +131,7 @@
 }
 
 .login-register a.text-link {
-  color: rgb(47, 158, 46);
+  color: rgb(71, 142, 212);
   text-decoration: none;
   font-weight: bold;
 }
