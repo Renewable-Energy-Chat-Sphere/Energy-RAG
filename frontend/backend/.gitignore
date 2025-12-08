@@ -20,6 +20,7 @@ yarn-error.log*
 # Python / Flask / venv
 # ============================================================
 venv/
+.venv/
 env/
 ENV/
 *.pyc
