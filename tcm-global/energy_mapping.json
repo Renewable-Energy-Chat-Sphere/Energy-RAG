@@ -1,0 +1,373 @@
+[
+  {
+    "key": "coal_and_coal_products",
+    "category": "Coal",
+    "name_en": "Coal and Coal Products",
+    "name_zh": "煤及煤產品",
+    "source_id": "S1"
+  },
+  {
+    "key": "bituminous_coal_coking_coal",
+    "category": "Coal",
+    "name_en": "Bituminous Coal - Coking Coal",
+    "name_zh": "煙煤-煉焦煤",
+    "source_id": "S2"
+  },
+  {
+    "key": "bituminous_coal_other_bituminous_coal_fuel_coal",
+    "category": "Coal",
+    "name_en": "Bituminous Coal - Fuel Coal",
+    "name_zh": "煙煤-燃料煤",
+    "source_id": "S3"
+  },
+  {
+    "key": "anthracite",
+    "category": "Coal",
+    "name_en": "Anthracite",
+    "name_zh": "無煙煤",
+    "source_id": "S4"
+  },
+  {
+    "key": "sub_bituminous_coal",
+    "category": "Coal",
+    "name_en": "Sub-bituminous Coal",
+    "name_zh": "亞煙煤",
+    "source_id": "S5"
+  },
+  {
+    "key": "lignite",
+    "category": "Coal",
+    "name_en": "Lignite",
+    "name_zh": "褐煤",
+    "source_id": "S6"
+  },
+  {
+    "key": "peat",
+    "category": "Coal",
+    "name_en": "Peat",
+    "name_zh": "泥煤",
+    "source_id": "S7"
+  },
+  {
+    "key": "coke_oven_coke",
+    "category": "Coal",
+    "name_en": "Coke Oven Coke",
+    "name_zh": "焦炭",
+    "source_id": "S8"
+  },
+  {
+    "key": "patent_fuel_briquettes",
+    "category": "Coal",
+    "name_en": "Patent Fuel (Briquettes)",
+    "name_zh": "煤球",
+    "source_id": "S9"
+  },
+  {
+    "key": "coke_oven_gas",
+    "category": "Coal",
+    "name_en": "Coke Oven Gas",
+    "name_zh": "焦爐氣",
+    "source_id": "S10"
+  },
+  {
+    "key": "blast_furnace_gas",
+    "category": "Gas",
+    "name_en": "Blast Furnace Gas",
+    "name_zh": "高爐氣",
+    "source_id": "S11"
+  },
+  {
+    "key": "oxygen_steel_furnace_gas_bof_gas",
+    "category": "Gas",
+    "name_en": "Oxygen Steel Furnace Gas (BOF Gas)",
+    "name_zh": "轉爐氣",
+    "source_id": "S12"
+  },
+  {
+    "key": "crude_oil_and_petroleum_products",
+    "category": "Oil",
+    "name_en": "Crude Oil and Petroleum Products",
+    "name_zh": "原油及石油產品",
+    "source_id": "S13"
+  },
+  {
+    "key": "crude_oil",
+    "category": "Oil",
+    "name_en": "Crude Oil",
+    "name_zh": "原油",
+    "source_id": "S14"
+  },
+  {
+    "key": "refinery_feedstocks",
+    "category": "Oil",
+    "name_en": "Refinery Feedstocks",
+    "name_zh": "煉油廠進料",
+    "source_id": "S15"
+  },
+  {
+    "key": "additives_and_oxygenates",
+    "category": "Other",
+    "name_en": "Additives and Oxygenates",
+    "name_zh": "添加劑/含氧化合物",
+    "source_id": "S16"
+  },
+  {
+    "key": "naphtha",
+    "category": "Oil",
+    "name_en": "Naphtha",
+    "name_zh": "煉油氣",
+    "source_id": "S17"
+  },
+  {
+    "key": "kerosene_jet_fuel_kerosene_type",
+    "category": "Oil",
+    "name_en": "Kerosene (Jet Fuel/Kerosene Type)",
+    "name_zh": "液化石油氣",
+    "source_id": "S18"
+  },
+  {
+    "key": "motor_gasoline",
+    "category": "Oil",
+    "name_en": "Motor Gasoline",
+    "name_zh": "(丙烷混合氣)",
+    "source_id": "S19"
+  },
+  {
+    "key": "diesel_oil_gas_diesel_oil",
+    "category": "Oil",
+    "name_en": "Diesel Oil (Gas/Diesel Oil)",
+    "name_zh": "天然汽油",
+    "source_id": "S20"
+  },
+  {
+    "key": "fuel_oil_heavy_fuel_oil",
+    "category": "Oil",
+    "name_en": "Fuel Oil (Heavy Fuel Oil)",
+    "name_zh": "石油腦",
+    "source_id": "S21"
+  },
+  {
+    "key": "liquefied_petroleum_gases_lpg",
+    "category": "Oil",
+    "name_en": "Liquefied Petroleum Gases (LPG)",
+    "name_zh": "車用汽油",
+    "source_id": "S22"
+  },
+  {
+    "key": "other_petroleum_products",
+    "category": "Oil",
+    "name_en": "Other Petroleum Products",
+    "name_zh": "(無鉛汽油)",
+    "source_id": "S23"
+  },
+  {
+    "key": "natural_gas",
+    "category": "Oil",
+    "name_en": "Natural Gas",
+    "name_zh": "航空汽油",
+    "source_id": "S24"
+  },
+  {
+    "key": "manufactured_gas",
+    "category": "Oil",
+    "name_en": "Manufactured Gas",
+    "name_zh": "航空燃油-汽油型",
+    "source_id": "S25"
+  },
+  {
+    "key": "manufactured_coal",
+    "category": "Coal",
+    "name_en": "Manufactured Coal",
+    "name_zh": "航空燃油-煤油型",
+    "source_id": "S26"
+  },
+  {
+    "key": "cement_production_process_emissions",
+    "category": "Coal",
+    "name_en": "Cement Production (Process Emissions)",
+    "name_zh": "煤油",
+    "source_id": "S27"
+  },
+  {
+    "key": "oil_refining_processes",
+    "category": "Oil",
+    "name_en": "Oil Refining Processes",
+    "name_zh": "柴油",
+    "source_id": "S28"
+  },
+  {
+    "key": "thermal_power_generation",
+    "category": "Oil",
+    "name_en": "Thermal Power Generation",
+    "name_zh": "燃料油",
+    "source_id": "S29"
+  },
+  {
+    "key": "other_transformation_processes",
+    "category": "Oil",
+    "name_en": "Other Transformation Processes",
+    "name_zh": "白精油",
+    "source_id": "S30"
+  },
+  {
+    "key": "imports",
+    "category": "Oil",
+    "name_en": "Imports",
+    "name_zh": "潤滑油",
+    "source_id": "S31"
+  },
+  {
+    "key": "exports",
+    "category": "Oil",
+    "name_en": "Exports",
+    "name_zh": "柏油",
+    "source_id": "S32"
+  },
+  {
+    "key": "international_marine_aviation_bunkers",
+    "category": "Oil",
+    "name_en": "International Marine/Aviation Bunkers",
+    "name_zh": "溶劑油",
+    "source_id": "S33"
+  },
+  {
+    "key": "paraffin_waxes",
+    "category": "Other",
+    "name_en": "Paraffin Waxes",
+    "name_zh": "石蠟",
+    "source_id": "S34"
+  },
+  {
+    "key": "petroleum_coke",
+    "category": "Coal",
+    "name_en": "Petroleum Coke",
+    "name_zh": "石油焦",
+    "source_id": "S35"
+  },
+  {
+    "key": "other_petroleum",
+    "category": "Oil",
+    "name_en": "Other Petroleum",
+    "name_zh": "其他石油產品",
+    "source_id": "S36"
+  },
+  {
+    "key": "natural_gas",
+    "category": "Gas",
+    "name_en": "Natural Gas",
+    "name_zh": "天然氣",
+    "source_id": "S37"
+  },
+  {
+    "key": "indigenous",
+    "category": "Gas",
+    "name_en": "(Indigenous)",
+    "name_zh": "(自產)天然氣",
+    "source_id": "S38"
+  },
+  {
+    "key": "imported",
+    "category": "Gas",
+    "name_en": "(Imported)",
+    "name_zh": "(進口)液化天然氣",
+    "source_id": "S39"
+  },
+  {
+    "key": "biomass_and_waste",
+    "category": "Renewable",
+    "name_en": "Biomass and Waste",
+    "name_zh": "生質能及廢棄物",
+    "source_id": "S40"
+  },
+  {
+    "key": "biomass",
+    "category": "Renewable",
+    "name_en": "Biomass",
+    "name_zh": "生質能",
+    "source_id": "S41"
+  },
+  {
+    "key": "solid_biomass",
+    "category": "Renewable",
+    "name_en": "Solid Biomass",
+    "name_zh": "固態生質能",
+    "source_id": "S42"
+  },
+  {
+    "key": "liquid_biofuels",
+    "category": "Renewable",
+    "name_en": "Liquid Biofuels",
+    "name_zh": "液態生質能",
+    "source_id": "S43"
+  },
+  {
+    "key": "biogas",
+    "category": "Gas",
+    "name_en": "Biogas",
+    "name_zh": "氣態生質能",
+    "source_id": "S44"
+  },
+  {
+    "key": "waste_renewable_waste_energy",
+    "category": "Waste",
+    "name_en": "Waste (Renewable Waste Energy)",
+    "name_zh": "廢棄物",
+    "source_id": "S45"
+  },
+  {
+    "key": "nuclear_energy",
+    "category": "Other",
+    "name_en": "Nuclear Energy",
+    "name_zh": "核能",
+    "source_id": "S46"
+  },
+  {
+    "key": "hydropower",
+    "category": "Other",
+    "name_en": "Hydropower",
+    "name_zh": "水力",
+    "source_id": "S47"
+  },
+  {
+    "key": "geothermal_energy",
+    "category": "Renewable",
+    "name_en": "Geothermal Energy",
+    "name_zh": "地熱",
+    "source_id": "S48"
+  },
+  {
+    "key": "solar_photovoltaic_solar_pv",
+    "category": "Renewable",
+    "name_en": "Solar PV",
+    "name_zh": "太陽光電",
+    "source_id": "S49"
+  },
+  {
+    "key": "wind_energy",
+    "category": "Renewable",
+    "name_en": "Wind Energy",
+    "name_zh": "風力",
+    "source_id": "S50"
+  },
+  {
+    "key": "electricity",
+    "category": "Electricity",
+    "name_en": "Electricity",
+    "name_zh": "電力",
+    "source_id": "S51"
+  },
+  {
+    "key": "solar_thermal_energy",
+    "category": "Renewable",
+    "name_en": "Solar Thermal Energy",
+    "name_zh": "太陽熱能",
+    "source_id": "S52"
+  },
+  {
+    "key": "heat_district_heating_geothermal_heat",
+    "category": "Renewable",
+    "name_en": "Heat",
+    "name_zh": "熱能",
+    "source_id": "S53"
+  }
+]
