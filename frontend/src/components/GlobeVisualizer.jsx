@@ -5,6 +5,7 @@
 
 import React, {
   useMemo,
+  useRef,
   useEffect,
   useState,
   Suspense
@@ -545,41 +546,72 @@ function EnergyGlobeLOD({ onSelect }) {
 }
 
 // ===================== Scene =====================
+// ===================== Scene =====================
 function Scene({ onSelect }) {
   const { camera, gl } = useThree();
+  const controlsRef = useRef();
 
   useEffect(() => {
+    // 初始相機位置
     camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6);
+
+    // 啟用 LOD 層
     camera.layers.enable(LAYER_LOD0);
     camera.layers.enable(LAYER_LOD1);
 
+    // 透明背景
     gl.setClearColor(0x000000, 0);
     gl.autoClear = false;
   }, [camera, gl]);
 
+  // ⭐ Google Earth 風格：距離越近 → 旋轉越慢、越精細
+  useFrame(() => {
+    if (!controlsRef.current) return;
+
+    const dist = camera.position.length(); // 與球心距離
+
+    // 正規化 0~1 → 用距離控制速度
+    const t = THREE.MathUtils.clamp(
+      (dist - RADIUS * 1.05) / (RADIUS * 5),
+      0,
+      1
+    );
+
+    // 遠 → 快；近 → 慢
+    const rotateSpeed = THREE.MathUtils.lerp(0.15, 1.1, t);
+    const zoomSpeed = THREE.MathUtils.lerp(0.25, 1.0, t);
+
+    controlsRef.current.rotateSpeed = rotateSpeed;
+    controlsRef.current.zoomSpeed = zoomSpeed;
+  });
+
   return (
     <>
+      {/* 光源 */}
       <ambientLight intensity={1.2} />
       <directionalLight position={[5, 5, 5]} intensity={1.4} color={0xffffff} />
 
+      {/* 地球層 */}
       <TransparentGlobe />
       <SoftTerminator />
       <Atmosphere />
 
+      {/* LOD 控制 */}
       <EnergyGlobeLOD onSelect={onSelect} />
 
+      {/* ⭐ 動態控制旋轉速度（Google Earth 風格） */}
       <OrbitControls
+        ref={controlsRef}
         enablePan={false}
         minDistance={RADIUS * 1.05}
         maxDistance={RADIUS * 6}
         enableDamping
         dampingFactor={0.08}
-        rotateSpeed={0.85}
-        zoomSpeed={0.85}
       />
     </>
   );
 }
+
 
 // ===================== Root Component =====================
 export default function GlobeVisualizer({ onSelect }) {
