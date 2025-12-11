@@ -1,6 +1,6 @@
 // =========================================
 // GlobeVisualizer.jsx — Part 1 / 2
-// LOD0 / LOD1 / LOD2 + Google Earth 文字縮放
+// LOD0 / LOD1 / LOD2 + Google Earth 文字縮放（修正版）
 // =========================================
 
 import React, {
@@ -52,11 +52,9 @@ function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
 function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r = RADIUS, seg = 48 }) {
   const positions = [], normals = [], indices = [];
   for (let i = 0; i <= seg; i++) {
-    const t = i / seg;
-    const lat = lat0 * (1 - t) + lat1 * t;
     for (let j = 0; j <= seg; j++) {
-      const s = j / seg;
-      const lon = lon0 * (1 - s) + lon1 * s;
+      const lat = THREE.MathUtils.lerp(lat0, lat1, i / seg);
+      const lon = THREE.MathUtils.lerp(lon0, lon1, j / seg);
 
       const p = lonLatToVec3(lon, lat, r);
       positions.push(p.x, p.y, p.z);
@@ -92,55 +90,51 @@ function raySphereIntersection(eye, dir, center, radius) {
   if (d2 > radius * radius) return null;
 
   const thc = Math.sqrt(radius * radius - d2);
-  const t0 = tca - thc, t1 = tca + thc;
+  const t0 = tca - thc;
+  const t1 = tca + thc;
   const t = t0 > 0 ? t0 : t1 > 0 ? t1 : null;
+
   return t == null ? null : eye.clone().add(dir.clone().multiplyScalar(t));
 }
 
 function vec3ToLonLat(v) {
   const n = v.clone().normalize();
-  const lat = THREE.MathUtils.radToDeg(Math.asin(n.y));
-  const lon = THREE.MathUtils.radToDeg(Math.atan2(n.z, n.x));
-  return { lon, lat };
+  return {
+    lat: THREE.MathUtils.radToDeg(Math.asin(n.y)),
+    lon: THREE.MathUtils.radToDeg(Math.atan2(n.z, n.x))
+  };
 }
 
 function sectorIndexFromLon(lonDeg) {
-  let lon = ((lonDeg + 180) % 360 + 360) % 360 - 180;
+  const lon = ((lonDeg + 180) % 360 + 360) % 360 - 180;
   return Math.floor((lon + 180) / 72) % 5;
 }
 
-// ===================== ⭐ Google Earth 文字縮放 Hook =====================
+// ===================== 字體縮放 Hook =====================
 function useCameraScale(baseSize = 1, baseDist = RADIUS * 3) {
   const { camera } = useThree();
   const [scale, setScale] = useState(baseSize);
 
   useFrame(() => {
     const d = camera.position.length();
-
-    // 距離越近 → 字越小（0.35 倍 ~ 1 倍）
-    const s = THREE.MathUtils.clamp(d / baseDist, 0.35, 1.0);
-
+    const s = THREE.MathUtils.clamp(d / baseDist, 0.35, 1);
     setScale(baseSize * s);
   });
 
   return scale;
 }
 
-// ===================== ⭐ LOD 切換（瞬間切換） =====================
+// ===================== LOD 判斷 =====================
 function useLODLevel() {
   const { camera } = useThree();
-  const [lod, setLOD] = useState(0); // 0=LOD0, 1=LOD1, 2=LOD2
+  const [lod, setLOD] = useState(0);
 
   useFrame(() => {
     const d = camera.position.length();
+    const L1 = RADIUS * 2.3;
+    const L2 = RADIUS * 1.45;
 
-    const LOD1_Dist = RADIUS * 2.3;
-    const LOD2_Dist = RADIUS * 1.45;
-
-    let newLOD = 0;
-    if (d < LOD2_Dist) newLOD = 2;
-    else if (d < LOD1_Dist) newLOD = 1;
-    else newLOD = 0;
+    const newLOD = d < L2 ? 2 : d < L1 ? 1 : 0;
 
     if (newLOD !== lod) setLOD(newLOD);
   });
@@ -148,54 +142,63 @@ function useLODLevel() {
   return lod;
 }
 
-// ===================== ⭐ LOD0：五大部門 =====================
+// ===================== ⭐ 修正版 LOD0（依射線判斷） =====================
 function FullCoverSectors({ onSelect }) {
-  const fontSize = useCameraScale(0.28); // Google Earth 自動縮放字體
+  const { camera } = useThree();
+  const fontSize = useCameraScale(0.28);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const bands = useMemo(() => {
-    const out = [];
-    for (let i = 0; i < 5; i++) {
-      out.push({
-        lon0: -180 + i * 72,
-        lon1: -180 + (i + 1) * 72,
-        lat0: -90,
-        lat1: 90,
-        sector: SECTORS[i]
-      });
-    }
-    return out;
+    return SECTORS.map((sector, i) => ({
+      lon0: -180 + i * 72,
+      lon1: -180 + (i + 1) * 72,
+      sector
+    }));
   }, []);
+
+  useFrame(() => {
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const hit = raySphereIntersection(camera.position, forward, new THREE.Vector3(0, 0, 0), RADIUS);
+    if (!hit) return;
+
+    const { lon } = vec3ToLonLat(hit);
+    const idx = sectorIndexFromLon(lon);
+    setActiveIndex(idx);
+  });
+
+  // 顯示：正對 + 左 1 + 右 1（半球）
+  const visible = [
+    activeIndex,
+    (activeIndex + 1) % 5,
+    (activeIndex + 4) % 5
+  ];
 
   return (
     <group>
       {bands.map((b, i) => {
+        if (!visible.includes(i)) return null;
+
         const geo = sphericalQuadGeometry({
-          ...b,
+          lat0: -90,
+          lat1: 90,
+          lon0: b.lon0,
+          lon1: b.lon1,
           r: RADIUS + 0.01
         });
-
-        const mat = new THREE.MeshStandardMaterial({
-          color: b.sector.color,
-          roughness: 0.8,
-          metalness: 0,
-          transparent: true,
-          opacity: 1
-        });
-
-        const labelPos = lonLatToVec3(
-          (b.lon0 + b.lon1) / 2,
-          0,
-          RADIUS + 0.05
-        ).toArray();
 
         return (
           <group key={i}>
             <mesh
               geometry={geo}
-              material={mat}
+              material={
+                new THREE.MeshStandardMaterial({
+                  color: b.sector.color,
+                  roughness: 0.8,
+                  transparent: true,
+                  opacity: 1
+                })
+              }
               onUpdate={(m) => m.layers.set(LAYER_LOD0)}
-              onPointerOver={() => (document.body.style.cursor = "pointer")}
-              onPointerOut={() => (document.body.style.cursor = "auto")}
               onClick={() =>
                 onSelect({
                   type: "sector",
@@ -205,8 +208,13 @@ function FullCoverSectors({ onSelect }) {
               }
             />
 
-            {/* ⭐ LOD0 Label（自動縮小） */}
-            <group position={labelPos}>
+            <group
+              position={lonLatToVec3(
+                (b.lon0 + b.lon1) / 2,
+                0,
+                RADIUS + 0.05
+              ).toArray()}
+            >
               <Billboard follow>
                 <Text
                   fontSize={fontSize}
@@ -227,20 +235,21 @@ function FullCoverSectors({ onSelect }) {
   );
 }
 
-// ===================== ⭐ LOD1 + LOD2 =====================
+// ===================== ⭐ 修正版 LOD1 + LOD2 =====================
 function SectorIndustryBubbles({ showLOD2, onSelect }) {
   const { camera } = useThree();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // ===== 找正對的 sector =====
+  const fontSizeL1 = useCameraScale(0.18);
+  const fontSizeL2 = useCameraScale(0.12, RADIUS * 2.2);
+
   useFrame(() => {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     const hit = raySphereIntersection(camera.position, dir, new THREE.Vector3(0, 0, 0), RADIUS);
     if (!hit) return;
 
     const { lon } = vec3ToLonLat(hit);
-    const idx = sectorIndexFromLon(lon);
-    setActiveIndex(idx);
+    setActiveIndex(sectorIndexFromLon(lon));
   });
 
   const all = [];
@@ -265,23 +274,22 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
         lat0, lat1, lon0, lon1, r: layerR
       });
 
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(parent.color).lerp(new THREE.Color(0xffffff), 0.3),
-        roughness: 0.85,
-        opacity: 1
-      });
-
       const isFront = si === activeIndex;
 
-      // ⭐ LOD1 label 字體縮放
-      const fontSizeL1 = useCameraScale(0.18);
-
+      // ========== LOD1 ==========
       all.push(
         <group key={`${si}-${k}`}>
-          {/* LOD1 主 Band */}
           <mesh
             geometry={subGeo}
-            material={mat}
+            material={
+              new THREE.MeshStandardMaterial({
+                color: new THREE.Color(parent.color).lerp(
+                  new THREE.Color(0xffffff),
+                  0.3
+                ),
+                roughness: 0.85
+              })
+            }
             onUpdate={(m) => m.layers.set(LAYER_LOD1)}
             onClick={() =>
               onSelect({
@@ -293,7 +301,6 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
             }
           />
 
-          {/* ⭐ LOD1 Label（LOD2 時不顯示） */}
           {isFront && !showLOD2 && (
             <group
               position={lonLatToVec3(
@@ -317,7 +324,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
             </group>
           )}
 
-          {/* ⭐ LOD2：Band 內再切三塊 */}
+          {/* ========== LOD2 ========== */}
           {showLOD2 &&
             Array.from({ length: 3 }).map((_, m) => {
               const s0 = m / 3;
@@ -333,9 +340,6 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
                 lon1: lon2_1,
                 r: layerR + 0.05
               });
-
-              // ⭐ LOD2 字體更小 + 距離更貼近地表
-              const fontSizeL2 = useCameraScale(0.12, RADIUS * 2.2);
 
               const labelPos = lonLatToVec3(
                 (lon2_0 + lon2_1) / 2,
@@ -353,8 +357,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
                           new THREE.Color(0xffffff),
                           0.55
                         ),
-                        roughness: 0.8,
-                        opacity: 1
+                        roughness: 0.8
                       })
                     }
                     onClick={(e) => {
@@ -368,7 +371,6 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
                     }}
                   />
 
-                  {/* LOD2 Label */}
                   {isFront && (
                     <group position={labelPos}>
                       <Billboard follow>
@@ -445,7 +447,8 @@ function SoftTerminator({
           void main() {
             vNormal = normalize(normalMatrix * normal);
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-          }`}
+          }
+        `}
         fragmentShader={`
           uniform vec3 sun;
           uniform float strength;
@@ -455,7 +458,8 @@ function SoftTerminator({
             float shade = smoothstep(-0.4, 0.2, nd);
             float a = (1.0 - shade) * strength;
             gl_FragColor = vec4(0.4,0.5,0.6, a * 0.6);
-          }`}
+          }
+        `}
       />
     </mesh>
   );
@@ -490,11 +494,10 @@ function RaycastLayerController({ activeLayer }) {
   return null;
 }
 
-// ===================== EnergyGlobeLOD (LOD0 / LOD1 / LOD2 切換) =====================
+// ===================== EnergyGlobeLOD（LOD 切換控制） =====================
 function EnergyGlobeLOD({ onSelect }) {
   const lod = useLODLevel(); // 0 / 1 / 2
 
-  // 哪一層能被 raycaster 撞到
   const activeLayer = lod === 0 ? LAYER_LOD0 : LAYER_LOD1;
 
   return (
@@ -502,14 +505,8 @@ function EnergyGlobeLOD({ onSelect }) {
       <RaycastLayerController activeLayer={activeLayer} />
 
       {lod === 0 && <FullCoverSectors onSelect={onSelect} />}
-
-      {lod === 1 && (
-        <SectorIndustryBubbles showLOD2={false} onSelect={onSelect} />
-      )}
-
-      {lod === 2 && (
-        <SectorIndustryBubbles showLOD2={true} onSelect={onSelect} />
-      )}
+      {lod === 1 && <SectorIndustryBubbles showLOD2={false} onSelect={onSelect} />}
+      {lod === 2 && <SectorIndustryBubbles showLOD2={true} onSelect={onSelect} />}
     </group>
   );
 }
@@ -519,33 +516,26 @@ function Scene({ onSelect }) {
   const { camera, gl } = useThree();
 
   useEffect(() => {
-    // 初始相機位置
     camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6);
 
-    // 啟用所有 LOD 層
     camera.layers.enable(LAYER_LOD0);
     camera.layers.enable(LAYER_LOD1);
 
-    // 透明背景
     gl.setClearColor(0x000000, 0);
     gl.autoClear = false;
   }, [camera, gl]);
 
   return (
     <>
-      {/* 光源 */}
       <ambientLight intensity={1.25} />
       <directionalLight position={[5, 5, 5]} intensity={1.6} color={0xffffff} />
 
-      {/* 球體視覺層 */}
       <TransparentGlobe />
       <SoftTerminator strength={0.5} />
       <Atmosphere />
 
-      {/* LOD0 / LOD1 / LOD2 */}
       <EnergyGlobeLOD onSelect={onSelect} />
 
-      {/* 相機控制 */}
       <OrbitControls
         enablePan={false}
         minDistance={RADIUS * 1.05}
@@ -559,7 +549,7 @@ function Scene({ onSelect }) {
   );
 }
 
-// ===================== Root Component: GlobeVisualizer =====================
+// ===================== Root Component =====================
 export default function GlobeVisualizer({ onSelect }) {
   const [selection, setSelection] = useState(null);
   const [lastAiSelection, setLastAiSelection] = useState(null);
