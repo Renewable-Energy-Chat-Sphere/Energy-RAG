@@ -1,7 +1,7 @@
-// ============================
+// =========================================
 // GlobeVisualizer.jsx — Part 1 / 2
-// LOD0 / LOD1 / LOD2（瞬間切換 + 正確文字顯示版本）
-// ============================
+// LOD0 / LOD1 / LOD2 + Google Earth 文字縮放
+// =========================================
 
 import React, {
   useMemo,
@@ -29,7 +29,7 @@ const SECTORS = [
   { key: "res", name: "住宅", color: 0xebf6f9 }
 ];
 
-// 第二層：子產業
+// 第二層：子產業（LOD1）
 const INDUSTRIES = {
   agri: ["農作物與畜牧", "林業與木材", "漁業與水產", "食品初級加工", "農機服務"],
   ind: ["砂石產品", "食品飲料及菸草製造業", "化學材料與製品", "金屬製品", "機械與設備"],
@@ -109,6 +109,23 @@ function sectorIndexFromLon(lonDeg) {
   return Math.floor((lon + 180) / 72) % 5;
 }
 
+// ===================== ⭐ Google Earth 文字縮放 Hook =====================
+function useCameraScale(baseSize = 1, baseDist = RADIUS * 3) {
+  const { camera } = useThree();
+  const [scale, setScale] = useState(baseSize);
+
+  useFrame(() => {
+    const d = camera.position.length();
+
+    // 距離越近 → 字越小（0.35 倍 ~ 1 倍）
+    const s = THREE.MathUtils.clamp(d / baseDist, 0.35, 1.0);
+
+    setScale(baseSize * s);
+  });
+
+  return scale;
+}
+
 // ===================== ⭐ LOD 切換（瞬間切換） =====================
 function useLODLevel() {
   const { camera } = useThree();
@@ -117,7 +134,7 @@ function useLODLevel() {
   useFrame(() => {
     const d = camera.position.length();
 
-    const LOD1_Dist = RADIUS * 2.3;  
+    const LOD1_Dist = RADIUS * 2.3;
     const LOD2_Dist = RADIUS * 1.45;
 
     let newLOD = 0;
@@ -131,8 +148,10 @@ function useLODLevel() {
   return lod;
 }
 
-// ===================== ⭐ LOD0：五大部門（含標籤） =====================
+// ===================== ⭐ LOD0：五大部門 =====================
 function FullCoverSectors({ onSelect }) {
+  const fontSize = useCameraScale(0.28); // Google Earth 自動縮放字體
+
   const bands = useMemo(() => {
     const out = [];
     for (let i = 0; i < 5; i++) {
@@ -152,23 +171,21 @@ function FullCoverSectors({ onSelect }) {
       {bands.map((b, i) => {
         const geo = sphericalQuadGeometry({
           ...b,
-          r: RADIUS + 0.01,
-          seg: 48
+          r: RADIUS + 0.01
         });
 
         const mat = new THREE.MeshStandardMaterial({
           color: b.sector.color,
           roughness: 0.8,
-          metalness: 0.0,
+          metalness: 0,
           transparent: true,
           opacity: 1
         });
 
-        // Label Position
         const labelPos = lonLatToVec3(
           (b.lon0 + b.lon1) / 2,
           0,
-          RADIUS + 0.06
+          RADIUS + 0.05
         ).toArray();
 
         return (
@@ -179,23 +196,23 @@ function FullCoverSectors({ onSelect }) {
               onUpdate={(m) => m.layers.set(LAYER_LOD0)}
               onPointerOver={() => (document.body.style.cursor = "pointer")}
               onPointerOut={() => (document.body.style.cursor = "auto")}
-              onClick={() => {
+              onClick={() =>
                 onSelect({
                   type: "sector",
                   key: b.sector.key,
                   name: b.sector.name
-                });
-              }}
+                })
+              }
             />
 
-            {/* LOD0 標籤 */}
+            {/* ⭐ LOD0 Label（自動縮小） */}
             <group position={labelPos}>
               <Billboard follow>
                 <Text
-                  fontSize={0.28}
+                  fontSize={fontSize}
                   color="#111"
                   material-depthTest={false}
-                  outlineWidth={0.007}
+                  outlineWidth={0.006}
                   outlineColor="#fff"
                   renderOrder={300}
                 >
@@ -215,15 +232,10 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
   const { camera } = useThree();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // 找相機正對的 sector
+  // ===== 找正對的 sector =====
   useFrame(() => {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const hit = raySphereIntersection(
-      camera.position,
-      dir,
-      new THREE.Vector3(0, 0, 0),
-      RADIUS
-    );
+    const hit = raySphereIntersection(camera.position, dir, new THREE.Vector3(0, 0, 0), RADIUS);
     if (!hit) return;
 
     const { lon } = vec3ToLonLat(hit);
@@ -250,9 +262,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
       const lat0 = THREE.MathUtils.lerp(90, -90, t1);
 
       const subGeo = sphericalQuadGeometry({
-        lat0, lat1,
-        lon0, lon1,
-        r: layerR
+        lat0, lat1, lon0, lon1, r: layerR
       });
 
       const mat = new THREE.MeshStandardMaterial({
@@ -263,26 +273,27 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
 
       const isFront = si === activeIndex;
 
+      // ⭐ LOD1 label 字體縮放
+      const fontSizeL1 = useCameraScale(0.18);
+
       all.push(
         <group key={`${si}-${k}`}>
-          {/* ===== LOD1 BAND ===== */}
+          {/* LOD1 主 Band */}
           <mesh
             geometry={subGeo}
             material={mat}
             onUpdate={(m) => m.layers.set(LAYER_LOD1)}
-            onPointerOver={() => (document.body.style.cursor = "pointer")}
-            onPointerOut={() => (document.body.style.cursor = "auto")}
-            onClick={() => {
+            onClick={() =>
               onSelect({
                 type: "industry",
                 parentKey: parent.key,
                 parentName: parent.name,
                 name: items[k]
-              });
-            }}
+              })
+            }
           />
 
-          {/* ===== LOD1 LABEL（LOD2 時不顯示） ===== */}
+          {/* ⭐ LOD1 Label（LOD2 時不顯示） */}
           {isFront && !showLOD2 && (
             <group
               position={lonLatToVec3(
@@ -293,7 +304,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
             >
               <Billboard follow>
                 <Text
-                  fontSize={0.18}
+                  fontSize={fontSizeL1}
                   color="#000"
                   material-depthTest={false}
                   outlineWidth={0.005}
@@ -306,7 +317,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
             </group>
           )}
 
-          {/* ===== ⭐ LOD2 小格（band 內再切 3 塊） ===== */}
+          {/* ⭐ LOD2：Band 內再切三塊 */}
           {showLOD2 &&
             Array.from({ length: 3 }).map((_, m) => {
               const s0 = m / 3;
@@ -323,10 +334,13 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
                 r: layerR + 0.05
               });
 
+              // ⭐ LOD2 字體更小 + 距離更貼近地表
+              const fontSizeL2 = useCameraScale(0.12, RADIUS * 2.2);
+
               const labelPos = lonLatToVec3(
                 (lon2_0 + lon2_1) / 2,
                 (lat0 + lat1) / 2,
-                layerR + 0.08
+                layerR + 0.06
               ).toArray();
 
               return (
@@ -354,12 +368,12 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
                     }}
                   />
 
-                  {/* LOD2 LABEL */}
+                  {/* LOD2 Label */}
                   {isFront && (
                     <group position={labelPos}>
                       <Billboard follow>
                         <Text
-                          fontSize={0.12}
+                          fontSize={fontSizeL2}
                           color="#000"
                           material-depthTest={false}
                           outlineWidth={0.003}
@@ -381,7 +395,12 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
 
   return <group>{all}</group>;
 }
-// ===================== 視覺：球體（透明外殼） =====================
+// =========================================
+// GlobeVisualizer.jsx — Part 2 / 2
+// Scene / LOD Controller / Root Component
+// =========================================
+
+// ===================== Transparent Globe =====================
 function TransparentGlobe() {
   return (
     <mesh>
@@ -390,16 +409,16 @@ function TransparentGlobe() {
         color={0xeef7ff}
         emissive={0xb7d4e6}
         specular={0xffffff}
+        shininess={90}
         transparent
         opacity={0.33}
-        shininess={90}
         depthWrite={false}
       />
     </mesh>
   );
 }
 
-// ===================== 柔光 Terminator =====================
+// ===================== Soft Terminator =====================
 function SoftTerminator({
   strength = 0.55,
   sunDir = new THREE.Vector3(1, 0.4, 0.2).normalize()
@@ -442,7 +461,7 @@ function SoftTerminator({
   );
 }
 
-// ===================== 大氣光暈 =====================
+// ===================== Atmosphere =====================
 function Atmosphere() {
   return (
     <mesh renderOrder={-20}>
@@ -452,14 +471,14 @@ function Atmosphere() {
         transparent
         opacity={0.06}
         side={THREE.BackSide}
-        depthTest={false}
         depthWrite={false}
+        depthTest={false}
       />
     </mesh>
   );
 }
 
-// ===================== Raycaster Layer 指定 =====================
+// ===================== Raycaster Layer Controller =====================
 function RaycastLayerController({ activeLayer }) {
   const { raycaster } = useThree();
 
@@ -471,10 +490,11 @@ function RaycastLayerController({ activeLayer }) {
   return null;
 }
 
-// ===================== ⭐ LOD 控制器 =====================
+// ===================== EnergyGlobeLOD (LOD0 / LOD1 / LOD2 切換) =====================
 function EnergyGlobeLOD({ onSelect }) {
-  const lod = useLODLevel(); // 0=LOD0, 1=LOD1, 2=LOD2
+  const lod = useLODLevel(); // 0 / 1 / 2
 
+  // 哪一層能被 raycaster 撞到
   const activeLayer = lod === 0 ? LAYER_LOD0 : LAYER_LOD1;
 
   return (
@@ -494,16 +514,19 @@ function EnergyGlobeLOD({ onSelect }) {
   );
 }
 
-// ===================== ⭐ Scene（燈光、球體等） =====================
+// ===================== Scene =====================
 function Scene({ onSelect }) {
   const { camera, gl } = useThree();
 
   useEffect(() => {
+    // 初始相機位置
     camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6);
 
+    // 啟用所有 LOD 層
     camera.layers.enable(LAYER_LOD0);
     camera.layers.enable(LAYER_LOD1);
 
+    // 透明背景
     gl.setClearColor(0x000000, 0);
     gl.autoClear = false;
   }, [camera, gl]);
@@ -512,21 +535,17 @@ function Scene({ onSelect }) {
     <>
       {/* 光源 */}
       <ambientLight intensity={1.25} />
-      <directionalLight
-        position={[5, 5, 5]}
-        intensity={1.6}
-        color={0xffffff}
-      />
+      <directionalLight position={[5, 5, 5]} intensity={1.6} color={0xffffff} />
 
-      {/* 球體結構 */}
+      {/* 球體視覺層 */}
       <TransparentGlobe />
       <SoftTerminator strength={0.5} />
       <Atmosphere />
 
-      {/* LOD */}
+      {/* LOD0 / LOD1 / LOD2 */}
       <EnergyGlobeLOD onSelect={onSelect} />
 
-      {/* 控制器 */}
+      {/* 相機控制 */}
       <OrbitControls
         enablePan={false}
         minDistance={RADIUS * 1.05}
@@ -540,12 +559,12 @@ function Scene({ onSelect }) {
   );
 }
 
-// ===================== ⭐ GlobeVisualizer（主入口） =====================
+// ===================== Root Component: GlobeVisualizer =====================
 export default function GlobeVisualizer({ onSelect }) {
   const [selection, setSelection] = useState(null);
   const [lastAiSelection, setLastAiSelection] = useState(null);
 
-  // ===================== AI 選擇同步（每 2 秒查 selected.json） =====================
+  // ===================== AI 選取同步 =====================
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -558,27 +577,29 @@ export default function GlobeVisualizer({ onSelect }) {
         const data = await res.json();
 
         if (data?.selection && data.selection !== lastAiSelection) {
-          const newSel = {
-            type: "sector",
-            name: data.selection,
-          };
-
+          const newSel = { type: "sector", name: data.selection };
           setSelection(newSel);
           onSelect?.(newSel);
           setLastAiSelection(data.selection);
         }
-      } catch (e) {
-        console.warn("❌ AI 選取同步錯誤：", e);
+      } catch (err) {
+        console.warn("❌ AI 選取同步錯誤：", err);
       }
     }, 2000);
 
     return () => clearInterval(interval);
   }, [lastAiSelection, onSelect]);
 
-  // ===================== 渲染 =====================
+  // ===================== Canvas 渲染 =====================
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", background: "transparent" }}>
-      {/* 左側：球體 */}
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        background: "transparent"
+      }}
+    >
       <div style={{ flex: 1, height: "100%", position: "relative" }}>
         <Canvas
           style={{ width: "100%", height: "100%" }}
