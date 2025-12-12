@@ -313,7 +313,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hover, setHover] = useState(null);
 
-  // 判斷目前正對的 sectorIndex
+  // ★ 判斷目前正對的 sectorIndex（保留你的做法）
   useFrame(() => {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     const hit = raySphereIntersection(
@@ -330,7 +330,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
   const nodes = [];
 
   for (let si = 0; si < SECTORS.length; si++) {
-    const parent = SECTORS[si];
+    const parent = SECTORS[si]; // sector
     const items = INDUSTRIES[parent.key] ?? [];
     const n = items.length;
 
@@ -351,7 +351,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
 
       const offset = isHover ? HOVER_OFFSET.lod1 : 0;
 
-      // LOD1 tile geometry
+      // ★ LOD1 tile geometry（未改）
       const geo1 = sphericalQuadGeometry({
         lat0,
         lat1,
@@ -361,6 +361,9 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
         seg: 32
       });
 
+      // =========================
+      //    LOD1 TILE + LABEL
+      // =========================
       nodes.push(
         <group key={`L1-${si}-${k}`}>
           <mesh
@@ -387,30 +390,59 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
             }
           />
 
-          {/* LOD1 label：只在正前方顯示 */}
+          {/* ======= LOD1 LABEL（改成 3 行資訊） ======= */}
           {isFront && !showLOD2 && (
             <group
               position={lonLatToVec3(
                 (lon0 + lon1) / 2,
                 (lat0 + lat1) / 2,
-                baseRadius + 0.015
+                baseRadius + 0.03
               ).toArray()}
             >
               <Billboard follow>
+
+                {/* 行業名稱 */}
                 <Text
                   fontSize={label.lod1}
                   color="#000"
                   material-depthTest={false}
+                  anchorX="center"
+                  position={[0, 0.06, 0]}
                 >
                   {items[k]}
                 </Text>
+
+                {/* 供給量 */}
+                <Text
+                  fontSize={label.lod1 * 0.75}
+                  color="#000"
+                  material-depthTest={false}
+                  anchorX="center"
+                  position={[0, -0.01, 0]}
+                >
+                  供給量：{parent.supply}
+                </Text>
+
+                {/* 需求量 */}
+                <Text
+                  fontSize={label.lod1 * 0.75}
+                  color="#000"
+                  material-depthTest={false}
+                  anchorX="center"
+                  position={[0, -0.08, 0]}
+                >
+                  需求量：{parent.demand}
+                </Text>
+
               </Billboard>
             </group>
           )}
         </group>
       );
 
-      // ============= LOD2 FAST =============
+      // =========================
+      //         LOD2 FAST
+      // =========================
       if (showLOD2 && isFront) {
         for (let m = 0; m < 3; m++) {
           const s0 = m / 3;
@@ -428,7 +460,7 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
             lon0: lonA,
             lon1: lonB,
             r: baseRadius + 0.05 + rOffset2,
-            seg: LOD2_SEG               // ⭐ FAST MODE（seg=18）
+            seg: LOD2_SEG
           });
 
           const labelPos = lonLatToVec3(
@@ -458,21 +490,48 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
                     type: "lod2",
                     parentSector: parent.name,
                     parentIndustry: items[k],
-                    name: `LOD2 範例 ${m + 1}`
+                    name: items[k] // ★ 不再顯示“LOD2 範例”
                   });
                 }}
               />
 
-              {/* LOD2 Label（小字 + 不貼太近） */}
+              {/* ======= LOD2 LABEL（3 行） ======= */}
               <group position={labelPos}>
                 <Billboard follow>
+
+                  {/* 行業名稱 */}
                   <Text
-                    fontSize={label.lod2}  // ⭐ 正確縮放
+                    fontSize={label.lod2}
                     color="#000"
                     material-depthTest={false}
+                    anchorX="center"
+                    position={[0, 0.03, 0]}
                   >
-                    {`LOD2 範例 ${m + 1}`}
+                    {items[k]}
                   </Text>
+
+                  {/* 供給量 */}
+                  <Text
+                    fontSize={label.lod2 * 0.85}
+                    color="#000"
+                    material-depthTest={false}
+                    anchorX="center"
+                    position={[0, -0.02, 0]}
+                  >
+                    供給量：{parent.supply}
+                  </Text>
+
+                  {/* 需求量 */}
+                  <Text
+                    fontSize={label.lod2 * 0.85}
+                    color="#000"
+                    material-depthTest={false}
+                    anchorX="center"
+                    position={[0, -0.06, 0]}
+                  >
+                    需求量：{parent.demand}
+                  </Text>
+
                 </Billboard>
               </group>
             </group>
@@ -481,9 +540,9 @@ function SectorIndustryBubbles({ showLOD2, onSelect }) {
       }
     }
   }
-
   return <group>{nodes}</group>;
 }
+
 
 // ===================== Transparent Globe =====================
 function TransparentGlobe() {
