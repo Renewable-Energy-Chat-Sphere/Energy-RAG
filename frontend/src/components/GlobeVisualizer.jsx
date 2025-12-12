@@ -1,8 +1,3 @@
-// =========================================
-// GlobeVisualizer.jsx — Part 1 / 2
-// LOD0 / LOD1 / LOD2 + Natural Hover + LOD2 FAST
-// =========================================
-
 import React, {
   useMemo,
   useRef,
@@ -13,7 +8,7 @@ import React, {
 
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Text, Billboard } from "@react-three/drei";
+import { OrbitControls, Html, Text, Billboard, useTexture } from "@react-three/drei";
 
 // ===================== 基本設定 =====================
 const RADIUS = 3.0;
@@ -32,11 +27,11 @@ const LOD2_SEG = 18;
 
 // ===================== 部門定義 =====================
 const SECTORS = [
-  { key: "agri", name: "農業", color: 0xdbeaf0 },
-  { key: "ind", name: "工業", color: 0xdfedf3 },
-  { key: "trans", name: "運輸", color: 0xe3f0f5 },
-  { key: "service", name: "服務", color: 0xe7f3f7 },
-  { key: "res", name: "住宅", color: 0xebf6f9 }
+  { key: "agri", name: "農業", color: 0xdbeaf0, supply: 124.5, demand: 98.7, icon: "/images/agri.png" },
+  { key: "ind", name: "工業", color: 0xdfedf3, supply: 350.2, demand: 420.1, icon: "/images/ind.png" },
+  { key: "trans", name: "運輸", color: 0xe3f0f5, supply: 210.8, demand: 260.4, icon: "/images/trans.png" },
+  { key: "service", name: "服務", color: 0xe7f3f7, supply: 180.6, demand: 159.9, icon: "/images/service.png" },
+  { key: "res", name: "住宅", color: 0xebf6f9, supply: 110.3, demand: 130.0, icon: "/images/res.png" }
 ];
 
 const INDUSTRIES = {
@@ -162,13 +157,15 @@ function useLODLevel() {
   return lod;
 }
 
-// ===================== ⭐ LOD0（半球 + Hover 浮起） =====================
+// ===================== ⭐ LOD0（整區資訊層 + Hover） =====================
 function FullCoverSectors({ onSelect }) {
   const { camera } = useThree();
   const label = useCameraLabelScales();
   const [activeIndex, setActiveIndex] = useState(0);
   const [hover, setHover] = useState(null);
+  const activeIndexRef = useRef(0);
 
+  // =============== Sector bands ===============
   const bands = useMemo(
     () =>
       SECTORS.map((sector, i) => ({
@@ -179,13 +176,24 @@ function FullCoverSectors({ onSelect }) {
     []
   );
 
-  // 判斷正對的 LOD0 Sector
+  // =============== 正對區段偵測（穩定，不閃爍） ===============
   useFrame(() => {
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const hit = raySphereIntersection(camera.position, forward, new THREE.Vector3(0, 0, 0), RADIUS);
+    const hit = raySphereIntersection(
+      camera.position,
+      forward,
+      new THREE.Vector3(0, 0, 0),
+      RADIUS
+    );
     if (!hit) return;
+
     const { lon } = vec3ToLonLat(hit);
-    setActiveIndex(sectorIndexFromLon(lon));
+    const idx = sectorIndexFromLon(lon);
+
+    if (idx !== activeIndexRef.current) {
+      activeIndexRef.current = idx;
+      setActiveIndex(idx);
+    }
   });
 
   const visible = [
@@ -194,6 +202,9 @@ function FullCoverSectors({ onSelect }) {
     (activeIndex + 4) % 5
   ];
 
+  // ============================================================
+  //                       RENDER
+  // ============================================================
   return (
     <group renderOrder={10}>
       {bands.map((b, i) => {
@@ -209,8 +220,16 @@ function FullCoverSectors({ onSelect }) {
           r: RADIUS + 0.01 + rOffset
         });
 
+        // ⭐資訊卡位置（貼齊球面）
+        const cardPos = lonLatToVec3(
+          (b.lon0 + b.lon1) / 2,
+          0,
+          RADIUS + 0.02
+        );
+
         return (
           <group key={i}>
+            {/* ================= Sector Mesh ================= */}
             <mesh
               geometry={geo}
               material={
@@ -231,23 +250,53 @@ function FullCoverSectors({ onSelect }) {
               }
             />
 
-            {/* label */}
+            {/* ================= 資訊卡 ================= */}
             <group
-              position={lonLatToVec3(
-                (b.lon0 + b.lon1) / 2,
-                0,
-                RADIUS + 0.05
-              ).toArray()}
+              position={cardPos.toArray()}
+              renderOrder={50}
+              ref={(el) => {
+                if (!el) return;
+
+                const normal = cardPos.clone().normalize();
+                const q = new THREE.Quaternion().setFromUnitVectors(
+                  new THREE.Vector3(0, 0, 1),
+                  normal
+                );
+                el.setRotationFromQuaternion(q);
+              }}
             >
-              <Billboard follow>
-                <Text
-                  fontSize={label.lod0}
-                  color="#111"
-                  material-depthTest={false}
-                >
-                  {b.sector.name}
-                </Text>
-              </Billboard>
+              {/* ===== Title ===== */}
+              <Text
+                fontSize={0.30}
+                color="black"
+                position={[0, 0.32, 0.002]}
+                anchorX="center"
+                material-depthTest={false}
+              >
+                {b.sector.name}
+              </Text>
+
+              {/* ===== Supply ===== */}
+              <Text
+                fontSize={0.17}
+                color="black"
+                position={[0, -0.10, 0.002]}
+                anchorX="center"
+                material-depthTest={false}
+              >
+                供給量：{b.sector.supply}
+              </Text>
+
+              {/* ===== Demand ===== */}
+              <Text
+                fontSize={0.17}
+                color="black"
+                position={[0, -0.28, 0.002]}
+                anchorX="center"
+                material-depthTest={false}
+              >
+                需求量：{b.sector.demand}
+              </Text>
             </group>
           </group>
         );
@@ -255,10 +304,6 @@ function FullCoverSectors({ onSelect }) {
     </group>
   );
 }
-// =========================================
-// GlobeVisualizer.jsx — Part 2 / 2
-// LOD1 / LOD2 FAST / Scene / Root Component
-// =========================================
 
 // ===================== LOD1 + LOD2 FAST =====================
 function SectorIndustryBubbles({ showLOD2, onSelect }) {
