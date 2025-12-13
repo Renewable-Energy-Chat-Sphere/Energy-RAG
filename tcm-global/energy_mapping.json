@@ -364,7 +364,7 @@
     "source_id": "S52"
   },
   {
-    "key": "heat_district_heating_geothermal_heat",
+    "key": "heat",
     "category": "Renewable",
     "name_en": "Heat",
     "name_zh": "熱能",
