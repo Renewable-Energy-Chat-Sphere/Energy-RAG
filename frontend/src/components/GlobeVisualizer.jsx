@@ -69,6 +69,45 @@ function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
     (r + lift) * Math.cos(lat) * Math.sin(lon)
   );
 }
+// =====================
+// Surface-aligned Label（貼齊球面文字）
+// =====================
+function SurfaceLabel({
+  lon,
+  lat,
+  radius,
+  offset = 0.02,
+  fontSize,
+  color = "#000",
+  children
+}) {
+  const ref = useRef();
+
+  const position = useMemo(() => {
+    return lonLatToVec3(lon, lat, radius + offset);
+  }, [lon, lat, radius, offset]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    // 面向球心，再轉 180° 讓文字正面朝外
+    ref.current.lookAt(0, 0, 0);
+    ref.current.rotateY(Math.PI);
+  }, []);
+
+  return (
+    <group ref={ref} position={position.toArray()}>
+      <Text
+        fontSize={fontSize}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        material-depthTest={false}
+      >
+        {children}
+      </Text>
+    </group>
+  );
+}
 
 // =====================
 // 球面分塊 Geometry
@@ -268,19 +307,17 @@ function LOD0Sectors({ hierarchy, onSelect }) {
               }
             />
 
-            {/* Label */}
-            <group position={labelPos.toArray()}>
-              <Billboard follow>
-                <Text
-                  fontSize={label.lod0}
-                  color="#000"
-                  textAlign="center"
-                  material-depthTest={false}
-                >
-                  {`${dept.code}\n${dept.name}`}
-                </Text>
-              </Billboard>
-            </group>
+            {/* Label — Surface aligned */}
+            <SurfaceLabel
+              lon={(lon0 + lon1) / 2}
+              lat={0}
+              radius={RADIUS}
+              offset={0.025}
+              fontSize={label.lod0}
+            >
+              {`${dept.code}\n${dept.name}`}
+            </SurfaceLabel>
+
           </group>
         );
       })}
@@ -367,24 +404,15 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
 
           {/* LOD1 Label */}
           {!showLOD2 && (
-            <group
-              position={lonLatToVec3(
-                (lon0 + lon1) / 2,
-                (lat0 + lat1) / 2,
-                baseR + 0.03
-              ).toArray()}
+            <SurfaceLabel
+              lon={(lon0 + lon1) / 2}
+              lat={(lat0 + lat1) / 2}
+              radius={baseR}
+              offset={0.03}
+              fontSize={label.lod1}
             >
-              <Billboard follow>
-                <Text
-                  fontSize={label.lod1}
-                  color="#000"
-                  textAlign="center"
-                  material-depthTest={false}
-                >
-                  {`${level2[i].code}\n${level2[i].name}`}
-                </Text>
-              </Billboard>
-            </group>
+              {`${level2[i].code}\n${level2[i].name}`}
+            </SurfaceLabel>
           )}
         </group>
       );
@@ -431,24 +459,16 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
                 }
               />
 
-              <group
-                position={lonLatToVec3(
-                  (lonA + lonB) / 2,
-                  (lat0 + lat1) / 2,
-                  baseR + 0.07
-                ).toArray()}
+              <SurfaceLabel
+                lon={(lonA + lonB) / 2}
+                lat={(lat0 + lat1) / 2}
+                radius={baseR + 0.05}
+                offset={0.02}
+                fontSize={label.lod2}
               >
-                <Billboard follow>
-                  <Text
-                    fontSize={label.lod2}
-                    color="#000"
-                    textAlign="center"
-                    material-depthTest={false}
-                  >
-                    {`${level3[k].code}\n${level3[k].name}`}
-                  </Text>
-                </Billboard>
-              </group>
+                {`${level3[k].code}\n${level3[k].name}`}
+              </SurfaceLabel>
+
             </group>
           );
         }
