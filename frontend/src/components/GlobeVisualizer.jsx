@@ -318,7 +318,7 @@ function LOD0Sectors({ hierarchy, onSelect }) {
   );
 }
 // =====================
-// LOD1 / LOD2 — Level 2 & 3（★整顆球都有 base）
+// LOD1 / LOD2 — Level 2 & 3（★貼在球殼「內側」）
 // =====================
 function LOD1And2({ hierarchy, showLOD2, onSelect }) {
   const { camera } = useThree();
@@ -347,20 +347,23 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
 
   const nodes = [];
 
+  // ⭐ 關鍵：LOD1 / LOD2 使用「球殼內側半徑」
+  const INNER_R = RADIUS - 0.06;
+
   for (let si = 0; si < level1.length; si++) {
     const parent = level1[si];
     const lon0 = -180 + si * sectorAngle;
     const lon1 = lon0 + sectorAngle;
 
     // =====================
-    // ★ Base layer（所有 sector 都有）
+    // Base（內側淡層，整顆球都有）
     // =====================
     const baseGeo = sphericalQuadGeometry({
       lat0: -90,
       lat1: 90,
       lon0,
       lon1,
-      r: RADIUS + 0.08,
+      r: INNER_R,
       seg: 32
     });
 
@@ -370,22 +373,24 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
         geometry={baseGeo}
         material={
           new THREE.MeshStandardMaterial({
-            color: 0xf0f6fa,
-            roughness: 0.9
+            color: 0xe6f4ff,
+            roughness: 1,
+            metalness: 0,
+            transparent: true,
+            opacity: 0.12,
+            depthWrite: false,
+            side: THREE.BackSide   // ⭐ 只畫球殼內側
           })
         }
         onUpdate={(m) => m.layers.set(LAYER_LOD1)}
       />
     );
 
-    // =====================
-    // ★ 只有 active sector 才細分
-    // =====================
+    // 只有正對 sector 才細分
     if (si !== activeIndex) continue;
 
     const level2 = level2ByParent[parent.code] ?? [];
     const n2 = level2.length;
-    const baseR = RADIUS + 0.08;
 
     for (let i = 0; i < n2; i++) {
       const t0 = i / n2;
@@ -398,7 +403,7 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
         lat1,
         lon0,
         lon1,
-        r: baseR,
+        r: INNER_R,
         seg: 32
       });
 
@@ -408,8 +413,13 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
             geometry={geo1}
             material={
               new THREE.MeshStandardMaterial({
-                color: 0xf0f6fa,
-                roughness: 0.9
+                color: 0xe6f4ff,
+                roughness: 1,
+                metalness: 0,
+                transparent: true,
+                opacity: 0.35,
+                depthWrite: false,
+                side: THREE.BackSide   // ⭐ 關鍵
               })
             }
             onUpdate={(m) => m.layers.set(LAYER_LOD1)}
@@ -427,8 +437,8 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
             <SurfaceLabel
               lon={(lon0 + lon1) / 2}
               lat={(lat0 + lat1) / 2}
-              radius={baseR}
-              offset={0.03}
+              radius={INNER_R}
+              offset={-0.004}   // ⭐ 字也吃進球裡
               fontSize={label.lod1}
             >
               {`${level2[i].code}\n${level2[i].name}`}
@@ -438,7 +448,7 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
       );
 
       // =====================
-      // LOD2 — Level 3（只在 active sector）
+      // LOD2（第三層，仍然在球內）
       // =====================
       if (showLOD2) {
         const level3 = level3ByParent[level2[i].code] ?? [];
@@ -455,7 +465,7 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
             lat1,
             lon0: lonA,
             lon1: lonB,
-            r: baseR + 0.05,
+            r: INNER_R - 0.015,
             seg: 18
           });
 
@@ -465,8 +475,13 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
                 geometry={geo2}
                 material={
                   new THREE.MeshStandardMaterial({
-                    color: 0xf7fbff,
-                    roughness: 0.9
+                    color: 0xf0f8ff,
+                    roughness: 1,
+                    metalness: 0,
+                    transparent: true,
+                    opacity: 0.45,
+                    depthWrite: false,
+                    side: THREE.BackSide
                   })
                 }
                 onClick={() =>
@@ -482,8 +497,8 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
               <SurfaceLabel
                 lon={(lonA + lonB) / 2}
                 lat={(lat0 + lat1) / 2}
-                radius={baseR + 0.05}
-                offset={0.02}
+                radius={INNER_R - 0.015}
+                offset={-0.004}
                 fontSize={label.lod2}
               >
                 {`${level3[k].code}\n${level3[k].name}`}
@@ -497,6 +512,7 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
 
   return <group>{nodes}</group>;
 }
+
 // =====================
 // Transparent Globe（底層球殼，負責整顆球顏色）
 // =====================
