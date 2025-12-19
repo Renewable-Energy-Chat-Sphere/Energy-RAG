@@ -8,7 +8,7 @@ import React, {
 
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Text, Billboard } from "@react-three/drei";
+import { OrbitControls, Html, Text } from "@react-three/drei";
 
 import DEPT_JSON from "../data/index_demand.json";
 
@@ -57,6 +57,7 @@ function extractDeptHierarchy(json) {
   walk(json);
   return { level1, level2ByParent, level3ByParent };
 }
+
 // =====================
 // Lon / Lat → Vec3
 // =====================
@@ -69,8 +70,9 @@ function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
     (r + lift) * Math.cos(lat) * Math.sin(lon)
   );
 }
+
 // =====================
-// Surface-aligned Label（貼齊球面文字）
+// Surface-aligned Label
 // =====================
 function SurfaceLabel({
   lon,
@@ -89,7 +91,6 @@ function SurfaceLabel({
 
   useEffect(() => {
     if (!ref.current) return;
-    // 面向球心，再轉 180° 讓文字正面朝外
     ref.current.lookAt(0, 0, 0);
     ref.current.rotateY(Math.PI);
   }, []);
@@ -145,7 +146,6 @@ function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r, seg = 48 }) {
   geo.computeBoundingSphere();
   return geo;
 }
-
 // =====================
 // Raycast 球面交會
 // =====================
@@ -226,8 +226,9 @@ function RaycastLayerController({ activeLayer }) {
 
   return null;
 }
+
 // =====================
-// LOD0 — Level 1（自動平均經度）
+// LOD0 — Level 1（★整顆球都 render）
 // =====================
 function LOD0Sectors({ hierarchy, onSelect }) {
   const { camera } = useThree();
@@ -259,17 +260,9 @@ function LOD0Sectors({ hierarchy, onSelect }) {
     }
   });
 
-  const visible = [
-    activeIndex,
-    (activeIndex + 1) % sectorCount,
-    (activeIndex - 1 + sectorCount) % sectorCount
-  ];
-
   return (
     <group renderOrder={10}>
       {level1.map((dept, i) => {
-        if (!visible.includes(i)) return null;
-
         const lon0 = -180 + i * sectorAngle;
         const lon1 = lon0 + sectorAngle;
 
@@ -281,14 +274,9 @@ function LOD0Sectors({ hierarchy, onSelect }) {
           r: RADIUS + 0.01
         });
 
-        const labelPos = lonLatToVec3(
-          (lon0 + lon1) / 2,
-          0,
-          RADIUS + 0.025
-        );
-
         return (
           <group key={dept.code}>
+            {/* ★ 所有 sector 都 render（前面 + 背面） */}
             <mesh
               geometry={geo}
               material={
@@ -307,26 +295,26 @@ function LOD0Sectors({ hierarchy, onSelect }) {
               }
             />
 
-            {/* Label — Surface aligned */}
-            <SurfaceLabel
-              lon={(lon0 + lon1) / 2}
-              lat={0}
-              radius={RADIUS}
-              offset={0.025}
-              fontSize={label.lod0}
-            >
-              {`${dept.code}\n${dept.name}`}
-            </SurfaceLabel>
-
+            {/* ★ Label 只顯示正對的 sector */}
+            {i === activeIndex && (
+              <SurfaceLabel
+                lon={(lon0 + lon1) / 2}
+                lat={0}
+                radius={RADIUS}
+                offset={0.025}
+                fontSize={label.lod0}
+              >
+                {`${dept.code}\n${dept.name}`}
+              </SurfaceLabel>
+            )}
           </group>
         );
       })}
     </group>
   );
 }
-
 // =====================
-// LOD1 / LOD2 — Level 2 & 3
+// LOD1 / LOD2 — Level 2 & 3（★整顆球都有 base）
 // =====================
 function LOD1And2({ hierarchy, showLOD2, onSelect }) {
   const { camera } = useThree();
@@ -356,11 +344,40 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
   const nodes = [];
 
   for (let si = 0; si < level1.length; si++) {
-    if (si !== activeIndex) continue;
-
     const parent = level1[si];
     const lon0 = -180 + si * sectorAngle;
     const lon1 = lon0 + sectorAngle;
+
+    // =====================
+    // ★ Base layer（所有 sector 都有）
+    // =====================
+    const baseGeo = sphericalQuadGeometry({
+      lat0: -90,
+      lat1: 90,
+      lon0,
+      lon1,
+      r: RADIUS + 0.08,
+      seg: 32
+    });
+
+    nodes.push(
+      <mesh
+        key={`base-${parent.code}`}
+        geometry={baseGeo}
+        material={
+          new THREE.MeshStandardMaterial({
+            color: 0xf0f6fa,
+            roughness: 0.9
+          })
+        }
+        onUpdate={(m) => m.layers.set(LAYER_LOD1)}
+      />
+    );
+
+    // =====================
+    // ★ 只有 active sector 才細分
+    // =====================
+    if (si !== activeIndex) continue;
 
     const level2 = level2ByParent[parent.code] ?? [];
     const n2 = level2.length;
@@ -402,7 +419,6 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
             }
           />
 
-          {/* LOD1 Label */}
           {!showLOD2 && (
             <SurfaceLabel
               lon={(lon0 + lon1) / 2}
@@ -418,7 +434,7 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
       );
 
       // =====================
-      // LOD2 — Level 3
+      // LOD2 — Level 3（只在 active sector）
       // =====================
       if (showLOD2) {
         const level3 = level3ByParent[level2[i].code] ?? [];
@@ -468,7 +484,6 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
               >
                 {`${level3[k].code}\n${level3[k].name}`}
               </SurfaceLabel>
-
             </group>
           );
         }
@@ -479,20 +494,18 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
   return <group>{nodes}</group>;
 }
 // =====================
-// Transparent Globe
+// Transparent Globe（底層球殼，負責整顆球顏色）
 // =====================
 function TransparentGlobe() {
   return (
     <mesh renderOrder={0}>
       <sphereGeometry args={[RADIUS, 96, 96]} />
-      <meshPhongMaterial
-        color={0xeef7ff}
-        emissive={0xb7d4e6}
-        specular={0xffffff}
-        shininess={90}
+      <meshBasicMaterial
+        color={0xe3f0f5}
         transparent
-        opacity={0.33}
-        depthWrite={false}
+        opacity={0.35}
+        depthWrite={true}
+        depthTest={true}
       />
     </mesh>
   );
@@ -565,7 +578,7 @@ function Scene({ hierarchy, onSelect }) {
 
   return (
     <>
-      {/* 光源 */}
+      {/* 光源（只影響 sector，不影響底層球殼） */}
       <ambientLight intensity={1.2} />
       <directionalLight
         position={[5, 5, 5]}
@@ -573,7 +586,7 @@ function Scene({ hierarchy, onSelect }) {
         color={0xffffff}
       />
 
-      {/* 透明球 */}
+      {/* 底層完整球殼 */}
       <TransparentGlobe />
 
       {/* LOD Globe */}
