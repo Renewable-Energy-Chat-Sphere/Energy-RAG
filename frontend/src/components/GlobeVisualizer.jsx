@@ -281,8 +281,12 @@ function LOD0Sectors({ hierarchy, onSelect }) {
               geometry={geo}
               material={
                 new THREE.MeshStandardMaterial({
-                  color: 0xe3f0f5,
-                  roughness: 0.85
+                  color: 0xe6eef2,   // 比原本更淡
+                  roughness: 1,
+                  metalness: 0,
+                  transparent: true,
+                  opacity: 0.18,     // ⭐ 關鍵：讓紫色球透出來
+                  depthWrite: false  // ⭐ 關鍵：不要擋底層球殼
                 })
               }
               onUpdate={(m) => m.layers.set(LAYER_LOD0)}
@@ -496,21 +500,42 @@ function LOD1And2({ hierarchy, showLOD2, onSelect }) {
 // =====================
 // Transparent Globe（底層球殼，負責整顆球顏色）
 // =====================
-function TransparentGlobe() {
+function BlueCoreGlobe() {
+  const material = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: true,
+      uniforms: {
+        colorInner: { value: new THREE.Color("#6fd9ffff") },
+        colorOuter: { value: new THREE.Color("#cfefff") }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        uniform vec3 colorInner;
+        uniform vec3 colorOuter;
+        void main() {
+          float f = pow(vNormal.z * 0.5 + 0.5, 1.4);
+          vec3 color = mix(colorInner, colorOuter, f);
+          gl_FragColor = vec4(color, 0.35);
+        }
+      `
+    });
+  }, []);
+
   return (
     <mesh renderOrder={0}>
       <sphereGeometry args={[RADIUS, 96, 96]} />
-      <meshBasicMaterial
-        color={0xe3f0f5}
-        transparent
-        opacity={0.35}
-        depthWrite={true}
-        depthTest={true}
-      />
+      <primitive object={material} attach="material" />
     </mesh>
   );
 }
-
 // =====================
 // LOD Controller
 // =====================
@@ -586,9 +611,7 @@ function Scene({ hierarchy, onSelect }) {
         color={0xffffff}
       />
 
-      {/* 底層完整球殼 */}
-      <TransparentGlobe />
-
+      <BlueCoreGlobe />
       {/* LOD Globe */}
       <EnergyGlobeLOD hierarchy={hierarchy} onSelect={onSelect} />
 
