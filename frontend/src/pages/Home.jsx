@@ -32,7 +32,7 @@ export default function Home() {
 
   return (
     <>
-      {/* HERO BANNER */}
+      {/* HERO BANNER（有圖片那一塊） */}
       <section
         className="hero-banner"
         style={{
@@ -44,32 +44,42 @@ export default function Home() {
           marginTop: "70px",
         }}
       >
+        {/* 黑色遮罩 */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             background: "rgba(0,0,0,0.45)",
+            zIndex: 1,
           }}
-        ></div>
+        />
 
+        {/* 左側文字 */}
         <div
           style={{
             position: "absolute",
             bottom: "40px",
             left: "60px",
             color: "white",
+            zIndex: 2,
           }}
         >
-          <h1
-            style={{ fontSize: "40px", fontWeight: 700, marginBottom: "40px" }}
-          >
+          <h1 style={{ fontSize: "40px", fontWeight: 700, marginBottom: "20px" }}>
             多模態視覺能源球 · 智慧代理系統
           </h1>
           <p style={{ fontSize: "18px", opacity: 0.9 }}>
             結合能源資料、三維視覺化與 AI RAG 的新一代能源決策平台。
           </p>
         </div>
+
+        {/* 右側登入按鈕 */}
+        <div className="hero-banner-login">
+          <Link to="/login" style={{ textDecoration: "none" }}>
+            <button className="hero-login-btn">登入 / 註冊</button>
+          </Link>
+        </div>
       </section>
+
 
       {/* HERO TITLE */}
       <section className="hero">
@@ -81,13 +91,7 @@ export default function Home() {
           旨在協助一般民眾、能源管理單位與研究人員理解能源資訊並支援專業決策。
         </p>
 
-        <Link
-          to="/login"
-          className="hero-login-btn"
-          style={{ textDecoration: "none" }} // 去除底線
-        >
-          <button className="hero button">登入 / 註冊</button>
-        </Link>
+        
 
       </section>
 

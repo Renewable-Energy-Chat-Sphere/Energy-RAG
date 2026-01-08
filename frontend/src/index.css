@@ -464,3 +464,43 @@ footer {
 .back-to-top:hover {
   background: #f68f3b;
 }
+/* =========================
+   Hero Banner 右側登入按鈕
+========================= */
+.hero-banner-login {
+  position: absolute;
+  right: 80px;
+  bottom: 50%;
+  transform: translateY(50%);
+  z-index: 3;
+}
+
+/* 登入按鈕樣式（沿用你原本的橘色邏輯） */
+.hero-login-btn {
+  padding: 16px 40px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+
+  background: var(--orange);
+  color: white;
+
+  box-shadow: 0 10px 30px rgba(249, 115, 22, 0.6);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.hero-login-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 14px 36px rgba(249, 115, 22, 0.9);
+}
+
+/* 📱 手機版：按鈕移到下方中央 */
+@media (max-width: 768px) {
+  .hero-banner-login {
+    right: 50%;
+    bottom: 30px;
+    transform: translateX(50%);
+  }
+}
