@@ -1,13 +1,18 @@
 # app.py
 import os
+import json
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# === 載入環境變數 ===
+# ====================================
+# 載入環境變數
+# ====================================
 load_dotenv()
 
-# === 載入 OpenAI Client ===
+# ====================================
+# 載入 OpenAI Client
+# ====================================
 try:
     from openai import OpenAI
 
@@ -16,22 +21,30 @@ try:
 except Exception:
     openai_client = None
 
-# === 載入 RAG pipeline ===
+# ====================================
+# 載入 RAG pipeline
+# ====================================
 from pipelines.rag_web import qa_over_web
 from pipelines.rag_pdf import qa_over_pdf
 from pipelines.rag_av import qa_over_av
 
-# === 藍圖 ===
+# ====================================
+# 藍圖 Blueprint
+# ====================================
 from chat import chat_bp
 from tables import tables_bp
 
-# === 建立 Flask ===
+# ====================================
+# 建立 Flask App
+# ====================================
 app = Flask(__name__)
-CORS(app)  # ★ 允許前端 http://localhost:5173 呼叫
+CORS(app)
+from scheduler import start_scheduler
+
+start_scheduler()
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
 
-# 將 pipeline 放入 config
 app.config.update(
     OPENAI_CLIENT=openai_client,
     QA_OVER_WEB=qa_over_web,
@@ -39,9 +52,58 @@ app.config.update(
     QA_OVER_AV=qa_over_av,
 )
 
-# === Blueprint ===
-app.register_blueprint(chat_bp)  # /chat
-app.register_blueprint(tables_bp)  # /ask_table
+# ====================================
+# Blueprint 註冊
+# ====================================
+app.register_blueprint(chat_bp)
+app.register_blueprint(tables_bp)
+
+# ====================================
+# 0. 能源署最新公告（✔ 正式版：讀取爬蟲快取）
+# ====================================
+NEWS_CACHE_FILE = "energy_news_cache.json"
+
+
+@app.route("/energy-news", methods=["GET"])
+def energy_news():
+    """
+    能源署最新公告
+    資料來源：Selenium 同步之官網公告（快取）
+    """
+    try:
+        with open(NEWS_CACHE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        items = data.get("items", [])
+
+        return jsonify(
+            {
+                "count": len(items),
+                "source": data.get("source", "經濟部能源署"),
+                "synced_at": data.get("synced_at"),
+                "items": items,
+            }
+        )
+
+    except FileNotFoundError:
+        return jsonify(
+            {
+                "count": 0,
+                "source": "經濟部能源署",
+                "items": [],
+                "note": "尚未進行公告同步",
+            }
+        )
+
+    except Exception as e:
+        return jsonify(
+            {
+                "count": 0,
+                "source": "經濟部能源署",
+                "items": [],
+                "note": "公告資料讀取失敗",
+            }
+        )
 
 
 # ====================================
@@ -99,5 +161,5 @@ def ask_av():
 # ====================================
 if __name__ == "__main__":
     print("🚀 Flask 啟動：http://127.0.0.1:8000")
-    print("📌 API 可用：/chat /ask_web /ask_pdf /ask_av /ask_table")
+    print("📌 API：/energy-news /chat /ask_web /ask_pdf /ask_av /ask_table")
     app.run(host="127.0.0.1", port=8000, debug=True)

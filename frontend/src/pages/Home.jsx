@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
-
+import EnergyNews from "../components/EnergyNews";
 
 export default function Home() {
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function Home() {
           width: "100%",
           height: "300px",
           background:
-            "url('https://tse4.mm.bing.net/th/id/OIP.xBTpZMfmXk8z6uNbQHNZUgHaE8') center/cover no-repeat",
+            "url('https://cdn.orsted.com/-/media/www/images/corp/tw/tw-news/1005preevent.jpg?mh=1440&mw=1440&rev=e3e5ef740b2d47f899c5ee7df1ce75e6&hash=142400333144F591C049C8D872C07F78') center/cover no-repeat",
           marginTop: "70px",
         }}
       >
@@ -64,7 +64,9 @@ export default function Home() {
             zIndex: 2,
           }}
         >
-          <h1 style={{ fontSize: "40px", fontWeight: 700, marginBottom: "20px" }}>
+          <h1
+            style={{ fontSize: "40px", fontWeight: 700, marginBottom: "20px" }}
+          >
             多模態視覺能源球 · 智慧代理系統
           </h1>
           <p style={{ fontSize: "18px", opacity: 0.9 }}>
@@ -80,7 +82,6 @@ export default function Home() {
         </div>
       </section>
 
-
       {/* HERO TITLE */}
       <section className="hero">
         <h1>多模態視覺能源球 · 智慧代理系統</h1>
@@ -90,11 +91,8 @@ export default function Home() {
         <p>
           旨在協助一般民眾、能源管理單位與研究人員理解能源資訊並支援專業決策。
         </p>
-
-        
-
       </section>
-
+      <EnergyNews />
       {/* FEATURES */}
       <section id="features" className="section">
         <h2 style={{ fontSize: "32px", fontWeight: 600, textAlign: "center" }}>

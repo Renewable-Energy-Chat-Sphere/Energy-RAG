@@ -504,3 +504,87 @@ footer {
     transform: translateX(50%);
   }
 }
+/* ===============================
+   Energy News Section
+================================ */
+
+.energy-news {
+  background: var(--card-bg);
+  border-left: 6px solid var(--blue);
+  border-radius: 14px;
+  padding: 28px 32px;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+}
+
+.energy-news-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.energy-news-title i {
+  color: var(--orange);
+  font-size: 22px;
+}
+
+.energy-news-subtitle {
+  margin-top: 4px;
+  color: var(--gray-500);
+}
+
+.energy-news-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.energy-news-item {
+  display: block;
+  padding: 14px 18px;
+  background: #fde4d1;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  line-height: 1.6;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.energy-news-item::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 22px;
+  width: 6px;
+  height: 6px;
+  background: var(--orange);
+  border-radius: 50%;
+}
+
+.energy-news-item span {
+  margin-left: 14px;
+}
+
+.energy-news-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--orange);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);
+}
+
+/* 🌙 深色模式微調（沿用你現有 dark 架構） */
+#main-content.dark .energy-news-item {
+  background: #2f3947;
+}
+
+#main-content.dark .energy-news-item:hover {
+  background: #35404f;
+}
+/* 🌙 深色模式：能源署最新公告標題變白色 */
+#main-content.dark .energy-news-title {
+  color: #ffffff;
+}
