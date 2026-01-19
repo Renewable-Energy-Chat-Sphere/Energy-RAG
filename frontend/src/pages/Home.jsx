@@ -67,10 +67,10 @@ export default function Home() {
           <h1
             style={{ fontSize: "40px", fontWeight: 700, marginBottom: "20px" }}
           >
-            多模態視覺能源球 · 智慧代理系統
+            讓能源資料真正「看得見、問得到、用得上」
           </h1>
           <p style={{ fontSize: "18px", opacity: 0.9 }}>
-            結合能源資料、三維視覺化與 AI RAG 的新一代能源決策平台。
+            結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台
           </p>
         </div>
 
@@ -84,13 +84,21 @@ export default function Home() {
 
       {/* HERO TITLE */}
       <section className="hero">
-        <h1>多模態視覺能源球 · 智慧代理系統</h1>
+        <h2 style={{ fontSize: "32px", fontWeight: 600, textAlign: "center" }}>
+          多模態視覺能源球 · 智慧代理系統
+        </h2>
 
-        <p>本平台由「多模態視覺能源球模型與智慧能源代理系統」研究團隊開發，</p>
-        <p>整合能源資料、3D 視覺化、AI Agent、RAG，</p>
         <p>
-          旨在協助一般民眾、能源管理單位與研究人員理解能源資訊並支援專業決策。
+          將複雜的能源資料轉化為可探索的三維能源球模型，
+          直覺呈現產業別能源使用結構與變化趨勢。
         </p>
+
+        <p>
+          透過 AI 智慧代理與 RAG 技術，
+          使用者可直接以自然語言查詢、比較與分析能源數據，
+        </p>
+
+        <p>協助快速理解能源現況，並支援後續研究與策略決策。</p>
       </section>
       <EnergyNews />
       {/* FEATURES */}
@@ -132,27 +140,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION PLACEHOLDERS */}
-      <section id="viz" className="section">
-        <h2>能源視覺化總覽</h2>
-        <p style={{ textAlign: "center", color: "var(--gray-500)" }}>
-          這裡是能源視覺化總覽內容。
-        </p>
-      </section>
-
-      <section id="viz-detail1" className="section">
-        <h2>視覺化細節 1</h2>
-        <p style={{ textAlign: "center", color: "var(--gray-500)" }}>
-          視覺化細節 1 的說明文字。
-        </p>
-      </section>
-
-      <section id="viz-detail2" className="section">
-        <h2>視覺化細節 2</h2>
-        <p style={{ textAlign: "center", color: "var(--gray-500)" }}>
-          視覺化細節 2 的說明文字。
-        </p>
-      </section>
 
       {/* ✔ 返回頂部按鈕 */}
       <BackToTopButton />
