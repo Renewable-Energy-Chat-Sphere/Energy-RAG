@@ -41,7 +41,14 @@ app = Flask(__name__)
 CORS(app)
 from scheduler import start_scheduler
 
-start_scheduler()
+ENABLE_NEWS_SYNC = os.getenv("ENABLE_NEWS_SYNC", "false").lower() == "true"
+
+if ENABLE_NEWS_SYNC:
+    print("📰 能源署公告同步：已啟用（本機）")
+    start_scheduler()
+else:
+    print("🛑 能源署公告同步：已關閉（非本機環境）")
+
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
 
