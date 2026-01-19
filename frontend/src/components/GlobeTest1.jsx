@@ -132,11 +132,11 @@ function GlassGlobe() {
    LOD0：五大部門
 ===================== */
 const LOD0_REGIONS = [
-  { lon0: -180, lon1: -60, lat0: 0, lat1: 80, name: "工業", icon: "https://img.icons8.com/ios-filled/200/factory.png" },
-  { lon0: -60, lon1: 60, lat0: 0, lat1: 80, name: "運輸", icon: "https://img.icons8.com/ios-filled/200/truck.png" },
-  { lon0: 60, lon1: 180, lat0: 0, lat1: 80, name: "農業", icon: "https://img.icons8.com/ios-filled/200/tractor.png" },
-  { lon0: -180, lon1: 0, lat0: -80, lat1: 0, name: "服務", icon: "https://img.icons8.com/ios-filled/200/service.png" },
-  { lon0: 0, lon1: 180, lat0: -80, lat1: 0, name: "住宅", icon: "https://img.icons8.com/ios-filled/200/city.png" }
+  { lon0: -180, lon1: -60, lat0: 0, lat1: 90, name: "工業", icon: "https://img.icons8.com/ios-filled/200/factory.png" },
+  { lon0: -60, lon1: 60, lat0: 0, lat1: 90, name: "運輸", icon: "https://img.icons8.com/ios-filled/200/truck.png" },
+  { lon0: 60, lon1: 180, lat0: 0, lat1: 90, name: "農業", icon: "https://img.icons8.com/ios-filled/200/tractor.png" },
+  { lon0: -180, lon1: 0, lat0: -90, lat1: 0, name: "服務", icon: "https://img.icons8.com/ios-filled/200/service.png" },
+  { lon0: 0, lon1: 180, lat0: -90, lat1: 0, name: "住宅", icon: "https://img.icons8.com/ios-filled/200/city.png" }
 ];
 
 function LOD0Regions() {
