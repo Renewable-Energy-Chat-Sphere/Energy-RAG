@@ -32,8 +32,7 @@ __pycache__/
 *.log
 instance/
 .cache/
-# 能源署公告快取（僅本機）
-frontend/backend/energy_news_cache.json
+
 
 
 
