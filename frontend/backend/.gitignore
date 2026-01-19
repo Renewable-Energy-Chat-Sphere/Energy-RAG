@@ -32,7 +32,9 @@ __pycache__/
 *.log
 instance/
 .cache/
-energy_news_cache.json
+# 能源署公告快取（僅本機）
+backend/energy_news_cache.json
+
 
 # Flask session keys
 *.pem
