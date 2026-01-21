@@ -288,7 +288,10 @@ nav .dropdown-btn:hover {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
+
+  align-items: start; /* ⭐⭐⭐ 關鍵：避免同列卡片被撐高 */
 }
+
 
 .card {
   background: var(--card-bg);
@@ -332,44 +335,61 @@ nav .dropdown-btn:hover {
 /* -----------------------------
    Accordion
 ------------------------------*/
+/* -----------------------------
+   Accordion（最終同步版）
+------------------------------*/
 .accordion {
   cursor: pointer;
   padding: 12px 0;
-  border-bottom: 1px solid var(--gray-200);
+  /*border-bottom: 1px solid var(--gray-200);底線*/ 
   font-weight: 600;
   color: var(--blue);
   margin-top: 20px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .accordion::after {
   content: "▼";
   font-size: 14px;
-  margin-left: 8px;
-  color: var(--orange);
+  color: var(--blue);
+  transition: transform 0.35s ease;
+}
+
+.accordion.active::after {
+  transform: rotate(180deg);
 }
 
 .accordion-content {
   max-height: 0;
   overflow: hidden;
-  transition: 0.4s ease;
-  color: var(--gray-500);
+
+  opacity: 0;
+  transform: translateY(-6px);
+
+  transition:
+    max-height 0.45s ease,
+    opacity 0.35s ease,
+    transform 0.35s ease;
 }
 
 .accordion-content.open {
-  max-height: 300px;
+  max-height: 300px; /* ⭐ 必須給「夠大的值」 */
+  opacity: 1;
+  transform: translateY(0);
   margin-top: 12px;
 }
 
-/* 深色模式 accordion */
+
+/* 深色模式 */
 #main-content.dark .accordion {
-  color: #fbbf24;
+  color: #f97316;
   border-bottom-color: #4b5563;
 }
 
 #main-content.dark .accordion::after {
-  color: #fbbf24;
+  color: #f97316;
 }
 
 /* -----------------------------
@@ -462,7 +482,7 @@ footer {
 }
 
 .back-to-top:hover {
-  background: #f68f3b;
+  background: #f97316;
 }
 /* =========================
    Hero Banner 右側登入按鈕
