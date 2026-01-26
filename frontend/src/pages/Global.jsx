@@ -1,5 +1,6 @@
 import { useState } from "react";
-import GlobeVisualizer from "../components/GlobeVisualizer";
+//import GlobeVisualizer from "../components/GlobeVisualizer";
+import GlobeVisualizer from "../components/GlobeTest1";
 import SidePanel from "../components/SidePanel";
 import "./global.css";
 import "./SidePanel.css";

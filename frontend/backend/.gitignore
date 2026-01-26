@@ -32,7 +32,9 @@ __pycache__/
 *.log
 instance/
 .cache/
-energy_news_cache.json
+
+
+
 
 # Flask session keys
 *.pem
