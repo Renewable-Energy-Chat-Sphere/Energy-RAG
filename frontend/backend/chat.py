@@ -82,18 +82,23 @@ def chat():
                 user_text = f"(網址處理失敗，改用一般聊天模式) {e}\n\n" + user_text
 
     # 一般聊天模式
+        # 一般聊天模式
     if openai_client:
         try:
             messages = _build_messages(session_id, user_text, system_prompt)
-            resp = openai_client.chat.completions.create(
+
+            resp = openai_client.responses.create(
                 model=model,
-                messages=messages,
+                input=messages,
                 temperature=0.2,
-                max_tokens=400,  # 約200~250字，避免過短或太長
+                max_output_tokens=400,
             )
+
             assistant_text = (
-                resp.choices[0].message.content or ""
-            ).strip() or "（模型沒有回傳內容）"
+                resp.output_text.strip()
+                if hasattr(resp, "output_text") and resp.output_text
+                else "（模型沒有回傳內容）"
+            )
 
         except Exception as e:
             assistant_text = (
@@ -101,6 +106,7 @@ def chat():
                 f"你剛才的問題是：{user_text}\n"
                 "請確認 OpenAI API Key 是否設定正確，或稍後再試。"
             )
+
     else:
         ts = time.strftime("%Y-%m-%d %H:%M:%S")
         assistant_text = (

@@ -13,13 +13,10 @@ load_dotenv()
 # ====================================
 # 載入 OpenAI Client
 # ====================================
-try:
-    from openai import OpenAI
+from openai import OpenAI
 
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-except Exception:
-    openai_client = None
+openai_client = OpenAI()  # 讓 SDK 自己吃環境變數
+
 
 # ====================================
 # 載入 RAG pipeline
@@ -41,7 +38,7 @@ app = Flask(__name__)
 CORS(app)
 from scheduler import start_scheduler
 
-start_scheduler()
+#start_scheduler()
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
 

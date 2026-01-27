@@ -119,3 +119,21 @@
   text-decoration: none;
   font-weight: bold;
 }
+/* -----------------------------
+   Responsive
+------------------------------*/
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    padding: 16px 20px;
+  }
+}
