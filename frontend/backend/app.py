@@ -38,7 +38,7 @@ app = Flask(__name__)
 CORS(app)
 from scheduler import start_scheduler
 
-#start_scheduler()
+start_scheduler()
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
 
