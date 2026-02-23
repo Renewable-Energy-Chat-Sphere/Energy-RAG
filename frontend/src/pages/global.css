@@ -1,5 +1,5 @@
 /* ================================================================
-   全域：背景保持透明（你的球體背景會從 body or page 繼承）
+   全域透明背景
 ================================================================ */
 .global-page,
 .global-main,
@@ -7,10 +7,8 @@
   background: transparent !important;
 }
 
-
-
 /* ================================================================
-   進場動畫：玻璃卡片浮現
+   玻璃進場動畫
 ================================================================ */
 @keyframes glassEnter {
   0% {
@@ -18,48 +16,156 @@
     transform: translateY(20px) scale(0.97);
     filter: blur(14px);
   }
-  60% {
-    opacity: 0.85;
-    transform: translateY(0px) scale(1);
-    filter: blur(4px);
-  }
   100% {
     opacity: 1;
     filter: blur(0px);
   }
 }
 
-
-
 /* ================================================================
-   流動邊框動畫（沿著邊框跑的光線）
+   流動邊框動畫
 ================================================================ */
 @keyframes borderRun {
-  0% {
-    background-position: 0% 0%;
-  }
-  100% {
-    background-position: 400% 0%;
-  }
+  0% { background-position: 0% 0%; }
+  100% { background-position: 400% 0%; }
 }
 
-
+/* ================================================================
+   整頁容器
+================================================================ */
+.global-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* 拉近距離 */
+}
 
 /* ================================================================
-   左側 globe-area & 右側 side-area 共用效果
+   控制面板
+================================================================ */
+.control-panel {
+  margin: 12px 32px 0 32px;  /* 原本 24px → 改小 */
+  padding: 18px 24px;
+  border-radius: 24px;
+
+  backdrop-filter: blur(18px) saturate(1.2);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(200,225,255,0.45);
+
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.08),
+    inset 0 0 14px rgba(255,255,255,0.22);
+
+  animation: glassEnter 0.3s ease-out forwards;
+
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ================================================================
+   下拉選單
+================================================================ */
+.panel-row select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.7);
+  transition: 0.2s ease;
+}
+
+.panel-row select:hover {
+  background: rgba(255,255,255,0.9);
+}
+
+/* ================================================================
+   Checkbox
+================================================================ */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ================================================================
+   搜尋框
+================================================================ */
+.search-box {
+  position: relative;
+  background: rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 6px 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(200,225,255,0.35);
+  transition: all 0.25s ease;
+}
+
+.search-box:hover {
+  border-color: rgba(150,190,255,0.8);
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  padding-left: 24px;
+  color: #111;
+  width: 200px;
+}
+
+.search-box input::placeholder {
+  color: rgba(0,0,0,0.5);
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.search-box:focus-within {
+  border-color: #5aa8ff;
+  box-shadow: 0 0 14px rgba(90,168,255,0.6);
+}
+
+/* ================================================================
+   左右布局
+================================================================ */
+.global-layout {
+  display: flex;
+  gap: 24px;
+  padding: 12px 32px 24px 32px; /* 上面距離縮小 */
+  margin-top: 0;
+}
+
+/* ================================================================
+   球體與側邊玻璃
 ================================================================ */
 .globe-area,
 .side-area {
   position: relative;
-  animation: glassEnter 0.2s ease-out forwards;
+  animation: glassEnter 0.3s ease-out forwards;
 
   border-radius: 24px;
   overflow: hidden;
 
-  /* 玻璃質感（淺色） */
   backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(200,225,255,0.45);
 
@@ -68,10 +174,19 @@
     inset 0 0 14px rgba(255,255,255,0.22);
 }
 
+.globe-area {
+  flex: 1;
+  max-width: 1200px;
+  height: 720px;
+}
 
+.side-area {
+  width: 340px;
+  padding: 20px;
+}
 
 /* ================================================================
-   流動邊框 (沿著邊框跑光) — 淺色模式
+   流動邊框
 ================================================================ */
 .globe-area::after,
 .side-area::after {
@@ -82,7 +197,6 @@
   padding: 2px;
   pointer-events: none;
 
-  /* ⭐ 跑動光線（四倍寬可繞一圈） */
   background: linear-gradient(
       120deg,
       rgba(255,255,255,0) 0%,
@@ -102,80 +216,15 @@
   animation: borderRun 17s linear infinite;
 }
 
-
-
 /* ================================================================
-   Globe Canvas 必須透明
+   Canvas 透明
 ================================================================ */
 .globe-area canvas {
   background: transparent !important;
 }
 
-
-
 /* ================================================================
-   深色模式：更強烈的科幻光 + 冷藍邊框
-================================================================ */
-.dark .globe-area,
-.dark .side-area {
-  background: rgba(20,25,35,0.45);
-  border: 1px solid rgba(255,255,255,0.12);
-
-  box-shadow:
-    0 8px 32px rgba(0,0,0,0.55),
-    inset 0 0 12px rgba(255,255,255,0.08);
-}
-
-.dark .globe-area::after,
-.dark .side-area::after {
-  background: linear-gradient(
-      120deg,
-      rgba(60,120,255,0) 0%,
-      rgba(60,130,255,0.9) 22%,
-      rgba(60,120,255,0) 42%,
-      rgba(60,130,255,0.9) 62%,
-      rgba(60,120,255,0) 82%
-    )
-    0 0 / 400% 100%;
-}
-
-
-
-/* ================================================================
-   左邊球體容器
-================================================================ */
-.globe-area {
-  flex: 1;
-  max-width: 1200px;
-  height: 720px;
-}
-
-
-
-/* ================================================================
-   右側資訊欄
-================================================================ */
-.side-area {
-  width: 340px;
-  padding: 20px;
-}
-
-
-
-/* ================================================================
-   Layout（你的兩欄配置）
-================================================================ */
-.global-layout {
-  display: flex;
-  gap: 24px;
-  padding: 24px 32px;
-  margin-top: 80px;
-}
-
-
-
-/* ================================================================
-   RWD 響應式
+   RWD
 ================================================================ */
 @media (max-width: 1024px) {
   .global-layout {
@@ -190,5 +239,3 @@
     height: 600px;
   }
 }
-
-

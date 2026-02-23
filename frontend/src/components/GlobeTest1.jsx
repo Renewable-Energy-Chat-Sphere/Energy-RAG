@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
+import demandData from "../data/demand_yearly.json";
 
 /* =====================
    基本設定
@@ -129,35 +130,59 @@ function GlassGlobe() {
 }
 
 /* =====================
-   LOD0：五大部門
+   LOD0：動態五大部門
 ===================== */
-const LOD0_REGIONS = [
-  { lon0: -180, lon1: -60, lat0: 0, lat1: 90, name: "工業", icon: "https://img.icons8.com/ios-filled/200/factory.png" },
-  { lon0: -60, lon1: 60, lat0: 0, lat1: 90, name: "運輸", icon: "https://img.icons8.com/ios-filled/200/truck.png" },
-  { lon0: 60, lon1: 180, lat0: 0, lat1: 90, name: "農業", icon: "https://img.icons8.com/ios-filled/200/tractor.png" },
-  { lon0: -180, lon1: 0, lat0: -90, lat1: 0, name: "服務", icon: "https://img.icons8.com/ios-filled/200/service.png" },
-  { lon0: 0, lon1: 180, lat0: -90, lat1: 0, name: "住宅", icon: "https://img.icons8.com/ios-filled/200/city.png" }
+
+const LEVEL1_CODES = [
+  { code: "D2", name: "工業" },
+  { code: "D40", name: "運輸" },
+  { code: "D47", name: "農業" },
+  { code: "D50", name: "服務" },
+  { code: "D68", name: "住宅" }
 ];
 
-function LOD0Regions() {
-  const textures = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    return LOD0_REGIONS.map(r => loader.load(r.icon));
-  }, []);
+function buildLOD0FromDemand(yearData) {
+  const total = LEVEL1_CODES.reduce(
+    (sum, item) => sum + (yearData?.[item.code] || 0),
+    0
+  );
 
+  let currentLon = -180;
+
+  return LEVEL1_CODES.map(item => {
+    const value = yearData?.[item.code] || 0;
+    const width = total === 0 ? 0 : (value / total) * 360;
+
+    const region = {
+      ...item,
+      lon0: currentLon,
+      lon1: currentLon + width,
+      lat0: -90,
+      lat1: 90,
+      value
+    };
+
+    currentLon += width;
+    return region;
+  });
+}
+
+function LOD0Regions({ regions }) {
   return (
     <>
-      {LOD0_REGIONS.map((r, i) => {
+      {regions.map((r, i) => {
         const centerLon = (r.lon0 + r.lon1) / 2;
-        const centerLat = (r.lat0 + r.lat1) / 2;
+        const centerLat = 0;
         const pos = lonLatToVec3(centerLon, centerLat, RADIUS + 0.06);
 
         return (
           <group key={`lod0-${i}`}>
             <mesh
               geometry={sphericalPatchGeometry({
-                lon0: r.lon0, lon1: r.lon1,
-                lat0: r.lat0, lat1: r.lat1,
+                lon0: r.lon0,
+                lon1: r.lon1,
+                lat0: r.lat0,
+                lat1: r.lat1,
                 radius: RADIUS + 0.06
               })}
             >
@@ -173,7 +198,6 @@ function LOD0Regions() {
 
             <PatchBorder {...r} radius={RADIUS + 0.015} />
 
-            {/* icon + 文字 */}
             <group
               position={pos.toArray()}
               onUpdate={(g) => {
@@ -181,17 +205,11 @@ function LOD0Regions() {
                 g.rotateY(Math.PI);
               }}
             >
-              <mesh>
-                <planeGeometry args={[0.28, 0.28]} />
-                <meshBasicMaterial map={textures[i]} transparent />
-              </mesh>
-
               <Text
-                position={[0, -0.26, 0]}
-                fontSize={0.12}
+                fontSize={0.15}
                 color="#111"
                 anchorX="center"
-                anchorY="top"
+                anchorY="middle"
               >
                 {r.name}
               </Text>
@@ -204,107 +222,29 @@ function LOD0Regions() {
 }
 
 /* =====================
-   LOD1：每區 2×2
+   LOD1（原本保留）
 ===================== */
 function LOD1Regions() {
-  const parts = 2;
-  return (
-    <>
-      {LOD0_REGIONS.flatMap((r, i) =>
-        [...Array(parts)].flatMap((_, u) =>
-          [...Array(parts)].map((_, v) => {
-            const lon0 = THREE.MathUtils.lerp(r.lon0, r.lon1, u / parts);
-            const lon1 = THREE.MathUtils.lerp(r.lon0, r.lon1, (u + 1) / parts);
-            const lat0 = THREE.MathUtils.lerp(r.lat0, r.lat1, v / parts);
-            const lat1 = THREE.MathUtils.lerp(r.lat0, r.lat1, (v + 1) / parts);
-
-            return (
-              <group key={`lod1-${i}-${u}-${v}`}>
-                <mesh
-                  geometry={sphericalPatchGeometry({
-                    lon0, lon1, lat0, lat1,
-                    radius: RADIUS - 0.01
-                  })}
-                >
-                  <meshStandardMaterial
-                    color="#74c0fc"
-                    transparent
-                    opacity={0.38}
-                    depthWrite={false}
-                    side={THREE.DoubleSide}
-                  />
-                </mesh>
-
-                <PatchBorder
-                  lon0={lon0}
-                  lon1={lon1}
-                  lat0={lat0}
-                  lat1={lat1}
-                  radius={RADIUS - 0.005}
-                />
-              </group>
-            );
-          })
-        )
-      )}
-    </>
-  );
+  return null;
 }
 
 /* =====================
-   LOD2：4×4
+   LOD2（原本保留）
 ===================== */
 function LOD2Regions() {
-  const parts = 4;
-  return (
-    <>
-      {LOD0_REGIONS.flatMap((r, i) =>
-        [...Array(parts)].flatMap((_, u) =>
-          [...Array(parts)].map((_, v) => {
-            const lon0 = THREE.MathUtils.lerp(r.lon0, r.lon1, u / parts);
-            const lon1 = THREE.MathUtils.lerp(r.lon0, r.lon1, (u + 1) / parts);
-            const lat0 = THREE.MathUtils.lerp(r.lat0, r.lat1, v / parts);
-            const lat1 = THREE.MathUtils.lerp(r.lat0, r.lat1, (v + 1) / parts);
-
-            return (
-              <group key={`lod2-${i}-${u}-${v}`}>
-                <mesh
-                  geometry={sphericalPatchGeometry({
-                    lon0, lon1, lat0, lat1,
-                    radius: RADIUS - 0.08
-                  })}
-                >
-                  <meshStandardMaterial
-                    color="#339af0"
-                    transparent
-                    opacity={0.55}
-                    depthWrite={false}
-                    side={THREE.DoubleSide}
-                  />
-                </mesh>
-
-                <PatchBorder
-                  lon0={lon0}
-                  lon1={lon1}
-                  lat0={lat0}
-                  lat1={lat1}
-                  radius={RADIUS - 0.075}
-                />
-              </group>
-            );
-          })
-        )
-      )}
-    </>
-  );
+  return null;
 }
 
 /* =====================
    Scene
 ===================== */
-function Scene() {
+function Scene({ year }) {
   const { camera } = useThree();
   const lod = useSimpleLOD();
+
+  const regions = useMemo(() => {
+    return buildLOD0FromDemand(demandData[year]);
+  }, [year]);
 
   useEffect(() => {
     camera.position.set(0, 0, RADIUS * 3.5);
@@ -317,7 +257,8 @@ function Scene() {
       <directionalLight position={[-5, -3, -5]} intensity={0.6} />
 
       <GlassGlobe />
-      {lod === 0 && <LOD0Regions />}
+
+      {lod === 0 && <LOD0Regions regions={regions} />}
       {lod === 1 && <LOD1Regions />}
       {lod === 2 && <LOD2Regions />}
 
@@ -332,13 +273,14 @@ function Scene() {
 }
 
 /* =====================
-   Root
+   Root（改為吃外部 year）
 ===================== */
-export default function GlobeVisualizer() {
+export default function GlobeVisualizer({ year, showSupply, search, onSelect }) {
+
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas camera={{ fov: 45, near: 0.1, far: 1000 }}>
-        <Scene />
+        <Scene year={year} />
       </Canvas>
     </div>
   );
