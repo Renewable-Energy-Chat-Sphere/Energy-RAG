@@ -124,7 +124,9 @@
   border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
-  transition: transform 0.08s ease, background 0.2s ease;
+  transition:
+    transform 0.08s ease,
+    background 0.2s ease;
 }
 
 /* 深色 tab */
@@ -339,7 +341,9 @@
   backdrop-filter: blur(10px) saturate(160%);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 /* 顯示時 */
@@ -366,4 +370,171 @@
   background: rgba(0, 100, 231, 0.85); /* 深色：#1e293b */
   color: #ff9100;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* =============================
+   AI 回答卡片樣式 2/23新增
+============================= */
+.ai-card {
+  background: linear-gradient(180deg, #ffffff, #f7f9fc);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: slideUp 0.5s ease;
+}
+
+.ai-card h1 {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.ai-card h2 {
+  margin-top: 24px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ai-card ul {
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+.ai-card li {
+  margin-bottom: 6px;
+}
+
+/* =============================
+   動畫效果
+============================= */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade {
+  animation: slideUp 0.5s ease forwards;
+} /*2/23新增*/
+/* ===============================
+   AI 回答卡片樣式
+================================= */
+
+.answer .ai-card {
+  margin-top: 16px;
+  padding: 28px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  animation: fadeUp 0.5s ease;
+}
+
+/* 標題 */
+.answer .ai-card h1 {
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+/* 區塊標題 */
+.answer .ai-card h2 {
+  margin-top: 24px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* 條列 */
+.answer .ai-card ul {
+  padding-left: 22px;
+  margin-top: 10px;
+}
+
+.answer .ai-card li {
+  margin-bottom: 8px;
+}
+
+/* 淡入動畫 */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.answer .ai-card {
+  margin-top: 16px;
+  padding: 28px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  line-height: 1.8;
+}
+
+/* 標題 */
+.answer .ai-card h1 {
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+
+/* 小標題 */
+.answer .ai-card h2 {
+  margin-top: 30px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* 條列 */
+.answer .ai-card ul {
+  margin: 12px 0 18px 22px;
+}
+
+.answer .ai-card li {
+  margin-bottom: 6px;
+}
+
+/* 段落 */
+.answer .ai-card p {
+  margin-bottom: 12px;
+}
+/* ===============================
+   Dark Mode AI Card
+================================= */
+
+.dark .answer .ai-card {
+  background: linear-gradient(180deg, #0f172a, #111827);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* 標題 */
+.dark .answer .ai-card h1 {
+  color: #ffffff;
+}
+
+/* 小標題 */
+.dark .answer .ai-card h2 {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  color: #93c5fd;
+}
+
+/* 條列 */
+.dark .answer .ai-card li {
+  color: #d1d5db;
+}
+
+/* 段落 */
+.dark .answer .ai-card p {
+  color: #e5e7eb;
 }

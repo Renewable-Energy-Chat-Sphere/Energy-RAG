@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { marked } from "marked"; //新增
 import "./rag.css";
 import BackToTopButton from "../components/BackToTopButton";
 
@@ -6,6 +7,21 @@ export default function Rag() {
   const [tab, setTab] = useState("chat");
 
   const API = "http://127.0.0.1:8000"; // ⭐ 統一 API
+  async function generateFile(type) {
+    const content = document.querySelector(".ai-card").innerText;
+
+    const res = await fetch(`${API}/export_${type}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+
+    const blob = await res.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = type === "ppt" ? "AI_Report.pptx" : "AI_Report.pdf";
+    link.click();
+  }
 
   /* =========================================================
      CHAT — 問答 / 泡泡 / 自動撐高
@@ -28,7 +44,7 @@ export default function Rag() {
       inputUser.style.height = "auto";
       inputUser.style.height = `${Math.max(
         inputUser.scrollHeight,
-        INPUT_MIN_HEIGHT
+        INPUT_MIN_HEIGHT,
       )}px`;
     };
     inputUser.addEventListener("input", resetHeight);
@@ -69,7 +85,7 @@ export default function Rag() {
       }
 
       try {
-        b.innerHTML = window.marked ? marked.parse(html) : html;
+        b.innerHTML = marked.parse(html); // ⭐ 直接解析 Markdown
       } catch {
         b.textContent = html;
       }
@@ -155,7 +171,21 @@ export default function Rag() {
       });
 
       const data = await res.json();
-      out.textContent = data.answer || "(無回應)";
+      const html = marked.parse(data.answer || "(無回應)");
+
+      out.innerHTML = `<div class="ai-card">${html}</div>`;
+
+      setTimeout(() => {
+        out.querySelectorAll("h1, h2, ul, p").forEach((el, i) => {
+          el.style.opacity = 0;
+          el.style.transform = "translateY(10px)";
+          setTimeout(() => {
+            el.style.transition = "all 0.4s ease";
+            el.style.opacity = 1;
+            el.style.transform = "translateY(0)";
+          }, i * 120);
+        });
+      }, 50);
       src.textContent = (data.sources || []).join("\n");
     });
   }, []);
@@ -188,7 +218,34 @@ export default function Rag() {
       });
 
       const data = await res.json();
-      out.textContent = data.answer || "(無回應)";
+      const answerText = data.answer || "(無回應)";
+      const html = marked.parse(answerText);
+
+      let buttons = "";
+
+      // 只有當助理有提到「生成文件」時才出現按鈕
+      if (
+        answerText.includes("生成") ||
+        answerText.includes("簡報") ||
+        answerText.includes("報告")
+      ) {
+        buttons = `
+    <div class="gen-buttons">
+      <button class="gen-btn" data-type="ppt">生成簡報 PPT</button>
+      <button class="gen-btn" data-type="pdf">生成報告 PDF</button>
+    </div>
+  `;
+      }
+
+      out.innerHTML = `
+  <div class="ai-card">
+    ${html}
+    ${buttons}
+  </div>
+`;
+      document.querySelectorAll(".gen-btn").forEach((btn) => {
+        btn.onclick = () => generateFile(btn.dataset.type);
+      });
       src.textContent = (data.sources || []).join("\n");
     });
   }, []);
@@ -266,6 +323,29 @@ export default function Rag() {
 
       out.textContent = data.answer || data.error || "(無回應)";
       src.textContent = JSON.stringify(data.sources || data.raw, null, 2);
+    });
+  }, []);
+  useEffect(() => {
+    document.addEventListener("click", async (e) => {
+      if (!e.target.classList.contains("gen-btn")) return;
+
+      const type = e.target.dataset.type;
+      const card = document.querySelector(".ai-card");
+      if (!card) return;
+
+      const content = card.innerText;
+
+      const res = await fetch(`${API}/export_${type}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = type === "ppt" ? "AI_Report.pptx" : "AI_Report.pdf";
+      link.click();
     });
   }, []);
 

@@ -4,6 +4,11 @@ import json
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask import send_file
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from pptx import Presentation
+import io
 
 # ====================================
 # 載入環境變數
@@ -151,6 +156,57 @@ def ask_av():
 
     answer, sources = qa_over_av(question, file)
     return jsonify({"answer": answer, "sources": sources})
+
+
+# ====================================
+# 4. 生成 PDF 報告
+# ====================================
+@app.route("/export_pdf", methods=["POST"])
+def export_pdf():
+    data = request.get_json()
+    content = data.get("content", "")
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
+
+    story = [Paragraph(content, styles["Normal"])]
+    doc.build(story)
+
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="AI_Report.pdf",
+        mimetype="application/pdf",
+    )
+
+
+# ====================================
+# 5. 生成 PPT 簡報
+# ====================================
+@app.route("/export_ppt", methods=["POST"])
+def export_ppt():
+    data = request.get_json()
+    content = data.get("content", "")
+
+    prs = Presentation()
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+
+    slide.shapes.title.text = "AI Analysis Report"
+    slide.placeholders[1].text = content[:1000]
+
+    buffer = io.BytesIO()
+    prs.save(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="AI_Report.pptx",
+        mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    )
 
 
 # ====================================
