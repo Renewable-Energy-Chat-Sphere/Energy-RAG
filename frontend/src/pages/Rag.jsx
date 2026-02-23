@@ -110,9 +110,9 @@ export default function Rag() {
 
       const payload = {
         user: userText,
-        system: inputSystem.value || "",
-        session_id: inputSid.value || "web-ui",
-        rag_auto: !!inputRag.checked,
+        system: inputSystem?.value || "",
+        session_id: inputSid?.value || "web-ui",
+        rag_auto: !!inputRag?.checked,
         model: "gpt-4o-mini",
       };
 
@@ -218,34 +218,40 @@ export default function Rag() {
       });
 
       const data = await res.json();
-      const answerText = data.answer || "(無回應)";
-      const html = marked.parse(answerText);
+
+      let answerText = data.answer || "(無回應)";
 
       let buttons = "";
 
-      // 只有當助理有提到「生成文件」時才出現按鈕
-      if (
-        answerText.includes("生成") ||
-        answerText.includes("簡報") ||
-        answerText.includes("報告")
-      ) {
+      if (answerText.includes("[SUGGEST_EXPORT]")) {
         buttons = `
-    <div class="gen-buttons">
-      <button class="gen-btn" data-type="ppt">生成簡報 PPT</button>
-      <button class="gen-btn" data-type="pdf">生成報告 PDF</button>
-    </div>
-  `;
+        <div class="gen-buttons">
+          <button id="ppt-btn">生成簡報 PPT</button>
+          <button id="pdf-btn">生成報告 PDF</button>
+        </div>
+      `;
+
+        answerText = answerText.replace("[SUGGEST_EXPORT]", "");
       }
 
+      const html = marked.parse(answerText);
+
       out.innerHTML = `
-  <div class="ai-card">
-    ${html}
-    ${buttons}
-  </div>
-`;
-      document.querySelectorAll(".gen-btn").forEach((btn) => {
-        btn.onclick = () => generateFile(btn.dataset.type);
-      });
+      <div class="ai-card">
+        ${html}
+        ${buttons}
+      </div>
+    `;
+
+      // 綁定按鈕
+      setTimeout(() => {
+        const pptBtn = document.getElementById("ppt-btn");
+        const pdfBtn = document.getElementById("pdf-btn");
+
+        if (pptBtn) pptBtn.onclick = () => generateFile("ppt");
+        if (pdfBtn) pdfBtn.onclick = () => generateFile("pdf");
+      }, 0);
+
       src.textContent = (data.sources || []).join("\n");
     });
   }, []);
@@ -325,29 +331,6 @@ export default function Rag() {
       src.textContent = JSON.stringify(data.sources || data.raw, null, 2);
     });
   }, []);
-  useEffect(() => {
-    document.addEventListener("click", async (e) => {
-      if (!e.target.classList.contains("gen-btn")) return;
-
-      const type = e.target.dataset.type;
-      const card = document.querySelector(".ai-card");
-      if (!card) return;
-
-      const content = card.innerText;
-
-      const res = await fetch(`${API}/export_${type}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = type === "ppt" ? "AI_Report.pptx" : "AI_Report.pdf";
-      link.click();
-    });
-  }, []);
 
   /* =========================================================
      JSX 頁面
@@ -417,23 +400,17 @@ export default function Rag() {
                     name="user"
                     rows="1"
                     required
-                    placeholder="輸入你的問題或網址（自動啟用 RAG Web）"
+                    placeholder="輸入你的問題或網址。"
                   />
                 </label>
                 <label>
-                  System
+                  提示詞
                   <input name="system" placeholder="你是專業助手…" />
                 </label>
-                <label>
-                  Session ID
-                  <input
-                    name="session_id"
-                    placeholder="自訂 ID（可保持對話）"
-                  />
-                </label>
+
                 <label className="rag-row">
                   <input type="checkbox" name="rag_auto" defaultChecked />{" "}
-                  自動偵測網址 → RAG Web
+                  自動偵測網址
                 </label>
                 <button type="submit">送出</button>
               </form>
@@ -458,7 +435,7 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="想問什麼？例如：再生能源佔比"
+                    placeholder="想問什麼？例如：這個網站的功能是甚麼?"
                   />
                 </label>
                 <label>
@@ -492,7 +469,7 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="想問 PDF 什麼內容？"
+                    placeholder="想問任何PDF文件中的什麼內容？"
                   />
                 </label>
                 <label>
@@ -531,7 +508,7 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="想從影片 / 音訊找什麼？"
+                    placeholder="想從影片/音訊找什麼？"
                   />
                 </label>
                 <label>
@@ -570,7 +547,7 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="例如：2024 總發電量是多少？"
+                    placeholder="想分析表格或是問問題嗎?例如：2024 總發電量是多少？"
                   />
                 </label>
                 <label>

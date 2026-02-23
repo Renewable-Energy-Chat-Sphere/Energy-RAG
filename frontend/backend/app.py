@@ -163,17 +163,34 @@ def ask_av():
 # ====================================
 @app.route("/export_pdf", methods=["POST"])
 def export_pdf():
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    import io
+
     data = request.get_json()
     content = data.get("content", "")
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
-    styles = getSampleStyleSheet()
 
-    story = [Paragraph(content, styles["Normal"])]
+    pdfmetrics.registerFont(TTFont("NotoSans", "NotoSansTC-Regular.ttf"))
+
+    doc = SimpleDocTemplate(buffer)
+    style = ParagraphStyle(name="Normal", fontName="NotoSans", fontSize=12, leading=18)
+
+    story = []
+
+    for line in content.split("\n"):
+        story.append(Paragraph(line, style))
+        story.append(Spacer(1, 0.2 * inch))
+
     doc.build(story)
 
     buffer.seek(0)
+
     return send_file(
         buffer,
         as_attachment=True,
@@ -187,15 +204,30 @@ def export_pdf():
 # ====================================
 @app.route("/export_ppt", methods=["POST"])
 def export_ppt():
+    from pptx import Presentation
+    import io
+
     data = request.get_json()
     content = data.get("content", "")
 
     prs = Presentation()
-    slide_layout = prs.slide_layouts[1]
-    slide = prs.slides.add_slide(slide_layout)
 
-    slide.shapes.title.text = "AI Analysis Report"
-    slide.placeholders[1].text = content[:1000]
+    slides = content.split("\n## ")
+
+    for slide_content in slides:
+        slide_content = slide_content.strip()
+        if not slide_content:
+            continue
+
+        lines = slide_content.split("\n")
+        title = lines[0].replace("## ", "").strip()
+        body = "\n".join(lines[1:]).strip()
+
+        slide_layout = prs.slide_layouts[1]
+        slide = prs.slides.add_slide(slide_layout)
+
+        slide.shapes.title.text = title
+        slide.placeholders[1].text = body[:1000]
 
     buffer = io.BytesIO()
     prs.save(buffer)
