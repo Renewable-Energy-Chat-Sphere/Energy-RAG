@@ -70,7 +70,6 @@ function sphericalPatchGeometry({
   return geo;
 }
 
-/* ===================== 玻璃球 ===================== */
 function GlassGlobe() {
   return (
     <mesh>
@@ -89,35 +88,58 @@ function GlassGlobe() {
   );
 }
 
-/* ===================== Level1 ===================== */
-function getLevel1Codes() {
-  const baseHue = 205;
+/* ===================== 顏色系統 ===================== */
+
+const BASE_HUES = [210, 140, 25, 280, 50];
+
+function generateChildColor(parentIndex, childIndex) {
+  const hue = BASE_HUES[parentIndex % BASE_HUES.length];
+  return `hsl(${hue}, 60%, ${45 + childIndex * 6}%)`;
+}
+
+/* ===================== 取得層級 ===================== */
+
+function getLevel1() {
   return Object.entries(hierarchy)
     .filter(([_, v]) => v.level === 1)
     .map(([code, v], i) => ({
       code,
       name: v.name,
-      color: `hsl(${baseHue}, ${55 + i * 5}%, ${48 + i * 3}%)`
+      parentIndex: i
     }));
 }
 
-/* ===================== 分配（無空隙） ===================== */
-function buildBlockGrid(yearData) {
+function getChildren(code) {
+  const node = hierarchy[code];
+  if (!node || !node.children) return [];
+  return Object.entries(node.children).map(([cCode, cData], i) => ({
+    code: cCode,
+    name: cData.name,
+    parentIndex: node.parentIndex ?? 0,
+    childIndex: i
+  }));
+}
+/* ===================== Level1 Column 分配 ===================== */
 
-  const LEVEL1 = getLevel1Codes();
+function allocateColumns(items, yearData) {
 
-  const total = LEVEL1.reduce(
+  if (!items.length) return [];
+
+  const total = items.reduce(
     (sum, item) => sum + (yearData?.[item.code] || 0),
     0
   );
 
+  if (!total) return [];
+
   const totalColumns = LON_DIV;
-  const baseColumns = LEVEL1.length;
+  const baseColumns = items.length;
   const remainingColumns = totalColumns - baseColumns;
 
-  const allocations = LEVEL1.map(item => {
+  const allocations = items.map(item => {
+
     const value = yearData?.[item.code] || 0;
-    const ratio = total === 0 ? 0 : value / total;
+    const ratio = value / total;
     const raw = ratio * remainingColumns;
 
     return {
@@ -141,6 +163,7 @@ function buildBlockGrid(yearData) {
   }
 
   const columnPlan = [];
+
   allocations.forEach(a => {
     const count = a.base + a.extra;
     for (let i = 0; i < count; i++) {
@@ -152,9 +175,23 @@ function buildBlockGrid(yearData) {
     columnPlan.push(columnPlan[columnPlan.length - 1]);
   }
 
+  return columnPlan;
+}
+
+/* ===================== 建立 LOD0 ===================== */
+
+function buildLOD0(yearData) {
+
+  const level1 = getLevel1();
+  if (!level1.length) return [];
+
+  const columnPlan = allocateColumns(level1, yearData);
+  if (!columnPlan.length) return [];
+
   const tiles = [];
 
   for (let lon = 0; lon < LON_DIV; lon++) {
+
     const dept = columnPlan[lon];
 
     for (let lat = 0; lat < LAT_DIV; lat++) {
@@ -164,14 +201,92 @@ function buildBlockGrid(yearData) {
       const lat0 = -90 + lat * (180 / LAT_DIV);
       const lat1 = lat0 + (180 / LAT_DIV);
 
-      tiles.push({ lon0, lon1, lat0, lat1, dept });
+      tiles.push({
+        lon0,
+        lon1,
+        lat0,
+        lat1,
+        dept,
+        color: generateChildColor(dept.parentIndex, 0)
+      });
     }
   }
 
   return tiles;
 }
 
-/* ===================== 部門外框 ===================== */
+/* ===================== 建立 LOD1（區塊內 Drill-Down） ===================== */
+
+function buildLOD1(yearData) {
+
+  const level1 = getLevel1();
+  if (!level1.length) return [];
+
+  const parentColumns = allocateColumns(level1, yearData);
+  if (!parentColumns.length) return [];
+
+  const tiles = [];
+
+  let columnIndex = 0;
+
+  level1.forEach(parent => {
+
+    const parentCount =
+      parentColumns.filter(c => c.code === parent.code).length;
+
+    if (!parentCount) return;
+
+    const childrenRaw = getChildren(parent.code);
+
+    const children = childrenRaw.map((c, i) => ({
+      ...c,
+      parentIndex: parent.parentIndex,
+      childIndex: i
+    }));
+
+    const childColumns = allocateColumns(children, yearData);
+
+    if (!childColumns.length) {
+      columnIndex += parentCount;
+      return;
+    }
+
+    for (let i = 0; i < parentCount; i++) {
+
+      const child =
+        childColumns[i % childColumns.length];
+
+      const lon = columnIndex + i;
+
+      for (let lat = 0; lat < LAT_DIV; lat++) {
+
+        const lon0 = -180 + lon * (360 / LON_DIV);
+        const lon1 = lon0 + (360 / LON_DIV);
+        const lat0 = -90 + lat * (180 / LAT_DIV);
+        const lat1 = lat0 + (180 / LAT_DIV);
+
+        tiles.push({
+          lon0,
+          lon1,
+          lat0,
+          lat1,
+          dept: child,
+          color: generateChildColor(
+            parent.parentIndex,
+            child.childIndex
+          )
+        });
+      }
+    }
+
+    columnIndex += parentCount;
+
+  });
+
+  return tiles;
+}
+/* ===================== 外框 ===================== */
+
 function DepartmentBorder({ minLon, maxLon }) {
 
   const points = [];
@@ -226,10 +341,13 @@ function DepartmentBorder({ minLon, maxLon }) {
   );
 }
 
-/* ===================== LOD0 ===================== */
-function LOD0Grid({ tiles }) {
+/* ===================== 共用 Grid ===================== */
+
+function Grid({ tiles }) {
 
   const [hovered, setHovered] = useState(null);
+
+  if (!tiles.length) return null;
 
   const groups = {};
 
@@ -271,12 +389,12 @@ function LOD0Grid({ tiles }) {
             onPointerOut={() => setHovered(null)}
           >
             <meshStandardMaterial
-              color={t.dept.color}
+              color={t.color}
               transparent
-              opacity={isHover ? 0.9 : 0.55}
+              opacity={isHover ? 0.9 : 0.6}
               roughness={0.45}
               metalness={0.15}
-              emissive={isHover ? t.dept.color : "#000000"}
+              emissive={isHover ? t.color : "#000000"}
               emissiveIntensity={isHover ? 0.35 : 0}
               side={THREE.DoubleSide}
               depthWrite={false}
@@ -308,7 +426,10 @@ function LOD0Grid({ tiles }) {
             }}
           >
             <Text
-              fontSize={0.16}
+              fontSize={0.15}
+              maxWidth={(g.maxLon - g.minLon) / 360 * 6}
+              lineHeight={1.1}
+              textAlign="center"
               color="#111"
               anchorX="center"
               anchorY="middle"
@@ -324,14 +445,30 @@ function LOD0Grid({ tiles }) {
 }
 
 /* ===================== Scene ===================== */
+
 function Scene({ year }) {
 
   const { camera } = useThree();
   const lod = useSimpleLOD();
 
+  const yearData = demandData?.[year];
+
   const tiles = useMemo(() => {
-    return buildBlockGrid(demandData[year]);
-  }, [year]);
+
+    if (!yearData) return [];
+
+    if (lod === 0)
+      return buildLOD0(yearData);
+
+    if (lod === 1)
+      return buildLOD1(yearData);
+
+    if (lod === 2)
+      return [];
+
+    return [];
+
+  }, [yearData, lod]);
 
   useEffect(() => {
     camera.position.set(0, 0, RADIUS * 3.5);
@@ -345,7 +482,7 @@ function Scene({ year }) {
 
       <GlassGlobe />
 
-      {lod === 0 && <LOD0Grid tiles={tiles} />}
+      {tiles.length > 0 && <Grid tiles={tiles} />}
 
       <OrbitControls
         enablePan={false}
@@ -356,6 +493,8 @@ function Scene({ year }) {
     </>
   );
 }
+
+/* ===================== Root ===================== */
 
 export default function GlobeVisualizer({ year }) {
   return (
