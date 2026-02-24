@@ -5,21 +5,28 @@ import BackToTopButton from "../components/BackToTopButton";
 
 export default function Rag() {
   const [tab, setTab] = useState("chat");
+  const [structuredData, setStructuredData] = useState(null);
+  const API = "http://127.0.0.1:8000";
 
-  const API = "http://127.0.0.1:8000"; // ⭐ 統一 API
-  async function generateFile(type) {
-    const content = document.querySelector(".ai-card").innerText;
+  async function generateFile() {
+    if (!structuredData) {
+      alert("沒有可匯出的結構化資料");
+      return;
+    }
 
-    const res = await fetch(`${API}/export_${type}`, {
+    const res = await fetch(`${API}/export_pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({
+        structured_data: structuredData.data, // ⭐ 只送真正報告內容
+        file_name: structuredData.file_name, // ⭐ 傳檔名
+      }),
     });
 
     const blob = await res.blob();
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = type === "ppt" ? "AI_Report.pptx" : "AI_Report.pdf";
+    link.download = structuredData.file_name; // ⭐ 用後端生成的檔名
     link.click();
   }
 
@@ -171,6 +178,9 @@ export default function Rag() {
       });
 
       const data = await res.json();
+      if (data.structured_data) {
+        setStructuredData(data.structured_data);
+      }
       const html = marked.parse(data.answer || "(無回應)");
 
       out.innerHTML = `<div class="ai-card">${html}</div>`;
@@ -219,19 +229,23 @@ export default function Rag() {
 
       const data = await res.json();
 
+      // ⭐⭐⭐ 加這段
+      if (data.structured_data) {
+        setStructuredData(data.structured_data);
+      }
+
       let answerText = data.answer || "(無回應)";
 
       let buttons = "";
 
-      if (answerText.includes("[SUGGEST_EXPORT]")) {
+      if (data.structured_data) {
         buttons = `
-        <div class="gen-buttons">
-          <button id="ppt-btn">生成簡報 PPT</button>
-          <button id="pdf-btn">生成報告 PDF</button>
-        </div>
-      `;
-
-        answerText = answerText.replace("[SUGGEST_EXPORT]", "");
+  <div class="download-section">
+    <hr/>
+    <p><strong>📄 已生成完整報告</strong></p>
+    <button id="pdf-btn">下載 PDF 報告</button>
+  </div>
+`;
       }
 
       const html = marked.parse(answerText);
@@ -249,7 +263,7 @@ export default function Rag() {
         const pdfBtn = document.getElementById("pdf-btn");
 
         if (pptBtn) pptBtn.onclick = () => generateFile("ppt");
-        if (pdfBtn) pdfBtn.onclick = () => generateFile("pdf");
+        if (pdfBtn) pdfBtn.onclick = () => generateFile();
       }, 0);
 
       src.textContent = (data.sources || []).join("\n");

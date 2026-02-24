@@ -2,50 +2,30 @@
 import os
 import json
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from flask import send_file
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from pptx import Presentation
 import io
 
-# ====================================
-# 載入環境變數
-# ====================================
 load_dotenv()
 
-# ====================================
-# 載入 OpenAI Client
-# ====================================
 from openai import OpenAI
+openai_client = OpenAI()
 
-openai_client = OpenAI()  # 讓 SDK 自己吃環境變數
-
-
-# ====================================
-# 載入 RAG pipeline
-# ====================================
 from pipelines.rag_web import qa_over_web
 from pipelines.rag_pdf import qa_over_pdf
 from pipelines.rag_av import qa_over_av
 
-# ====================================
-# 藍圖 Blueprint
-# ====================================
 from chat import chat_bp
 from tables import tables_bp
 
-# ====================================
-# 建立 Flask App
-# ====================================
-app = Flask(__name__)
-CORS(app)
+# 🔥 加回 scheduler
 from scheduler import start_scheduler
 
-start_scheduler()
 
-app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
+app = Flask(__name__)
+CORS(app)
+
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
 
 app.config.update(
     OPENAI_CLIENT=openai_client,
@@ -54,58 +34,14 @@ app.config.update(
     QA_OVER_AV=qa_over_av,
 )
 
-# ====================================
-# Blueprint 註冊
-# ====================================
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
 
-# ====================================
-# 0. 能源署最新公告（✔ 正式版：讀取爬蟲快取）
-# ====================================
-NEWS_CACHE_FILE = "energy_news_cache.json"
 
-
-@app.route("/energy-news", methods=["GET"])
-def energy_news():
-    """
-    能源署最新公告
-    資料來源：Selenium 同步之官網公告（快取）
-    """
-    try:
-        with open(NEWS_CACHE_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        items = data.get("items", [])
-
-        return jsonify(
-            {
-                "count": len(items),
-                "source": data.get("source", "經濟部能源署"),
-                "synced_at": data.get("synced_at"),
-                "items": items,
-            }
-        )
-
-    except FileNotFoundError:
-        return jsonify(
-            {
-                "count": 0,
-                "source": "經濟部能源署",
-                "items": [],
-                "note": "尚未進行公告同步",
-            }
-        )
-
-    except Exception as e:
-        return jsonify(
-            {
-                "count": 0,
-                "source": "經濟部能源署",
-                "items": [],
-                "note": "公告資料讀取失敗",
-            }
-        )
+# 🔥 Debug 模式安全啟動 Scheduler
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    print("🔥 Scheduler starting...")
+    start_scheduler()
 
 
 # ====================================
@@ -137,12 +73,17 @@ def ask_pdf():
     if not file:
         return jsonify({"error": "❌ 請上傳 PDF 檔案"}), 400
 
-    answer, sources = qa_over_pdf(question, file)
-    return jsonify({"answer": answer, "sources": sources})
+    answer, sources, structured_data = qa_over_pdf(question, file)
+
+    return jsonify({
+        "answer": answer,
+        "sources": sources,
+        "structured_data": structured_data
+    })
 
 
 # ====================================
-# 3. 音訊 / 影片 問答
+# 3. AV 問答
 # ====================================
 @app.route("/ask_av", methods=["POST"])
 def ask_av():
@@ -159,85 +100,54 @@ def ask_av():
 
 
 # ====================================
-# 4. 生成 PDF 報告
+# 4. 生成 PDF
 # ====================================
 @app.route("/export_pdf", methods=["POST"])
 def export_pdf():
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import ParagraphStyle
-    from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.lib.units import inch
-    from reportlab.lib import colors
-    import io
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.pagesizes import A4
 
     data = request.get_json()
-    content = data.get("content", "")
+
+    structured_data = data.get("structured_data")
+    file_name = data.get("file_name", "AI_Report.pdf")
+
+    if not structured_data:
+        return jsonify({"error": "沒有收到 structured_data"}), 400
+
+    if isinstance(structured_data, str):
+        structured_data = json.loads(structured_data)
 
     buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
 
-    pdfmetrics.registerFont(TTFont("NotoSans", "NotoSansTC-Regular.ttf"))
+    elements.append(
+        Paragraph(structured_data.get("title", "AI Report"), styles["Heading1"])
+    )
+    elements.append(Spacer(1, 12))
 
-    doc = SimpleDocTemplate(buffer)
-    style = ParagraphStyle(name="Normal", fontName="NotoSans", fontSize=12, leading=18)
+    for section in structured_data.get("sections", []):
+        elements.append(Paragraph(section.get("heading", ""), styles["Heading2"]))
+        elements.append(Spacer(1, 6))
+        elements.append(Paragraph(section.get("content", ""), styles["BodyText"]))
+        elements.append(Spacer(1, 12))
 
-    story = []
-
-    for line in content.split("\n"):
-        story.append(Paragraph(line, style))
-        story.append(Spacer(1, 0.2 * inch))
-
-    doc.build(story)
-
-    buffer.seek(0)
-
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name="AI_Report.pdf",
-        mimetype="application/pdf",
+    elements.append(Paragraph("Conclusion", styles["Heading2"]))
+    elements.append(
+        Paragraph(structured_data.get("conclusion", ""), styles["BodyText"])
     )
 
-
-# ====================================
-# 5. 生成 PPT 簡報
-# ====================================
-@app.route("/export_ppt", methods=["POST"])
-def export_ppt():
-    from pptx import Presentation
-    import io
-
-    data = request.get_json()
-    content = data.get("content", "")
-
-    prs = Presentation()
-
-    slides = content.split("\n## ")
-
-    for slide_content in slides:
-        slide_content = slide_content.strip()
-        if not slide_content:
-            continue
-
-        lines = slide_content.split("\n")
-        title = lines[0].replace("## ", "").strip()
-        body = "\n".join(lines[1:]).strip()
-
-        slide_layout = prs.slide_layouts[1]
-        slide = prs.slides.add_slide(slide_layout)
-
-        slide.shapes.title.text = title
-        slide.placeholders[1].text = body[:1000]
-
-    buffer = io.BytesIO()
-    prs.save(buffer)
+    doc.build(elements)
     buffer.seek(0)
 
     return send_file(
         buffer,
         as_attachment=True,
-        download_name="AI_Report.pptx",
-        mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        download_name=file_name,
+        mimetype="application/pdf",
     )
 
 
@@ -246,5 +156,5 @@ def export_ppt():
 # ====================================
 if __name__ == "__main__":
     print("🚀 Flask 啟動：http://127.0.0.1:8000")
-    print("📌 API：/energy-news /chat /ask_web /ask_pdf /ask_av /ask_table")
+    print("📌 API：/chat /ask_web /ask_pdf /ask_av /export_pdf")
     app.run(host="127.0.0.1", port=8000, debug=True)
