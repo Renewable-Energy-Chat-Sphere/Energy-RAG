@@ -1,17 +1,16 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import demandData from "../data/demand_yearly.json";
+import hierarchy from "../data/hierarchy.json";
 
-/* =====================
-   基本設定
-===================== */
+/* ===================== */
 const RADIUS = 3.0;
+const LON_DIV = 24;
+const LAT_DIV = 12;
+/* ===================== */
 
-/* =====================
-   LOD（距離）
-===================== */
 function useSimpleLOD() {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
@@ -26,9 +25,6 @@ function useSimpleLOD() {
   return lod;
 }
 
-/* =====================
-   經緯度 → Vector3
-===================== */
 function lonLatToVec3(lon, lat, radius) {
   const latR = THREE.MathUtils.degToRad(lat);
   const lonR = THREE.MathUtils.degToRad(lon);
@@ -39,11 +35,8 @@ function lonLatToVec3(lon, lat, radius) {
   );
 }
 
-/* =====================
-   球面 Patch Geometry
-===================== */
 function sphericalPatchGeometry({
-  lon0, lon1, lat0, lat1, radius, seg = 24
+  lon0, lon1, lat0, lat1, radius, seg = 12
 }) {
   const positions = [];
   const normals = [];
@@ -77,143 +70,252 @@ function sphericalPatchGeometry({
   return geo;
 }
 
-/* =====================
-   區塊邊界線
-===================== */
-function PatchBorder({ lon0, lon1, lat0, lat1, radius }) {
-  const points = [];
-  const steps = 32;
-
-  for (let i = 0; i <= steps; i++)
-    points.push(lonLatToVec3(
-      THREE.MathUtils.lerp(lon0, lon1, i / steps), lat1, radius
-    ));
-  for (let i = 0; i <= steps; i++)
-    points.push(lonLatToVec3(
-      lon1, THREE.MathUtils.lerp(lat1, lat0, i / steps), radius
-    ));
-  for (let i = 0; i <= steps; i++)
-    points.push(lonLatToVec3(
-      THREE.MathUtils.lerp(lon1, lon0, i / steps), lat0, radius
-    ));
-  for (let i = 0; i <= steps; i++)
-    points.push(lonLatToVec3(
-      lon0, THREE.MathUtils.lerp(lat0, lat1, i / steps), radius
-    ));
-
-  return (
-    <line geometry={new THREE.BufferGeometry().setFromPoints(points)}>
-      <lineBasicMaterial color="#ffffff" transparent opacity={0.9} />
-    </line>
-  );
-}
-
-/* =====================
-   玻璃球本體
-===================== */
+/* ===================== 玻璃球 ===================== */
 function GlassGlobe() {
   return (
     <mesh>
       <sphereGeometry args={[RADIUS, 96, 96]} />
       <meshPhysicalMaterial
-        color="#2f80ff"
+        color="#3b82f6"
         transparent
-        opacity={0.35}
-        transmission={0.9}
-        roughness={0.05}
-        thickness={0.6}
-        ior={1.45}
-        clearcoat={0.8}
+        opacity={0.25}
+        transmission={1}
+        roughness={0.02}
+        thickness={1}
+        ior={1.5}
+        clearcoat={1}
       />
     </mesh>
   );
 }
 
-/* =====================
-   LOD0：動態五大部門
-===================== */
+/* ===================== Level1 ===================== */
+function getLevel1Codes() {
+  const baseHue = 205;
+  return Object.entries(hierarchy)
+    .filter(([_, v]) => v.level === 1)
+    .map(([code, v], i) => ({
+      code,
+      name: v.name,
+      color: `hsl(${baseHue}, ${55 + i * 5}%, ${48 + i * 3}%)`
+    }));
+}
 
-const LEVEL1_CODES = [
-  { code: "D2", name: "工業" },
-  { code: "D40", name: "運輸" },
-  { code: "D47", name: "農業" },
-  { code: "D50", name: "服務" },
-  { code: "D68", name: "住宅" }
-];
+/* ===================== 分配（無空隙） ===================== */
+function buildBlockGrid(yearData) {
 
-function buildLOD0FromDemand(yearData) {
-  const total = LEVEL1_CODES.reduce(
+  const LEVEL1 = getLevel1Codes();
+
+  const total = LEVEL1.reduce(
     (sum, item) => sum + (yearData?.[item.code] || 0),
     0
   );
 
-  let currentLon = -180;
+  const totalColumns = LON_DIV;
+  const baseColumns = LEVEL1.length;
+  const remainingColumns = totalColumns - baseColumns;
 
-  return LEVEL1_CODES.map(item => {
+  const allocations = LEVEL1.map(item => {
     const value = yearData?.[item.code] || 0;
-    const width = total === 0 ? 0 : (value / total) * 360;
+    const ratio = total === 0 ? 0 : value / total;
+    const raw = ratio * remainingColumns;
 
-    const region = {
+    return {
       ...item,
-      lon0: currentLon,
-      lon1: currentLon + width,
-      lat0: -90,
-      lat1: 90,
-      value
+      base: 1,
+      extra: Math.floor(raw),
+      remainder: raw - Math.floor(raw)
     };
-
-    currentLon += width;
-    return region;
   });
+
+  let assigned =
+    allocations.reduce((sum, a) => sum + a.extra, 0);
+
+  let diff = remainingColumns - assigned;
+
+  if (diff > 0) {
+    allocations
+      .sort((a, b) => b.remainder - a.remainder)
+      .slice(0, diff)
+      .forEach(a => a.extra += 1);
+  }
+
+  const columnPlan = [];
+  allocations.forEach(a => {
+    const count = a.base + a.extra;
+    for (let i = 0; i < count; i++) {
+      columnPlan.push(a);
+    }
+  });
+
+  while (columnPlan.length < totalColumns) {
+    columnPlan.push(columnPlan[columnPlan.length - 1]);
+  }
+
+  const tiles = [];
+
+  for (let lon = 0; lon < LON_DIV; lon++) {
+    const dept = columnPlan[lon];
+
+    for (let lat = 0; lat < LAT_DIV; lat++) {
+
+      const lon0 = -180 + lon * (360 / LON_DIV);
+      const lon1 = lon0 + (360 / LON_DIV);
+      const lat0 = -90 + lat * (180 / LAT_DIV);
+      const lat1 = lat0 + (180 / LAT_DIV);
+
+      tiles.push({ lon0, lon1, lat0, lat1, dept });
+    }
+  }
+
+  return tiles;
 }
 
-function LOD0Regions({ regions }) {
+/* ===================== 部門外框 ===================== */
+function DepartmentBorder({ minLon, maxLon }) {
+
+  const points = [];
+  const steps = 32;
+
+  for (let i = 0; i <= steps; i++)
+    points.push(
+      lonLatToVec3(
+        THREE.MathUtils.lerp(minLon, maxLon, i / steps),
+        90,
+        RADIUS + 0.051
+      )
+    );
+
+  for (let i = 0; i <= steps; i++)
+    points.push(
+      lonLatToVec3(
+        maxLon,
+        THREE.MathUtils.lerp(90, -90, i / steps),
+        RADIUS + 0.051
+      )
+    );
+
+  for (let i = 0; i <= steps; i++)
+    points.push(
+      lonLatToVec3(
+        THREE.MathUtils.lerp(maxLon, minLon, i / steps),
+        -90,
+        RADIUS + 0.051
+      )
+    );
+
+  for (let i = 0; i <= steps; i++)
+    points.push(
+      lonLatToVec3(
+        minLon,
+        THREE.MathUtils.lerp(-90, 90, i / steps),
+        RADIUS + 0.051
+      )
+    );
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+  return (
+    <line geometry={geometry}>
+      <lineBasicMaterial
+        color="#ffffff"
+        transparent
+        opacity={0.35}
+      />
+    </line>
+  );
+}
+
+/* ===================== LOD0 ===================== */
+function LOD0Grid({ tiles }) {
+
+  const [hovered, setHovered] = useState(null);
+
+  const groups = {};
+
+  tiles.forEach(t => {
+    if (!groups[t.dept.code]) {
+      groups[t.dept.code] = {
+        name: t.dept.name,
+        minLon: t.lon0,
+        maxLon: t.lon1
+      };
+    } else {
+      groups[t.dept.code].minLon =
+        Math.min(groups[t.dept.code].minLon, t.lon0);
+      groups[t.dept.code].maxLon =
+        Math.max(groups[t.dept.code].maxLon, t.lon1);
+    }
+  });
+
   return (
     <>
-      {regions.map((r, i) => {
-        const centerLon = (r.lon0 + r.lon1) / 2;
-        const centerLat = 0;
-        const pos = lonLatToVec3(centerLon, centerLat, RADIUS + 0.06);
+      {tiles.map((t, i) => {
+
+        const isHover = hovered === t.dept.code;
 
         return (
-          <group key={`lod0-${i}`}>
-            <mesh
-              geometry={sphericalPatchGeometry({
-                lon0: r.lon0,
-                lon1: r.lon1,
-                lat0: r.lat0,
-                lat1: r.lat1,
-                radius: RADIUS + 0.06
-              })}
-            >
-              <meshStandardMaterial
-                color="#ffffff"
-                transparent
-                opacity={0.12}
-                roughness={0.85}
-                depthWrite={false}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
+          <mesh
+            key={i}
+            geometry={sphericalPatchGeometry({
+              lon0: t.lon0,
+              lon1: t.lon1,
+              lat0: t.lat0,
+              lat1: t.lat1,
+              radius: RADIUS + 0.05
+            })}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              setHovered(t.dept.code);
+            }}
+            onPointerOut={() => setHovered(null)}
+          >
+            <meshStandardMaterial
+              color={t.dept.color}
+              transparent
+              opacity={isHover ? 0.9 : 0.55}
+              roughness={0.45}
+              metalness={0.15}
+              emissive={isHover ? t.dept.color : "#000000"}
+              emissiveIntensity={isHover ? 0.35 : 0}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+        );
+      })}
 
-            <PatchBorder {...r} radius={RADIUS + 0.015} />
+      {Object.entries(groups).map(([code, g]) => (
+        <DepartmentBorder
+          key={code}
+          minLon={g.minLon}
+          maxLon={g.maxLon}
+        />
+      ))}
 
-            <group
-              position={pos.toArray()}
-              onUpdate={(g) => {
-                g.lookAt(0, 0, 0);
-                g.rotateY(Math.PI);
-              }}
+      {Object.entries(groups).map(([code, g]) => {
+
+        const centerLon = (g.minLon + g.maxLon) / 2;
+        const pos = lonLatToVec3(centerLon, 0, RADIUS + 0.08);
+
+        return (
+          <group
+            key={`label-${code}`}
+            position={pos.toArray()}
+            onUpdate={(obj) => {
+              obj.lookAt(0, 0, 0);
+              obj.rotateY(Math.PI);
+            }}
+          >
+            <Text
+              fontSize={0.16}
+              color="#111"
+              anchorX="center"
+              anchorY="middle"
+              depthTest={false}
             >
-              <Text
-                fontSize={0.15}
-                color="#111"
-                anchorX="center"
-                anchorY="middle"
-              >
-                {r.name}
-              </Text>
-            </group>
+              {g.name}
+            </Text>
           </group>
         );
       })}
@@ -221,29 +323,14 @@ function LOD0Regions({ regions }) {
   );
 }
 
-/* =====================
-   LOD1（原本保留）
-===================== */
-function LOD1Regions() {
-  return null;
-}
-
-/* =====================
-   LOD2（原本保留）
-===================== */
-function LOD2Regions() {
-  return null;
-}
-
-/* =====================
-   Scene
-===================== */
+/* ===================== Scene ===================== */
 function Scene({ year }) {
+
   const { camera } = useThree();
   const lod = useSimpleLOD();
 
-  const regions = useMemo(() => {
-    return buildLOD0FromDemand(demandData[year]);
+  const tiles = useMemo(() => {
+    return buildBlockGrid(demandData[year]);
   }, [year]);
 
   useEffect(() => {
@@ -252,15 +339,13 @@ function Scene({ year }) {
 
   return (
     <>
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[5, 5, 5]} intensity={1.6} />
-      <directionalLight position={[-5, -3, -5]} intensity={0.6} />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[6, 6, 6]} intensity={1.5} />
+      <directionalLight position={[-4, -2, -5]} intensity={0.5} />
 
       <GlassGlobe />
 
-      {lod === 0 && <LOD0Regions regions={regions} />}
-      {lod === 1 && <LOD1Regions />}
-      {lod === 2 && <LOD2Regions />}
+      {lod === 0 && <LOD0Grid tiles={tiles} />}
 
       <OrbitControls
         enablePan={false}
@@ -272,11 +357,7 @@ function Scene({ year }) {
   );
 }
 
-/* =====================
-   Root（改為吃外部 year）
-===================== */
-export default function GlobeVisualizer({ year, showSupply, search, onSelect }) {
-
+export default function GlobeVisualizer({ year }) {
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Canvas camera={{ fov: 45, near: 0.1, far: 1000 }}>
