@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import demandData from "../data/demand_yearly.json";
 import hierarchy from "../data/hierarchy.json";
@@ -9,7 +9,7 @@ import hierarchy from "../data/hierarchy.json";
 const RADIUS = 3.0;
 const LON_DIV = 24;
 const LAT_DIV = 12;
-/* ===================== */
+/* ===================== LOD ===================== */
 
 function useSimpleLOD() {
   const { camera } = useThree();
@@ -17,13 +17,18 @@ function useSimpleLOD() {
 
   useFrame(() => {
     const d = camera.position.length();
-    if (d > RADIUS * 2.8) setLOD(0);
-    else if (d > RADIUS * 1.8) setLOD(1);
-    else setLOD(2);
+
+    if (d > RADIUS * 2.2) {
+      setLOD(0);
+    } else {
+      setLOD(1);
+    }
   });
 
   return lod;
 }
+
+/* ===================== 基礎幾何 ===================== */
 
 function lonLatToVec3(lon, lat, radius) {
   const latR = THREE.MathUtils.degToRad(lat);
@@ -88,16 +93,16 @@ function GlassGlobe() {
   );
 }
 
-/* ===================== 顏色系統 ===================== */
+/* ===================== 顏色 ===================== */
 
 const BASE_HUES = [210, 140, 25, 280, 50];
 
-function generateChildColor(parentIndex, childIndex) {
-  const hue = BASE_HUES[parentIndex % BASE_HUES.length];
-  return `hsl(${hue}, 60%, ${45 + childIndex * 6}%)`;
+function generateColor(index) {
+  const hue = BASE_HUES[index % BASE_HUES.length];
+  return `hsl(${hue}, 60%, 50%)`;
 }
 
-/* ===================== 取得層級 ===================== */
+/* ===================== Level1 ===================== */
 
 function getLevel1() {
   return Object.entries(hierarchy)
@@ -105,96 +110,222 @@ function getLevel1() {
     .map(([code, v], i) => ({
       code,
       name: v.name,
-      parentIndex: i
+      index: i
     }));
 }
 
-function getChildren(code) {
-  const node = hierarchy[code];
-  if (!node || !node.children) return [];
-  return Object.entries(node.children).map(([cCode, cData], i) => ({
-    code: cCode,
-    name: cData.name,
-    parentIndex: node.parentIndex ?? 0,
-    childIndex: i
-  }));
-}
-/* ===================== Level1 Column 分配 ===================== */
+/* ===================== 核心分配函數 ===================== */
 
-function allocateColumns(items, yearData) {
+function buildTiles(yearData, lod) {
 
-  if (!items.length) return [];
+  const level1 = getLevel1();
+  if (!level1.length) return [];
 
-  const total = items.reduce(
+  const totalTiles = LON_DIV * LAT_DIV;
+
+  const totalValue = level1.reduce(
     (sum, item) => sum + (yearData?.[item.code] || 0),
     0
   );
 
-  if (!total) return [];
+  if (!totalValue) return [];
 
-  const totalColumns = LON_DIV;
-  const baseColumns = items.length;
-  const remainingColumns = totalColumns - baseColumns;
+  /* ===== Level1 分配 ===== */
 
-  const allocations = items.map(item => {
-
+  const allocations = level1.map(item => {
     const value = yearData?.[item.code] || 0;
-    const ratio = value / total;
-    const raw = ratio * remainingColumns;
+    const ratio = value / totalValue;
+    const raw = ratio * totalTiles;
 
     return {
       ...item,
-      base: 1,
-      extra: Math.floor(raw),
+      count: Math.max(1, Math.floor(raw)),
       remainder: raw - Math.floor(raw)
     };
   });
 
-  let assigned =
-    allocations.reduce((sum, a) => sum + a.extra, 0);
-
-  let diff = remainingColumns - assigned;
+  let assigned = allocations.reduce((s, a) => s + a.count, 0);
+  let diff = totalTiles - assigned;
 
   if (diff > 0) {
     allocations
       .sort((a, b) => b.remainder - a.remainder)
       .slice(0, diff)
-      .forEach(a => a.extra += 1);
+      .forEach(a => a.count += 1);
   }
 
-  const columnPlan = [];
+  const grid = Array.from({ length: LON_DIV }, () =>
+    Array(LAT_DIV).fill(null)
+  );
 
-  allocations.forEach(a => {
-    const count = a.base + a.extra;
-    for (let i = 0; i < count; i++) {
-      columnPlan.push(a);
+  const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+
+  /* ===== flood fill Level1 ===== */
+
+  allocations.forEach(dept => {
+
+    let seedFound = false;
+    let seedLon = 0;
+    let seedLat = 0;
+
+    for (let i = 0; i < LON_DIV && !seedFound; i++) {
+      for (let j = 0; j < LAT_DIV && !seedFound; j++) {
+        if (!grid[i][j]) {
+          seedLon = i;
+          seedLat = j;
+          seedFound = true;
+        }
+      }
+    }
+
+    if (!seedFound) return;
+
+    const queue = [[seedLon, seedLat]];
+    grid[seedLon][seedLat] = dept;
+
+    let filled = 1;
+
+    while (queue.length && filled < dept.count) {
+
+      const [lon, lat] = queue.shift();
+
+      for (let [dx, dy] of directions) {
+
+        const nx = lon + dx;
+        const ny = lat + dy;
+
+        if (
+          nx >= 0 && nx < LON_DIV &&
+          ny >= 0 && ny < LAT_DIV &&
+          !grid[nx][ny]
+        ) {
+          grid[nx][ny] = dept;
+          queue.push([nx, ny]);
+          filled++;
+          if (filled >= dept.count) break;
+        }
+      }
     }
   });
 
-  while (columnPlan.length < totalColumns) {
-    columnPlan.push(columnPlan[columnPlan.length - 1]);
+  /* ===== LOD1 細分（在 parent 區塊內再 flood fill）===== */
+
+  if (lod === 1) {
+
+    const grouped = {};
+
+    for (let lon = 0; lon < LON_DIV; lon++) {
+      for (let lat = 0; lat < LAT_DIV; lat++) {
+        const dept = grid[lon][lat];
+        if (!dept) continue;
+        if (!grouped[dept.code]) grouped[dept.code] = [];
+        grouped[dept.code].push([lon, lat]);
+      }
+    }
+
+    Object.entries(grouped).forEach(([parentCode, cells]) => {
+
+      const parentNode = hierarchy[parentCode];
+      if (!parentNode?.children) return;
+
+      const parentValue = yearData?.[parentCode] || 0;
+      if (!parentValue) return;
+
+      const children = Object.entries(parentNode.children)
+        .map(([code, data]) => ({
+          code,
+          name: data.name,
+          value: yearData?.[code] || 0
+        }))
+        .filter(c => c.value > 0);
+
+      if (!children.length) return;
+
+      // 子 grid
+      const localGrid = {};
+      cells.forEach(([lon, lat]) => {
+        localGrid[`${lon}_${lat}`] = null;
+      });
+
+      const allocations = children.map(c => {
+        const ratio = c.value / parentValue;
+        const raw = ratio * cells.length;
+        return {
+          ...c,
+          count: Math.max(1, Math.floor(raw)),
+          remainder: raw - Math.floor(raw)
+        };
+      });
+
+      let assigned = allocations.reduce((s, a) => s + a.count, 0);
+      let diff = cells.length - assigned;
+
+      if (diff > 0) {
+        allocations
+          .sort((a, b) => b.remainder - a.remainder)
+          .slice(0, diff)
+          .forEach(a => a.count += 1);
+      }
+
+      allocations.forEach(child => {
+
+        const emptyCell = Object.keys(localGrid)
+          .find(k => localGrid[k] === null);
+
+        if (!emptyCell) return;
+
+        const [seedLon, seedLat] =
+          emptyCell.split("_").map(Number);
+
+        const queue = [[seedLon, seedLat]];
+        localGrid[emptyCell] = child;
+
+        let filled = 1;
+
+        while (queue.length && filled < child.count) {
+
+          const [lon, lat] = queue.shift();
+
+          for (let [dx, dy] of directions) {
+
+            const nx = lon + dx;
+            const ny = lat + dy;
+            const key = `${nx}_${ny}`;
+
+            if (localGrid[key] === null) {
+              localGrid[key] = child;
+              queue.push([nx, ny]);
+              filled++;
+              if (filled >= child.count) break;
+            }
+          }
+        }
+      });
+
+      // 寫回 grid（顏色保持 parent）
+      const parentIndex =
+        level1.find(l => l.code === parentCode)?.index || 0;
+
+      Object.entries(localGrid).forEach(([k, child]) => {
+        const [lon, lat] = k.split("_").map(Number);
+        grid[lon][lat] = {
+          ...child,
+          index: parentIndex
+        };
+      });
+
+    });
   }
 
-  return columnPlan;
-}
-
-/* ===================== 建立 LOD0 ===================== */
-
-function buildLOD0(yearData) {
-
-  const level1 = getLevel1();
-  if (!level1.length) return [];
-
-  const columnPlan = allocateColumns(level1, yearData);
-  if (!columnPlan.length) return [];
+  /* ===== 轉為 tiles ===== */
 
   const tiles = [];
 
   for (let lon = 0; lon < LON_DIV; lon++) {
-
-    const dept = columnPlan[lon];
-
     for (let lat = 0; lat < LAT_DIV; lat++) {
+
+      const dept = grid[lon][lat];
+      if (!dept) continue;
 
       const lon0 = -180 + lon * (360 / LON_DIV);
       const lon1 = lon0 + (360 / LON_DIV);
@@ -207,7 +338,7 @@ function buildLOD0(yearData) {
         lat0,
         lat1,
         dept,
-        color: generateChildColor(dept.parentIndex, 0)
+        color: generateColor(dept.index)
       });
     }
   }
@@ -215,227 +346,187 @@ function buildLOD0(yearData) {
   return tiles;
 }
 
-/* ===================== 建立 LOD1（區塊內 Drill-Down） ===================== */
+/* ===================== Grid ===================== */
+/* ===================== 穩定版 Grid ===================== */
 
-function buildLOD1(yearData) {
+function Grid({ tiles, lod }) {
 
-  const level1 = getLevel1();
-  if (!level1.length) return [];
+  /* ===================== 防呆 ===================== */
 
-  const parentColumns = allocateColumns(level1, yearData);
-  if (!parentColumns.length) return [];
+  if (!tiles || !tiles.length) return null;
 
-  const tiles = [];
+  /* ===================== tile map (找鄰居用) ===================== */
 
-  let columnIndex = 0;
-
-  level1.forEach(parent => {
-
-    const parentCount =
-      parentColumns.filter(c => c.code === parent.code).length;
-
-    if (!parentCount) return;
-
-    const childrenRaw = getChildren(parent.code);
-
-    const children = childrenRaw.map((c, i) => ({
-      ...c,
-      parentIndex: parent.parentIndex,
-      childIndex: i
-    }));
-
-    const childColumns = allocateColumns(children, yearData);
-
-    if (!childColumns.length) {
-      columnIndex += parentCount;
-      return;
-    }
-
-    for (let i = 0; i < parentCount; i++) {
-
-      const child =
-        childColumns[i % childColumns.length];
-
-      const lon = columnIndex + i;
-
-      for (let lat = 0; lat < LAT_DIV; lat++) {
-
-        const lon0 = -180 + lon * (360 / LON_DIV);
-        const lon1 = lon0 + (360 / LON_DIV);
-        const lat0 = -90 + lat * (180 / LAT_DIV);
-        const lat1 = lat0 + (180 / LAT_DIV);
-
-        tiles.push({
-          lon0,
-          lon1,
-          lat0,
-          lat1,
-          dept: child,
-          color: generateChildColor(
-            parent.parentIndex,
-            child.childIndex
-          )
-        });
-      }
-    }
-
-    columnIndex += parentCount;
-
+  const tileMap = {};
+  tiles.forEach(t => {
+    const key = `${t.lon0}_${t.lat0}`;
+    tileMap[key] = t;
   });
 
-  return tiles;
-}
-/* ===================== 外框 ===================== */
-
-function DepartmentBorder({ minLon, maxLon }) {
-
-  const points = [];
-  const steps = 32;
-
-  for (let i = 0; i <= steps; i++)
-    points.push(
-      lonLatToVec3(
-        THREE.MathUtils.lerp(minLon, maxLon, i / steps),
-        90,
-        RADIUS + 0.051
-      )
-    );
-
-  for (let i = 0; i <= steps; i++)
-    points.push(
-      lonLatToVec3(
-        maxLon,
-        THREE.MathUtils.lerp(90, -90, i / steps),
-        RADIUS + 0.051
-      )
-    );
-
-  for (let i = 0; i <= steps; i++)
-    points.push(
-      lonLatToVec3(
-        THREE.MathUtils.lerp(maxLon, minLon, i / steps),
-        -90,
-        RADIUS + 0.051
-      )
-    );
-
-  for (let i = 0; i <= steps; i++)
-    points.push(
-      lonLatToVec3(
-        minLon,
-        THREE.MathUtils.lerp(-90, 90, i / steps),
-        RADIUS + 0.051
-      )
-    );
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-  return (
-    <line geometry={geometry}>
-      <lineBasicMaterial
-        color="#ffffff"
-        transparent
-        opacity={0.35}
-      />
-    </line>
-  );
-}
-
-/* ===================== 共用 Grid ===================== */
-
-function Grid({ tiles }) {
-
-  const [hovered, setHovered] = useState(null);
-
-  if (!tiles.length) return null;
+  /* ===================== 分組 ===================== */
 
   const groups = {};
 
   tiles.forEach(t => {
-    if (!groups[t.dept.code]) {
-      groups[t.dept.code] = {
-        name: t.dept.name,
-        minLon: t.lon0,
-        maxLon: t.lon1
+
+    if (!t?.dept?.code) return;
+
+    const code = t.dept.code;
+    const name = t.dept.name || "";
+
+    const centerLon = (t.lon0 + t.lon1) / 2;
+    const centerLat = (t.lat0 + t.lat1) / 2;
+    const centerVec = lonLatToVec3(centerLon, centerLat, RADIUS + 0.12);
+
+    if (!groups[code]) {
+      groups[code] = {
+        name,
+        vectors: [centerVec],
+        count: 1
       };
     } else {
-      groups[t.dept.code].minLon =
-        Math.min(groups[t.dept.code].minLon, t.lon0);
-      groups[t.dept.code].maxLon =
-        Math.max(groups[t.dept.code].maxLon, t.lon1);
+      groups[code].vectors.push(centerVec);
+      groups[code].count++;
     }
   });
 
+  /* ===================== 最大 tile 數（防爆） ===================== */
+
+  const groupValues = Object.values(groups);
+  const maxTiles = groupValues.length
+    ? Math.max(...groupValues.map(g => g.count))
+    : 1;
+
+  /* ===================== LOD1 邊界線 ===================== */
+
+  const boundaryLines = [];
+
+  if (lod === 1) {
+
+    tiles.forEach(t => {
+
+      const rightKey = `${t.lon1}_${t.lat0}`;
+      const topKey   = `${t.lon0}_${t.lat1}`;
+
+      const rightNeighbor = tileMap[rightKey];
+      const topNeighbor   = tileMap[topKey];
+
+      if (
+        rightNeighbor &&
+        rightNeighbor.dept?.code !== t.dept?.code
+      ) {
+        const p1 = lonLatToVec3(t.lon1, t.lat0, RADIUS + 0.051);
+        const p2 = lonLatToVec3(t.lon1, t.lat1, RADIUS + 0.051);
+        boundaryLines.push([p1, p2]);
+      }
+
+      if (
+        topNeighbor &&
+        topNeighbor.dept?.code !== t.dept?.code
+      ) {
+        const p1 = lonLatToVec3(t.lon0, t.lat1, RADIUS + 0.051);
+        const p2 = lonLatToVec3(t.lon1, t.lat1, RADIUS + 0.051);
+        boundaryLines.push([p1, p2]);
+      }
+
+    });
+  }
+
+  /* ===================== Render ===================== */
+
   return (
     <>
-      {tiles.map((t, i) => {
-
-        const isHover = hovered === t.dept.code;
-
-        return (
-          <mesh
-            key={i}
-            geometry={sphericalPatchGeometry({
-              lon0: t.lon0,
-              lon1: t.lon1,
-              lat0: t.lat0,
-              lat1: t.lat1,
-              radius: RADIUS + 0.05
-            })}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              setHovered(t.dept.code);
-            }}
-            onPointerOut={() => setHovered(null)}
-          >
-            <meshStandardMaterial
-              color={t.color}
-              transparent
-              opacity={isHover ? 0.9 : 0.6}
-              roughness={0.45}
-              metalness={0.15}
-              emissive={isHover ? t.color : "#000000"}
-              emissiveIntensity={isHover ? 0.35 : 0}
-              side={THREE.DoubleSide}
-              depthWrite={false}
-            />
-          </mesh>
-        );
-      })}
-
-      {Object.entries(groups).map(([code, g]) => (
-        <DepartmentBorder
-          key={code}
-          minLon={g.minLon}
-          maxLon={g.maxLon}
-        />
+      {/* ===================== 區塊 Mesh ===================== */}
+      {tiles.map((t, i) => (
+        <mesh
+          key={i}
+          geometry={sphericalPatchGeometry({
+            lon0: t.lon0,
+            lon1: t.lon1,
+            lat0: t.lat0,
+            lat1: t.lat1,
+            radius: RADIUS + 0.05
+          })}
+        >
+          <meshStandardMaterial
+            color={t.color}
+            transparent
+            opacity={0.7}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
       ))}
 
+      {/* ===================== LOD1 邊界線 ===================== */}
+      {lod === 1 &&
+        boundaryLines.map((line, i) => {
+          const geometry = new THREE.BufferGeometry().setFromPoints(line);
+          return (
+            <line key={i} geometry={geometry}>
+              <lineBasicMaterial
+                color="#ffffff"
+                transparent
+                opacity={0.9}
+              />
+            </line>
+          );
+        })}
+
+      {/* ===================== 文字 ===================== */}
       {Object.entries(groups).map(([code, g]) => {
 
-        const centerLon = (g.minLon + g.maxLon) / 2;
-        const pos = lonLatToVec3(centerLon, 0, RADIUS + 0.08);
+        if (!g || !g.vectors || !g.vectors.length) return null;
+
+        /* === 中心點 === */
+        const avg = new THREE.Vector3();
+        g.vectors.forEach(v => avg.add(v));
+        avg.divideScalar(g.vectors.length);
+        avg.normalize().multiplyScalar(RADIUS + 0.14);
+
+        /* === 字體大小 === */
+        const ratio = g.count / maxTiles;
+        const minSize = 0.06;
+        const maxSize = 0.22;
+        const fontSize =
+          minSize + (maxSize - minSize) * ratio;
+
+        /* === 自動省略 === */
+        let displayName = g.name || "";
+
+        const maxChars = Math.floor(ratio * 10) + 4;
+
+        if (displayName.length > maxChars) {
+          displayName =
+            displayName.substring(0, maxChars) + "...";
+        }
+
+        /* === LOD 控制 === */
+        if (lod === 0) {
+          // LOD0 顯示 Level1
+        } else if (lod === 1) {
+          // LOD1 顯示 Level2
+        }
 
         return (
           <group
             key={`label-${code}`}
-            position={pos.toArray()}
+            position={avg.toArray()}
             onUpdate={(obj) => {
               obj.lookAt(0, 0, 0);
               obj.rotateY(Math.PI);
             }}
           >
             <Text
-              fontSize={0.15}
-              maxWidth={(g.maxLon - g.minLon) / 360 * 6}
-              lineHeight={1.1}
+              fontSize={fontSize}
               textAlign="center"
-              color="#111"
               anchorX="center"
               anchorY="middle"
+              maxWidth={fontSize * 6}
+              lineHeight={1.1}
               depthTest={false}
             >
-              {g.name}
+              {displayName}
             </Text>
           </group>
         );
@@ -443,7 +534,6 @@ function Grid({ tiles }) {
     </>
   );
 }
-
 /* ===================== Scene ===================== */
 
 function Scene({ year }) {
@@ -454,20 +544,8 @@ function Scene({ year }) {
   const yearData = demandData?.[year];
 
   const tiles = useMemo(() => {
-
     if (!yearData) return [];
-
-    if (lod === 0)
-      return buildLOD0(yearData);
-
-    if (lod === 1)
-      return buildLOD1(yearData);
-
-    if (lod === 2)
-      return [];
-
-    return [];
-
+    return buildTiles(yearData, lod);
   }, [yearData, lod]);
 
   useEffect(() => {
@@ -478,11 +556,13 @@ function Scene({ year }) {
     <>
       <ambientLight intensity={0.8} />
       <directionalLight position={[6, 6, 6]} intensity={1.5} />
-      <directionalLight position={[-4, -2, -5]} intensity={0.5} />
+      <directionalLight position={[-5, -4, -6]} intensity={0.4} />
 
       <GlassGlobe />
 
-      {tiles.length > 0 && <Grid tiles={tiles} />}
+      {tiles.length > 0 && (
+        <Grid tiles={tiles} lod={lod} />
+      )}
 
       <OrbitControls
         enablePan={false}
