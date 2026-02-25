@@ -152,6 +152,23 @@ def export_pdf():
 
 
 # ====================================
+# 5. 能源署公告 API
+# ====================================
+@app.route("/energy-news", methods=["GET"])
+def get_energy_news():
+    try:
+        with open("energy_news_cache.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        print("讀取公告錯誤:", e)
+        return jsonify({
+            "source": "經濟部能源署",
+            "items": []
+        })
+    
+    
+# ====================================
 # 入口
 # ====================================
 if __name__ == "__main__":

@@ -1,12 +1,11 @@
-# crawlers/energy_news_crawler.py
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 import json
 import time
 from datetime import datetime
+import os
 
 ENERGY_NEWS_URL = (
     "https://www.moeaea.gov.tw/ECW/populace/news/News.aspx"
@@ -16,24 +15,25 @@ ENERGY_NEWS_URL = (
 OUTPUT_PATH = "energy_news_cache.json"
 
 def crawl_energy_news():
-    # ===== 啟動瀏覽器 =====
-    options = Options()
-    options.add_argument("--headless=new")  # 若抓不到可先改成 False
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
+    print("🔥 爬蟲開始執行")
 
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=options
-    )
+    options = Options()
+    # options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+
+    # ⭐ 指定本地 driver（完全離線）
+    driver_path = os.path.join(os.getcwd(), "msedgedriver.exe")
+    service = Service(driver_path)
+
+    driver = webdriver.Edge(service=service, options=options)
 
     print("🌐 開啟能源署公告頁…")
     driver.get(ENERGY_NEWS_URL)
-    time.sleep(6)  # ⏳ 等 JS 載入（重要）
+
+    time.sleep(6)
 
     items = []
 
-    # ===== 抓所有「公告連結」（穩定做法）=====
     links = driver.find_elements(
         By.XPATH,
         "//a[contains(@href, 'News.aspx')]"
@@ -43,7 +43,6 @@ def crawl_energy_news():
         title = a.text.strip()
         link = a.get_attribute("href")
 
-        # 過濾無效項目
         if not title:
             continue
         if "menu_id" not in link:
@@ -69,6 +68,7 @@ def crawl_energy_news():
         json.dump(data, f, ensure_ascii=False, indent=2)
 
     print(f"✅ 同步完成，共 {len(items)} 則公告")
+
 
 if __name__ == "__main__":
     crawl_energy_news()
