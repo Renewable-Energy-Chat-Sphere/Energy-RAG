@@ -5,43 +5,71 @@ import EnergyNews from "../components/EnergyNews";
 
 export default function Home() {
   useEffect(() => {
-    /* 卡片進場動畫 */
-    const cards = document.querySelectorAll(".card");
+    /* =========================
+       Reveal Observer
+    ========================== */
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("active");
-            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.15 },
     );
 
-    cards.forEach((c) => observer.observe(c));
+    const revealElements = document.querySelectorAll(".reveal");
+    revealElements.forEach((el) => observer.observe(el));
 
-    /* Accordion：事件委派（關鍵） */
+    /* =========================
+       Accordion
+    ========================== */
     const cardsContainer = document.querySelector(".cards");
 
     const onAccordionClick = (e) => {
       const acc = e.target.closest(".accordion");
       if (!acc) return;
 
-      const allAccordions = cardsContainer.querySelectorAll(".accordion");
-
-      allAccordions.forEach((other) => {
-        if (other !== acc) {
-          other.classList.remove("active");
-          other.nextElementSibling.classList.remove("open");
+      document.querySelectorAll(".accordion").forEach((a) => {
+        if (a !== acc) {
+          a.classList.remove("active");
+          a.nextElementSibling?.classList.remove("open");
         }
       });
 
       acc.classList.toggle("active");
-      acc.nextElementSibling.classList.toggle("open");
+      acc.nextElementSibling?.classList.toggle("open");
     };
 
     cardsContainer?.addEventListener("click", onAccordionClick);
+
+    /* =========================
+       數字滾動動畫
+    ========================== */
+    const animateValue = (el) => {
+      const raw = el.innerText;
+      const number = parseFloat(raw.replace(/[^\d.]/g, ""));
+      const suffix = raw.replace(/[\d,.]/g, "");
+
+      let start = 0;
+      const duration = 1200;
+      const stepTime = 16;
+      const totalSteps = duration / stepTime;
+      const increment = number / totalSteps;
+
+      const counter = setInterval(() => {
+        start += increment;
+        if (start >= number) {
+          el.innerText = raw;
+          clearInterval(counter);
+        } else {
+          el.innerText = Math.floor(start).toLocaleString() + suffix;
+        }
+      }, stepTime);
+    };
+
+    document.querySelectorAll(".big-number").forEach((el) => animateValue(el));
 
     return () => {
       observer.disconnect();
@@ -68,7 +96,6 @@ export default function Home() {
             position: "absolute",
             inset: 0,
             background: "rgba(0,0,0,0.45)",
-            zIndex: 1,
           }}
         />
 
@@ -78,7 +105,6 @@ export default function Home() {
             bottom: "40px",
             left: "60px",
             color: "white",
-            zIndex: 2,
           }}
         >
           <h1 style={{ fontSize: "40px", fontWeight: 700 }}>
@@ -94,51 +120,112 @@ export default function Home() {
         </div>
       </section>
 
-      {/* HERO */}
-      <section className="hero">
-        <h2>多模態視覺能源球 · 智慧代理系統</h2>
-        <p>將複雜的能源資料轉化為可探索的三維能源球模型</p>
-        <p>透過 AI 與 RAG 技術進行能源查詢與分析</p>
-        <p>支援研究與政策決策應用</p>
+      {/* DASHBOARD */}
+      <section className="dashboard reveal">
+        <div className="dashboard-grid">
+          {[
+            { title: "今日用電量", value: "180,528 MWh", sub: "較昨日 +2.3%" },
+            { title: "再生能源占比", value: "24.6%", sub: "近五年最高" },
+            { title: "尖峰負載", value: "36,468 MW", sub: "14:25 發生" },
+            {
+              title: "碳排估算",
+              value: "109,632 噸 CO₂e",
+              sub: "較去年同期 -3.1%",
+            },
+          ].map((item, i) => (
+            <div className="dashboard-card reveal" key={i}>
+              <h4>{item.title}</h4>
+              <p className="big-number">{item.value}</p>
+              <span>{item.sub}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <EnergyNews />
+      {/* Energy News */}
+      <div className="reveal">
+        <EnergyNews />
+      </div>
+
+      {/* SPHERE PREVIEW */}
+      <section className="sphere-preview reveal">
+        <div className="sphere-left">
+          <h2>能源結構探索 / Energy Sphere</h2>
+          <p>
+            本系統統整近 30 年能源平衡資料，並轉換為三維視覺球模型，
+            以支援年度比較、產業分層結構分析與能源結構相似度研究。
+          </p>
+
+          <Link to="/sphere">
+            <button className="primary-btn">探索能源球 →</button>
+          </Link>
+        </div>
+
+        <div className="sphere-right">
+          <img src="/images/sphere.jpg" alt="Energy Sphere Preview" />
+        </div>
+      </section>
+
+      {/* AI PREVIEW */}
+      <section className="ai-preview reveal">
+        <div className="ai-box">
+          <h2>智慧 RAG 查詢 / Energy Q&A</h2>
+          <p>輸入問題，即可快速取得能源結構分析與資料來源。</p>
+
+          <div className="fake-chat">
+            <input
+              type="text"
+              placeholder="例如：112 年與 113 年產業用電差異？"
+              disabled
+            />
+            <Link to="/rag">
+              <button className="primary-btn">立即查詢 →</button>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* FEATURES */}
-      <section id="features" className="section">
+      <section id="features" className="section reveal">
         <h2 style={{ textAlign: "center" }}>系統特色</h2>
 
         <div className="cards">
           {[
             {
               title: "3D 能源視覺球",
-              desc:
-                "以 Google Earth 風格，將台灣各產業能源結構轉換為可旋轉、可比較的三維視覺模型",
+              desc: "三維旋轉視覺化能源結構模型",
               detail:
-                "使用最新三維技術，結合實時數據，支援年度切換、產業分層與相似度視覺化。",
+                "整合近 30 年能源平衡資料，建構三維互動式能源球模型。支援跨年度比較、產業分層結構分析與能源結構相似度研究，讓能源變化趨勢與結構差異一目了然。",
+              img: "/images/sphere.jpg",
             },
             {
               title: "智慧 RAG 查詢",
-              desc:
-                "結合能源平衡表、電力與政策資料，使用自然語言查詢與比較能源數據。",
+              desc: "自然語言驅動的能源資料探索",
               detail:
-                "例如：「哪個產業近十年能源結構變化最大？」",
+                "支援文字、網址、文件、影音與表格等多模態資料輸入。透過語意向量化與相似度檢索機制，結合大型語言模型生成具依據且可追溯來源的分析結果，實現精準且可解釋的能源查詢體驗。",
+              img: "/images/analysis.jpg",
             },
             {
-              title: "決策輔助分析",
-              desc:
-                "透過相似度計算與趨勢視覺化，協助比較產業、年度與區域用能差異。",
+              title: "主動式能源智慧代理",
+              desc: "自動化分析與視覺控制",
               detail:
-                "作為能源政策與產業分析的輔助工具。",
+                "建構具自主決策能力的 AI Agent，能依據使用者查詢自動啟動分析流程，並同步控制三維能源球進行年度切換、產業聚焦與差異比較，實現理解、推理與視覺操作整合的智慧決策支援。",
+              img: "/images/ai.jpg",
             },
           ].map((item, i) => (
-            <div className="card" key={i}>
-              <h3>{item.title}</h3>
-              <p>{item.desc}</p>
+            <div className="card reveal" key={i}>
+              <div className="card-image">
+                <img src={item.img} alt={item.title} />
+              </div>
 
-              <div className="accordion">更多細節說明</div>
-              <div className="accordion-content">
-                <p>{item.detail}</p>
+              <div className="card-body">
+                <h3>{item.title}</h3>
+                <p>{item.desc}</p>
+
+                <div className="accordion">更多細節說明</div>
+                <div className="accordion-content">
+                  <p>{item.detail}</p>
+                </div>
               </div>
             </div>
           ))}

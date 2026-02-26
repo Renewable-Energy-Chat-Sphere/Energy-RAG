@@ -8,66 +8,81 @@ from datetime import datetime
 import os
 
 ENERGY_NEWS_URL = (
-    "https://www.moeaea.gov.tw/ECW/populace/news/News.aspx"
-    "?kind=1&menu_id=41"
+    "https://www.moeaea.gov.tw/ECW/populace/news/News.aspx" "?kind=1&menu_id=41"
 )
 
 OUTPUT_PATH = "energy_news_cache.json"
+
 
 def crawl_energy_news():
     print("🔥 爬蟲開始執行")
 
     options = Options()
-    # options.add_argument("--headless=new")
-    options.add_argument("--disable-gpu")
 
-    # ⭐ 指定本地 driver（完全離線）
+    # ✅ 背景執行（不開瀏覽器視窗）
+    options.add_argument("--headless=new")
+
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
     driver_path = os.path.join(os.getcwd(), "msedgedriver.exe")
     service = Service(driver_path)
 
     driver = webdriver.Edge(service=service, options=options)
 
-    print("🌐 開啟能源署公告頁…")
-    driver.get(ENERGY_NEWS_URL)
+    try:
+        print("🌐 抓取能源署公告資料...")
+        driver.get(ENERGY_NEWS_URL)
 
-    time.sleep(6)
+        time.sleep(4)
 
-    items = []
+        items = []
+        seen_links = set()
 
-    links = driver.find_elements(
-        By.XPATH,
-        "//a[contains(@href, 'News.aspx')]"
-    )
+        # ⭐ 只抓真正新聞（含 news_id）
+        links = driver.find_elements(By.XPATH, "//a[contains(@href, 'news_id=')]")
 
-    for a in links:
-        title = a.text.strip()
-        link = a.get_attribute("href")
+        for a in links:
+            title = a.text.strip()
+            link = a.get_attribute("href")
 
-        if not title:
-            continue
-        if "menu_id" not in link:
-            continue
+            if not title:
+                continue
 
-        items.append({
-            "title": title,
-            "link": link
-        })
+            if not link:
+                continue
 
-        if len(items) >= 5:
-            break
+            if link in seen_links:
+                continue
 
-    driver.quit()
+            # 排除分類頁文字
+            if title in ["新聞", "新聞澄清", "查看全部新聞"]:
+                continue
 
-    data = {
-        "source": "經濟部能源署",
-        "synced_at": datetime.now().isoformat(),
-        "items": items
-    }
+            seen_links.add(link)
 
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+            items.append({"title": title, "link": link})
 
-    print(f"✅ 同步完成，共 {len(items)} 則公告")
+            if len(items) >= 5:
+                break
+
+        data = {
+            "source": "經濟部能源署",
+            "synced_at": datetime.now().isoformat(),
+            "items": items,
+        }
+
+        with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        print(f"✅ 同步完成，共 {len(items)} 則公告")
+
+    except Exception as e:
+        print("❌ 爬蟲錯誤:", e)
+
+    finally:
+        driver.quit()
 
 
 if __name__ == "__main__":
