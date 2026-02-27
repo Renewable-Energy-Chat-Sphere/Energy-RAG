@@ -346,24 +346,23 @@ function buildTiles(yearData, lod) {
   return tiles;
 }
 
-/* ===================== Grid ===================== */
-/* ===================== 穩定版 Grid ===================== */
+/* ===================== FINAL STABLE GRID ===================== */
 
 function Grid({ tiles, lod }) {
 
-  /* ===================== 防呆 ===================== */
-
   if (!tiles || !tiles.length) return null;
 
-  /* ===================== tile map (找鄰居用) ===================== */
+  /* ===================== 建立 index map（找鄰居） ===================== */
 
-  const tileMap = {};
+  const gridIndexMap = {};
+
   tiles.forEach(t => {
-    const key = `${t.lon0}_${t.lat0}`;
-    tileMap[key] = t;
+    const lonIndex = Math.floor((t.lon0 + 180) / (360 / LON_DIV));
+    const latIndex = Math.floor((t.lat0 + 90) / (180 / LAT_DIV));
+    gridIndexMap[`${lonIndex}_${latIndex}`] = t;
   });
 
-  /* ===================== 分組 ===================== */
+  /* ===================== 分組（用於文字） ===================== */
 
   const groups = {};
 
@@ -374,23 +373,20 @@ function Grid({ tiles, lod }) {
     const code = t.dept.code;
     const name = t.dept.name || "";
 
-    const centerLon = (t.lon0 + t.lon1) / 2;
-    const centerLat = (t.lat0 + t.lat1) / 2;
-    const centerVec = lonLatToVec3(centerLon, centerLat, RADIUS + 0.12);
+    const lonIndex = Math.floor((t.lon0 + 180) / (360 / LON_DIV));
+    const latIndex = Math.floor((t.lat0 + 90) / (180 / LAT_DIV));
 
     if (!groups[code]) {
       groups[code] = {
         name,
-        vectors: [centerVec],
+        cells: [[lonIndex, latIndex]],
         count: 1
       };
     } else {
-      groups[code].vectors.push(centerVec);
+      groups[code].cells.push([lonIndex, latIndex]);
       groups[code].count++;
     }
   });
-
-  /* ===================== 最大 tile 數（防爆） ===================== */
 
   const groupValues = Object.values(groups);
   const maxTiles = groupValues.length
@@ -405,18 +401,21 @@ function Grid({ tiles, lod }) {
 
     tiles.forEach(t => {
 
-      const rightKey = `${t.lon1}_${t.lat0}`;
-      const topKey   = `${t.lon0}_${t.lat1}`;
+      const lonIndex = Math.floor((t.lon0 + 180) / (360 / LON_DIV));
+      const latIndex = Math.floor((t.lat0 + 90) / (180 / LAT_DIV));
 
-      const rightNeighbor = tileMap[rightKey];
-      const topNeighbor   = tileMap[topKey];
+      const rightNeighbor =
+        gridIndexMap[`${lonIndex + 1}_${latIndex}`];
+
+      const topNeighbor =
+        gridIndexMap[`${lonIndex}_${latIndex + 1}`];
 
       if (
         rightNeighbor &&
         rightNeighbor.dept?.code !== t.dept?.code
       ) {
-        const p1 = lonLatToVec3(t.lon1, t.lat0, RADIUS + 0.051);
-        const p2 = lonLatToVec3(t.lon1, t.lat1, RADIUS + 0.051);
+        const p1 = lonLatToVec3(t.lon1, t.lat0, RADIUS + 0.06);
+        const p2 = lonLatToVec3(t.lon1, t.lat1, RADIUS + 0.06);
         boundaryLines.push([p1, p2]);
       }
 
@@ -424,8 +423,8 @@ function Grid({ tiles, lod }) {
         topNeighbor &&
         topNeighbor.dept?.code !== t.dept?.code
       ) {
-        const p1 = lonLatToVec3(t.lon0, t.lat1, RADIUS + 0.051);
-        const p2 = lonLatToVec3(t.lon1, t.lat1, RADIUS + 0.051);
+        const p1 = lonLatToVec3(t.lon0, t.lat1, RADIUS + 0.06);
+        const p2 = lonLatToVec3(t.lon1, t.lat1, RADIUS + 0.06);
         boundaryLines.push([p1, p2]);
       }
 
@@ -436,7 +435,7 @@ function Grid({ tiles, lod }) {
 
   return (
     <>
-      {/* ===================== 區塊 Mesh ===================== */}
+      {/* ===================== 區塊 ===================== */}
       {tiles.map((t, i) => (
         <mesh
           key={i}
@@ -451,23 +450,30 @@ function Grid({ tiles, lod }) {
           <meshStandardMaterial
             color={t.color}
             transparent
-            opacity={0.7}
+            opacity={0.72}
             side={THREE.DoubleSide}
             depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
           />
         </mesh>
       ))}
 
-      {/* ===================== LOD1 邊界線 ===================== */}
+      {/* ===================== LOD1 邊界 ===================== */}
       {lod === 1 &&
         boundaryLines.map((line, i) => {
-          const geometry = new THREE.BufferGeometry().setFromPoints(line);
+
+          const geometry =
+            new THREE.BufferGeometry().setFromPoints(line);
+
           return (
             <line key={i} geometry={geometry}>
               <lineBasicMaterial
                 color="#ffffff"
                 transparent
-                opacity={0.9}
+                opacity={0.95}
+                depthTest={false}
               />
             </line>
           );
@@ -476,42 +482,75 @@ function Grid({ tiles, lod }) {
       {/* ===================== 文字 ===================== */}
       {Object.entries(groups).map(([code, g]) => {
 
-        if (!g || !g.vectors || !g.vectors.length) return null;
+        if (!g || !g.cells.length) return null;
 
-        /* === 中心點 === */
-        const avg = new THREE.Vector3();
-        g.vectors.forEach(v => avg.add(v));
-        avg.divideScalar(g.vectors.length);
-        avg.normalize().multiplyScalar(RADIUS + 0.14);
+        // LOD 控制
+        if (lod === 0) {
+          // LOD0 顯示 Level1
+        } else if (lod === 1) {
+          // LOD1 顯示 Level2（Level1 不顯示）
+          // 若你想只顯示 level 2 可在這裡加條件
+        }
 
-        /* === 字體大小 === */
-        const ratio = g.count / maxTiles;
-        const minSize = 0.06;
-        const maxSize = 0.22;
-        const fontSize =
+        /* ===== 計算區塊地理中心（不再平均向量） ===== */
+
+        let minLon = Infinity;
+        let maxLon = -Infinity;
+        let minLat = Infinity;
+        let maxLat = -Infinity;
+
+        g.cells.forEach(([lonIndex, latIndex]) => {
+
+          const lon0 = -180 + lonIndex * (360 / LON_DIV);
+          const lon1 = lon0 + (360 / LON_DIV);
+          const lat0 = -90 + latIndex * (180 / LAT_DIV);
+          const lat1 = lat0 + (180 / LAT_DIV);
+
+          minLon = Math.min(minLon, lon0);
+          maxLon = Math.max(maxLon, lon1);
+          minLat = Math.min(minLat, lat0);
+          maxLat = Math.max(maxLat, lat1);
+        });
+
+        const centerLon = (minLon + maxLon) / 2;
+        const centerLat = (minLat + maxLat) / 2;
+
+        let position =
+          lonLatToVec3(centerLon, centerLat, RADIUS + 0.18);
+
+        // 極區推開
+        if (Math.abs(centerLat) > 70) {
+          position.multiplyScalar(1.08);
+        }
+
+        /* ===== 字體大小 ===== */
+
+        const ratio = Math.sqrt(g.count / maxTiles);
+
+        const minSize = 0.05;
+        const maxSize = 0.20;
+
+        let fontSize =
           minSize + (maxSize - minSize) * ratio;
 
-        /* === 自動省略 === */
+        if (g.count < 3) fontSize *= 0.8;
+
+        /* ===== 文字省略 ===== */
+
         let displayName = g.name || "";
 
-        const maxChars = Math.floor(ratio * 10) + 4;
+        const maxChars =
+          Math.max(3, Math.floor(ratio * 8));
 
         if (displayName.length > maxChars) {
           displayName =
             displayName.substring(0, maxChars) + "...";
         }
 
-        /* === LOD 控制 === */
-        if (lod === 0) {
-          // LOD0 顯示 Level1
-        } else if (lod === 1) {
-          // LOD1 顯示 Level2
-        }
-
         return (
           <group
             key={`label-${code}`}
-            position={avg.toArray()}
+            position={position.toArray()}
             onUpdate={(obj) => {
               obj.lookAt(0, 0, 0);
               obj.rotateY(Math.PI);
@@ -522,8 +561,8 @@ function Grid({ tiles, lod }) {
               textAlign="center"
               anchorX="center"
               anchorY="middle"
-              maxWidth={fontSize * 6}
-              lineHeight={1.1}
+              maxWidth={fontSize * 4}
+              lineHeight={1.05}
               depthTest={false}
             >
               {displayName}
