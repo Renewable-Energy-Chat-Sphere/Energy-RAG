@@ -1,5 +1,5 @@
 {
-  "supply-weighted similarity": {
+  "Supply": {
     "S1": {
       "S1": 1.0,
       "S2": 1.0,
@@ -2917,7 +2917,7 @@
     }
   },
   
-  "demand-weighted similarity": {
+  "Demand": {
     "Level 1": {
       "D2": {
         "D2": 1.0,
