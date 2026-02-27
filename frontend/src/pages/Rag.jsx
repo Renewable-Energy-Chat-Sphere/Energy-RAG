@@ -306,6 +306,9 @@ export default function Rag() {
   /* =========================================================
      TABLE — 問 Excel/CSV
   ========================================================= */
+  /* =========================================================
+   TABLE — 問 Excel/CSV
+========================================================= */
   useEffect(() => {
     const form = document.getElementById("rag-form-table");
     if (!form) return;
@@ -331,18 +334,36 @@ export default function Rag() {
         body: fd,
       });
 
-      const txt = await res.text();
-      console.log("TABLE RAW RESPONSE:", txt); // ⭐ 在瀏覽器 console 印出真正回傳內容
+      const data = await res.json();
 
-      let data = {};
-      try {
-        data = JSON.parse(txt);
-      } catch {
-        data = { error: "JSON parse failed", raw: txt };
+      if (!data.success) {
+        out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
+        return;
       }
 
-      out.textContent = data.answer || data.error || "(無回應)";
-      src.textContent = JSON.stringify(data.sources || data.raw, null, 2);
+      // ⭐ 解析 Markdown
+      const html = marked.parse(data.answer || "(無回應)");
+
+      out.innerHTML = `
+      <div class="ai-card">
+        ${html}
+      </div>
+    `;
+
+      // ⭐ 來源顯示美化
+      if (data.sources?.length) {
+        src.innerHTML = `
+        <div class="source-card">
+          <strong>📊 表格來源：</strong>
+          ${data.sources
+            .map(
+              (s) =>
+                `<div>• ${s.sheet}（${s.rows} rows / ${s.columns_count} cols）</div>`,
+            )
+            .join("")}
+        </div>
+      `;
+      }
     });
   }, []);
 

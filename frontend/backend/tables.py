@@ -104,9 +104,10 @@ def ask_table():
         file = request.files.get("file")
 
         if not question:
-            return jsonify({"error": "question is required"}), 400
+            return jsonify({"success": False, "error": "question is required"}), 400
+
         if not file:
-            return jsonify({"error": "table file is required"}), 400
+            return jsonify({"success": False, "error": "table file is required"}), 400
 
         # 讀取表格
         sheets = read_table(file)
@@ -114,26 +115,35 @@ def ask_table():
         # 轉 markdown
         md = build_md(sheets)
 
-        # 樣本來源
+        # 建立來源資訊（跟 PDF / Web 類似）
         sources = [
             {
+                "source_type": "table",
                 "sheet": name,
-                "shape": [int(df.shape[0]), int(df.shape[1])],
+                "rows": int(df.shape[0]),
+                "columns_count": int(df.shape[1]),
                 "columns": list(map(str, df.columns.tolist())),
             }
             for name, df in sheets.items()
         ]
 
-        # OpenAI
+        # 呼叫 OpenAI
         client = current_app.config.get("OPENAI_CLIENT")
         answer = ask_llm(question, md, client)
 
-        # 若無 API → 回傳摘要
+        # 若沒 API
         if answer is None:
-            answer = "⚠️ 未設定 OPENAI_API_KEY，以下提供表格摘要：\n\n" + md
+            answer = "⚠️ 未設定 OPENAI_API_KEY，以下為表格內容摘要：\n\n" + md
 
-        return jsonify({"answer": answer, "sources": sources})
+        return jsonify(
+            {
+                "success": True,
+                "type": "table",
+                "question": question,
+                "answer": answer,
+                "sources": sources,
+            }
+        )
 
     except Exception as e:
-        # ⭐ 讓你可以看到真正錯誤（不再 500 一片空白）
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
