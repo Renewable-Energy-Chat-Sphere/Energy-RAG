@@ -273,6 +273,9 @@ export default function Rag() {
   /* =========================================================
      AV — 問影片/音訊
   ========================================================= */
+  /* =========================================================
+   AV — 問影片/音訊
+========================================================= */
   useEffect(() => {
     const form = document.getElementById("rag-form-av");
     if (!form) return;
@@ -282,6 +285,7 @@ export default function Rag() {
 
       const file = form.file.files[0];
       const question = form.question.value.trim();
+
       const out = document.getElementById("out-av");
       const src = document.getElementById("src-av");
 
@@ -298,8 +302,42 @@ export default function Rag() {
       });
 
       const data = await res.json();
-      out.textContent = data.answer || "(無回應)";
-      src.textContent = (data.sources || []).join("\n");
+
+      // ⭐ 如果有 structured_data 存起來
+      if (data.structured_data) {
+        setStructuredData(data.structured_data);
+      }
+
+      const html = marked.parse(data.answer || "(無回應)");
+
+      out.innerHTML = `
+      <div class="ai-card">
+        ${html}
+      </div>
+    `;
+
+      // ⭐ 動畫效果（跟 Web 一樣）
+      setTimeout(() => {
+        out.querySelectorAll("h1, h2, ul, p").forEach((el, i) => {
+          el.style.opacity = 0;
+          el.style.transform = "translateY(10px)";
+          setTimeout(() => {
+            el.style.transition = "all 0.4s ease";
+            el.style.opacity = 1;
+            el.style.transform = "translateY(0)";
+          }, i * 120);
+        });
+      }, 50);
+
+      // ⭐ 來源顯示
+      if (data.sources?.length) {
+        src.innerHTML = `
+        <div class="source-card">
+          <strong>🎬 影音來源：</strong>
+          ${data.sources.map((s) => `<div>• ${s}</div>`).join("")}
+        </div>
+      `;
+      }
     });
   }, []);
 
