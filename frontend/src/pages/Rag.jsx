@@ -454,7 +454,7 @@ export default function Rag() {
   }, []);
 
   /* =========================================================
-     JSX 頁面
+     整個RAG頁面
   ========================================================= */
   return (
     <div className="rag-page">
@@ -462,12 +462,12 @@ export default function Rag() {
         {/* HERO */}
         <div className="rag-hero">
           <h1>Energy RAG</h1>
-          <p>Web · PDF · Audio/Video · Table — 能源資料檢索與決策支援</p>
+          <p>Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索</p>
 
           <div className="rag-badges">
-            <span className="rag-badge">LangChain · FAISS</span>
-            <span className="rag-badge alt">OpenAI GPT</span>
-            <span className="rag-badge">Clean Energy UI</span>
+            <span className="rag-badge">多模態分析支援</span>
+            <span className="rag-badge alt">能源決策助理</span>
+            <span className="rag-badge">相關問題解答</span>
           </div>
         </div>
 
