@@ -1,3 +1,26 @@
+function sentenceWriter(element, html, delay = 250) {
+  element.innerHTML = "";
+
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+
+  const nodes = Array.from(temp.childNodes);
+
+  nodes.forEach((node, index) => {
+    setTimeout(() => {
+      const wrapper = document.createElement("div");
+      wrapper.style.opacity = 0;
+
+      wrapper.appendChild(node.cloneNode(true));
+      element.appendChild(wrapper);
+
+      setTimeout(() => {
+        wrapper.style.transition = "opacity 0.4s ease";
+        wrapper.style.opacity = 1;
+      }, 50);
+    }, index * delay);
+  });
+}
 import { useEffect, useState } from "react";
 import { marked } from "marked"; //新增
 import "./rag.css";
@@ -6,6 +29,7 @@ import BackToTopButton from "../components/BackToTopButton";
 export default function Rag() {
   const [tab, setTab] = useState("chat");
   const [structuredData, setStructuredData] = useState(null);
+  const [loading, setLoading] = useState(false);
   const API = "http://127.0.0.1:8000";
 
   async function generateFile() {
@@ -66,35 +90,23 @@ export default function Rag() {
     });
 
     /* ------- 泡泡 UI ------- */
-    const bubble = (role, html) => {
+    const bubble = (role, html, isLoading = false) => {
       const wrap = document.createElement("div");
-      wrap.style.display = "flex";
-      wrap.style.justifyContent = role === "user" ? "flex-end" : "flex-start";
+
+      // ⭐ 這行決定左右
+      wrap.className =
+        role === "user" ? "rag-bubble-wrap right" : "rag-bubble-wrap left";
 
       const b = document.createElement("div");
-      b.className = "chat-bubble";
 
-      b.style.maxWidth = "78%";
-      b.style.padding = "10px 12px";
-      b.style.borderRadius = "14px";
-      b.style.boxShadow = "var(--shadow-soft)";
-      b.style.whiteSpace = "pre-wrap";
-      b.style.border = "1px solid var(--border)";
+      // ⭐ 這行決定樣式
+      b.className =
+        role === "user" ? "rag-bubble user" : "rag-bubble assistant";
 
-      const isDark = document.documentElement.classList.contains("dark");
-
-      if (role === "user") {
-        b.style.background = "linear-gradient(180deg, #34a1d33f, #33a9f2ce)";
-        b.style.color = isDark ? "#fff" : "var(--text)";
+      if (isLoading) {
+        b.innerHTML = "思考中...";
       } else {
-        b.style.background = "linear-gradient(180deg, #d389343f, #e78121ce)";
-        b.style.color = isDark ? "#fff" : "var(--text)";
-      }
-
-      try {
-        b.innerHTML = marked.parse(html); // ⭐ 直接解析 Markdown
-      } catch {
-        b.textContent = html;
+        b.innerHTML = marked.parse(html);
       }
 
       wrap.appendChild(b);
@@ -103,17 +115,31 @@ export default function Rag() {
     };
 
     /* ------- Chat 提交 ------- */
-    form.addEventListener("submit", async (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
+
       const userText = inputUser.value.trim();
+
       if (!userText) return;
-
-      bubble("user", userText);
+      inputUser.value = ""; // ⭐ 清空輸入框
       inputUser.value = "";
-      resetHeight();
-      srcBox.textContent = "";
+      inputUser.style.height = "44px";
+      // ===== 使用者訊息 =====
+      const userWrap = document.createElement("div");
+      userWrap.className = "rag-message user";
 
-      bubble("assistant", "思考中…");
+      const userInner = document.createElement("div");
+      userInner.className = "rag-message-inner";
+
+      userInner.innerHTML = `
+    <div class="user-bubble">
+      ${marked.parse(userText)}
+    </div>
+  `;
+
+      userWrap.appendChild(userInner);
+      chatLog.appendChild(userWrap);
+      chatLog.scrollTop = chatLog.scrollHeight;
 
       const payload = {
         user: userText,
@@ -130,26 +156,47 @@ export default function Rag() {
           body: JSON.stringify(payload),
         });
 
-        const txt = await res.text();
-        let data = {};
-        try {
-          data = JSON.parse(txt);
-        } catch {
-          data = { answer: "(伺服器回傳格式錯誤)", raw: txt };
-        }
+        const data = await res.json();
 
-        chatLog.lastElementChild?.remove();
-        bubble("assistant", data.answer || data.error || "（無回應）");
+        // ===== AI 回答 =====
+        const wrap = document.createElement("div");
+        wrap.className = "rag-message assistant";
 
-        if (data.sources?.length) {
-          srcBox.textContent =
-            "來源：\n" + data.sources.map((s) => `• ${s}`).join("\n");
-        }
+        const inner = document.createElement("div");
+        inner.className = "rag-message-inner";
+
+        const card = document.createElement("div");
+        card.className = "ai-card";
+
+        let fullText = data.answer || data.error || "（無回應）";
+        let index = 0;
+
+        card.innerHTML = "";
+
+        const interval = setInterval(() => {
+          card.innerHTML += fullText[index];
+          index++;
+
+          if (index >= fullText.length) {
+            clearInterval(interval);
+          }
+        }, 15);
+        inner.appendChild(card);
+        wrap.appendChild(inner);
+        chatLog.appendChild(wrap);
+        chatLog.scrollTop = chatLog.scrollHeight;
       } catch (err) {
-        chatLog.lastElementChild?.remove();
-        bubble("assistant", `錯誤：${err.message}`);
+        console.error(err);
       }
-    });
+    };
+
+    // ⭐ 綁定
+    form.addEventListener("submit", handleSubmit);
+
+    // ⭐⭐ 這行是重點（防止重複四次）
+    return () => {
+      form.removeEventListener("submit", handleSubmit);
+    };
   }, []);
 
   /* =========================================================
@@ -171,6 +218,7 @@ export default function Rag() {
       src.textContent = "";
 
       const payload = { question, url };
+      setLoading(true);
       const res = await fetch(`${API}/ask_web`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -490,7 +538,19 @@ export default function Rag() {
 
               <article>
                 <h3>對話</h3>
-                <div id="rag-chat-log" className="rag-chat-log"></div>
+                <div id="rag-chat-log" className="rag-chat-log">
+                  {loading && (
+                    <div className="rag-message assistant">
+                      <div className="rag-message-inner">
+                        <div className="thinking">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div id="rag-src-chat" className="rag-src"></div>
               </article>
             </div>
