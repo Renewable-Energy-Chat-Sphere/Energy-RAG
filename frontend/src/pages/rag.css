@@ -58,14 +58,18 @@
   padding: 28px 24px;
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) + 4px);
-  background: linear-gradient(135deg, #023b69 0%, #229ed3 100%), var(--panel);
+
   backdrop-filter: var(--glass);
   box-shadow: var(--shadow);
 }
 
 /* 深色 hero */
 .dark .rag-page .rag-hero {
-  background: linear-gradient(135deg, #021a33 0%, #165a8a 100%), var(--panel);
+  background: url("/images/energy-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
   border-color: #1e293b;
 }
 
@@ -234,7 +238,7 @@
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid #69cdff;
-  background: linear-gradient(180deg,#69cdff);
+  background: linear-gradient(180deg, #69cdff);
   color: #ffffff;
   font-weight: 700;
   cursor: pointer;
@@ -274,7 +278,7 @@
   margin-top: 10px;
   font-size: 13px;
   color: var(--muted);
-  
+
   padding-top: 10px;
 }
 /* ============================= */
@@ -650,4 +654,26 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+.rag-hero {
+  position: relative;
+  padding: 100px 40px;
+  color: white;
+  overflow: hidden;
+
+  background-image: url("/images/energy-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.rag-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(5, 20, 60, 0.7), rgba(5, 20, 60, 0.8));
+  z-index: 0;
+}
+.rag-hero > * {
+  position: relative;
+  z-index: 1;
 }
