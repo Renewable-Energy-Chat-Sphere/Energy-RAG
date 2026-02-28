@@ -587,7 +587,7 @@
 /* ===== 使用者 ===== */
 
 .user-bubble {
-  background: linear-gradient(135deg, #f97316, #7f3a09);
+  background: linear-gradient(135deg,  rgb(255 117 18 / 35%), #ff7a18);
   color: white;
   padding: 16px 20px;
   border-radius: 18px 18px 6px 18px;
