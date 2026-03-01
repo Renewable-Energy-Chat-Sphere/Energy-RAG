@@ -53,6 +53,16 @@ export default function Rag() {
     link.download = structuredData.file_name; // ⭐ 用後端生成的檔名
     link.click();
   }
+  function showLoading(target, text = "處理中") {
+    target.innerHTML = `
+      <div class="ai-card loading-card">
+        <div class="loading-text">${text}</div>
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+  }
 
   /* =========================================================
      CHAT — 問答 / 泡泡 / 自動撐高
@@ -230,7 +240,7 @@ export default function Rag() {
       const out = document.getElementById("out-web");
       const src = document.getElementById("src-web");
 
-      out.textContent = "解析網站中…";
+      showLoading(out, "解析網站中");
       src.textContent = "";
 
       const payload = { question, url };
@@ -279,7 +289,7 @@ export default function Rag() {
       const out = document.getElementById("out-pdf");
       const src = document.getElementById("src-pdf");
 
-      out.textContent = "解析 PDF 中…";
+      showLoading(out, "解析 PDF 中");
       src.textContent = "";
 
       const fd = new FormData();
@@ -353,7 +363,7 @@ export default function Rag() {
       const out = document.getElementById("out-av");
       const src = document.getElementById("src-av");
 
-      out.textContent = "處理影音中…";
+      showLoading(out, "處理影音中");
       src.textContent = "";
 
       const fd = new FormData();
@@ -424,7 +434,7 @@ export default function Rag() {
       const out = document.getElementById("out-table");
       const src = document.getElementById("src-table");
 
-      out.textContent = "解析表格中…";
+      showLoading(out, "解析表格中");
       src.textContent = "";
 
       const fd = new FormData();
