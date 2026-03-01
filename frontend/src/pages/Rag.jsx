@@ -150,6 +150,21 @@ export default function Rag() {
       };
 
       try {
+        const thinkingWrap = document.createElement("div");
+        thinkingWrap.className = "rag-message assistant";
+
+        const thinkingInner = document.createElement("div");
+        thinkingInner.className = "rag-message-inner";
+
+        thinkingInner.innerHTML = `
+    <div class="ai-card thinking">
+      <span></span><span></span><span></span>
+    </div>
+  `;
+
+        thinkingWrap.appendChild(thinkingInner);
+        chatLog.appendChild(thinkingWrap);
+        chatLog.scrollTop = chatLog.scrollHeight;
         const res = await fetch(`${API}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -157,6 +172,7 @@ export default function Rag() {
         });
 
         const data = await res.json();
+        thinkingWrap.remove();
 
         // ===== AI 回答 =====
         const wrap = document.createElement("div");
@@ -521,7 +537,7 @@ export default function Rag() {
                     name="user"
                     rows="1"
                     required
-                    placeholder="輸入你的問題或網址。"
+                    placeholder="請輸入您的問題。"
                   />
                 </label>
                 <label>
