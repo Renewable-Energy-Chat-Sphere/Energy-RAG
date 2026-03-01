@@ -1,180 +1,218 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSchool, faPeopleGroup } from "@fortawesome/free-solid-svg-icons";
 import BackToTopButton from "../components/BackToTopButton";
-
+import { faClipboardList } from "@fortawesome/free-solid-svg-icons";
 export default function Contact() {
   return (
-    <section id="contact" className="section" style={{ padding: "20px" }}>
-      <h2 style={{ textAlign: "center" }}>聯絡我們</h2>
+    <section id="contact" className="contact-section">
+      <div className="contact-container">
+        <h2 className="contact-title">聯絡我們</h2>
 
-      <p style={{ textAlign: "center", color: "var(--gray-500)" }}>
-        如您對 EnerSphere TW（能源球 3D 視覺化與智慧能源代理系統）
-        有任何建議、合作意願、或技術問題，歡迎與我們聯繫。
-      </p>
+        <p className="contact-subtitle">
+          如您對 EnerSphere TW（能源球 3D 視覺化與智慧能源代理系統）
+          有任何建議、合作意願或技術問題，歡迎與我們聯繫。
+        </p>
 
-      {/* ⭐⭐⭐ 左右欄位布局（無 Bootstrap） ⭐⭐⭐ */}
-      <div
-        style={{
-          marginTop: "30px",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "40px",
-        }}
-      >
-        {/* -------------------------
-            左邊：聯絡資訊
-        -------------------------- */}
-        <div style={{ color: "var(--gray-500)", lineHeight: "1.8",marginLeft:"20px" }}>
-          <h3>
-            <FontAwesomeIcon icon={faPeopleGroup} /> &nbsp; 專案團隊（MIS 小組）
-          </h3>
+        <div className="contact-grid">
+          {/* 左側資訊 */}
+          <div className="contact-info-card">
+            <h3 className="section-title">
+              <FontAwesomeIcon icon={faPeopleGroup} />
+              專案團隊
+            </h3>
 
-          <strong>指導教授</strong>
-          <br />
-          ・石佳惠 | 159931@mail.fju.edu.tw
-          <br />
-          <br />
-
-          <strong>專案成員</strong>
-          <br />
-          ・陳相叡 | 412402165@m365.fju.edu.tw <br />
-          ・周子芹 | 412402036@m365.fju.edu.tw <br />
-          ・呂羿辰 | 412402244@m365.fju.edu.tw <br />
-          ・張宇承 | 412402335@m365.fju.edu.tw <br />
-
-          <br />
-
-          <h3>
-            <FontAwesomeIcon icon={faSchool} /> &nbsp; 所屬單位
-          </h3>
-          天主教輔仁大學 <br />
-          資訊管理系｜多模態視覺能源研究團隊 <br />
-          致力於能源資料整合、3D 視覺化與智慧能源決策系統研究。
-        </div>
-
-        {/* -------------------------
-            右邊：回饋表單
-        -------------------------- */}
-        <div>
-          <form
-            id="contactForm"
-            action="insert2.php"
-            method="post"
-            style={{ display: "flex", flexDirection: "column", gap: "18px" }}
-          >
-            {/* 姓名 */}
-            <label>
-              <b style={{ color: "var(--gray-500)", lineHeight: "1.8"}}>姓名</b>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Enter your name..."
-                required
-                className="input-field"
-              />
-            </label>
-
-            {/* 電子郵件 */}
-            <label>
-              <b style={{ color: "var(--gray-500)", lineHeight: "1.8" }}>電子郵件</b>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email..."
-                required
-                className="input-field"
-              />
-            </label>
-
-            {/* 電話 */}
-            <label>
-              <b style={{ color: "var(--gray-500)", lineHeight: "1.8" }}>電話號碼</b>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="Enter your phone number..."
-                required
-                className="input-field"
-              />
-            </label>
-
-            {/* 使用感受 */}
-            <div>
-              <b style={{ color: "var(--gray-500)", lineHeight: "1.8" }}>使用感受</b>
-              <div style={{ marginTop: "6px" }}>
-                {[
-                  ["very_satisfied", "非常滿意"],
-                  ["satisfied", "滿意"],
-                  ["neutral", "一般"],
-                  ["dissatisfied", "不滿意"],
-                  ["very_dissatisfied", "非常不滿意"],
-                ].map(([id, label]) => (
-                  <label key={id} style={{ marginRight: "10px" }}>
-                    <input type="radio" name="feeling" id={id} value={label} />
-                    &nbsp;{label}
-                  </label>
-                ))}
-              </div>
+            <div className="info-block">
+              <strong>指導教授</strong>
+              <p>石佳惠｜159931@mail.fju.edu.tw</p>
             </div>
 
-            {/* 改進建議 */}
-            <label>
-              <b style={{ color: "var(--gray-500)", lineHeight: "1.8"}}>待改進之處</b>
-              <textarea
-                id="message"
-                name="message"
-                placeholder="Enter your message here..."
-                className="input-field"
-                style={{ height: "120px", resize: "vertical" }}
-              ></textarea>
-            </label>
+            <div className="info-block">
+              <strong>專案成員</strong>
+              <p>陳相叡｜412402165@m365.fju.edu.tw</p>
+              <p>周子芹｜412402036@m365.fju.edu.tw</p>
+              <p>呂羿辰｜412402244@m365.fju.edu.tw</p>
+              <p>張宇承｜412402335@m365.fju.edu.tw</p>
+            </div>
 
-            {/* 提交按鈕 */}
-            <button
-              type="submit"
-              style={{
-                backgroundColor: "#00000099",
-                color: "white",
-                padding: "10px 20px",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                width: "140px",
-              }}
-            >
-              送出 Send
-            </button>
-          </form>
+            <h3 className="section-title">
+              <FontAwesomeIcon icon={faSchool} />
+              所屬單位
+            </h3>
+
+            <p>
+              天主教輔仁大學
+              <br />
+              資訊管理系｜多模態視覺能源研究團隊
+            </p>
+          </div>
+
+          {/* 右側表單 */}
+          <div className="contact-form-card">
+            <div className="form-header">
+              <h3 className="section-title">
+                <FontAwesomeIcon icon={faClipboardList} className="form-icon" />
+                意見表
+              </h3>
+            </div>
+
+            <form id="contactForm">
+              <label>
+                姓名
+                <input type="text" required />
+              </label>
+
+              <label>
+                電子郵件
+                <input type="email" required />
+              </label>
+
+              <label>
+                電話號碼
+                <input type="tel" required />
+              </label>
+
+              <label>
+                使用感受
+                <div className="radio-group">
+                  {["非常滿意", "滿意", "一般", "不滿意", "非常不滿意"].map(
+                    (item) => (
+                      <label key={item}>
+                        <input type="radio" name="feeling" value={item} />
+                        {item}
+                      </label>
+                    ),
+                  )}
+                </div>
+              </label>
+
+              <label>
+                待改進之處
+                <textarea rows="4"></textarea>
+              </label>
+
+              <button type="submit" className="contact-btn">
+                送出 Send
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
-      {/* ⭐ 純 CSS（放到 Contact.jsx 或 contact.css） */}
+      <BackToTopButton />
+
+      {/* CSS */}
       <style>{`
-        .input-field {
+        .contact-section {
+  padding: 80px 20px;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+        .contact-container {
+          max-width: 1100px;
+          margin: auto;
+        }
+
+        .contact-title {
+          text-align: center;
+          font-size: 36px;
+          margin-bottom: 10px;
+        }
+
+        .contact-subtitle {
+          text-align: center;
+          color: #f97316;
+          margin-bottom: 50px;
+        }
+
+        .contact-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+        }
+
+        .contact-info-card,
+.contact-form-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: var(--glass);
+  box-shadow: var(--shadow-soft);
+  padding: 30px;              /* ⭐ 加這行 */
+  border-radius: 16px;        /* ⭐ 加圓角 */
+  transition: 0.3s ease;
+}
+
+        .contact-info-card:hover,
+        .contact-form-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+      .section-title {
+  color: var(--section-title-color);
+  margin-top: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.3s ease;
+}
+
+        .info-block {
+          margin-bottom: 20px;
+        }
+
+        .contact-form-card form {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .contact-form-card input,
+        .contact-form-card textarea {
           width: 100%;
           padding: 10px;
-          border: 1px solid var(--border, #ccc);
-          border-radius: 6px;
-          background: var(--card, #f7f7f7);
-          color: var(--text, #333);
+          border-radius: 8px;
+          border: none;
+          background: #9c9c9c24;
+          color: var(--text);
+          border: 1px solid var(--border);
+        }
+
+        .contact-form-card input:focus,
+        .contact-form-card textarea:focus {
+          outline: 2px solid #0d2c6e;
+        }
+
+        .radio-group {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
           margin-top: 6px;
         }
 
-        .input-field:focus {
-          outline: none;
-          border-color: #888;
-        }
+       .contact-btn {
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0d2c6e); /* ⭐ 直接給色 */
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
-        @media (max-width: 768px) {
-          #contact .container {
-            grid-template-columns: 1fr;
-          }
-        }
+.contact-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+}
+
+.contact-btn:active {
+  transform: scale(0.97);
+}
       `}</style>
-    <BackToTopButton />
     </section>
   );
 }
