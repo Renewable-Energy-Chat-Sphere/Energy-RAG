@@ -1,687 +1,275 @@
-import React, {
-  useMemo,
-  useRef,
-  useEffect,
-  useState,
-  Suspense
-} from "react";
-
+import React, { useMemo, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Text } from "@react-three/drei";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { OrbitControls, Text } from "@react-three/drei";
 
-import DEPT_JSON from "../data/index_demand.json";
+import demandData from "../data/demand_yearly.json";
+import hierarchy from "../data/hierarchy.json";
+import demandDistance from "../data/113_energy_euclidean_distance.json";
 
-// ===================== 基本設定 =====================
-const RADIUS = 3.0;
-const LAYER_LOD0 = 1;
-const LAYER_LOD1 = 2;
+import {
+  generateDepartmentSphere,
+  generateLevel2WithinParent
+} from "../geometry/SphereLayoutEngine";
 
-// Hover 浮起高度
-const HOVER_OFFSET = {
-  lod0: 0.015,
-  lod1: 0.01,
-  lod2: 0.006
-};
+const RADIUS = 3;
 
-// =====================
-// JSON → Hierarchy Extractor
-// =====================
-function extractDeptHierarchy(json) {
-  const level1 = [];
-  const level2ByParent = {};
-  const level3ByParent = {};
+/* ============================
+   LOD 控制
+============================ */
 
-  function walk(node, parentCode = null) {
-    for (const [code, item] of Object.entries(node)) {
-      if (item.level === 1) {
-        level1.push({ code, name: item.name });
-      }
-
-      if (item.level === 2 && parentCode) {
-        level2ByParent[parentCode] ??= [];
-        level2ByParent[parentCode].push({ code, name: item.name });
-      }
-
-      if (item.level === 3 && parentCode) {
-        level3ByParent[parentCode] ??= [];
-        level3ByParent[parentCode].push({ code, name: item.name });
-      }
-
-      if (item.children) {
-        walk(item.children, code);
-      }
-    }
-  }
-
-  walk(json);
-  return { level1, level2ByParent, level3ByParent };
-}
-
-// =====================
-// Lon / Lat → Vec3
-// =====================
-function lonLatToVec3(lonDeg, latDeg, r = RADIUS, lift = 0) {
-  const lon = THREE.MathUtils.degToRad(lonDeg);
-  const lat = THREE.MathUtils.degToRad(latDeg);
-  return new THREE.Vector3(
-    (r + lift) * Math.cos(lat) * Math.cos(lon),
-    (r + lift) * Math.sin(lat),
-    (r + lift) * Math.cos(lat) * Math.sin(lon)
-  );
-}
-
-// =====================
-// Surface-aligned Label
-// =====================
-function SurfaceLabel({
-  lon,
-  lat,
-  radius,
-  offset = 0.02,
-  fontSize,
-  color = "#000",
-  children
-}) {
-  const ref = useRef();
-
-  const position = useMemo(() => {
-    return lonLatToVec3(lon, lat, radius + offset);
-  }, [lon, lat, radius, offset]);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    ref.current.lookAt(0, 0, 0);
-    ref.current.rotateY(Math.PI);
-  }, []);
-
-  return (
-    <group ref={ref} position={position.toArray()}>
-      <Text
-        fontSize={fontSize}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-        material-depthTest={false}
-      >
-        {children}
-      </Text>
-    </group>
-  );
-}
-
-// =====================
-// 球面分塊 Geometry
-// =====================
-function sphericalQuadGeometry({ lat0, lat1, lon0, lon1, r, seg = 48 }) {
-  const positions = [];
-  const normals = [];
-  const indices = [];
-
-  for (let i = 0; i <= seg; i++) {
-    for (let j = 0; j <= seg; j++) {
-      const lat = THREE.MathUtils.lerp(lat0, lat1, i / seg);
-      const lon = THREE.MathUtils.lerp(lon0, lon1, j / seg);
-      const p = lonLatToVec3(lon, lat, r);
-      positions.push(p.x, p.y, p.z);
-      normals.push(...p.clone().normalize());
-    }
-  }
-
-  const row = seg + 1;
-  for (let i = 0; i < seg; i++) {
-    for (let j = 0; j < seg; j++) {
-      const a = i * row + j;
-      const b = a + 1;
-      const c = a + row;
-      const d = c + 1;
-      indices.push(a, c, b, b, c, d);
-    }
-  }
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
-  geo.setIndex(indices);
-  geo.computeBoundingSphere();
-  return geo;
-}
-// =====================
-// Raycast 球面交會
-// =====================
-function raySphereIntersection(eye, dir, center, radius) {
-  const L = center.clone().sub(eye);
-  const tca = L.dot(dir);
-  const d2 = L.lengthSq() - tca * tca;
-  if (d2 > radius * radius) return null;
-
-  const thc = Math.sqrt(radius * radius - d2);
-  const t0 = tca - thc;
-  const t1 = tca + thc;
-  const t = t0 > 0 ? t0 : t1 > 0 ? t1 : null;
-
-  return t == null ? null : eye.clone().add(dir.clone().multiplyScalar(t));
-}
-
-function vec3ToLonLat(v) {
-  const n = v.clone().normalize();
-  return {
-    lat: THREE.MathUtils.radToDeg(Math.asin(n.y)),
-    lon: THREE.MathUtils.radToDeg(Math.atan2(n.z, n.x))
-  };
-}
-
-// =====================
-// Camera 距離 → LOD
-// =====================
-function useLODLevel() {
+function useLOD() {
   const { camera } = useThree();
-  const [lod, setLOD] = useState(0);
+  const [lod, setLOD] = useState(1);
 
   useFrame(() => {
     const d = camera.position.length();
-    const L1 = RADIUS * 2.3;
-    const L2 = RADIUS * 1.45;
-    const newLOD = d < L2 ? 2 : d < L1 ? 1 : 0;
-    if (newLOD !== lod) setLOD(newLOD);
+    if (d < 6) setLOD(2);
+    else setLOD(1);
   });
 
   return lod;
 }
 
-// =====================
-// 字體縮放（Google Earth 風格）
-// =====================
-function useCameraLabelScales() {
-  const { camera } = useThree();
-  const [sizes, setSizes] = useState({
-    lod0: 0.26,
-    lod1: 0.18,
-    lod2: 0.1
-  });
+/* ============================
+   球面貼齊文字
+============================ */
 
-  useFrame(() => {
-    const d = camera.position.length();
-    const s = THREE.MathUtils.clamp(d / (RADIUS * 3.2), 0.35, 1);
-    setSizes({
-      lod0: 0.26 * s,
-      lod1: 0.18 * (s * 0.78),
-      lod2: 0.1 * (s * 0.6)
-    });
-  });
+function SurfaceText({ geometry, text, size = 0.22 }) {
+  if (!geometry) return null;
 
-  return sizes;
-}
+  const pos = geometry.attributes.position;
+  const dir = new THREE.Vector3();
 
-// =====================
-// Raycaster Layer Controller
-// =====================
-function RaycastLayerController({ activeLayer }) {
-  const { raycaster } = useThree();
-
-  useEffect(() => {
-    raycaster.layers.disableAll();
-    raycaster.layers.enable(activeLayer);
-  }, [activeLayer, raycaster]);
-
-  return null;
-}
-
-// =====================
-// LOD0 — Level 1（★整顆球都 render）
-// =====================
-function LOD0Sectors({ hierarchy, onSelect }) {
-  const { camera } = useThree();
-  const label = useCameraLabelScales();
-  const { level1 } = hierarchy;
-
-  const sectorCount = level1.length;
-  const sectorAngle = 360 / sectorCount;
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeRef = useRef(0);
-
-  useFrame(() => {
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const hit = raySphereIntersection(
-      camera.position,
-      dir,
-      new THREE.Vector3(0, 0, 0),
-      RADIUS
-    );
-    if (!hit) return;
-    const { lon } = vec3ToLonLat(hit);
-    const idx =
-      Math.floor(((lon + 180) / 360) * sectorCount) % sectorCount;
-
-    if (idx !== activeRef.current) {
-      activeRef.current = idx;
-      setActiveIndex(idx);
-    }
-  });
-
-  return (
-    <group renderOrder={10}>
-      {level1.map((dept, i) => {
-        const lon0 = -180 + i * sectorAngle;
-        const lon1 = lon0 + sectorAngle;
-
-        const geo = sphericalQuadGeometry({
-          lat0: -90,
-          lat1: 90,
-          lon0,
-          lon1,
-          r: RADIUS + 0.01
-        });
-
-        return (
-          <group key={dept.code}>
-            {/* ★ 所有 sector 都 render（前面 + 背面） */}
-            <mesh
-              geometry={geo}
-              material={
-                new THREE.MeshStandardMaterial({
-                  color: 0xe6eef2,   // 比原本更淡
-                  roughness: 1,
-                  metalness: 0,
-                  transparent: true,
-                  opacity: 0.18,     // ⭐ 關鍵：讓紫色球透出來
-                  depthWrite: false  // ⭐ 關鍵：不要擋底層球殼
-                })
-              }
-              onUpdate={(m) => m.layers.set(LAYER_LOD0)}
-              onClick={() =>
-                onSelect?.({
-                  level: 1,
-                  code: dept.code,
-                  name: dept.name
-                })
-              }
-            />
-
-            {/* ★ Label 只顯示正對的 sector */}
-            {i === activeIndex && (
-              <SurfaceLabel
-                lon={(lon0 + lon1) / 2}
-                lat={0}
-                radius={RADIUS}
-                offset={0.025}
-                fontSize={label.lod0}
-              >
-                {`${dept.code}\n${dept.name}`}
-              </SurfaceLabel>
-            )}
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-// =====================
-// LOD1 / LOD2 — Level 2 & 3（★貼在球殼「內側」）
-// =====================
-function LOD1And2({ hierarchy, showLOD2, onSelect }) {
-  const { camera } = useThree();
-  const label = useCameraLabelScales();
-
-  const { level1, level2ByParent, level3ByParent } = hierarchy;
-  const sectorCount = level1.length;
-  const sectorAngle = 360 / sectorCount;
-
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useFrame(() => {
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const hit = raySphereIntersection(
-      camera.position,
-      dir,
-      new THREE.Vector3(0, 0, 0),
-      RADIUS
-    );
-    if (!hit) return;
-    const { lon } = vec3ToLonLat(hit);
-    const idx =
-      Math.floor(((lon + 180) / 360) * sectorCount) % sectorCount;
-    setActiveIndex(idx);
-  });
-
-  const nodes = [];
-
-  // ⭐ 關鍵：LOD1 / LOD2 使用「球殼內側半徑」
-  const INNER_R = RADIUS - 0.06;
-
-  for (let si = 0; si < level1.length; si++) {
-    const parent = level1[si];
-    const lon0 = -180 + si * sectorAngle;
-    const lon1 = lon0 + sectorAngle;
-
-    // =====================
-    // Base（內側淡層，整顆球都有）
-    // =====================
-    const baseGeo = sphericalQuadGeometry({
-      lat0: -90,
-      lat1: 90,
-      lon0,
-      lon1,
-      r: INNER_R,
-      seg: 32
-    });
-
-    nodes.push(
-      <mesh
-        key={`base-${parent.code}`}
-        geometry={baseGeo}
-        material={
-          new THREE.MeshStandardMaterial({
-            color: 0xe6f4ff,
-            roughness: 1,
-            metalness: 0,
-            transparent: true,
-            opacity: 0.12,
-            depthWrite: false,
-            side: THREE.BackSide   // ⭐ 只畫球殼內側
-          })
-        }
-        onUpdate={(m) => m.layers.set(LAYER_LOD1)}
-      />
-    );
-
-    // 只有正對 sector 才細分
-    if (si !== activeIndex) continue;
-
-    const level2 = level2ByParent[parent.code] ?? [];
-    const n2 = level2.length;
-
-    for (let i = 0; i < n2; i++) {
-      const t0 = i / n2;
-      const t1 = (i + 1) / n2;
-      const lat1 = THREE.MathUtils.lerp(90, -90, t0);
-      const lat0 = THREE.MathUtils.lerp(90, -90, t1);
-
-      const geo1 = sphericalQuadGeometry({
-        lat0,
-        lat1,
-        lon0,
-        lon1,
-        r: INNER_R,
-        seg: 32
-      });
-
-      nodes.push(
-        <group key={`L1-${parent.code}-${i}`}>
-          <mesh
-            geometry={geo1}
-            material={
-              new THREE.MeshStandardMaterial({
-                color: 0xe6f4ff,
-                roughness: 1,
-                metalness: 0,
-                transparent: true,
-                opacity: 0.35,
-                depthWrite: false,
-                side: THREE.BackSide   // ⭐ 關鍵
-              })
-            }
-            onUpdate={(m) => m.layers.set(LAYER_LOD1)}
-            onClick={() =>
-              onSelect?.({
-                level: 2,
-                code: level2[i].code,
-                name: level2[i].name,
-                parent: parent.code
-              })
-            }
-          />
-
-          {!showLOD2 && (
-            <SurfaceLabel
-              lon={(lon0 + lon1) / 2}
-              lat={(lat0 + lat1) / 2}
-              radius={INNER_R}
-              offset={-0.004}   // ⭐ 字也吃進球裡
-              fontSize={label.lod1}
-            >
-              {`${level2[i].code}\n${level2[i].name}`}
-            </SurfaceLabel>
-          )}
-        </group>
-      );
-
-      // =====================
-      // LOD2（第三層，仍然在球內）
-      // =====================
-      if (showLOD2) {
-        const level3 = level3ByParent[level2[i].code] ?? [];
-        const n3 = level3.length;
-
-        for (let k = 0; k < n3; k++) {
-          const s0 = k / n3;
-          const s1 = (k + 1) / n3;
-          const lonA = THREE.MathUtils.lerp(lon0, lon1, s0);
-          const lonB = THREE.MathUtils.lerp(lon0, lon1, s1);
-
-          const geo2 = sphericalQuadGeometry({
-            lat0,
-            lat1,
-            lon0: lonA,
-            lon1: lonB,
-            r: INNER_R - 0.015,
-            seg: 18
-          });
-
-          nodes.push(
-            <group key={`L2-${level2[i].code}-${k}`}>
-              <mesh
-                geometry={geo2}
-                material={
-                  new THREE.MeshStandardMaterial({
-                    color: 0xf0f8ff,
-                    roughness: 1,
-                    metalness: 0,
-                    transparent: true,
-                    opacity: 0.45,
-                    depthWrite: false,
-                    side: THREE.BackSide
-                  })
-                }
-                onClick={() =>
-                  onSelect?.({
-                    level: 3,
-                    code: level3[k].code,
-                    name: level3[k].name,
-                    parent: level2[i].code
-                  })
-                }
-              />
-
-              <SurfaceLabel
-                lon={(lonA + lonB) / 2}
-                lat={(lat0 + lat1) / 2}
-                radius={INNER_R - 0.015}
-                offset={-0.004}
-                fontSize={label.lod2}
-              >
-                {`${level3[k].code}\n${level3[k].name}`}
-              </SurfaceLabel>
-            </group>
-          );
-        }
-      }
-    }
+  for (let i = 0; i < pos.count; i++) {
+    dir.x += pos.getX(i);
+    dir.y += pos.getY(i);
+    dir.z += pos.getZ(i);
   }
 
-  return <group>{nodes}</group>;
-}
+  dir.divideScalar(pos.count).normalize();
 
-// =====================
-// Transparent Globe（底層球殼，負責整顆球顏色）
-// =====================
-function BlueCoreGlobe() {
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: true,
-      uniforms: {
-        colorInner: { value: new THREE.Color("#6fd9ffff") },
-        colorOuter: { value: new THREE.Color("#cfefff") }
-      },
-      vertexShader: `
-        varying vec3 vNormal;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        uniform vec3 colorInner;
-        uniform vec3 colorOuter;
-        void main() {
-          float f = pow(vNormal.z * 0.5 + 0.5, 1.4);
-          vec3 color = mix(colorInner, colorOuter, f);
-          gl_FragColor = vec4(color, 0.35);
-        }
-      `
-    });
-  }, []);
+  const position = dir.clone().multiplyScalar(RADIUS * 1.02);
+  const outward = position.clone().normalize();
+
+  let reference = new THREE.Vector3(0, 1, 0);
+  if (Math.abs(outward.dot(reference)) > 0.95) {
+    reference = new THREE.Vector3(1, 0, 0);
+  }
+
+  const right = new THREE.Vector3()
+    .crossVectors(reference, outward)
+    .normalize();
+
+  const up = new THREE.Vector3()
+    .crossVectors(outward, right)
+    .normalize();
+
+  const matrix = new THREE.Matrix4();
+  matrix.makeBasis(right, up, outward);
+
+  const quaternion = new THREE.Quaternion()
+    .setFromRotationMatrix(matrix);
 
   return (
-    <mesh renderOrder={0}>
-      <sphereGeometry args={[RADIUS, 96, 96]} />
-      <primitive object={material} attach="material" />
-    </mesh>
-  );
-}
-// =====================
-// LOD Controller
-// =====================
-function EnergyGlobeLOD({ hierarchy, onSelect }) {
-  const lod = useLODLevel();
-  const activeLayer = lod === 0 ? LAYER_LOD0 : LAYER_LOD1;
-
-  return (
-    <group renderOrder={10}>
-      <RaycastLayerController activeLayer={activeLayer} />
-
-      {lod === 0 && (
-        <LOD0Sectors hierarchy={hierarchy} onSelect={onSelect} />
-      )}
-
-      {lod === 1 && (
-        <LOD1And2
-          hierarchy={hierarchy}
-          showLOD2={false}
-          onSelect={onSelect}
-        />
-      )}
-
-      {lod === 2 && (
-        <LOD1And2
-          hierarchy={hierarchy}
-          showLOD2={true}
-          onSelect={onSelect}
-        />
-      )}
-    </group>
+    <Text
+      position={position}
+      quaternion={quaternion}
+      fontSize={size}
+      color="white"
+      anchorX="center"
+      anchorY="middle"
+      depthTest={false}
+      renderOrder={999}
+    >
+      {text}
+    </Text>
   );
 }
 
-// =====================
-// Scene
-// =====================
-function Scene({ hierarchy, onSelect }) {
-  const { camera, gl } = useThree();
-  const controlsRef = useRef();
+/* ============================
+   主球體
+============================ */
 
-  useEffect(() => {
-    camera.position.set(0, RADIUS * 0.9, RADIUS * 2.6);
-    camera.layers.enable(LAYER_LOD0);
-    camera.layers.enable(LAYER_LOD1);
+function Globe({ year = "113" }) {
+  const lod = useLOD();
 
-    gl.setClearColor(0x000000, 0);
-    gl.autoClear = false;
-  }, [camera, gl]);
+  const level1Regions = useMemo(() => {
+    const yearData = demandData[year];
 
-  // Google Earth 風格：距離 → 操作速度
-  useFrame(() => {
-    if (!controlsRef.current) return;
+    const level1Nodes = Object.keys(hierarchy)
+      .filter(k => hierarchy[k].level === 1)
+      .map(k => ({
+        id: k,
+        name: hierarchy[k].name,
+        value: yearData[k] || 0
+      }));
 
-    const dist = camera.position.length();
-    const t = THREE.MathUtils.clamp(
-      (dist - RADIUS * 1.05) / (RADIUS * 5),
-      0,
-      1
+    const total = level1Nodes.reduce((s, v) => s + v.value, 0);
+
+    const normalized = level1Nodes.map(v => ({
+      ...v,
+      normalizedValue: total > 0 ? v.value / total : 0
+    }));
+
+    return generateDepartmentSphere(
+      normalized,
+      RADIUS,
+      5,
+      demandDistance?.Demand?.["Level 1"]
     );
-
-    controlsRef.current.rotateSpeed = THREE.MathUtils.lerp(0.15, 1.1, t);
-    controlsRef.current.zoomSpeed = THREE.MathUtils.lerp(0.25, 1.0, t);
-  });
+  }, [year]);
 
   return (
     <>
-      {/* 光源（只影響 sector，不影響底層球殼） */}
-      <ambientLight intensity={1.2} />
-      <directionalLight
-        position={[5, 5, 5]}
-        intensity={1.4}
-        color={0xffffff}
-      />
+      {level1Regions.map((region, i) => {
+        const baseColor = new THREE.Color().setHSL(
+          i / level1Regions.length,
+          0.6,
+          0.45
+        );
 
-      <BlueCoreGlobe />
-      {/* LOD Globe */}
-      <EnergyGlobeLOD hierarchy={hierarchy} onSelect={onSelect} />
+        let level2Regions = [];
 
-      {/* Orbit Controls */}
-      <OrbitControls
-        ref={controlsRef}
-        enablePan={false}
-        minDistance={RADIUS * 1.05}
-        maxDistance={RADIUS * 6}
-        enableDamping
-        dampingFactor={0.08}
-      />
+        if (lod === 2 && hierarchy[region.id]?.children) {
+          const yearData = demandData[year];
+
+          const childIds = Object.keys(
+            hierarchy[region.id].children
+          );
+
+          const childTotal = childIds.reduce(
+            (sum, cid) => sum + (yearData[cid] || 0),
+            0
+          );
+
+          console.log(region.id, "childTotal =", childTotal);
+
+          if (childTotal > 0) {
+            const childNodes = childIds.map(cid => ({
+              id: cid,
+              name: hierarchy[region.id].children[cid].name,
+              normalizedValue:
+                (yearData[cid] || 0) / childTotal
+            }));
+
+            level2Regions = generateLevel2WithinParent(
+              region,
+              childNodes
+            );
+          }
+        }
+
+        return (
+          <group key={region.id}>
+            {/* Level1 */}
+            <mesh geometry={region.geometry}>
+              <meshStandardMaterial
+                color={baseColor}
+                roughness={0.4}
+                metalness={0.1}
+              />
+            </mesh>
+
+            {lod === 1 && (
+              <SurfaceText
+                geometry={region.geometry}
+                text={region.name}
+                size={0.22}
+              />
+            )}
+
+            {/* Level2 */}
+            {lod === 2 &&
+              level2Regions.map((child, idx) => {
+                const vertices = [];
+
+                child.faces.forEach(face => {
+                  const pos =
+                    region.geometry.attributes.position;
+
+                  const i = face.index;
+
+                  const v1 = new THREE.Vector3().fromBufferAttribute(pos, i * 3);
+                  const v2 = new THREE.Vector3().fromBufferAttribute(pos, i * 3 + 1);
+                  const v3 = new THREE.Vector3().fromBufferAttribute(pos, i * 3 + 2);
+
+                  vertices.push(
+                    ...v1.toArray(),
+                    ...v2.toArray(),
+                    ...v3.toArray()
+                  );
+                });
+
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute(
+                  "position",
+                  new THREE.Float32BufferAttribute(vertices, 3)
+                );
+                geo.computeVertexNormals();
+
+                return (
+                  <group key={child.id}>
+                    <mesh geometry={geo}>
+                      <meshStandardMaterial
+                        color={baseColor.clone().offsetHSL(
+                          0,
+                          0,
+                          idx % 2 === 0 ? 0.1 : -0.1
+                        )}
+                        roughness={0.5}
+                        metalness={0.05}
+                      />
+                    </mesh>
+
+                    <SurfaceText
+                      geometry={geo}
+                      text={
+                        child.name.length > 5
+                          ? child.name.slice(0, 5) + "..."
+                          : child.name
+                      }
+                      size={0.15}
+                    />
+                  </group>
+                );
+              })}
+          </group>
+        );
+      })}
+
+      {/* 玻璃殼 */}
+      <mesh>
+        <sphereGeometry args={[RADIUS * 1.02, 64, 64]} />
+        <meshPhysicalMaterial
+          transparent
+          opacity={0.08}
+          roughness={0}
+          transmission={1}
+          thickness={0.5}
+        />
+      </mesh>
     </>
   );
 }
 
-// =====================
-// Root Component
-// =====================
-export default function GlobeVisualizer({ onSelect }) {
-  const hierarchy = useMemo(
-    () => extractDeptHierarchy(DEPT_JSON),
-    []
-  );
+/* ============================
+   主畫面
+============================ */
 
+export default function GlobeVisualizer() {
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        background: "transparent"
-      }}
+    <Canvas
+      camera={{ position: [0, 0, 9], fov: 50 }}
+      style={{ background: "#0f172a" }}
     >
-      <div style={{ flex: 1, height: "100%", position: "relative" }}>
-        <Canvas
-          style={{ width: "100%", height: "100%" }}
-          gl={{
-            alpha: true,
-            antialias: true,
-            logarithmicDepthBuffer: true,
-            powerPreference: "high-performance"
-          }}
-          dpr={[1, 2]}
-          camera={{ fov: 45, near: 0.1, far: 2000 }}
-        >
-          <Suspense fallback={<Html center>Loading…</Html>}>
-            <Scene
-              hierarchy={hierarchy}
-              onSelect={(v) => onSelect?.(v)}
-            />
-          </Suspense>
-        </Canvas>
-      </div>
-    </div>
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 5, 5]} intensity={1.2} />
+      <directionalLight position={[-5, -5, -5]} intensity={0.4} />
+
+      <Globe year="113" />
+
+      <OrbitControls enablePan={false} />
+    </Canvas>
   );
 }
