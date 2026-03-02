@@ -317,7 +317,7 @@ function GridSphere({ year, onSelect }) {
       .divideScalar(departmentCounts[key])
       .normalize();
 
-    const position = avg.clone().multiplyScalar(RADIUS + 0.04);
+    const position = avg.clone().multiplyScalar(RADIUS);
 
     const name = hierarchy[key]?.name || key;
 
