@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text, Html } from "@react-three/drei";
+import { OrbitControls, Text } from "@react-three/drei";
 import hierarchy from "../data/hierarchy.json";
 import demandData from "../data/demand_ratio_yearly.json";
 
@@ -64,17 +64,14 @@ function getNeighbors(i) {
 function getLevel1Data(year) {
   const yearKey = String(year);
   const yearData = demandData?.[yearKey];
-
   if (!yearData) return {};
 
   const result = {};
-
   for (let key in hierarchy) {
     if (hierarchy[key].level === 1) {
       result[key] = yearData[key] ?? 0;
     }
   }
-
   return result;
 }
 
@@ -128,7 +125,6 @@ function generateRegions(level1Data) {
 
     while (dept.quota > 0) {
       const newFrontier = new Set();
-
       for (let cell of frontier) {
         for (let n of getNeighbors(cell)) {
           if (grid[n] === null && dept.quota > 0) {
@@ -138,7 +134,6 @@ function generateRegions(level1Data) {
           }
         }
       }
-
       if (newFrontier.size === 0) break;
       frontier = newFrontier;
     }
@@ -194,9 +189,8 @@ function createPatch(lon1, lon2, lat1, lat2) {
 /* 主球 */
 /* ===================== */
 
-function GridSphere({ year, onSelect }) {
+function GridSphere({ year, onSelect, onHover }) {
   const lod = useLOD();
-  const [hoverData, setHoverData] = useState(null);
 
   const grid = useMemo(() => {
     const level1Data = getLevel1Data(year);
@@ -224,9 +218,6 @@ function GridSphere({ year, onSelect }) {
       const centerLat = (lat1 + lat2) / 2;
       const centerVec = lonLatToVec3(centerLon, centerLat, RADIUS);
 
-      const normal = centerVec.clone().normalize();
-      const hoverPosition = normal.clone().multiplyScalar(RADIUS + 0.6);
-
       if (!departmentCenters[key]) {
         departmentCenters[key] = new THREE.Vector3();
         departmentCounts[key] = 0;
@@ -242,14 +233,27 @@ function GridSphere({ year, onSelect }) {
             geometry={geometry}
             onPointerOver={(e) => {
               e.stopPropagation();
-              setHoverData({
-                code: key,
-                name: hierarchy[key]?.name,
-                year,
-                position: hoverPosition,
-              });
+              if (onHover) {
+                onHover({
+                  code: key,
+                  name: hierarchy[key]?.name,
+                  year,
+                });
+              }
             }}
-            onPointerOut={() => setHoverData(null)}
+            onPointerOut={() => {
+              if (onHover) onHover(null);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onSelect) {
+                onSelect({
+                  code: key,
+                  name: hierarchy[key]?.name,
+                  year,
+                });
+              }
+            }}
           >
             <meshPhysicalMaterial
               color={colors[key]}
@@ -292,6 +296,7 @@ function GridSphere({ year, onSelect }) {
 
   const labels = Object.keys(departmentCenters).map((key) => {
     const avg = departmentCenters[key]
+      .clone()
       .divideScalar(departmentCounts[key])
       .normalize();
 
@@ -327,63 +332,28 @@ function GridSphere({ year, onSelect }) {
     <>
       {tiles}
       {lod === 1 && labels}
-
-      {hoverData && (
-        <Html
-          fullscreen
-          style={{ pointerEvents: "none" }}
-        >
-          <div className="hover-overlay">
-
-            <div className="hover-card">
-
-              <div className="hover-header">
-                <span>{hoverData.name}</span>
-
-                <button
-                  style={{ pointerEvents: "auto" }}
-                  onClick={() =>
-                    onSelect && onSelect(hoverData)
-                  }
-                >
-                  ⤢
-                </button>
-              </div>
-
-              <img
-                src={`/images/${hoverData.code}.jpg`}
-                alt=""
-                className="hover-img"
-              />
-
-              <div className="hover-content">
-                常用能源：
-                <br />
-                電力、石油、天然氣
-              </div>
-
-            </div>
-
-          </div>
-        </Html>
-      )}
     </>
   );
 }
 
 /* ===================== */
 
-export default function GlobeVisualizer({ year, onSelect }) {
+export default function GlobeVisualizer({
+  year,
+  onSelect,
+  onHover,
+}) {
   return (
-    <Canvas
-      camera={{ position: [0, 0, 6], fov: 55 }}
-      gl={{ alpha: true }}
-    >
+    <Canvas camera={{ position: [0, 0, 6], fov: 55 }} gl={{ alpha: true }}>
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 5, 5]} intensity={1.2} />
       <directionalLight position={[-5, -4, -5]} intensity={0.8} />
 
-      <GridSphere year={year} onSelect={onSelect} />
+      <GridSphere
+        year={year}
+        onSelect={onSelect}
+        onHover={onHover}
+      />
 
       <OrbitControls enableDamping />
     </Canvas>
