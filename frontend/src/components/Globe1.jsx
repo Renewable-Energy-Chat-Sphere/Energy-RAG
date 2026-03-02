@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text } from "@react-three/drei";
+import { OrbitControls, Text, Html } from "@react-three/drei";
 import hierarchy from "../data/hierarchy.json";
 import demandData from "../data/demand_ratio_yearly.json";
 
@@ -196,6 +196,7 @@ function createPatch(lon1, lon2, lat1, lat2) {
 
 function GridSphere({ year, onSelect }) {
   const lod = useLOD();
+  const [hoverData, setHoverData] = useState(null);
 
   const grid = useMemo(() => {
     const level1Data = getLevel1Data(year);
@@ -208,10 +209,6 @@ function GridSphere({ year, onSelect }) {
   const tiles = [];
   const departmentCenters = {};
   const departmentCounts = {};
-
-  /* ========================= */
-  /* 建立 tile + 計算中心 */
-  /* ========================= */
 
   for (let i = 0; i < LON_DIV; i++) {
     for (let j = 0; j < LAT_DIV; j++) {
@@ -227,6 +224,9 @@ function GridSphere({ year, onSelect }) {
       const centerLat = (lat1 + lat2) / 2;
       const centerVec = lonLatToVec3(centerLon, centerLat, RADIUS);
 
+      const normal = centerVec.clone().normalize();
+      const hoverPosition = normal.clone().multiplyScalar(RADIUS + 0.6);
+
       if (!departmentCenters[key]) {
         departmentCenters[key] = new THREE.Vector3();
         departmentCounts[key] = 0;
@@ -235,63 +235,21 @@ function GridSphere({ year, onSelect }) {
       departmentCenters[key].add(centerVec);
       departmentCounts[key]++;
 
-      const hasLevel2 =
-        hierarchy[key] && hierarchy[key].children;
-
-      /* ========================= */
-      /* LOD2 切割邏輯 */
-      /* ========================= */
-
-      if (lod === 2 && hasLevel2) {
-        const lonMid = (lon1 + lon2) / 2;
-        const latMid = (lat1 + lat2) / 2;
-
-        const parts = [
-          [lon1, lonMid, lat1, latMid],
-          [lonMid, lon2, lat1, latMid],
-          [lon1, lonMid, latMid, lat2],
-          [lonMid, lon2, latMid, lat2],
-        ];
-
-        parts.forEach((p, k) => {
-          tiles.push(
-            <mesh
-              key={`${i}-${j}-${k}`}
-              geometry={createPatch(p[0], p[1], p[2], p[3])}
-              onClick={() =>
-                onSelect &&
-                onSelect({
-                  code: key,
-                  name: hierarchy[key]?.name,
-                  year,
-                })
-              }
-            >
-              <meshPhysicalMaterial
-                color={colors[key]}
-                roughness={0.35}
-                metalness={0}
-                clearcoat={1}
-                clearcoatRoughness={0.1}
-                transparent
-                opacity={0.95}
-              />
-            </mesh>
-          );
-        });
-      } else {
+      const pushMesh = (geometry, uniqueKey) => {
         tiles.push(
           <mesh
-            key={`${i}-${j}`}
-            geometry={createPatch(lon1, lon2, lat1, lat2)}
-            onClick={() =>
-              onSelect &&
-              onSelect({
+            key={uniqueKey}
+            geometry={geometry}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              setHoverData({
                 code: key,
                 name: hierarchy[key]?.name,
                 year,
-              })
-            }
+                position: hoverPosition,
+              });
+            }}
+            onPointerOut={() => setHoverData(null)}
           >
             <meshPhysicalMaterial
               color={colors[key]}
@@ -304,13 +262,33 @@ function GridSphere({ year, onSelect }) {
             />
           </mesh>
         );
+      };
+
+      if (lod === 2) {
+        const lonMid = (lon1 + lon2) / 2;
+        const latMid = (lat1 + lat2) / 2;
+
+        const parts = [
+          [lon1, lonMid, lat1, latMid],
+          [lonMid, lon2, lat1, latMid],
+          [lon1, lonMid, latMid, lat2],
+          [lonMid, lon2, latMid, lat2],
+        ];
+
+        parts.forEach((p, k) => {
+          pushMesh(
+            createPatch(p[0], p[1], p[2], p[3]),
+            `${i}-${j}-${k}`
+          );
+        });
+      } else {
+        pushMesh(
+          createPatch(lon1, lon2, lat1, lat2),
+          `${i}-${j}`
+        );
       }
     }
   }
-
-  /* ========================= */
-  /* Level1 Label（保留你原本版本） */
-  /* ========================= */
 
   const labels = Object.keys(departmentCenters).map((key) => {
     const avg = departmentCenters[key]
@@ -318,9 +296,7 @@ function GridSphere({ year, onSelect }) {
       .normalize();
 
     const position = avg.clone().multiplyScalar(RADIUS);
-
     const name = hierarchy[key]?.name || key;
-
     const size = Math.sqrt(departmentCounts[key]) * 0.045;
 
     return (
@@ -328,10 +304,7 @@ function GridSphere({ year, onSelect }) {
         key={`label-${key}`}
         position={[position.x, position.y, position.z]}
         onUpdate={(self) => {
-          // 讓文字貼齊球面法線
           self.lookAt(0, 0, 0);
-
-          // 修正方向（避免倒立）
           self.rotateY(Math.PI);
         }}
       >
@@ -354,6 +327,46 @@ function GridSphere({ year, onSelect }) {
     <>
       {tiles}
       {lod === 1 && labels}
+
+      {hoverData && (
+        <Html
+          fullscreen
+          style={{ pointerEvents: "none" }}
+        >
+          <div className="hover-overlay">
+
+            <div className="hover-card">
+
+              <div className="hover-header">
+                <span>{hoverData.name}</span>
+
+                <button
+                  style={{ pointerEvents: "auto" }}
+                  onClick={() =>
+                    onSelect && onSelect(hoverData)
+                  }
+                >
+                  ⤢
+                </button>
+              </div>
+
+              <img
+                src={`/images/${hoverData.code}.jpg`}
+                alt=""
+                className="hover-img"
+              />
+
+              <div className="hover-content">
+                常用能源：
+                <br />
+                電力、石油、天然氣
+              </div>
+
+            </div>
+
+          </div>
+        </Html>
+      )}
     </>
   );
 }

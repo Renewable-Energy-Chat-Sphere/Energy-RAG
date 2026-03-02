@@ -1,8 +1,6 @@
 import { useState } from "react";
 import GlobeVisualizer from "../components/Globe1.jsx";
-import SidePanel from "../components/SidePanel";
 import "./global.css";
-import "./SidePanel.css";
 import BackToTopButton from "../components/BackToTopButton";
 
 export default function Global() {
@@ -62,11 +60,10 @@ export default function Global() {
       </div>
 
       {/* ===================== */}
-      {/* 下方左右布局 */}
+      {/* 球體區塊（全寬） */}
       {/* ===================== */}
       <div className="global-layout">
 
-        {/* 左側球體 */}
         <div className="globe-area">
           <GlobeVisualizer
             year={year}
@@ -76,15 +73,54 @@ export default function Global() {
           />
         </div>
 
-        {/* 右側資訊欄 */}
-        <div className="side-area">
-          <SidePanel
-            selection={selection}
-            onClear={() => setSelection(null)}
-          />
-        </div>
-
       </div>
+
+      {/* ===================== */}
+      {/* 全畫面展開卡片 */}
+      {/* ===================== */}
+      {selection && (
+        <div className="full-card-overlay">
+
+          <div className="full-card">
+
+            <button
+              className="full-close"
+              onClick={() => setSelection(null)}
+            >
+              ✕
+            </button>
+
+            <h2>{selection.name}</h2>
+
+            <img
+              src={`/images/${selection.code}.jpg`}
+              alt=""
+              className="full-img"
+            />
+
+            <div className="full-content">
+
+              <h3>常用能源</h3>
+              <p>電力、石油、天然氣</p>
+
+              <h3>年度分析</h3>
+              <p>
+                這裡可以放該部門於 {selection.year} 年的
+                能源結構比例、需求佔比、趨勢變化等。
+              </p>
+
+              <h3>相似度分析</h3>
+              <p>
+                供給加權相似度 / 需求加權相似度 /
+                歐幾里得距離等。
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
       <BackToTopButton />
 
