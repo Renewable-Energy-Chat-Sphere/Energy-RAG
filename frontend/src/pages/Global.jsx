@@ -2,9 +2,26 @@ import { useState } from "react";
 import GlobeVisualizer from "../components/Globe1.jsx";
 import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
+import hierarchy from "../data/hierarchy.json";
+
+/* ===================== */
+/* 遞迴查找節點（支援多層） */
+/* ===================== */
+function findNodeByCode(code, tree) {
+  for (const key in tree) {
+    if (key === code) return tree[key];
+
+    if (tree[key].children) {
+      const found = findNodeByCode(code, tree[key].children);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 export default function Global() {
   const [selection, setSelection] = useState(null);
+  const [hover, setHover] = useState(null);
   const [year, setYear] = useState("113");
   const [showSupply, setShowSupply] = useState(false);
   const [search, setSearch] = useState("");
@@ -60,7 +77,7 @@ export default function Global() {
       </div>
 
       {/* ===================== */}
-      {/* 球體區塊（全寬） */}
+      {/* 球體區塊 */}
       {/* ===================== */}
       <div className="global-layout">
 
@@ -70,9 +87,43 @@ export default function Global() {
             showSupply={showSupply}
             search={search}
             onSelect={setSelection}
+            onHover={setHover}
           />
-        </div>
 
+          {/* ===================== */}
+          {/* Hover 卡片 */}
+          {/* ===================== */}
+          {hover && (
+            <div className="hover-overlay">
+              <div className="hover-card">
+
+                <div className="hover-header">
+                  {hover.name}
+                </div>
+
+                {(() => {
+                  const node = findNodeByCode(hover.code, hierarchy);
+                  return node?.img ? (
+                    <img
+                      src={node.img}
+                      alt=""
+                      className="hover-img"
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  ) : null;
+                })()}
+
+                <div className="hover-content">
+                  常用能源：
+                  <br />
+                  電力、石油、天然氣
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
 
       {/* ===================== */}
@@ -92,11 +143,17 @@ export default function Global() {
 
             <h2>{selection.name}</h2>
 
-            <img
-              src={`/images/${selection.code}.jpg`}
-              alt=""
-              className="full-img"
-            />
+            {(() => {
+              const node = findNodeByCode(selection.code, hierarchy);
+              return node?.img ? (
+                <img
+                  src={node.img}
+                  alt=""
+                  className="full-img"
+                  onError={(e) => (e.target.style.display = "none")}
+                />
+              ) : null;
+            })()}
 
             <div className="full-content">
 
