@@ -40,3 +40,27 @@
 .read-the-docs {
   color: #888;
 }
+:root {
+  --bg-light: #f4f6f9;
+  --bg-dark: #0b1220;
+  --card-dark: linear-gradient(135deg, #0f172a, #1e293b);
+  --text-light: #0f172a;
+  --text-dark: #ffffff;
+}
+
+body {
+  background: var(--bg-light);
+  transition: background 0.4s ease;
+}
+
+body.dark {
+  background: var(--bg-dark);
+}
+@keyframes pulseGlow {
+  from {
+    text-shadow: 0 0 5px rgba(74, 222, 128, 0.4);
+  }
+  to {
+    text-shadow: 0 0 15px rgba(74, 222, 128, 1);
+  }
+}

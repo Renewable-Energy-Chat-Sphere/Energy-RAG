@@ -5,10 +5,14 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import io
+import requests
+
+from datetime import datetime
 
 load_dotenv()
 
 from openai import OpenAI
+
 openai_client = OpenAI()
 
 from pipelines.rag_web import qa_over_web
@@ -36,6 +40,45 @@ app.config.update(
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
+
+
+from bs4 import BeautifulSoup  # 加在最上面 import 區
+
+
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    try:
+        url = "https://www.taipower.com.tw/"
+        res = requests.get(url, timeout=8)
+
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        # 找首頁即時用電數字
+        load = soup.find("span", {"id": "lblLoad"})
+        if load:
+            current_load = float(load.text.replace(",", ""))
+        else:
+            current_load = 180000  # fallback
+
+        now = datetime.now()
+
+        return {
+            "power": current_load,
+            "renewable": 25,
+            "peak": current_load + 5000,
+            "carbon": round(current_load * 0.45, 2),
+            "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+    except Exception as e:
+        print("🔥 error:", e)
+        return {
+            "power": 0,
+            "renewable": 0,
+            "peak": 0,
+            "carbon": 0,
+            "timestamp": "error",
+        }
 
 
 # 🔥 Debug 模式安全啟動 Scheduler
@@ -75,11 +118,9 @@ def ask_pdf():
 
     answer, sources, structured_data = qa_over_pdf(question, file)
 
-    return jsonify({
-        "answer": answer,
-        "sources": sources,
-        "structured_data": structured_data
-    })
+    return jsonify(
+        {"answer": answer, "sources": sources, "structured_data": structured_data}
+    )
 
 
 # ====================================
@@ -162,12 +203,9 @@ def get_energy_news():
         return jsonify(data)
     except Exception as e:
         print("讀取公告錯誤:", e)
-        return jsonify({
-            "source": "經濟部能源署",
-            "items": []
-        })
-    
-    
+        return jsonify({"source": "經濟部能源署", "items": []})
+
+
 # ====================================
 # 入口
 # ====================================

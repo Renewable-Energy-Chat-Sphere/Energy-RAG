@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import EnergyNews from "../components/EnergyNews";
-
+import Dashboard from "../components/Dashboard";
+import RealtimeChart from "../components/RealtimeChart";
 export default function Home() {
   useEffect(() => {
     /* =========================
@@ -119,29 +120,9 @@ export default function Home() {
           </Link>
         </div>
       </section>
-
-      {/* DASHBOARD */}
-      <section className="dashboard reveal">
-        <div className="dashboard-grid">
-          {[
-            { title: "今日用電量", value: "180,528 MWh", sub: "較昨日 +2.3%" },
-            { title: "再生能源占比", value: "24.6%", sub: "近五年最高" },
-            { title: "尖峰負載", value: "36,468 MW", sub: "14:25 發生" },
-            {
-              title: "碳排估算",
-              value: "109,632 噸 CO₂e",
-              sub: "較去年同期 -3.1%",
-            },
-          ].map((item, i) => (
-            <div className="dashboard-card reveal" key={i}>
-              <h4>{item.title}</h4>
-              <p className="big-number">{item.value}</p>
-              <span>{item.sub}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
+      {/*真正有功能的儀表板*/}
+      <Dashboard />
+      <RealtimeChart />
       {/* Energy News */}
       <div className="reveal">
         <EnergyNews />
