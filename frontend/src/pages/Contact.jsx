@@ -104,7 +104,7 @@ export default function Contact() {
       <style>{`
         .contact-section {
   padding: 80px 20px;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   transition: background 0.3s ease, color 0.3s ease;
 }
