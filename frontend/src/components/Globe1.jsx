@@ -1,22 +1,16 @@
 import React, { useMemo, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Text } from "@react-three/drei";
 import hierarchy from "../data/hierarchy.json";
+import demandData from "../data/demand_ratio_yearly.json";
 
+/* ===================== */
 const RADIUS = 2;
 const LON_DIV = 24;
 const LAT_DIV = 12;
 const TOTAL = LON_DIV * LAT_DIV;
-
-/* ===== 113 Level1 ===== */
-const data113 = {
-  D2: 4.94,
-  D50: 3.19,
-  D40: 1.27,
-  D68: 0.81,
-  D47: 0.39,
-};
+/* ===================== */
 
 const colors = {
   D2: "#60a5fa",
@@ -26,9 +20,9 @@ const colors = {
   D47: "#a78bfa",
 };
 
-/* ========================= */
-/* LOD 控制 */
-/* ========================= */
+/* ===================== */
+/* LOD */
+/* ===================== */
 
 function useLOD() {
   const { camera } = useThree();
@@ -43,9 +37,9 @@ function useLOD() {
   return lod;
 }
 
-/* ========================= */
-/* 鄰居工具 */
-/* ========================= */
+/* ===================== */
+/* 工具 */
+/* ===================== */
 
 function getNeighbors(i) {
   const x = i % LON_DIV;
@@ -58,27 +52,53 @@ function getNeighbors(i) {
     { x, y: y - 1 },
   ];
 
-  const result = [];
+  return list
+    .filter((n) => n.y >= 0 && n.y < LAT_DIV)
+    .map((n) => n.y * LON_DIV + n.x);
+}
 
-  for (let n of list) {
-    if (n.y >= 0 && n.y < LAT_DIV) {
-      result.push(n.y * LON_DIV + n.x);
+/* ===================== */
+/* 取得 Level1 數據 */
+/* ===================== */
+
+function getLevel1Data(year) {
+  const yearKey = String(year);
+  const yearData = demandData?.[yearKey];
+
+  if (!yearData) return {};
+
+  const result = {};
+
+  for (let key in hierarchy) {
+    if (hierarchy[key].level === 1) {
+      result[key] = yearData[key] ?? 0;
     }
   }
 
   return result;
 }
 
-/* ========================= */
-/* Level1 分配邏輯（不動） */
-/* ========================= */
+/* ===================== */
+/* Level1 分配 */
+/* ===================== */
 
-function generateRegions() {
+function generateRegions(level1Data) {
+  if (!level1Data || Object.keys(level1Data).length === 0) {
+    return new Array(TOTAL).fill("D2");
+  }
+
   const grid = new Array(TOTAL).fill(null);
 
-  const totalValue = Object.values(data113).reduce((a, b) => a + b, 0);
+  const totalValue = Object.values(level1Data).reduce(
+    (a, b) => a + b,
+    0
+  );
 
-  let depts = Object.entries(data113).map(([key, value]) => ({
+  if (totalValue === 0) {
+    return new Array(TOTAL).fill("D2");
+  }
+
+  let depts = Object.entries(level1Data).map(([key, value]) => ({
     key,
     value,
     quota: Math.round((value / totalValue) * TOTAL),
@@ -93,10 +113,10 @@ function generateRegions() {
   const smallFour = depts;
 
   const seeds = [
-    10 * LON_DIV + 12, // 北
-    1 * LON_DIV + 12,  // 南
-    6 * LON_DIV + 21,  // 東
-    6 * LON_DIV + 2,   // 西
+    10 * LON_DIV + 12,
+    1 * LON_DIV + 12,
+    6 * LON_DIV + 21,
+    6 * LON_DIV + 2,
   ];
 
   smallFour.forEach((dept, idx) => {
@@ -133,9 +153,9 @@ function generateRegions() {
   return grid;
 }
 
-/* ========================= */
-/* 球面 patch */
-/* ========================= */
+/* ===================== */
+/* 球面幾何 */
+/* ===================== */
 
 function lonLatToVec3(lon, lat, radius) {
   const phi = THREE.MathUtils.degToRad(90 - lat);
@@ -170,18 +190,28 @@ function createPatch(lon1, lon2, lat1, lat2) {
   return geometry;
 }
 
-/* ========================= */
-/* 渲染 */
-/* ========================= */
+/* ===================== */
+/* 主球 */
+/* ===================== */
 
-function GridSphere() {
+function GridSphere({ year, onSelect }) {
   const lod = useLOD();
-  const grid = useMemo(() => generateRegions(), []);
+
+  const grid = useMemo(() => {
+    const level1Data = getLevel1Data(year);
+    return generateRegions(level1Data);
+  }, [year]);
 
   const lonStep = 360 / LON_DIV;
   const latStep = 180 / LAT_DIV;
 
   const tiles = [];
+  const departmentCenters = {};
+  const departmentCounts = {};
+
+  /* ========================= */
+  /* 建立 tile + 計算中心 */
+  /* ========================= */
 
   for (let i = 0; i < LON_DIV; i++) {
     for (let j = 0; j < LAT_DIV; j++) {
@@ -193,26 +223,26 @@ function GridSphere() {
       const lat1 = -90 + j * latStep;
       const lat2 = lat1 + latStep;
 
+      const centerLon = (lon1 + lon2) / 2;
+      const centerLat = (lat1 + lat2) / 2;
+      const centerVec = lonLatToVec3(centerLon, centerLat, RADIUS);
+
+      if (!departmentCenters[key]) {
+        departmentCenters[key] = new THREE.Vector3();
+        departmentCounts[key] = 0;
+      }
+
+      departmentCenters[key].add(centerVec);
+      departmentCounts[key]++;
+
       const hasLevel2 =
         hierarchy[key] && hierarchy[key].children;
 
-      if (lod === 1 || !hasLevel2) {
-        // LOD1 或沒有 Level2 → 保持原格
-        tiles.push(
-          <mesh key={`${i}-${j}`} geometry={createPatch(lon1, lon2, lat1, lat2)}>
-            <meshPhysicalMaterial
-              color={colors[key]}
-              roughness={0.35}
-              metalness={0}
-              clearcoat={1}
-              clearcoatRoughness={0.1}
-              transparent
-              opacity={0.95}
-            />
-          </mesh>
-        );
-      } else {
-        // LOD2 → 細分 2x2
+      /* ========================= */
+      /* LOD2 切割邏輯 */
+      /* ========================= */
+
+      if (lod === 2 && hasLevel2) {
         const lonMid = (lon1 + lon2) / 2;
         const latMid = (lat1 + lat2) / 2;
 
@@ -228,6 +258,14 @@ function GridSphere() {
             <mesh
               key={`${i}-${j}-${k}`}
               geometry={createPatch(p[0], p[1], p[2], p[3])}
+              onClick={() =>
+                onSelect &&
+                onSelect({
+                  code: key,
+                  name: hierarchy[key]?.name,
+                  year,
+                })
+              }
             >
               <meshPhysicalMaterial
                 color={colors[key]}
@@ -241,29 +279,99 @@ function GridSphere() {
             </mesh>
           );
         });
+      } else {
+        tiles.push(
+          <mesh
+            key={`${i}-${j}`}
+            geometry={createPatch(lon1, lon2, lat1, lat2)}
+            onClick={() =>
+              onSelect &&
+              onSelect({
+                code: key,
+                name: hierarchy[key]?.name,
+                year,
+              })
+            }
+          >
+            <meshPhysicalMaterial
+              color={colors[key]}
+              roughness={0.35}
+              metalness={0}
+              clearcoat={1}
+              clearcoatRoughness={0.1}
+              transparent
+              opacity={0.95}
+            />
+          </mesh>
+        );
       }
     }
   }
 
-  return <>{tiles}</>;
+  /* ========================= */
+  /* Level1 Label（保留你原本版本） */
+  /* ========================= */
+
+  const labels = Object.keys(departmentCenters).map((key) => {
+    const avg = departmentCenters[key]
+      .divideScalar(departmentCounts[key])
+      .normalize();
+
+    const position = avg.clone().multiplyScalar(RADIUS + 0.04);
+
+    const name = hierarchy[key]?.name || key;
+
+    const size = Math.sqrt(departmentCounts[key]) * 0.045;
+
+    return (
+      <group
+        key={`label-${key}`}
+        position={[position.x, position.y, position.z]}
+        onUpdate={(self) => {
+          // 讓文字貼齊球面法線
+          self.lookAt(0, 0, 0);
+
+          // 修正方向（避免倒立）
+          self.rotateY(Math.PI);
+        }}
+      >
+        <Text
+          fontSize={size}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.003}
+          outlineColor="#000000"
+          depthTest={false}
+        >
+          {name}
+        </Text>
+      </group>
+    );
+  });
+
+  return (
+    <>
+      {tiles}
+      {lod === 1 && labels}
+    </>
+  );
 }
 
-/* ========================= */
-/* 主元件 */
-/* ========================= */
+/* ===================== */
 
-export default function GlobeVisualizer() {
+export default function GlobeVisualizer({ year, onSelect }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 6], fov: 55 }}
       gl={{ alpha: true }}
-      style={{ background: "transparent" }}
     >
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 5, 5]} intensity={1.2} />
       <directionalLight position={[-5, -4, -5]} intensity={0.8} />
 
-      <GridSphere />
+      <GridSphere year={year} onSelect={onSelect} />
+
       <OrbitControls enableDamping />
     </Canvas>
   );
