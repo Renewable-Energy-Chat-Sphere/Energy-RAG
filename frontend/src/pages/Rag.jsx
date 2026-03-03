@@ -185,8 +185,9 @@ export default function Rag() {
         thinkingWrap.remove();
 
         // ===== AI 回答 =====
-        const wrap = document.createElement("div");
-        wrap.className = "rag-message assistant";
+        // ===== AI 回答 =====
+        const aiWrap = document.createElement("div");
+        aiWrap.className = "rag-message assistant";
 
         const inner = document.createElement("div");
         inner.className = "rag-message-inner";
@@ -194,19 +195,13 @@ export default function Rag() {
         const card = document.createElement("div");
         card.className = "ai-card";
 
-        let fullText = data.answer || data.error || "（無回應）";
-        let index = 0;
+        const html = marked.parse(data.answer || data.error || "（無回應）");
+        card.innerHTML = html;
 
-        card.innerHTML = "";
-
-        const interval = setInterval(() => {
-          card.innerHTML += fullText[index];
-          index++;
-
-          if (index >= fullText.length) {
-            clearInterval(interval);
-          }
-        }, 15);
+        inner.appendChild(card);
+        aiWrap.appendChild(inner);
+        chatLog.appendChild(aiWrap);
+        chatLog.scrollTop = chatLog.scrollHeight;
         inner.appendChild(card);
         wrap.appendChild(inner);
         chatLog.appendChild(wrap);
