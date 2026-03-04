@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import hierarchy from "../data/hierarchy.json";
-import demandData from "../data/demand_ratio_yearly.json";
+import demandData from "../data/Demand_ratio_yearly.json";
 
 /* ===================== */
 const RADIUS = 2;
