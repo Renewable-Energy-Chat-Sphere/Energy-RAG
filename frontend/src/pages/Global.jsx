@@ -1,5 +1,5 @@
 import { useState } from "react";
-import GlobeVisualizer from "../components/Globe1.jsx";
+import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
 import hierarchy from "../data/hierarchy.json";
