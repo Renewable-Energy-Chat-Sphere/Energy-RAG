@@ -21,6 +21,18 @@ function sentenceWriter(element, html, delay = 250) {
     }, index * delay);
   });
 }
+function showLoading(element, text = "處理中...") {
+  element.innerHTML = `
+    <div class="ai-card thinking">
+      ${text}
+      <div class="thinking">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  `;
+}
 import { useEffect, useState } from "react";
 import { marked } from "marked"; //新增
 import "./rag.css";
@@ -32,38 +44,46 @@ export default function Rag() {
   const [loading, setLoading] = useState(false);
   const API = "http://127.0.0.1:8000";
 
-  async function generateFile() {
-    if (!structuredData) {
+  async function generateFile(reportData = structuredData) {
+    if (!reportData || !reportData.data) {
       alert("沒有可匯出的結構化資料");
       return;
     }
 
-    const res = await fetch(`${API}/export_pdf`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        structured_data: structuredData.data, // ⭐ 只送真正報告內容
-        file_name: structuredData.file_name, // ⭐ 傳檔名
-      }),
-    });
+    try {
+      const res = await fetch(`${API}/export_pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          structured_data: reportData.data,
+          file_name: reportData.file_name || "AI_Report.pdf",
+        }),
+      });
 
-    const blob = await res.blob();
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = structuredData.file_name; // ⭐ 用後端生成的檔名
-    link.click();
-  }
-  function showLoading(target, text = "處理中") {
-    target.innerHTML = `
-      <div class="ai-card loading-card">
-        <div class="loading-text">${text}</div>
-        <div class="loading-dots">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-    `;
-  }
+      if (!res.ok) {
+        throw new Error("PDF 生成失敗");
+      }
 
+      const blob = await res.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = reportData.file_name || "AI_Report.pdf";
+
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("下載失敗");
+    }
+  }
   /* =========================================================
      CHAT — 問答 / 泡泡 / 自動撐高
   ========================================================= */
@@ -299,10 +319,10 @@ export default function Rag() {
       const data = await res.json();
 
       // ⭐⭐⭐ 加這段
-      if (data.structured_data) {
+      if (data.structured_data && data.structured_data.data) {
         setStructuredData(data.structured_data);
+        console.log("structuredData:", data.structured_data);
       }
-
       let answerText = data.answer || "(無回應)";
 
       let buttons = "";
@@ -312,7 +332,7 @@ export default function Rag() {
   <div class="download-section">
     <hr/>
     <p><strong>📄 已生成完整報告</strong></p>
-    <button id="pdf-btn">下載 PDF 報告</button>
+    <button id="pdf-btn">下載檔案/報告</button>
   </div>
 `;
       }
@@ -328,13 +348,14 @@ export default function Rag() {
 
       // 綁定按鈕
       setTimeout(() => {
-        const pptBtn = document.getElementById("ppt-btn");
         const pdfBtn = document.getElementById("pdf-btn");
 
-        if (pptBtn) pptBtn.onclick = () => generateFile("ppt");
-        if (pdfBtn) pdfBtn.onclick = () => generateFile();
+        if (pdfBtn) {
+          pdfBtn.onclick = () => {
+            generateFile(data.structured_data);
+          };
+        }
       }, 0);
-
       src.textContent = (data.sources || []).join("\n");
     });
   }, []);

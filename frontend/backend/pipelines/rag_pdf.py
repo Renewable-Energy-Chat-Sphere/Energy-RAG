@@ -6,11 +6,12 @@ from flask import current_app
 
 
 # ===============================
-# 🔹 智慧判斷：只要提到「下載」或「匯出」就進 structured
+# 🔹 智慧判斷：是否需要生成報告
 # ===============================
 def detect_structured_intent(question: str):
+
     if not question:
-        return False
+        return True
 
     question = question.lower()
 
@@ -20,6 +21,18 @@ def detect_structured_intent(question: str):
         "匯出",
         "下載",
         "簡報",
+        "整理",
+        "生成",
+        "產生",
+        "產出",
+        "優化",
+        "改寫",
+        "加強",
+        "總結",
+        "統整",
+        "重新整理",
+        "report",
+        "export",
     ]
 
     return any(word in question for word in trigger_words)
@@ -29,9 +42,12 @@ def detect_structured_intent(question: str):
 # 🔹 防止 GPT 多吐字
 # ===============================
 def extract_json(text):
+
     match = re.search(r"\{.*\}", text, re.DOTALL)
+
     if match:
         return match.group(0)
+
     return text
 
 
@@ -39,7 +55,9 @@ def extract_json(text):
 # 🔹 檔名安全處理
 # ===============================
 def sanitize_filename(name):
+
     name = re.sub(r"[^\w\u4e00-\u9fff\[\]\(\)\-_]", "_", name)
+
     return name
 
 
@@ -55,18 +73,24 @@ def qa_over_pdf(question, file):
 
     # === 讀取 PDF ===
     try:
+
         reader = PdfReader(pdf_path)
+
         pages = [page.extract_text() or "" for page in reader.pages]
+
     except Exception as e:
+
         return f"PDF 讀取失敗：{e}", [], None
 
     full_text = "\n\n".join(pages)[:30000]
 
     client = current_app.config.get("OPENAI_CLIENT")
+
     if not client:
         return "未設定 OPENAI_API_KEY，無法分析 PDF。", [], None
 
     structured_mode = detect_structured_intent(question)
+
     print("Question:", question)
     print("Structured mode:", structured_mode)
 
@@ -95,6 +119,7 @@ def qa_over_pdf(question, file):
         )
 
         answer = resp.choices[0].message.content.strip()
+
         sources = [f"PDF 總頁數：{len(pages)} 頁"]
 
         return answer, sources, None
@@ -112,17 +137,17 @@ def qa_over_pdf(question, file):
 請輸出純 JSON，格式如下：
 
 {{
-  "title": "",
-  "sections": [
-    {{
-      "heading": "",
-      "content": ""
-    }}
-  ],
-  "conclusion": ""
+"title": "",
+"sections": [
+{{
+"heading": "",
+"content": ""
+}}
+],
+"conclusion": ""
 }}
 
-⚠️ 僅輸出 JSON，不要其他文字。
+⚠️ 僅輸出 JSON，不要任何解釋或文字。
 
 【PDF內容】
 {full_text}
@@ -138,28 +163,45 @@ def qa_over_pdf(question, file):
         )
 
         raw = resp.choices[0].message.content.strip()
+
         cleaned_json = extract_json(raw)
 
         try:
+
             structured_data = json.loads(cleaned_json)
+
         except Exception as e:
+
+            print("JSON解析失敗:", raw)
+
             return f"JSON 解析失敗：{e}", [], None
 
         # ===============================
-        # 🔹 智慧檔名生成
+        # 🔹 檔名生成
         # ===============================
         original_filename = file.filename
+
         base_name = original_filename.rsplit(".", 1)[0]
+
         base_name = sanitize_filename(base_name)
 
         if "更難" in question:
             suffix = "加強版"
+
         elif "優化" in question:
             suffix = "優化版"
+
         elif "整理" in question:
-            suffix = "正式報告"
+            suffix = "正式檔案"
+            
+        elif "統整" in question:
+            suffix = "統整"
+
+        elif "生成" in question:
+            suffix = "NEW"
+
         else:
-            suffix = "報告版"
+            suffix = "更新版"
 
         new_filename = f"{base_name}_{suffix}.pdf"
 
@@ -168,13 +210,13 @@ def qa_over_pdf(question, file):
         estimated_size = round(len(cleaned_json) / 1024, 1)
 
         answer_text = f"""
-好的，我已經幫你完成整理與報告排版 📄✨
+好的，我已經幫你完成整理與排版 📄✨
 
 📁 檔名：{new_filename}  
 📄 來源頁數：{len(pages)} 頁  
 📦 預估內容大小：約 {estimated_size} KB  
 
-你可以在下方點擊「生成報告 PDF」下載完整檔案。
+你可以在下方點擊「下載檔案/報告」下載完整資料。
 """
 
         return (

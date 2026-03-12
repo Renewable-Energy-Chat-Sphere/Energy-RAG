@@ -145,40 +145,56 @@ def ask_av():
 # ====================================
 @app.route("/export_pdf", methods=["POST"])
 def export_pdf():
+
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from xml.sax.saxutils import escape
 
     data = request.get_json()
 
     structured_data = data.get("structured_data")
     file_name = data.get("file_name", "AI_Report.pdf")
 
-    if not structured_data:
-        return jsonify({"error": "沒有收到 structured_data"}), 400
-
     if isinstance(structured_data, str):
         structured_data = json.loads(structured_data)
 
     buffer = io.BytesIO()
+
+    # ⭐ 字型路徑
+    font_path = os.path.join(os.path.dirname(__file__), "NotoSansTC-Regular.ttf")
+
+    pdfmetrics.registerFont(TTFont("NotoSansTC", font_path))
+
+    styles = getSampleStyleSheet()
+    styles["Normal"].fontName = "NotoSansTC"
+    styles["Heading1"].fontName = "NotoSansTC"
+    styles["Heading2"].fontName = "NotoSansTC"
+    styles["BodyText"].fontName = "NotoSansTC"
+
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     elements = []
-    styles = getSampleStyleSheet()
 
     elements.append(
-        Paragraph(structured_data.get("title", "AI Report"), styles["Heading1"])
+        Paragraph(escape(structured_data.get("title", "AI Report")), styles["Heading1"])
     )
     elements.append(Spacer(1, 12))
 
     for section in structured_data.get("sections", []):
-        elements.append(Paragraph(section.get("heading", ""), styles["Heading2"]))
+        elements.append(
+            Paragraph(escape(section.get("heading", "")), styles["Heading2"])
+        )
         elements.append(Spacer(1, 6))
-        elements.append(Paragraph(section.get("content", ""), styles["BodyText"]))
+        elements.append(
+            Paragraph(escape(section.get("content", "")), styles["BodyText"])
+        )
         elements.append(Spacer(1, 12))
 
     elements.append(Paragraph("Conclusion", styles["Heading2"]))
     elements.append(
-        Paragraph(structured_data.get("conclusion", ""), styles["BodyText"])
+        Paragraph(escape(structured_data.get("conclusion", "")), styles["BodyText"])
     )
 
     doc.build(elements)
