@@ -184,7 +184,7 @@ export default function Home() {
               desc: "自然語言驅動的能源資料探索",
               detail:
                 "支援文字、網址、文件、影音與表格等多模態資料輸入。透過語意向量化與相似度檢索機制，結合大型語言模型生成具依據且可追溯來源的分析結果，實現精準且可解釋的能源查詢體驗。",
-              img: "/images/analysis.jpg",
+              img: "/images/analysis.png",
             },
             {
               title: "主動式能源智慧代理",
