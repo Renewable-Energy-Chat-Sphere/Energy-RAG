@@ -8,18 +8,27 @@ import hierarchy from "../data/hierarchy.json";
 /* 遞迴查找節點（支援多層） */
 /* ===================== */
 function findNodeByCode(code, tree) {
+
   for (const key in tree) {
+
     if (key === code) return tree[key];
 
     if (tree[key].children) {
+
       const found = findNodeByCode(code, tree[key].children);
+
       if (found) return found;
+
     }
+
   }
+
   return null;
+
 }
 
 export default function Global() {
+
   const [selection, setSelection] = useState(null);
   const [hover, setHover] = useState(null);
   const [year, setYear] = useState("113");
@@ -27,11 +36,14 @@ export default function Global() {
   const [search, setSearch] = useState("");
 
   return (
+
     <div className="global-page">
+
 
       {/* ===================== */}
       {/* 上方控制面板 */}
       {/* ===================== */}
+
       <div className="control-panel">
 
         <div className="panel-title">
@@ -40,147 +52,237 @@ export default function Global() {
 
         {/* 年份選擇 */}
         <div className="panel-row">
+
           <label>年份</label>
+
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
           >
+
             <option value="113">113</option>
             <option value="112">112</option>
             <option value="111">111</option>
+
           </select>
+
         </div>
+
 
         {/* 供給線開關 */}
         <div className="panel-row">
+
           <label className="checkbox-row">
+
             <input
               type="checkbox"
               checked={showSupply}
               onChange={() => setShowSupply(!showSupply)}
             />
+
             顯示供給線
+
           </label>
+
         </div>
+
 
         {/* 搜尋框 */}
         <div className="panel-row search-box">
+
           <span className="search-icon">🔍</span>
+
           <input
             type="text"
             placeholder="搜尋部門..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+
         </div>
 
       </div>
 
+
       {/* ===================== */}
-      {/* 球體區塊 */}
+      {/* 下方主區域 */}
       {/* ===================== */}
+
       <div className="global-layout">
 
+
+        {/* 左側：球體 */}
         <div className="globe-area">
+
           <GlobeVisualizer
+
             year={year}
             showSupply={showSupply}
             search={search}
+
+            selected={selection}
+
             onSelect={setSelection}
             onHover={setHover}
+
           />
 
-          {/* ===================== */}
-          {/* Hover 卡片 */}
-          {/* ===================== */}
-          {hover && (
-            <div className="hover-overlay">
-              <div className="hover-card">
+        </div>
 
-                <div className="hover-header">
-                  {hover.name}
-                </div>
 
-                {(() => {
-                  const node = findNodeByCode(hover.code, hierarchy);
-                  return node?.img ? (
-                    <img
-                      src={node.img}
-                      alt=""
-                      className="hover-img"
-                      onError={(e) => (e.target.style.display = "none")}
-                    />
-                  ) : null;
-                })()}
+        {/* 右側：資訊欄 */}
+        <div className="info-panel">
 
-                <div className="hover-content">
-                  常用能源：
-                  <br />
+
+          {!selection && (
+
+            <div className="info-empty">
+
+              <h3>請點擊需求節點</h3>
+
+              <p>
+                點擊球體上的 Demand node
+                <br />
+                查看能源資訊
+              </p>
+
+            </div>
+
+          )}
+
+
+          {selection && (
+
+            <div className="info-card">
+
+
+              <h2>{selection.name}</h2>
+
+
+              {(() => {
+
+                const node = findNodeByCode(selection.code, hierarchy);
+
+                return node?.img ? (
+
+                  <img
+                    src={node.img}
+                    alt=""
+                    className="info-img"
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+
+                ) : null;
+
+              })()}
+
+
+              <div className="info-content">
+
+
+                <h3>常用能源</h3>
+
+                <p>
                   電力、石油、天然氣
-                </div>
+                </p>
+
+
+                <h3>年度分析</h3>
+
+                <p>
+
+                  這裡可以放
+
+                  <br />
+
+                  {selection.year} 年能源結構比例
+                  <br />
+                  部門需求佔比
+                  <br />
+                  能源趨勢分析
+
+                </p>
+
+
+                <h3>相似度分析</h3>
+
+                <p>
+
+                  供給加權相似度
+                  <br />
+                  需求加權相似度
+                  <br />
+                  歐幾里得距離
+
+                </p>
+
 
               </div>
+
             </div>
+
           )}
 
         </div>
-      </div>
 
-      {/* ===================== */}
-      {/* 全畫面展開卡片 */}
-      {/* ===================== */}
-      {selection && (
-        <div className="full-card-overlay">
 
-          <div className="full-card">
+        {/* ===================== */}
+        {/* Hover 卡片 */}
+        {/* ===================== */}
 
-            <button
-              className="full-close"
-              onClick={() => setSelection(null)}
-            >
-              ✕
-            </button>
+        {hover && (
 
-            <h2>{selection.name}</h2>
+          <div className="hover-overlay">
 
-            {(() => {
-              const node = findNodeByCode(selection.code, hierarchy);
-              return node?.img ? (
-                <img
-                  src={node.img}
-                  alt=""
-                  className="full-img"
-                  onError={(e) => (e.target.style.display = "none")}
-                />
-              ) : null;
-            })()}
+            <div className="hover-card">
 
-            <div className="full-content">
+              <div className="hover-header">
+                {hover.name}
+              </div>
 
-              <h3>常用能源</h3>
-              <p>電力、石油、天然氣</p>
 
-              <h3>年度分析</h3>
-              <p>
-                這裡可以放該部門於 {selection.year} 年的
-                能源結構比例、需求佔比、趨勢變化等。
-              </p>
+              {(() => {
 
-              <h3>相似度分析</h3>
-              <p>
-                供給加權相似度 / 需求加權相似度 /
-                歐幾里得距離等。
-              </p>
+                const node = findNodeByCode(hover.code, hierarchy);
+
+                return node?.img ? (
+
+                  <img
+                    src={node.img}
+                    alt=""
+                    className="hover-img"
+                    onError={(e) => (e.target.style.display = "none")}
+                  />
+
+                ) : null;
+
+              })()}
+
+
+              <div className="hover-content">
+
+                常用能源：
+
+                <br />
+
+                電力、石油、天然氣
+
+              </div>
 
             </div>
 
           </div>
 
-        </div>
-      )}
+        )}
+
+
+      </div>
+
 
       <BackToTopButton />
 
     </div>
+
   );
+
 }

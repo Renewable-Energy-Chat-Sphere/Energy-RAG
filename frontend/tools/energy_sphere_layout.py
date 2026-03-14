@@ -2,19 +2,19 @@ import json
 import numpy as np
 import os
 
-DATA_DIR = "../src/data"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, "src", "data")
 
-ITERATIONS = 1500
+ITERATIONS = 1200
 LR = 0.03
 
-# 控制力
-SIM_WEIGHT = 0.2
+SIM_WEIGHT = 0.25
 REPULSION = 0.05
 MIN_DIST = 0.35
 
 
 # =========================
-# 讀取 distance
+# 讀取 distance matrix
 # =========================
 
 files = [f for f in os.listdir(DATA_DIR) if "energy_euclidean_distance" in f]
@@ -41,8 +41,8 @@ dist_matrix = np.mean(matrices, axis=0)
 
 N = len(keys)
 
-print("Loaded", len(matrices), "years")
-print("Nodes:", N)
+print("Loaded years:", len(matrices))
+print("Supply nodes:", N)
 
 
 # =========================
@@ -67,7 +67,7 @@ for i in range(N):
 
 
 # =========================
-# layout optimization
+# Force layout optimization
 # =========================
 
 for step in range(ITERATIONS):
@@ -83,15 +83,13 @@ for step in range(ITERATIONS):
 
             direction = diff/dist
 
-            # 相似度吸引
             target = dist_matrix[i][j]
-            sim_force = SIM_WEIGHT*(dist-target)*direction
 
-            # 基本排斥
+            sim_force = SIM_WEIGHT*(dist-target)*direction
             rep_force = REPULSION*(direction/(dist*dist))
 
-            # 最小距離限制
             min_force = np.zeros(3)
+
             if dist < MIN_DIST:
                 min_force = 0.2*(MIN_DIST-dist)*direction
 
@@ -102,31 +100,88 @@ for step in range(ITERATIONS):
 
     points += LR*forces
 
-    # 投影回球面
     points /= np.linalg.norm(points,axis=1)[:,None]
 
     if step%200==0:
         print("iteration",step)
 
 
-print("Optimization done")
+print("Supply optimization done")
 
 
 # =========================
-# output
+# 輸出 supply layout
 # =========================
 
-layout = {}
+supply_layout = {}
 
 for i,k in enumerate(keys):
 
-    layout[k] = {
+    supply_layout[k] = {
         "x":float(points[i][0]),
         "y":float(points[i][1]),
         "z":float(points[i][2])
     }
 
 with open(os.path.join(DATA_DIR,"supply_layout.json"),"w",encoding="utf-8") as f:
-    json.dump(layout,f,indent=2)
+    json.dump(supply_layout,f,indent=2)
 
-print("Saved to supply_layout.json")
+print("Saved supply_layout.json")
+
+
+# =========================
+# 讀需求資料 (113年範例)
+# =========================
+
+ratio_file = os.path.join(DATA_DIR,"113_energy_ratio.json")
+
+if not os.path.exists(ratio_file):
+
+    print("No demand ratio file found")
+    exit()
+
+with open(ratio_file,"r",encoding="utf-8") as f:
+    demand_data = json.load(f)
+
+
+# =========================
+# Demand barycenter
+# =========================
+
+supply_vec = {
+    k: np.array([v["x"],v["y"],v["z"]])
+    for k,v in supply_layout.items()
+}
+
+demand_layout = {}
+
+for demand, supplies in demand_data.items():
+
+    total = 0
+    pos = np.zeros(3)
+
+    for s,w in supplies.items():
+
+        if s not in supply_vec:
+            continue
+
+        pos += supply_vec[s]*w
+        total += w
+
+    if total == 0:
+        continue
+
+    pos /= total
+    pos /= np.linalg.norm(pos)
+
+    demand_layout[demand] = {
+        "x":float(pos[0]),
+        "y":float(pos[1]),
+        "z":float(pos[2])
+    }
+
+
+with open(os.path.join(DATA_DIR,"demand_layout.json"),"w",encoding="utf-8") as f:
+    json.dump(demand_layout,f,indent=2)
+
+print("Saved demand_layout.json")
