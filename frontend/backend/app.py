@@ -17,7 +17,7 @@ openai_client = OpenAI()
 
 from pipelines.rag_web import qa_over_web
 from pipelines.rag_pdf import qa_over_pdf
-from pipelines.rag_av import qa_over_av
+#from pipelines.rag_av import qa_over_av
 
 from chat import chat_bp
 from tables import tables_bp
@@ -27,7 +27,7 @@ from scheduler import start_scheduler
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
 
@@ -35,7 +35,7 @@ app.config.update(
     OPENAI_CLIENT=openai_client,
     QA_OVER_WEB=qa_over_web,
     QA_OVER_PDF=qa_over_pdf,
-    QA_OVER_AV=qa_over_av,
+    #QA_OVER_AV=qa_over_av,
 )
 
 app.register_blueprint(chat_bp)
@@ -146,67 +146,158 @@ def ask_av():
 @app.route("/export_pdf", methods=["POST"])
 def export_pdf():
 
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.pagesizes import A4
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-    from xml.sax.saxutils import escape
+    try:
+
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        from xml.sax.saxutils import escape
+
+        data = request.get_json()
+
+        print("收到資料:", data)
+
+        structured_data = data.get("structured_data", {})
+        file_name = data.get("file_name", "AI_Report.pdf")
+
+        print("structured_data:", structured_data)
+
+        if "data" in structured_data:
+            structured_data = {
+                "title": "AI Analysis Report",
+                "sections": [
+                    {
+                        "heading": "Data",
+                        "content": json.dumps(structured_data["data"], ensure_ascii=False)
+                    }
+                ],
+                "conclusion": "Generated automatically by Energy RAG."
+            }
+
+        buffer = io.BytesIO()
+
+        font_path = os.path.join(os.path.dirname(__file__), "NotoSansTC-Regular.ttf")
+
+        if os.path.exists(font_path):
+            pdfmetrics.registerFont(TTFont("NotoSansTC", font_path))
+            font_name = "NotoSansTC"
+        else:
+            font_name = "Helvetica"
+
+        styles = getSampleStyleSheet()
+
+        styles["Normal"].fontName = font_name
+        styles["Heading1"].fontName = font_name
+        styles["Heading2"].fontName = font_name
+        styles["BodyText"].fontName = font_name
+
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+
+        elements = []
+
+        elements.append(
+            Paragraph(escape(structured_data.get("title", "AI Report")), styles["Heading1"])
+        )
+
+        elements.append(Spacer(1, 12))
+
+        for section in structured_data.get("sections", []):
+
+            elements.append(
+                Paragraph(escape(section.get("heading", "")), styles["Heading2"])
+            )
+
+            elements.append(Spacer(1, 6))
+
+            content = section.get("content", "")
+
+            if not isinstance(content, str):
+                content = json.dumps(content, ensure_ascii=False)
+
+            elements.append(
+                Paragraph(escape(content), styles["BodyText"])
+            )
+
+            elements.append(Spacer(1, 12))
+
+        elements.append(Paragraph("Conclusion", styles["Heading2"]))
+
+        elements.append(
+            Paragraph(escape(structured_data.get("conclusion", "")), styles["BodyText"])
+        )
+
+        doc.build(elements)
+
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=file_name,
+            mimetype="application/pdf"
+        )
+
+    except Exception as e:
+
+        print("🔥 export_pdf crash:", e)
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+@app.route("/export_excel", methods=["POST"])
+def export_excel():
+
+    from flask import request, send_file
+    from openpyxl import Workbook
+    import io
+    import re
+    import json
 
     data = request.get_json()
-
     structured_data = data.get("structured_data")
-    file_name = data.get("file_name", "AI_Report.pdf")
 
     if isinstance(structured_data, str):
         structured_data = json.loads(structured_data)
 
+    # 取得 AI 回答文字
+    text = ""
+
+    if isinstance(structured_data, dict):
+        for section in structured_data.get("sections", []):
+            text += section.get("content", "") + "\n"
+
+    # 自動偵測 key:value
+    pattern = r"([A-Za-z0-9_ ]+)\s*[:：]\s*(-?\d+\.?\d*)"
+    matches = re.findall(pattern, text)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "AI Table"
+
+    if matches:
+
+        ws.append(["Key", "Value"])
+
+        for k, v in matches:
+            ws.append([k.strip(), float(v)])
+
+    else:
+        # fallback：整段輸出
+        ws.append(["AI Answer"])
+        ws.append([text])
+
     buffer = io.BytesIO()
-
-    # ⭐ 字型路徑
-    font_path = os.path.join(os.path.dirname(__file__), "NotoSansTC-Regular.ttf")
-
-    pdfmetrics.registerFont(TTFont("NotoSansTC", font_path))
-
-    styles = getSampleStyleSheet()
-    styles["Normal"].fontName = "NotoSansTC"
-    styles["Heading1"].fontName = "NotoSansTC"
-    styles["Heading2"].fontName = "NotoSansTC"
-    styles["BodyText"].fontName = "NotoSansTC"
-
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    elements = []
-
-    elements.append(
-        Paragraph(escape(structured_data.get("title", "AI Report")), styles["Heading1"])
-    )
-    elements.append(Spacer(1, 12))
-
-    for section in structured_data.get("sections", []):
-        elements.append(
-            Paragraph(escape(section.get("heading", "")), styles["Heading2"])
-        )
-        elements.append(Spacer(1, 6))
-        elements.append(
-            Paragraph(escape(section.get("content", "")), styles["BodyText"])
-        )
-        elements.append(Spacer(1, 12))
-
-    elements.append(Paragraph("Conclusion", styles["Heading2"]))
-    elements.append(
-        Paragraph(escape(structured_data.get("conclusion", "")), styles["BodyText"])
-    )
-
-    doc.build(elements)
+    wb.save(buffer)
     buffer.seek(0)
 
     return send_file(
         buffer,
         as_attachment=True,
-        download_name=file_name,
-        mimetype="application/pdf",
+        download_name="AI_Table.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-
 
 # ====================================
 # 5. 能源署公告 API

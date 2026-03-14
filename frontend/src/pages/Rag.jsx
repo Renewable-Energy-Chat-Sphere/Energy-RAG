@@ -45,45 +45,77 @@ export default function Rag() {
   const API = "http://127.0.0.1:8000";
 
   async function generateFile(reportData = structuredData) {
-    if (!reportData || !reportData.data) {
-      alert("沒有可匯出的結構化資料");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API}/export_pdf`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          structured_data: reportData.data,
-          file_name: reportData.file_name || "AI_Report.pdf",
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("PDF 生成失敗");
-      }
-
-      const blob = await res.blob();
-
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = reportData.file_name || "AI_Report.pdf";
-
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      alert("下載失敗");
-    }
+  if (!reportData) {
+    alert("沒有可匯出的結構化資料");
+    return;
   }
+
+  try {
+    const res = await fetch(`${API}/export_pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        structured_data: reportData,
+        file_name: "AI_Report.pdf",
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("PDF 生成失敗");
+    }
+
+    const blob = await res.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "AI_Report.pdf";
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    alert("下載失敗");
+  }
+}
+async function generateExcel(reportData = structuredData) {
+
+  try {
+    const res = await fetch(`${API}/export_excel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        structured_data: reportData,
+      }),
+    });
+
+    const blob = await res.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "AI_Report.xlsx";
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.error(err);
+    alert("Excel 下載失敗");
+  }
+}
   /* =========================================================
      CHAT — 問答 / 泡泡 / 自動撐高
   ========================================================= */
@@ -431,70 +463,98 @@ export default function Rag() {
     });
   }, []);
 
-  /* =========================================================
-     TABLE — 問 Excel/CSV
-  ========================================================= */
-  /* =========================================================
-   TABLE — 問 Excel/CSV
+ /* =========================================================
+   TABLE — 問 Excel/CSV + 匯出報告
 ========================================================= */
-  useEffect(() => {
-    const form = document.getElementById("rag-form-table");
-    if (!form) return;
+useEffect(() => {
+  const form = document.getElementById("rag-form-table");
+  if (!form) return;
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      const file = form.file.files[0];
-      const question = form.question.value.trim();
+    const file = form.file.files[0];
+    const question = form.question.value.trim();
 
-      const out = document.getElementById("out-table");
-      const src = document.getElementById("src-table");
+    const out = document.getElementById("out-table");
+    const src = document.getElementById("src-table");
 
-      showLoading(out, "解析表格中");
-      src.textContent = "";
+    showLoading(out, "解析表格中");
+    src.textContent = "";
 
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("question", question);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("question", question);
 
-      const res = await fetch(`${API}/ask_table`, {
-        method: "POST",
-        body: fd,
-      });
+    const res = await fetch(`${API}/ask_table`, {
+      method: "POST",
+      body: fd,
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!data.success) {
-        out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
-        return;
-      }
+    if (!data.success) {
+      out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
+      return;
+    }
 
-      // ⭐ 解析 Markdown
-      const html = marked.parse(data.answer || "(無回應)");
+    // ⭐ 如果有 structured_data
+    if (data.structured_data) {
+      setStructuredData(data.structured_data);
+    }
 
-      out.innerHTML = `
+    const html = marked.parse(data.answer || "(無回應)");
+
+    let buttons = "";
+
+    if (data.structured_data) {
+      buttons = `
+        <div class="download-section">
+          <hr/>
+          <p><strong>📊 已生成完整報告</strong></p>
+          <button id="excel-btn">下載檔案/報告</button>
+        </div>
+      `;
+    }
+
+    out.innerHTML = `
       <div class="ai-card">
         ${html}
+        ${buttons}
       </div>
     `;
 
-      // ⭐ 來源顯示美化
-      if (data.sources?.length) {
-        src.innerHTML = `
+    // ⭐ 綁定下載
+    setTimeout(() => {
+      const excelBtn = document.getElementById("excel-btn");
+
+      if (excelBtn) {
+  excelBtn.onclick = () => {
+    generateExcel(data.structured_data);
+  };
+}if (excelBtn) {
+  excelBtn.onclick = () => {
+    generateExcel(data.structured_data);
+  };
+}
+    }, 0);
+
+    // ⭐ 來源顯示
+    if (data.sources?.length) {
+      src.innerHTML = `
         <div class="source-card">
           <strong>📊 表格來源：</strong>
           ${data.sources
             .map(
               (s) =>
-                `<div>• ${s.sheet}（${s.rows} rows / ${s.columns_count} cols）</div>`,
+                `<div>• ${s.sheet}（${s.rows} rows / ${s.columns_count} cols）</div>`
             )
             .join("")}
         </div>
       `;
-      }
-    });
-  }, []);
-
+    }
+  });
+}, []);
   /* =========================================================
      整個RAG頁面
   ========================================================= */

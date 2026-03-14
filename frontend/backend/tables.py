@@ -136,14 +136,23 @@ def ask_table():
             answer = "⚠️ 未設定 OPENAI_API_KEY，以下為表格內容摘要：\n\n" + md
 
         return jsonify(
-            {
-                "success": True,
-                "type": "table",
-                "question": question,
-                "answer": answer,
-                "sources": sources,
-            }
-        )
+{
+    "success": True,
+    "type": "table",
+    "question": question,
+    "answer": answer,
+    "sources": sources,
+
+    # ⭐ 新增這段
+    "structured_data": {
+        "file_name": "table_export.xlsx",
+        "data": {
+            name: df.fillna("").values.tolist()
+            for name, df in sheets.items()
+        }
+    }
+}
+)
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
