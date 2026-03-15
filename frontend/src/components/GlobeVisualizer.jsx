@@ -1,98 +1,125 @@
-import React from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { useState } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
 import supplyLayout from "../data/supply_layout.json";
 import demandLayout from "../data/demand_layout.json";
 import supplyCatalog from "../data/supply_catalog.json";
-import ratio113 from "../data/113_energy_ratio.json";
+import demandSupply from "../data/113_energy_demand_supply.json";
+import hierarchy from "../data/hierarchy.json";
 
-const RADIUS = 3;
+const SUPPLY_RADIUS = 3.25;
 
 
 /* ===================== */
-/* Supply 查詢表 */
+/* Supply Map */
 /* ===================== */
 
 const supplyMap = {};
-
-supplyCatalog.forEach((s) => {
+supplyCatalog.forEach((s)=>{
   supplyMap[s.source_id] = s;
 });
 
 
 /* ===================== */
-/* 球體經緯線 */
+/* Build hierarchy level map */
 /* ===================== */
 
-function GridSphere() {
+const demandLevel = {};
 
-  const lines = [];
+function buildLevel(node, code){
 
-  const latSegments = 12;
-  const lonSegments = 24;
+  demandLevel[code] = node.level;
 
-  for (let i = 1; i < latSegments; i++) {
+  if(node.children){
 
-    const lat = Math.PI * (i / latSegments - 0.5);
-    const y = RADIUS * Math.sin(lat);
-    const r = RADIUS * Math.cos(lat);
+    Object.entries(node.children).forEach(([childCode, child])=>{
+      buildLevel(child, childCode);
+    });
 
-    const points = [];
-
-    for (let j = 0; j <= 64; j++) {
-
-      const lon = (j / 64) * Math.PI * 2;
-
-      points.push(
-        new THREE.Vector3(
-          r * Math.cos(lon),
-          y,
-          r * Math.sin(lon)
-        )
-      );
-    }
-
-    const geo = new THREE.BufferGeometry().setFromPoints(points);
-
-    lines.push(
-      <line key={"lat" + i} geometry={geo}>
-        <lineBasicMaterial color="#64748b" />
-      </line>
-    );
   }
 
+}
 
-  for (let i = 0; i < lonSegments; i++) {
+Object.entries(hierarchy).forEach(([code,node])=>{
+  buildLevel(node, code);
+});
 
-    const lon = (i / lonSegments) * Math.PI * 2;
 
-    const points = [];
+/* ===================== */
+/* Grid Sphere */
+/* ===================== */
 
-    for (let j = -32; j <= 32; j++) {
+function GridSphere(){
 
-      const lat = (j / 32) * Math.PI / 2;
+  const lines=[];
+  const latSegments=12;
+  const lonSegments=24;
+
+  for(let i=1;i<latSegments;i++){
+
+    const lat=Math.PI*(i/latSegments-0.5);
+    const y=3*Math.sin(lat);
+    const r=3*Math.cos(lat);
+
+    const points=[];
+
+    for(let j=0;j<=64;j++){
+
+      const lon=(j/64)*Math.PI*2;
 
       points.push(
         new THREE.Vector3(
-          RADIUS * Math.cos(lat) * Math.cos(lon),
-          RADIUS * Math.sin(lat),
-          RADIUS * Math.cos(lat) * Math.sin(lon)
+          r*Math.cos(lon),
+          y,
+          r*Math.sin(lon)
         )
       );
+
     }
 
-    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const geo=new THREE.BufferGeometry().setFromPoints(points);
 
     lines.push(
-      <line key={"lon" + i} geometry={geo}>
-        <lineBasicMaterial color="#64748b" />
+      <line key={"lat"+i} geometry={geo}>
+        <lineBasicMaterial color="#64748b"/>
       </line>
     );
+
+  }
+
+  for(let i=0;i<lonSegments;i++){
+
+    const lon=(i/lonSegments)*Math.PI*2;
+    const points=[];
+
+    for(let j=-32;j<=32;j++){
+
+      const lat=(j/32)*Math.PI/2;
+
+      points.push(
+        new THREE.Vector3(
+          3*Math.cos(lat)*Math.cos(lon),
+          3*Math.sin(lat),
+          3*Math.cos(lat)*Math.sin(lon)
+        )
+      );
+
+    }
+
+    const geo=new THREE.BufferGeometry().setFromPoints(points);
+
+    lines.push(
+      <line key={"lon"+i} geometry={geo}>
+        <lineBasicMaterial color="#64748b"/>
+      </line>
+    );
+
   }
 
   return <group>{lines}</group>;
+
 }
 
 
@@ -100,46 +127,42 @@ function GridSphere() {
 /* Supply Nodes */
 /* ===================== */
 
-function SupplyNodes({ onHover, search }) {
+function SupplyNodes({onHover}){
 
-  return Object.entries(supplyLayout).map(([id, pos]) => {
+  return Object.entries(supplyLayout).map(([id,pos])=>{
 
-    const info = supplyMap[id];
+    const info=supplyMap[id];
 
-    if (search && !info?.name_zh?.includes(search)) return null;
-
-    const position = [
-      pos.x * RADIUS,
-      pos.y * RADIUS,
-      pos.z * RADIUS
+    const position=[
+      pos.x*SUPPLY_RADIUS,
+      pos.y*SUPPLY_RADIUS,
+      pos.z*SUPPLY_RADIUS
     ];
 
-    return (
+    return(
 
       <mesh
         key={id}
         position={position}
 
-        onPointerOver={(e) => {
+        onPointerOver={(e)=>{
 
           e.stopPropagation();
 
-          if (onHover) {
+          onHover({
+            code:id,
+            name:info?.name_zh||id,
+            category:info?.category,
+            type:"supply"
+          });
 
-            onHover({
-              code: id,
-              name: info?.name_zh || id,
-              category: info?.category,
-              type: "supply"
-            });
-          }
         }}
 
-        onPointerOut={() => onHover(null)}
+        onPointerOut={()=>onHover(null)}
 
       >
 
-        <sphereGeometry args={[0.07, 16, 16]} />
+        <sphereGeometry args={[0.06,16,16]}/>
 
         <meshStandardMaterial
           color="#f59e0b"
@@ -150,7 +173,9 @@ function SupplyNodes({ onHover, search }) {
       </mesh>
 
     );
+
   });
+
 }
 
 
@@ -158,14 +183,36 @@ function SupplyNodes({ onHover, search }) {
 /* Demand Nodes */
 /* ===================== */
 
-function DemandNodes({ onHover, onSelect }) {
+function DemandNodes({ lod, onHover, onSelect }) {
 
   return Object.entries(demandLayout).map(([id, pos]) => {
 
+    const level = demandLevel[id];
+
+    /* LOD control */
+
+    if (lod === 0 && level !== 1) return null;
+    if (lod === 1 && level !== 2) return null;
+    if (lod === 2 && level !== 3) return null;
+
+    /* node size (接近 supply) */
+
+    const size =
+      level === 1 ? 0.09 :
+      level === 2 ? 0.075 :
+      0.06;
+
+    /* hierarchy radius */
+
+    const radius =
+      level === 1 ? 2.9 :
+      level === 2 ? 3.0 :
+      3.1;
+
     const position = [
-      pos.x * RADIUS,
-      pos.y * RADIUS,
-      pos.z * RADIUS
+      pos.x * radius,
+      pos.y * radius,
+      pos.z * radius
     ];
 
     return (
@@ -178,14 +225,12 @@ function DemandNodes({ onHover, onSelect }) {
 
           e.stopPropagation();
 
-          if (onHover) {
+          onHover({
+            code: id,
+            name: id,
+            type: "demand"
+          });
 
-            onHover({
-              code: id,
-              name: id,
-              type: "demand"
-            });
-          }
         }}
 
         onPointerOut={() => onHover(null)}
@@ -194,30 +239,30 @@ function DemandNodes({ onHover, onSelect }) {
 
           e.stopPropagation();
 
-          if (onSelect) {
+          onSelect({
+            code: id,
+            name: id,
+            year: "113"
+          });
 
-            onSelect({
-              code: id,
-              name: id,
-              year: "113"
-            });
-          }
         }}
 
       >
 
-        <sphereGeometry args={[0.11, 20, 20]} />
+        <sphereGeometry args={[size, 16, 16]} />
 
         <meshStandardMaterial
           color="#3b82f6"
           emissive="#3b82f6"
-          emissiveIntensity={0.4}
+          emissiveIntensity={0.25}
         />
 
       </mesh>
 
     );
+
   });
+
 }
 
 
@@ -225,36 +270,42 @@ function DemandNodes({ onHover, onSelect }) {
 /* Energy Flow Lines */
 /* ===================== */
 
-function SupplyFlowLines({ selected, showSupply }) {
+function SupplyFlowLines({selected,lod}){
 
-  if (!selected || !showSupply) return null;
+  if(!selected) return null;
 
-  const ratio = ratio113[selected.code];
+  const level=demandLevel[selected.code];
 
-  if (!ratio) return null;
+  if(lod===0 && level!==1) return null;
+  if(lod===1 && level!==2) return null;
+  if(lod===2 && level!==3) return null;
 
-  const lines = [];
+  const ratio=demandSupply[selected.code];
 
-  Object.entries(ratio).forEach(([supply, weight]) => {
+  if(!ratio) return null;
 
-    const s = supplyLayout[supply];
-    const d = demandLayout[selected.code];
+  const lines=[];
 
-    if (!s || !d) return;
+  Object.entries(ratio).forEach(([supply,weight])=>{
 
-    const p1 = new THREE.Vector3(
-      s.x * RADIUS,
-      s.y * RADIUS,
-      s.z * RADIUS
+    const s=supplyLayout[supply];
+    const d=demandLayout[selected.code];
+
+    if(!s||!d) return;
+
+    const p1=new THREE.Vector3(
+      s.x*SUPPLY_RADIUS,
+      s.y*SUPPLY_RADIUS,
+      s.z*SUPPLY_RADIUS
     );
 
-    const p2 = new THREE.Vector3(
-      d.x * RADIUS,
-      d.y * RADIUS,
-      d.z * RADIUS
+    const p2=new THREE.Vector3(
+      d.x*3,
+      d.y*3,
+      d.z*3
     );
 
-    const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+    const geo=new THREE.BufferGeometry().setFromPoints([p1,p2]);
 
     lines.push(
 
@@ -271,54 +322,86 @@ function SupplyFlowLines({ selected, showSupply }) {
   });
 
   return <group>{lines}</group>;
+
 }
 
 
 /* ===================== */
-/* 主視覺 */
+/* LOD Controller */
 /* ===================== */
 
-export default function GlobeVisualizer({
-  onHover,
-  onSelect,
-  selected,
-  search,
-  showSupply
-}) {
+function Scene({onHover,onSelect,selected}){
 
-  return (
+  const {camera}=useThree();
+  const [lod,setLOD]=useState(0);
 
-    <Canvas
-      camera={{ position: [0, 0, 8], fov: 50 }}
-      style={{ background: "transparent" }}
-    >
+  useFrame(()=>{
 
-      <ambientLight intensity={0.6} />
+    const d=camera.position.length();
 
-      <pointLight position={[10, 10, 10]} intensity={1} />
+    if(d>7) setLOD(0);
+    else if(d>5) setLOD(1);
+    else setLOD(2);
 
-      <GridSphere />
+  });
 
-      <SupplyNodes
-        onHover={onHover}
-        search={search}
-      />
+  return(
+
+    <>
+
+      <ambientLight intensity={0.6}/>
+      <pointLight position={[10,10,10]} intensity={1}/>
+
+      <GridSphere/>
+
+      <SupplyNodes onHover={onHover}/>
 
       <DemandNodes
+        lod={lod}
+        camera={camera}
         onHover={onHover}
         onSelect={onSelect}
       />
 
       <SupplyFlowLines
         selected={selected}
-        showSupply={showSupply}
+        lod={lod}
       />
 
-      <OrbitControls
-        enablePan={false}
-        enableZoom={true}
+      <OrbitControls enablePan={false}/>
+
+    </>
+
+  );
+
+}
+
+
+/* ===================== */
+/* Main */
+/* ===================== */
+
+export default function GlobeVisualizer({
+  onHover,
+  onSelect,
+  selected
+}){
+
+  return(
+
+    <Canvas
+      camera={{position:[0,0,8],fov:50}}
+      style={{background:"transparent"}}
+    >
+
+      <Scene
+        onHover={onHover}
+        onSelect={onSelect}
+        selected={selected}
       />
 
     </Canvas>
+
   );
+
 }
