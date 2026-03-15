@@ -249,44 +249,35 @@ def export_pdf():
 @app.route("/export_excel", methods=["POST"])
 def export_excel():
 
-    from flask import request, send_file
     from openpyxl import Workbook
+    from flask import request, send_file
     import io
-    import re
-    import json
 
     data = request.get_json()
-    structured_data = data.get("structured_data")
-
-    if isinstance(structured_data, str):
-        structured_data = json.loads(structured_data)
-
-    # 取得 AI 回答文字
-    text = ""
-
-    if isinstance(structured_data, dict):
-        for section in structured_data.get("sections", []):
-            text += section.get("content", "") + "\n"
-
-    # 自動偵測 key:value
-    pattern = r"([A-Za-z0-9_ ]+)\s*[:：]\s*(-?\d+\.?\d*)"
-    matches = re.findall(pattern, text)
+    table = data.get("structured_data", {})
+    if not table:
+        return jsonify({"error": "沒有表格資料"}), 400
 
     wb = Workbook()
     ws = wb.active
     ws.title = "AI Table"
 
-    if matches:
+    columns = table.get("columns", [])
+    rows = table.get("rows", [])
 
-        ws.append(["Key", "Value"])
+    if columns:
+        ws.append(columns)
 
-        for k, v in matches:
-            ws.append([k.strip(), float(v)])
+    for r in rows:
+        if isinstance(r, list):
+            ws.append(r)
 
-    else:
-        # fallback：整段輸出
-        ws.append(["AI Answer"])
-        ws.append([text])
+    # header
+    ws.append(columns)
+
+    # data
+    for r in rows:
+        ws.append(r)
 
     buffer = io.BytesIO()
     wb.save(buffer)
@@ -296,7 +287,7 @@ def export_excel():
         buffer,
         as_attachment=True,
         download_name="AI_Table.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 # ====================================

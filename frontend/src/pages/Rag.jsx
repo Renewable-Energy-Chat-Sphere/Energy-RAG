@@ -86,7 +86,13 @@ export default function Rag() {
 }
 async function generateExcel(reportData = structuredData) {
 
+  if (!reportData) {
+    alert("沒有可匯出的結構化資料");
+    return;
+  }
+
   try {
+
     const res = await fetch(`${API}/export_excel`, {
       method: "POST",
       headers: {
@@ -96,6 +102,10 @@ async function generateExcel(reportData = structuredData) {
         structured_data: reportData,
       }),
     });
+
+    if (!res.ok) {
+      throw new Error("Excel 生成失敗");
+    }
 
     const blob = await res.blob();
 
@@ -532,10 +542,7 @@ useEffect(() => {
   excelBtn.onclick = () => {
     generateExcel(data.structured_data);
   };
-}if (excelBtn) {
-  excelBtn.onclick = () => {
-    generateExcel(data.structured_data);
-  };
+
 }
     }, 0);
 
