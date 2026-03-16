@@ -1,4 +1,4 @@
-# tables.py — Simplest Stable Version
+# tables.py — Stable Version
 import re
 import json
 import io
@@ -9,11 +9,44 @@ tables_bp = Blueprint("tables", __name__)
 
 
 # ------------------------------------------------------------
+# 檔名安全處理
+# ------------------------------------------------------------
+def sanitize_filename(name):
+    return re.sub(r"[^\w\u4e00-\u9fff\[\]\(\)\-_]", "_", name)
+
+
+# ------------------------------------------------------------
+# 檔名生成
+# ------------------------------------------------------------
+def generate_filename(original_filename, question, ext="xlsx"):
+
+    base_name = original_filename.rsplit(".", 1)[0]
+    base_name = sanitize_filename(base_name)
+
+    if "更難" in question:
+        suffix = "加強版"
+    elif "優化" in question:
+        suffix = "優化版"
+    elif "整理" in question:
+        suffix = "正式檔案"
+    elif "統整" in question:
+        suffix = "統整"
+    elif "生成" in question:
+        suffix = "NEW"
+    else:
+        suffix = "更新版"
+
+    return f"{base_name}_{suffix}.{ext}"
+
+
+# ------------------------------------------------------------
 # 讀取 Excel / CSV / TSV
 # ------------------------------------------------------------
 def read_table(file):
+
     filename = (file.filename or "").lower()
     data = file.read()
+
     bio = io.BytesIO(data)
 
     try:
@@ -31,7 +64,6 @@ def read_table(file):
         elif filename.endswith(".tsv"):
             sheets = {"Sheet1": pd.read_csv(bio, sep="\t", dtype=str)}
 
-        # fallback
         else:
             sheets = {"Sheet1": pd.read_csv(bio, dtype=str)}
 
@@ -45,9 +77,13 @@ def read_table(file):
 # DataFrame → Markdown
 # ------------------------------------------------------------
 def df_to_markdown(df, max_rows=30, max_cols=15):
+
     df2 = df.copy()
+
     df2 = df2.head(max_rows)
+
     df2 = df2.iloc[:, :max_cols]
+
     return df2.to_markdown(index=False)
 
 
@@ -59,12 +95,13 @@ def build_md(sheets):
     parts = []
 
     for name, df in sheets.items():
+
         parts.append(f"### {name}\n\n{df_to_markdown(df)}\n")
 
     text = "\n\n".join(parts)
 
-    if len(text) > 12000:
-        text = text[:12000] + "\n\n...(後面省略)..."
+    if len(text) > 10000:
+        text = text[:10000] + "\n\n...(後面省略)..."
 
     return text
 
@@ -122,6 +159,28 @@ structured_data:
 
 
 # ------------------------------------------------------------
+# JSON 擷取
+# ------------------------------------------------------------
+def extract_json(text):
+
+    if not text:
+        return None
+
+    # 移除 ```json
+    text = text.replace("```json", "").replace("```", "")
+
+    match = re.search(r"\{[\s\S]*\}", text)
+
+    if not match:
+        return None
+
+    try:
+        return json.loads(match.group())
+    except:
+        return None
+
+
+# ------------------------------------------------------------
 # 主 API
 # ------------------------------------------------------------
 @tables_bp.route("/ask_table", methods=["POST"])
@@ -130,6 +189,7 @@ def ask_table():
     try:
 
         question = (request.form.get("question") or "").strip()
+
         file = request.files.get("file")
 
         if not question:
@@ -141,10 +201,10 @@ def ask_table():
         # 讀取表格
         sheets = read_table(file)
 
-        # 轉 markdown
+        # Markdown
         md = build_md(sheets)
 
-        # 來源資訊
+        # 表格來源
         sources = [
             {
                 "source_type": "table",
@@ -158,38 +218,43 @@ def ask_table():
 
         # 呼叫 OpenAI
         client = current_app.config.get("OPENAI_CLIENT")
+
         answer = ask_llm(question, md, client)
 
         if answer is None:
+
             answer = "⚠️ 未設定 OPENAI_API_KEY\n\n" + md
 
-        # ⭐ 解析 GPT 回傳 JSON
-        structured_data = None
+        # ------------------------------------------------
+        # JSON 解析
+        # ------------------------------------------------
 
-        try:
+        structured_data = extract_json(answer)
 
-            match = re.search(r"\{[\s\S]*\}", answer)
+        file_name = None
 
-            if match:
-                structured_data = json.loads(match.group())
+        if structured_data:
 
-        except Exception as e:
-            print("JSON parse error:", e)
+            file_name = generate_filename(file.filename, question, "xlsx")
 
-        
-
-        return jsonify({
-            "success": True,
-            "type": "table",
-            "question": question,
-            "answer": answer,
-            "sources": sources,
-            "structured_data": structured_data
-        })
+        return jsonify(
+            {
+                "success": True,
+                "type": "table",
+                "question": question,
+                "answer": answer,
+                "sources": sources,
+                "structured_data": (
+                    {
+                        "file_name": file_name,
+                        "data": structured_data,
+                    }
+                    if structured_data
+                    else None
+                ),
+            }
+        )
 
     except Exception as e:
 
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
