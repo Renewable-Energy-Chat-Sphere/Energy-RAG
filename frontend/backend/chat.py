@@ -11,85 +11,117 @@ CHAT_SESSIONS = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
 
 URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
 
-# ===== 升級版系統提示（分析文件模式） =====
+
+# =====================================================
+# 🌍 語言控制（萬用多語🔥）
+# =====================================================
+def get_language_prompt(user_text):
+    return f"""
+請嚴格遵守以下語言規則：
+
+1. 使用與使用者輸入「完全相同的語言」回答
+2. 不得切換語言
+3. 不得翻譯
+4. 保持語氣與文字系統一致
+
+使用者輸入：
+\"\"\"{user_text}\"\"\"
+
+請用相同語言回答。
+"""
+
+
+# =====================================================
+# 💬 聊天模式判斷
+# =====================================================
+def is_simple_chat(text):
+    simple_words = ["你好", "hi", "hello", "嗨", "在嗎"]
+    return text.lower() in simple_words or len(text) <= 6
+
+
+# =====================================================
+# 🤖 Energy Sphere 專屬助手 Prompt（🔥核心）
+# =====================================================
+BASE_ASSISTANT_PROMPT = """
+你是「Energy Sphere 智慧能源平台」的虛擬助理。
+
+你的任務是協助使用者理解本網站的能源資料、分析結果與視覺化內容。
+
+【角色定位】
+- 你是本網站專屬 AI（不是一般聊天機器人）
+- 熟悉能源需求、供給、比例、相似度分析與 3D 能源球
+- 可以解釋圖表、數據與分析結果
+
+【回答原則】
+- 簡單問題 → 簡短自然回答
+- 專業問題 → 條理清楚、易懂
+- 優先以平台邏輯解釋（不要亂編）
+
+【語言規則（最高優先）】
+- 回答語言必須與使用者輸入完全一致
+- 不得自行切換語言
+- 不得翻譯
+
+【禁止】
+- 不要胡亂捏造數據
+"""
+
+
+# =====================================================
+# 📊 分析模式 Prompt
+# =====================================================
 DEFAULT_SYSTEM_PROMPT = """
-你是一位專業的「能源分析顧問」。
-
-請使用正式分析報告風格回答問題，並嚴格遵守以下格式規範：
-
-【輸出格式要求】
-
-1. 使用 Markdown
-2. 主標題使用：## 
-3. 小標題使用：### 
-4. 條列使用：
-   - 數字條列：1. 2. 3.
-   - 或無序條列：-
-5. 重要關鍵詞請使用 **粗體**
-6. 每個段落之間請空一行
-7. 避免過度口語化
-
-【結構建議】
+請使用正式分析報告風格回答：
 
 ## 主題名稱
 
 ### 一、背景或定義
-說明...
 
 ### 二、主要內容或分析
-1. ...
-2. ...
-3. ...
 
 ### 三、影響或延伸說明
-- ...
-- ...
 
 ### 四、結論
-簡潔專業總結。
 
-【專業要求】
-
-- 若涉及數據，請保留原始單位與年份
-- 若資料不足，請明確說明「沒有足夠資料」
-- 回答要條理分明
-- 適合正式分析文件呈現
-- 不要加入表情符號
+要求：
+- 條理清楚
+- 使用 Markdown
+- 關鍵字加粗
+- 不要口語化
 """
 
 
-# ===== 建立對話上下文 =====
-def _build_messages(session_id: str, user_text: str, system_prompt: str | None):
-    msgs = []
-
-    if system_prompt:
-        msgs.append({"role": "system", "content": system_prompt})
+# =====================================================
+# 🧠 建立對話上下文
+# =====================================================
+def _build_messages(session_id: str, user_text: str, system_prompt: str):
+    msgs = [{"role": "system", "content": system_prompt}]
 
     for role, content in CHAT_SESSIONS[session_id]:
         msgs.append({"role": role, "content": content})
 
     msgs.append({"role": "user", "content": user_text})
-
     return msgs
 
 
-# ===== 儲存對話 =====
+# =====================================================
+# 💾 儲存對話
+# =====================================================
 def _store_turn(session_id: str, user_text: str, assistant_text: str):
     CHAT_SESSIONS[session_id].append(("user", user_text))
     CHAT_SESSIONS[session_id].append(("assistant", assistant_text))
 
 
-# =========================================================
-# CHAT API
-# =========================================================
+# =====================================================
+# 🚀 CHAT API
+# =====================================================
 @chat_bp.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json(force=True) or {}
 
     session_id = (data.get("session_id") or "default").strip() or "default"
     user_text = (data.get("user") or "").strip()
-    system_prompt = (data.get("system") or "").strip() or DEFAULT_SYSTEM_PROMPT
-    model = (data.get("model") or "gpt-4o-mini").strip() or "gpt-4o-mini"
+    model = (data.get("model") or "gpt-4o-mini").strip()
     rag_auto = bool(data.get("rag_auto", True))
 
     if not user_text:
@@ -99,7 +131,7 @@ def chat():
     qa_over_web = current_app.config.get("QA_OVER_WEB")
 
     # =====================================================
-    # 自動網址偵測 → RAG Web
+    # 🌐 URL → RAG
     # =====================================================
     if rag_auto and qa_over_web:
         m = URL_RE.search(user_text)
@@ -122,10 +154,25 @@ def chat():
                 )
 
             except Exception as e:
-                user_text = f"(網址處理失敗，改用一般聊天模式) {e}\n\n{user_text}"
+                user_text = f"(網址處理失敗) {e}\n\n{user_text}"
 
     # =====================================================
-    # 一般聊天模式
+    # 🧠 模式判斷（聊天 / 分析）
+    # =====================================================
+    if is_simple_chat(user_text):
+        mode_prompt = "請用自然語氣簡短回答。"
+    else:
+        mode_prompt = DEFAULT_SYSTEM_PROMPT
+
+    # 🌍 語言 + 助手角色 + 模式
+    language_prompt = get_language_prompt(user_text)
+
+    system_prompt = (
+        language_prompt + "\n\n" + BASE_ASSISTANT_PROMPT + "\n\n" + mode_prompt
+    )
+
+    # =====================================================
+    # 🤖 呼叫模型
     # =====================================================
     if openai_client:
         try:
@@ -135,7 +182,7 @@ def chat():
                 model=model,
                 input=messages,
                 temperature=0.2,
-                max_output_tokens=800,  # 🔥 提高輸出長度
+                max_output_tokens=800,
             )
 
             assistant_text = (
@@ -145,22 +192,12 @@ def chat():
             )
 
         except Exception as e:
-            assistant_text = (
-                f"⚠️ 模型呼叫失敗：{e}\n\n"
-                f"你剛才的問題是：{user_text}\n"
-                "請確認 OpenAI API Key 是否設定正確，或稍後再試。"
-            )
+            assistant_text = f"⚠️ 模型錯誤：{e}"
 
     else:
-        ts = time.strftime("%Y-%m-%d %H:%M:%S")
-        assistant_text = (
-            "（離線模式）目前無法連線至雲端模型。\n\n"
-            f"時間：{ts}\n\n"
-            f"你剛才的問題：{user_text}\n\n"
-            "請確認是否已設定 OPENAI_API_KEY。"
-        )
+        assistant_text = "⚠️ 尚未設定 OpenAI API Key"
 
-    # 儲存對話
+    # 儲存
     _store_turn(session_id, user_text, assistant_text)
 
     return jsonify(
