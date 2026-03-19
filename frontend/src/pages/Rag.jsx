@@ -472,77 +472,74 @@ export default function Rag() {
    TABLE — 問 Excel/CSV + 匯出報告
 ========================================================= */
   useEffect(() => {
-    const form = document.getElementById("rag-form-table");
-    if (!form) return;
+  const form = document.getElementById("rag-form-table");
+  if (!form) return;
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-      const file = form.file.files[0];
-      const question = form.question.value.trim();
+    const file = form.file.files[0];
+    const question = form.question.value.trim();
 
-      const out = document.getElementById("out-table");
-      const src = document.getElementById("src-table");
+    const out = document.getElementById("out-table");
+    const src = document.getElementById("src-table");
 
-      showLoading(out, "解析表格中");
-      src.textContent = "";
+    showLoading(out, "解析表格中");
+    src.textContent = "";
 
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("question", question);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("question", question);
 
-      const res = await fetch(`${API}/ask_table`, {
-        method: "POST",
-        body: fd,
-      });
+    const res = await fetch(`${API}/ask_table`, {
+      method: "POST",
+      body: fd,
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!data.success) {
-        out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
-        return;
-      }
+    if (!data.success) {
+      out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
+      return;
+    }
 
-      // ⭐ 如果有 structured_data
-      if (data.structured_data) {
-        setStructuredData(data.structured_data);
-      }
+    if (data.structured_data) {
+      setStructuredData(data.structured_data);
+    }
 
-      const html = marked.parse(data.answer || "(無回應)");
+    const html = marked.parse(data.answer || "(無回應)");
 
-      let buttons = "";
+    let buttons = "";
 
-      if (data.structured_data) {
-        buttons = `
+    if (data.structured_data) {
+      buttons = `
         <div class="download-section">
           <hr/>
           <p><strong>📊 已生成完整報告</strong></p>
           <button id="excel-btn">下載檔案/報告</button>
         </div>
       `;
-      }
+    }
 
-      out.innerHTML = `
+    out.innerHTML = `
       <div class="ai-card">
         ${html}
         ${buttons}
       </div>
     `;
 
-      // ⭐ 綁定下載
-      setTimeout(() => {
-        const excelBtn = document.getElementById("excel-btn");
+    setTimeout(() => {
+      const excelBtn = document.getElementById("excel-btn");
 
-        if (excelBtn) {
-          excelBtn.onclick = () => {
-            generateExcel(data.structured_data);
-          };
-        }
-      }, 0);
+      if (excelBtn) {
+        excelBtn.onclick = () => {
+          generateExcel(data.structured_data);
+        };
+      }
+    }, 0);
 
-      // ⭐ 來源顯示
-      if (data.sources?.length) {
-        src.innerHTML = `
+    if (data.sources?.length) {
+      src.innerHTML = `
         <div class="source-card">
           <strong>📊 表格來源：</strong>
           ${data.sources
@@ -553,9 +550,17 @@ export default function Rag() {
             .join("")}
         </div>
       `;
-      }
-    });
-  }, []);
+    }
+  };
+
+  form.addEventListener("submit", handleSubmit);
+
+  // ⭐⭐⭐ 這裡才會真的生效
+  return () => {
+    form.removeEventListener("submit", handleSubmit);
+  };
+
+}, []);
   /* =========================================================
      整個RAG頁面
   ========================================================= */
