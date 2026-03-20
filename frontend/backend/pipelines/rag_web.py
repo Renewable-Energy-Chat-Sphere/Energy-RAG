@@ -60,7 +60,7 @@ Language Rules:
 Structure Rules:
 You must ALWAYS follow this Markdown structure.
 
-# 🌍 AI Website Analysis
+# 🌍 Website Analysis
 **Target URL:** (show the URL if provided)
 
 ---
