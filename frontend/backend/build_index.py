@@ -8,9 +8,9 @@ from sentence_transformers import SentenceTransformer
 BASE_DIR = Path(__file__).resolve().parent
 PROCESSED_DIR = BASE_DIR / "processed"
 
-INPUT_JSON = PROCESSED_DIR / "energy_rag_core_records.json"
-OUTPUT_INDEX = PROCESSED_DIR / "energy_rag_core.index"
-OUTPUT_META = PROCESSED_DIR / "energy_rag_core_meta.json"
+INPUT_JSON = PROCESSED_DIR / "energy_rag_all_years_meta.json"
+OUTPUT_INDEX = PROCESSED_DIR / "energy_rag_all_years.index"
+OUTPUT_META = PROCESSED_DIR / "energy_rag_all_years_meta_index.json"
 
 
 def main():
