@@ -1,4 +1,6 @@
+from energy_chat_router import is_energy_question, answer_energy_question
 import re
+import time
 from collections import defaultdict, deque
 from flask import Blueprint, request, jsonify, current_app
 
@@ -12,7 +14,7 @@ URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
 
 
 # =====================================================
-# 🌍 語言控制（更穩定）
+# 🌍 語言控制（萬用多語🔥）
 # =====================================================
 def get_language_prompt(user_text):
     return f"""
@@ -21,75 +23,72 @@ def get_language_prompt(user_text):
 1. 使用與使用者輸入「完全相同的語言」回答
 2. 不得切換語言
 3. 不得翻譯
-4. 若無法判斷語言，請使用繁體中文
+4. 保持語氣與文字系統一致
 
 使用者輸入：
 \"\"\"{user_text}\"\"\"
+
+請用相同語言回答。
 """
 
 
 # =====================================================
-# 💬 判斷：簡單聊天
+# 💬 聊天模式判斷
 # =====================================================
 def is_simple_chat(text):
-    text = text.lower().strip()
-    simple_words = ["你好", "hi", "hello", "嗨", "在嗎", "hey"]
-    return text in simple_words or len(text) <= 4
+    simple_words = ["你好", "hi", "hello", "嗨", "在嗎"]
+    return text.lower() in simple_words or len(text) <= 6
 
 
 # =====================================================
-# 📊 判斷：是否偏分析型
-# =====================================================
-def wants_structure(text):
-    keywords = [
-        "分析",
-        "整理",
-        "比較",
-        "差異",
-        "優缺點",
-        "原因",
-        "影響",
-        "report",
-        "analysis",
-        "compare",
-    ]
-    return any(k in text for k in keywords)
-
-
-# =====================================================
-# 🤖 Energy Sphere 助手 Prompt（升級版🔥）
+# 🤖 Energy Sphere 專屬助手 Prompt（🔥核心）
 # =====================================================
 BASE_ASSISTANT_PROMPT = """
-你是「Energy Sphere 智慧能源平台」的 AI 助手。
+你是「Energy Sphere 智慧能源平台」的虛擬助理。
 
-【角色】
-- 專門解釋能源資料、供給、需求、比例、相似度與 3D 能源球
-- 幫助使用者理解平台內容
+你的任務是協助使用者理解本網站的能源資料、分析結果與視覺化內容。
 
-【回答風格（非常重要）】
-請像 ChatGPT 一樣「自動選擇最適合的格式」：
+【角色定位】
+- 你是本網站專屬 AI（不是一般聊天機器人）
+- 熟悉能源需求、供給、比例、相似度分析與 3D 能源球
+- 可以解釋圖表、數據與分析結果
 
-1️⃣ 打招呼 / 閒聊  
-→ 簡短自然（像真人）
+【回答原則】
+- 簡單問題 → 簡短自然回答
+- 專業問題 → 條理清楚、易懂
+- 優先以平台邏輯解釋（不要亂編）
 
-2️⃣ 一般問題  
-→ 清楚解釋（可用段落或條列）
-
-3️⃣ 分析 / 比較 / 複雜問題  
-→ 條列 + 分段（但不要固定報告模板）
-
-4️⃣ 使用者明確要求（報告 / PDF / 條列整理）  
-→ 才使用完整結構化格式
-
-⚠️ 絕對不要每次都用同一種格式
-⚠️ 回答要自然、有彈性
-
-【語言規則】
-- 必須與使用者語言完全一致
-- 不可切換語言
+【語言規則（最高優先）】
+- 回答語言必須與使用者輸入完全一致
+- 不得自行切換語言
+- 不得翻譯
 
 【禁止】
-- 不要亂編數據
+- 不要胡亂捏造數據
+"""
+
+
+# =====================================================
+# 📊 分析模式 Prompt
+# =====================================================
+DEFAULT_SYSTEM_PROMPT = """
+請使用正式分析報告風格回答：
+
+## 主題名稱
+
+### 一、背景或定義
+
+### 二、主要內容或分析
+
+### 三、影響或延伸說明
+
+### 四、結論
+
+要求：
+- 條理清楚
+- 使用 Markdown
+- 關鍵字加粗
+- 不要口語化
 """
 
 
@@ -149,8 +148,10 @@ def chat():
                     {
                         "answer": answer,
                         "sources": sources,
+                        "results": [],
                         "session_id": session_id,
                         "model": "rag_web",
+                        "uses_openai": bool(openai_client),
                     }
                 )
 
@@ -158,20 +159,48 @@ def chat():
                 user_text = f"(網址處理失敗) {e}\n\n{user_text}"
 
     # =====================================================
-    # 🧠 GPT風格控制（🔥重點）
+    # ⚡ Energy RAG Router
     # =====================================================
+    if is_energy_question(user_text):
+        try:
+            result = answer_energy_question(user_text)
+            assistant_text = result.get("answer", "（無回應）")
+            _store_turn(session_id, user_text, assistant_text)
+
+            return jsonify(
+                {
+                    "answer": assistant_text,
+                    "sources": result.get("sources", []),
+                    "results": result.get("results", []),
+                    "session_id": session_id,
+                    "model": "energy_rag",
+                    "uses_openai": False,
+                }
+            )
+        except Exception as e:
+            return jsonify(
+                {
+                    "answer": f"⚠️ Energy RAG 錯誤：{e}",
+                    "sources": [],
+                    "results": [],
+                    "session_id": session_id,
+                    "model": "energy_rag",
+                    "uses_openai": False,
+                }
+            ), 500
+
+    # =====================================================
+    # 🧠 模式判斷（聊天 / 分析）
+    # =====================================================
+    if is_simple_chat(user_text):
+        mode_prompt = "請用自然語氣簡短回答。"
+    else:
+        mode_prompt = DEFAULT_SYSTEM_PROMPT
+
     language_prompt = get_language_prompt(user_text)
 
-    # 👉 動態引導（不再鎖死格式）
-    if is_simple_chat(user_text):
-        style_hint = "請用簡短自然的方式回答。"
-    elif wants_structure(user_text):
-        style_hint = "請用條列與分段說明，幫助理解。"
-    else:
-        style_hint = "請清楚解釋，必要時可用條列。"
-
     system_prompt = (
-        language_prompt + "\n\n" + BASE_ASSISTANT_PROMPT + "\n\n" + style_hint
+        language_prompt + "\n\n" + BASE_ASSISTANT_PROMPT + "\n\n" + mode_prompt
     )
 
     # =====================================================
@@ -184,7 +213,7 @@ def chat():
             resp = openai_client.responses.create(
                 model=model,
                 input=messages,
-                temperature=0.4,  # 🔥 提升自然度
+                temperature=0.2,
                 max_output_tokens=800,
             )
 
@@ -205,8 +234,11 @@ def chat():
     return jsonify(
         {
             "answer": assistant_text,
+            "sources": [],
+            "results": [],
             "session_id": session_id,
             "history_len": len(CHAT_SESSIONS[session_id]),
             "model": model,
+            "uses_openai": bool(openai_client),
         }
     )

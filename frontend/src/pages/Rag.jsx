@@ -258,10 +258,29 @@ export default function Rag() {
         const html = marked.parse(data.answer || data.error || "（無回應）");
         card.innerHTML = html;
 
-        inner.appendChild(card);
+                inner.appendChild(card);
         aiWrap.appendChild(inner);
         chatLog.appendChild(aiWrap);
         chatLog.scrollTop = chatLog.scrollHeight;
+
+        // ===== 顯示資料依據 / 來源 =====
+        if (data.results?.length) {
+          srcBox.innerHTML = `
+            <div class="source-card">
+              <strong>📌 資料依據：</strong>
+              ${data.results.map((r) => `<div>• ${r.text}</div>`).join("")}
+            </div>
+          `;
+        } else if (data.sources?.length) {
+          srcBox.innerHTML = `
+            <div class="source-card">
+              <strong>📌 來源：</strong>
+              ${data.sources.map((s) => `<div>• ${s}</div>`).join("")}
+            </div>
+          `;
+        } else {
+          srcBox.innerHTML = "";
+        }
         
       } catch (err) {
         console.error(err);
