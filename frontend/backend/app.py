@@ -49,30 +49,58 @@ from bs4 import BeautifulSoup  # 加在最上面 import 區
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     try:
-        url = "https://www.taipower.com.tw/"
-        res = requests.get(url, timeout=8)
+        url = "https://datatw.net/data/energy"
+        res = requests.get(url, timeout=10)
+
+        from bs4 import BeautifulSoup
+        import re
+        import json
 
         soup = BeautifulSoup(res.text, "html.parser")
+        scripts = soup.find_all("script")
 
-        # 找首頁即時用電數字
-        load = soup.find("span", {"id": "lblLoad"})
-        if load:
-            current_load = float(load.text.replace(",", ""))
-        else:
-            current_load = 180000  # fallback
+        data = None
 
+        for s in scripts:
+            if "energy" in s.text or "data" in s.text:
+
+                match = re.search(r"\{.*\}", s.text, re.DOTALL)
+
+                if match:
+                    raw = match.group(0)
+
+                    # 🔥 清理 JS 不是 JSON 的部分
+                    raw = raw.replace("undefined", "null")
+
+                    try:
+                        data = json.loads(raw)
+                        break
+                    except:
+                        continue
+
+        if not data:
+            return {
+                "power": 0,
+                "renewable": 0,
+                "peak": 0,
+                "carbon": 0,
+                "timestamp": "no data",
+            }
+
+        # 🔥 這裡你可以依 datatw 結構改
+        # 先給通用 fallback
         now = datetime.now()
 
         return {
-            "power": current_load,
-            "renewable": 25,
-            "peak": current_load + 5000,
-            "carbon": round(current_load * 0.45, 2),
+            "power": data.get("power", 0),
+            "renewable": data.get("renewable", 0),
+            "peak": data.get("peak", 0),
+            "carbon": data.get("carbon", 0),
             "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
     except Exception as e:
-        print("🔥 error:", e)
+        print("🔥 datatw error:", e)
         return {
             "power": 0,
             "renewable": 0,
