@@ -1,213 +1,181 @@
-import { useEffect, useState, useRef } from "react";
-
-/* ======================== */
-/* 數字動畫 */
-/* ======================== */
-
-function AnimatedNumber({ value }) {
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    let start = 0;
-    const duration = 800;
-    const step = 16;
-    const steps = duration / step;
-    const increment = value / steps;
-
-    const counter = setInterval(() => {
-      start += increment;
-      if (start >= value) {
-        setDisplay(value);
-        clearInterval(counter);
-      } else {
-        setDisplay(Math.floor(start));
-      }
-    }, step);
-
-    return () => clearInterval(counter);
-  }, [value]);
-
-  return (
-    <span
-      style={{
-        color: "#4ade80",
-        textShadow: "0 0 8px rgba(74,222,128,0.7)",
-        animation: "pulseGlow 2s infinite alternate",
-      }}
-    >
-      {display.toLocaleString()}
-    </span>
-  );
-}
-
-/* ======================== */
-/* 主 Dashboard */
-/* ======================== */
+import { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
-
-  /* ✅ 正確放在 component 內 */
-  useEffect(() => {
-    const darkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (darkMode) {
-      document.body.classList.add("dark");
-    }
-  }, []);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     const fetchData = () => {
       fetch("http://127.0.0.1:8000/dashboard")
         .then((res) => res.json())
-        .then(setData);
+        .then((d) => {
+          setData(d);
+
+          const time = d.timestamp?.split(" ")[1];
+
+          setHistory((prev) => [
+            ...prev.slice(-20),
+            { time, value: d.power },
+          ]);
+        });
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
   if (!data) return null;
 
-  return (
-    <div
-      style={{
-        maxWidth: "1280px",
-        margin: "0 auto",
-        padding: "80px 40px 40px",
-      }}
-    >
-      <h2 style={{ fontSize: 28, marginBottom: 50 }}>即時能源儀表板</h2>
+  /* 模擬能源結構（之後可接 API） */
+  const energyMix = [
+    { name: "燃煤", value: 35 },
+    { name: "燃氣", value: 40 },
+    { name: "核能", value: 10 },
+    { name: "再生能源", value: data.renewable },
+  ];
 
+  const COLORS = ["#64748b", "#f97316", "#8b5cf6", "#22c55e"];
+
+  return (
+    <div style={{ padding: 30, background: "#f5f7fb", minHeight: "100vh" }}>
+      <h2 style={{ marginBottom: 20 }}>⚡ 即時能源儀表板</h2>
+
+      {/* KPI */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+        <KPI title="用電量" value={data.power} unit="MW" />
+        <KPI title="尖峰負載" value={data.peak} unit="MW" />
+        <KPI title="再生能源" value={data.renewable} unit="%" />
+        <KPI title="碳排放" value={data.carbon} unit="噸" />
+      </div>
+
+      {/* 主區塊 */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4,1fr)",
-          gap: 40,
+          gridTemplateColumns: "2fr 3fr",
+          gap: 20,
+          marginTop: 30,
         }}
       >
-        <Card title="今日用電量" value={data.power} unit="MWh" />
-        <RenewableCard value={data.renewable} />
-        <Card title="尖峰負載" value={data.peak} unit="MW" />
-        <Card title="碳排估算" value={data.carbon} unit="噸 CO₂e" />
+      
+      {/* 圓餅圖（即時電力狀態） */}
+      <div style={cardStyle}>
+        <h4>即時電力狀態</h4>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+              <Pie
+                  data={[
+                    { name: "已使用", value: data.power },
+                    { name: "剩餘", value: Math.max(data.peak - data.power, 0) },
+                  ]}
+                  dataKey="value"
+                  innerRadius={70}   // 🔥 變環形圖
+                  outerRadius={100}
+              >
+                <Cell fill="#22c55e" /> {/* 已使用 */}
+                <Cell fill="#1e293b" /> {/* 剩餘 */}
+              </Pie>
+
+            {/* 🔥 中間顯示使用率 */}
+            <text
+                x="50%"
+                y="50%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ fill: "white", fontSize: 20, fontWeight: "bold" }}
+              >
+                {((data.power / data.peak) * 100).toFixed(1)}%
+            </text>
+
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+
+        {/* 🔥 補資訊（像 datatw） */}
+        <div style={{ marginTop: 10, color: "#94a3b8" }}>
+          用電量：{data.power} MW / {data.peak} MW
+        </div>
+
+        <div style={{ marginTop: 5, color: "#94a3b8" }}>
+          備轉容量：{Math.max(data.peak - data.power, 0)} MW
+        </div>
       </div>
 
-      <div style={{ marginTop: 20, opacity: 0.7 }}>
-        🟢 即時資料 | 最後更新 {data.timestamp?.split(" ")[1]}
+      {/* 折線圖 */}
+      <div style={cardStyle}>
+          <h4>用電趨勢</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={history}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="value" stroke="#3b82f6" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 表格 */}
+      <div style={{ ...cardStyle, marginTop: 20 }}>
+        <h4>能源細項</h4>
+        <table style={{ width: "100%", marginTop: 10 }}>
+          <thead>
+            <tr>
+              <th>能源類型</th>
+              <th>占比</th>
+            </tr>
+          </thead>
+          <tbody>
+            {energyMix.map((e, i) => (
+              <tr key={i}>
+                <td>{e.name}</td>
+                <td>{e.value}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-/* ======================== */
-/* 卡片 */
-/* ======================== */
-
-function Card({ title, value, unit }) {
+/* KPI 卡 */
+function KPI({ title, value, unit }) {
   return (
     <div
       style={{
-        background: "rgba(15,23,42,0.8)",
-        backdropFilter: "blur(10px)",
-        padding: 30,
+        background: "white",
+        padding: 20,
         borderRadius: 20,
-        color: "white",
-        border: "1px solid rgba(59,130,246,0.2)",
-        boxShadow: "0 0 25px rgba(59,130,246,0.2)",
-        transition: "all 0.3s ease",
-        cursor: "pointer",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-10px)";
-        e.currentTarget.style.boxShadow = "0 0 40px rgba(59,130,246,0.6)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 0 25px rgba(59,130,246,0.2)";
+        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
       }}
     >
-      <h4 style={{ opacity: 0.6 }}>{title}</h4>
-      <div style={{ fontSize: 32, marginTop: 15 }}>
-        <AnimatedNumber value={Number(value)} />{" "}
-        <span style={{ fontSize: 16, opacity: 0.6 }}>{unit}</span>
+      <div style={{ fontSize: 14, color: "#64748b" }}>{title}</div>
+      <div style={{ fontSize: 28, fontWeight: "bold" }}>
+        {value} <span style={{ fontSize: 14 }}>{unit}</span>
       </div>
     </div>
   );
 }
 
-/* ======================== */
-/* 環形圖 */
-/* ======================== */
-
-function RenewableCard({ value }) {
-  const radius = 55;
-  const stroke = 8;
-  const normalized = radius * 2 * Math.PI;
-  const offset = normalized - (value / 100) * normalized;
-
-  return (
-    <div
-      style={{
-        background: "rgba(15,23,42,0.8)",
-        backdropFilter: "blur(10px)",
-        padding: 30,
-        borderRadius: 20,
-        color: "white",
-        border: "1px solid rgba(74,222,128,0.2)",
-        boxShadow: "0 0 25px rgba(74,222,128,0.2)",
-        transition: "all 0.3s ease",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-10px)";
-        e.currentTarget.style.boxShadow = "0 0 40px rgba(74,222,128,0.6)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 0 25px rgba(74,222,128,0.2)";
-      }}
-    >
-      <h4 style={{ opacity: 0.6 }}>再生能源占比</h4>
-
-      <svg height="150" width="150" style={{ marginTop: 20 }}>
-        <circle
-          stroke="rgba(255,255,255,0.08)"
-          fill="transparent"
-          strokeWidth={stroke}
-          r={radius}
-          cx="75"
-          cy="75"
-        />
-        <circle
-          stroke="#4ade80"
-          fill="transparent"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={normalized}
-          strokeDashoffset={offset}
-          r={radius}
-          cx="75"
-          cy="75"
-          style={{
-            transition: "stroke-dashoffset 0.6s ease",
-            filter: "drop-shadow(0 0 8px #4ade80)",
-          }}
-        />
-        <text
-          x="50%"
-          y="50%"
-          textAnchor="middle"
-          dy=".3em"
-          fill="white"
-          fontSize="22"
-          fontWeight="600"
-        >
-          {value}%
-        </text>
-      </svg>
-    </div>
-  );
-}
+const cardStyle = {
+  background: "white",
+  padding: 20,
+  borderRadius: 20,
+  boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+};

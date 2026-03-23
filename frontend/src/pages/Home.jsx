@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import EnergyNews from "../components/EnergyNews";
 import Dashboard from "../components/Dashboard";
-import RealtimeChart from "../components/RealtimeChart";
 export default function Home() {
   useEffect(() => {
     /* =========================
@@ -122,7 +121,6 @@ export default function Home() {
       </section>
       {/*真正有功能的儀表板*/}
       <Dashboard />
-      <RealtimeChart />
       {/* Energy News */}
       <div className="reveal">
         <EnergyNews />
