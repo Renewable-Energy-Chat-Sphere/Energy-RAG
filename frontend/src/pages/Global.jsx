@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
@@ -8,88 +8,114 @@ import hierarchy from "../data/hierarchy.json";
 /* 遞迴查找節點（支援多層） */
 /* ===================== */
 function findNodeByCode(code, tree) {
-
   for (const key in tree) {
-
     if (key === code) return tree[key];
 
     if (tree[key].children) {
-
       const found = findNodeByCode(code, tree[key].children);
 
       if (found) return found;
-
     }
-
   }
 
   return null;
-
 }
 
 export default function Global() {
-
   const [selection, setSelection] = useState(null);
   const [hover, setHover] = useState(null);
   const [year, setYear] = useState("113");
   const [showSupply, setShowSupply] = useState(false);
   const [search, setSearch] = useState("");
+  const [showAI, setShowAI] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const handleMouseDown = () => {
+    setDragging(true);
+  };
 
+  const handleMouseMove = (e) => {
+    if (!dragging) return;
+
+    setPosition((prev) => ({
+      x: prev.x + e.movementX,
+      y: prev.y + e.movementY,
+    }));
+  };
+
+  const handleMouseUp = () => {
+    setDragging(false);
+  };
+  async function handleAsk() {
+    const res = await fetch("/ask_rag", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+        context: {
+          year,
+          department: selection?.name,
+          code: selection?.code,
+        },
+      }),
+    });
+
+    const data = await res.json();
+
+    setAnswer(data.answer);
+  }
+  useEffect(() => {
+    if (selection) {
+      setQuestion(`${year}年 ${selection.name} 的主要能源是什麼？`);
+    }
+  }, [selection]);
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragging]);
   return (
-
     <div className="global-page">
-
-
       {/* ===================== */}
       {/* 上方控制面板 */}
       {/* ===================== */}
 
       <div className="control-panel">
-
-        <div className="panel-title">
-          ⚙️ 能源控制面板
-        </div>
+        <div className="panel-title">⚙️ 能源控制面板</div>
 
         {/* 年份選擇 */}
         <div className="panel-row">
-
           <label>年份</label>
 
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-          >
-
+          <select value={year} onChange={(e) => setYear(e.target.value)}>
             <option value="113">113</option>
             <option value="112">112</option>
             <option value="111">111</option>
-
           </select>
-
         </div>
-
 
         {/* 供給線開關 */}
         <div className="panel-row">
-
           <label className="checkbox-row">
-
             <input
               type="checkbox"
               checked={showSupply}
               onChange={() => setShowSupply(!showSupply)}
             />
-
             顯示供給線
-
           </label>
-
         </div>
-
 
         {/* 搜尋框 */}
         <div className="panel-row search-box">
-
           <span className="search-icon">🔍</span>
 
           <input
@@ -98,46 +124,35 @@ export default function Global() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
         </div>
-
+        <div className="panel-row">
+          <div className="ai-box" onClick={() => setShowAI(true)}>
+            🤖 問能源
+          </div>
+        </div>
       </div>
-
 
       {/* ===================== */}
       {/* 下方主區域 */}
       {/* ===================== */}
 
       <div className="global-layout">
-
-
         {/* 左側：球體 */}
         <div className="globe-area">
-
           <GlobeVisualizer
-
             year={year}
             showSupply={showSupply}
             search={search}
-
             selected={selection}
-
             onSelect={setSelection}
             onHover={setHover}
-
           />
-
         </div>
-
 
         {/* 右側：資訊欄 */}
         <div className="info-panel">
-
-
           {!selection && (
-
             <div className="info-empty">
-
               <h3>請點擊需求節點</h3>
 
               <p>
@@ -145,144 +160,120 @@ export default function Global() {
                 <br />
                 查看能源資訊
               </p>
-
             </div>
-
           )}
 
-
           {selection && (
-
             <div className="info-card">
-
-
               <h2>{selection.name}</h2>
 
-
               {(() => {
-
                 const node = findNodeByCode(selection.code, hierarchy);
 
                 return node?.img ? (
-
                   <img
                     src={node.img}
                     alt=""
                     className="info-img"
                     onError={(e) => (e.target.style.display = "none")}
                   />
-
                 ) : null;
-
               })()}
 
-
               <div className="info-content">
-
-
                 <h3>常用能源</h3>
 
-                <p>
-                  電力、石油、天然氣
-                </p>
-
+                <p>電力、石油、天然氣</p>
 
                 <h3>年度分析</h3>
 
                 <p>
-
                   這裡可以放
-
                   <br />
-
                   {selection.year} 年能源結構比例
                   <br />
                   部門需求佔比
                   <br />
                   能源趨勢分析
-
                 </p>
-
 
                 <h3>相似度分析</h3>
 
                 <p>
-
                   供給加權相似度
                   <br />
                   需求加權相似度
                   <br />
                   歐幾里得距離
-
                 </p>
-
-
               </div>
-
             </div>
-
           )}
-
         </div>
-
 
         {/* ===================== */}
         {/* Hover 卡片 */}
         {/* ===================== */}
 
         {hover && (
-
           <div className="hover-overlay">
-
             <div className="hover-card">
-
-              <div className="hover-header">
-                {hover.name}
-              </div>
-
+              <div className="hover-header">{hover.name}</div>
 
               {(() => {
-
                 const node = findNodeByCode(hover.code, hierarchy);
 
                 return node?.img ? (
-
                   <img
                     src={node.img}
                     alt=""
                     className="hover-img"
                     onError={(e) => (e.target.style.display = "none")}
                   />
-
                 ) : null;
-
               })()}
 
-
               <div className="hover-content">
-
                 常用能源：
-
                 <br />
-
                 電力、石油、天然氣
-
               </div>
-
+            </div>
+          </div>
+        )}
+      </div>
+      {showAI && (
+        <div className="ai-overlay">
+          <div
+            className="ai-panel"
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px)`,
+            }}
+          >
+            {/* Header（可拖曳） */}
+            <div className="ai-header" onMouseDown={handleMouseDown}>
+              <span className="ai-title">🤖 問能源</span>
+              <span className="ai-close" onClick={() => setShowAI(false)}>
+                ✕
+              </span>
             </div>
 
+            {/* 輸入框 */}
+            <textarea
+              placeholder={`例如：${year}年 ${selection?.name || ""} 的能源占比`}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+
+            {/* 按鈕 */}
+            <button onClick={handleAsk}>送出</button>
+
+            {/* 回答 */}
+            {answer && <div className="ai-answer">{answer}</div>}
           </div>
-
-        )}
-
-
-      </div>
-
-
+        </div>
+      )}
       <BackToTopButton />
-
     </div>
-
   );
-
 }

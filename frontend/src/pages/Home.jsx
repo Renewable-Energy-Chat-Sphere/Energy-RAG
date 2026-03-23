@@ -126,43 +126,7 @@ export default function Home() {
         <EnergyNews />
       </div>
 
-      {/* SPHERE PREVIEW */}
-      <section className="sphere-preview reveal">
-        <div className="sphere-left">
-          <h2>能源結構探索 / Energy Sphere</h2>
-          <p>
-            本系統統整近 30 年能源平衡資料，並轉換為三維視覺球模型，
-            以支援年度比較、產業分層結構分析與能源結構相似度研究。
-          </p>
-
-          <Link to="/sphere">
-            <button className="primary-btn">探索能源球 →</button>
-          </Link>
-        </div>
-
-        <div className="sphere-right">
-          <img src="/images/sphere.jpg" alt="Energy Sphere Preview" />
-        </div>
-      </section>
-
-      {/* AI PREVIEW */}
-      <section className="ai-preview reveal">
-        <div className="ai-box">
-          <h2>智慧 RAG 查詢 / Energy Q&A</h2>
-          <p>輸入問題，即可快速取得能源結構分析與資料來源。</p>
-
-          <div className="fake-chat">
-            <input
-              type="text"
-              placeholder="例如：112 年與 113 年產業用電差異？"
-              disabled
-            />
-            <Link to="/rag">
-              <button className="primary-btn">立即查詢 →</button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      
 
       {/* FEATURES */}
       <section id="features" className="section reveal">
