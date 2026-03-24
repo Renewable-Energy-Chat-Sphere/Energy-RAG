@@ -17,39 +17,116 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 # =====================================================
-# 基本判斷
+# 基本資料
+# =====================================================
+DEPARTMENTS = [
+    "工業部門",
+    "運輸部門",
+    "農業部門",
+    "服務業部門",
+    "住宅部門",
+]
+
+ENERGY_NAMES = sorted(
+    {r.get("supply_name_zh", "") for r in records if r.get("supply_name_zh")},
+    key=len,
+    reverse=True,
+)
+
+# 部門同義詞：口語 / 簡稱 -> 正式名稱
+DEPARTMENT_SYNONYMS = {
+    "工業": "工業部門",
+    "工業部門": "工業部門",
+    "運輸": "運輸部門",
+    "交通": "運輸部門",
+    "運輸部門": "運輸部門",
+    "農業": "農業部門",
+    "農業部門": "農業部門",
+    "服務業": "服務業部門",
+    "商業": "服務業部門",
+    "服務部門": "服務業部門",
+    "服務業部門": "服務業部門",
+    "住宅": "住宅部門",
+    "住家": "住宅部門",
+    "家庭": "住宅部門",
+    "民生": "住宅部門",
+    "住宅部門": "住宅部門",
+}
+
+# 能源同義詞：口語 / 簡稱 -> 正式名稱
+ENERGY_SYNONYMS = {
+    "天然氣": "天然氣",
+    "瓦斯": "天然氣",
+    "液化天然氣": "天然氣",
+    "lng": "天然氣",
+    "LNG": "天然氣",
+
+    "電力": "電力",
+    "用電": "電力",
+    "電": "電力",
+
+    "煤": "煤及煤產品",
+    "煤炭": "煤及煤產品",
+    "煤及煤產品": "煤及煤產品",
+
+    "石油": "原油及石油產品",
+    "油": "原油及石油產品",
+    "原油": "原油及石油產品",
+    "原油及石油產品": "原油及石油產品",
+
+    "太陽能": "太陽光電",
+    "光電": "太陽光電",
+    "太陽光電": "太陽光電",
+
+    "風電": "風力",
+    "風能": "風力",
+    "風力": "風力",
+
+    "熱": "熱能",
+    "熱能": "熱能",
+
+    "核電": "核能",
+    "核能": "核能",
+
+    "水電": "水力",
+    "水力": "水力",
+
+    "生質能": "生質能",
+    "廢棄物": "廢棄物",
+}
+
+
+# =====================================================
+# 判斷是不是能源問題
 # =====================================================
 def is_energy_question(text: str) -> bool:
     keywords = [
+        "能源", "部門", "天然氣", "電力", "煤", "石油",
+        "原油", "熱能", "太陽光電", "風力", "生質能",
+        "使用", "比例", "最多", "最大", "前五", "排名",
+        "哪些部門", "哪些能源", "有沒有用", "有用到",
         "工業部門", "運輸部門", "農業部門", "服務業部門", "住宅部門",
-        "能源", "煤", "天然氣", "電力", "石油", "比例", "部門",
-        "主要使用", "使用哪些能源", "哪些部門使用", "用在哪些部門",
-        "有沒有使用", "有用", "最多", "最大", "前五", "top",
-        "D2", "D40", "D47", "D50", "D68"
+        "工業", "運輸", "交通", "農業", "服務業", "住宅", "住家", "家庭",
+        "瓦斯", "電", "油", "煤炭", "風電", "太陽能",
+        "D2", "D40", "D47", "D50", "D68",
     ]
-    text = text.strip()
     return any(k in text for k in keywords)
 
 
 # =====================================================
-# 抓年份
-# 支援：
-# - 民國85年
-# - 85年
-# - 1996年（可轉民國）
-# - 純數字 85 / 113
+# 年份抽取
 # =====================================================
 def extract_year(text: str):
     text = text.strip()
 
-    # 民國85年 / 85年 / 113年
+    # 民國85年 / 113年
     m = re.search(r"(?:民國)?(\d{2,3})年", text)
     if m:
         year = int(m.group(1))
         if 1 <= year <= 300:
             return year
 
-    # 西元年轉民國，例如 1996年 -> 85
+    # 西元年 1996年 -> 民國85年
     m = re.search(r"(19\d{2}|20\d{2})年", text)
     if m:
         ad_year = int(m.group(1))
@@ -57,7 +134,7 @@ def extract_year(text: str):
         if 1 <= roc_year <= 300:
             return roc_year
 
-    # 單獨數字：85 / 113
+    # 單獨數字
     m = re.search(r"\b(8[0-9]|9[0-9]|10[0-9]|11[0-9])\b", text)
     if m:
         return int(m.group(1))
@@ -66,36 +143,107 @@ def extract_year(text: str):
 
 
 # =====================================================
-# 抓部門
+# 正規化部門
 # =====================================================
-def extract_department(text: str):
-    departments = [
-        "工業部門",
-        "運輸部門",
-        "農業部門",
-        "服務業部門",
-        "住宅部門",
-    ]
-    for dept in departments:
+def normalize_department(text: str):
+    # 先找正式名稱
+    for dept in DEPARTMENTS:
         if dept in text:
             return dept
+
+    # 再找同義詞
+    for alias, canonical in sorted(DEPARTMENT_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True):
+        if alias in text:
+            return canonical
+
     return None
 
 
 # =====================================================
-# 抓能源名稱
-# 從 records 內所有 supply_name_zh 動態抓
+# 正規化能源
 # =====================================================
-def extract_energy(text: str):
-    energy_names = sorted(
-        {r.get("supply_name_zh", "") for r in records if r.get("supply_name_zh")},
-        key=len,
-        reverse=True,
-    )
-    for name in energy_names:
+def normalize_energy(text: str):
+    # 先找正式名稱
+    for name in ENERGY_NAMES:
         if name and name in text:
             return name
+
+    # 再找同義詞
+    for alias, canonical in sorted(ENERGY_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True):
+        if alias in text:
+            # 如果 canonical 本身在正式能源名稱中，直接回傳
+            if canonical in ENERGY_NAMES:
+                return canonical
+
+            # 否則試著找包含 canonical 的正式名稱
+            for name in ENERGY_NAMES:
+                if canonical and canonical in name:
+                    return name
+
     return None
+
+
+# =====================================================
+# 問題意圖判斷
+# =====================================================
+def detect_intent(user_text: str, year=None, department=None, energy_name=None):
+    text = user_text.strip()
+
+    # 問整體最多能源
+    if (
+        ("最多" in text or "最大" in text or "排名" in text or "前五" in text or "top" in text.lower())
+        and ("能源" in text or energy_name is not None or "資源" in text)
+        and department is None
+    ):
+        return "top_energy_overall"
+
+    # 問某部門主要用哪些能源
+    if department and (
+        "主要使用" in text
+        or "使用哪些能源" in text
+        or "用哪些能源" in text
+        or "主要用什麼能源" in text
+        or "都用什麼" in text
+        or ("部門" in text and "能源" in text and "哪些" in text)
+        or ("部門" in text and "前五" in text)
+        or ("部門" in text and "最多" in text)
+    ):
+        return "top_energy_by_department"
+
+    # 問某能源用在哪些部門
+    if energy_name and (
+        "哪些部門使用" in text
+        or "用在哪些部門" in text
+        or "有哪些部門" in text
+        or "哪些部門有用" in text
+        or "誰在用" in text
+        or "哪些部門有用到" in text
+        or "哪些人用" in text
+        or ("部門" in text and ("使用" in text or "有用" in text or "有用到" in text))
+    ):
+        return "top_department_by_energy"
+
+    # 問某部門有沒有使用某能源
+    if department and energy_name and (
+        "有沒有使用" in text
+        or "有沒有用" in text
+        or "有用嗎" in text
+        or "有用到嗎" in text
+        or "是否使用" in text
+        or "有沒有" in text
+        or ("是否" in text and "使用" in text)
+    ):
+        return "check_usage"
+
+    # 如果有能源且問部門，但沒明確句型，也視為能源→部門
+    if energy_name and department is None and "部門" in text:
+        return "top_department_by_energy"
+
+    # 如果有部門但沒明確句型，也常常是部門→能源
+    if department and energy_name is None and ("能源" in text or "資源" in text):
+        return "top_energy_by_department"
+
+    return "semantic_search"
 
 
 # =====================================================
@@ -113,7 +261,7 @@ def search_energy_records(question: str, k: int = 20):
 
 
 # =====================================================
-# 依條件抓 ratio 記錄
+# ratio 資料篩選
 # =====================================================
 def get_ratio_records(year=None, department=None, energy_name=None):
     result = [
@@ -141,7 +289,7 @@ def get_ratio_records(year=None, department=None, energy_name=None):
 
 
 # =====================================================
-# 問題 1：某年某部門主要使用哪些能源
+# 某年某部門主要能源
 # =====================================================
 def answer_top_energy_by_department(department: str, year=None, top_n: int = 5):
     ratio_records = get_ratio_records(year=year, department=department)
@@ -152,7 +300,7 @@ def answer_top_energy_by_department(department: str, year=None, top_n: int = 5):
             "success": False,
             "answer": f"找不到「{year_text}{department}」的能源資料。",
             "sources": [],
-            "results": []
+            "results": [],
         }
 
     ratio_records = sorted(ratio_records, key=lambda x: x.get("value", 0), reverse=True)
@@ -169,12 +317,12 @@ def answer_top_energy_by_department(department: str, year=None, top_n: int = 5):
         "success": True,
         "answer": answer,
         "sources": ["energy_rag_all_years_meta.json", "energy_rag_all_years.index"],
-        "results": top
+        "results": top,
     }
 
 
 # =====================================================
-# 問題 2：某年某能源主要用在哪些部門
+# 某年某能源主要用在哪些部門
 # =====================================================
 def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5):
     ratio_records = get_ratio_records(year=year, energy_name=energy_name)
@@ -185,16 +333,24 @@ def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5)
             "success": False,
             "answer": f"找不到「{year_text}{energy_name}」的資料。",
             "sources": [],
-            "results": []
+            "results": [],
         }
 
     ratio_records = sorted(ratio_records, key=lambda x: x.get("value", 0), reverse=True)
     top = ratio_records[:top_n]
 
+    answer_parts = []
+    seen = set()
+    for r in top:
+        dept = r["demand_name"]
+        if dept not in seen:
+            seen.add(dept)
+            answer_parts.append(f"{dept}（{r['value']}）")
+
     year_text = f"{year}年" if year else "各年度"
     answer = (
         f"根據{year_text}已生成的能源資料，{energy_name}主要使用於："
-        + "、".join([f"{r['demand_name']}（{r['value']}）" for r in top])
+        + "、".join(answer_parts)
         + "。"
     )
 
@@ -202,12 +358,12 @@ def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5)
         "success": True,
         "answer": answer,
         "sources": ["energy_rag_all_years_meta.json", "energy_rag_all_years.index"],
-        "results": top
+        "results": top,
     }
 
 
 # =====================================================
-# 問題 3：某年某部門有沒有使用某能源
+# 某年某部門有沒有使用某能源
 # =====================================================
 def answer_check_usage(department: str, energy_name: str, year=None):
     matches = get_ratio_records(year=year, department=department, energy_name=energy_name)
@@ -219,7 +375,7 @@ def answer_check_usage(department: str, energy_name: str, year=None):
             "success": True,
             "answer": f"根據{year_text}已生成的能源資料，{department}沒有使用{energy_name}。",
             "sources": ["energy_rag_all_years_meta.json"],
-            "results": []
+            "results": [],
         }
 
     matches = sorted(matches, key=lambda x: x.get("value", 0), reverse=True)
@@ -229,13 +385,12 @@ def answer_check_usage(department: str, energy_name: str, year=None):
         "success": True,
         "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（{best['value']}）。",
         "sources": ["energy_rag_all_years_meta.json"],
-        "results": [best]
+        "results": [best],
     }
 
 
 # =====================================================
-# 問題 4：某年使用最多的能源
-# 這裡是把該年所有 ratio 記錄依 supply 聚合後排序
+# 某年整體最多能源
 # =====================================================
 def answer_top_energy_overall(year=None, top_n: int = 5):
     ratio_records = get_ratio_records(year=year)
@@ -246,7 +401,7 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
             "success": False,
             "answer": f"找不到「{year_text}」的整體能源資料。",
             "sources": [],
-            "results": []
+            "results": [],
         }
 
     agg = {}
@@ -259,7 +414,7 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
             agg[name] = {
                 "supply_name_zh": name,
                 "supply_code": code,
-                "value": 0
+                "value": 0,
             }
         agg[name]["value"] += value
 
@@ -277,12 +432,12 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
         "success": True,
         "answer": answer,
         "sources": ["energy_rag_all_years_meta.json"],
-        "results": top
+        "results": top,
     }
 
 
 # =====================================================
-# fallback：用向量檢索找相關資料
+# fallback：語意檢索
 # =====================================================
 def answer_by_semantic_search(user_text: str, year=None):
     retrieved = search_energy_records(user_text, k=12)
@@ -298,7 +453,7 @@ def answer_by_semantic_search(user_text: str, year=None):
             "success": False,
             "answer": "找不到相關能源資料。",
             "sources": [],
-            "results": []
+            "results": [],
         }
 
     year_text = f"{year}年" if year else "相關年度"
@@ -310,33 +465,29 @@ def answer_by_semantic_search(user_text: str, year=None):
         "success": True,
         "answer": answer,
         "sources": ["energy_rag_all_years_meta.json", "energy_rag_all_years.index"],
-        "results": final_results
+        "results": final_results,
     }
 
 
 # =====================================================
-# 主路由函式
+# 主路由
 # =====================================================
 def answer_energy_question(user_text: str):
     year = extract_year(user_text)
-    department = extract_department(user_text)
-    energy_name = extract_energy(user_text)
+    department = normalize_department(user_text)
+    energy_name = normalize_energy(user_text)
+    intent = detect_intent(user_text, year=year, department=department, energy_name=energy_name)
 
-    # 1. 問某年整體哪個能源最多
-    if ("最多" in user_text or "最大" in user_text) and "能源" in user_text:
+    if intent == "top_energy_overall":
         return answer_top_energy_overall(year=year, top_n=5)
 
-    # 2. 問某年某部門主要使用哪些能源
-    if department and ("主要使用" in user_text or "使用哪些能源" in user_text):
+    if intent == "top_energy_by_department":
         return answer_top_energy_by_department(department, year=year, top_n=5)
 
-    # 3. 問某年某能源用在哪些部門
-    if energy_name and ("用在哪些部門" in user_text or "哪些部門使用" in user_text):
+    if intent == "top_department_by_energy":
         return answer_top_department_by_energy(energy_name, year=year, top_n=5)
 
-    # 4. 問某年某部門是否使用某能源
-    if department and energy_name and ("有用" in user_text or "有沒有使用" in user_text):
+    if intent == "check_usage":
         return answer_check_usage(department, energy_name, year=year)
 
-    # 5. fallback：語意檢索
     return answer_by_semantic_search(user_text, year=year)
