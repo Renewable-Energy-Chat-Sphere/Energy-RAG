@@ -232,13 +232,13 @@ def chat():
     _store_turn(session_id, user_text, assistant_text)
 
     return jsonify(
-        {
-            "answer": assistant_text,
-            "sources": [],
-            "results": [],
-            "session_id": session_id,
-            "history_len": len(CHAT_SESSIONS[session_id]),
-            "model": model,
-            "uses_openai": bool(openai_client),
-        }
-    )
+    {
+        "answer": assistant_text,
+        "sources": result.get("sources", []),
+        "results": result.get("results", []),
+        "card_type": result.get("card_type", "default"),
+        "session_id": session_id,
+        "model": "energy_rag",
+        "uses_openai": False,
+    }
+)

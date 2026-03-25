@@ -21,6 +21,156 @@ function sentenceWriter(element, html, delay = 250) {
     }, index * delay);
   });
 }
+function renderEnergyTopCards(results) {
+  if (!Array.isArray(results) || !results.length) return "";
+
+  return `
+    <div class="energy-cards">
+      ${results
+        .map(
+          (r, i) => `
+            <div class="energy-card-item">
+              <div class="energy-rank">#${i + 1}</div>
+              <div class="energy-main">
+                <div class="energy-title">${r.supply_name_zh || r.demand_name || "-"}</div>
+                <div class="energy-sub">${r.supply_code || r.demand_code || ""}</div>
+              </div>
+              <div class="energy-value">${r.value ?? "-"}</div>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderComparisonCards(results) {
+  if (!results || typeof results !== "object") return "";
+
+  if (results.comparison_type === "department_across_years") {
+    const top1 = results.top_year1 || [];
+    const top2 = results.top_year2 || [];
+
+    return `
+      <div class="energy-compare-grid">
+        <div class="energy-compare-panel">
+          <h4>${results.department}｜${results.year1}年</h4>
+          ${top1
+            .map(
+              (r, i) => `
+                <div class="energy-card-item">
+                  <div class="energy-rank">#${i + 1}</div>
+                  <div class="energy-main">
+                    <div class="energy-title">${r.supply_name_zh}</div>
+                    <div class="energy-sub">${r.supply_code}</div>
+                  </div>
+                  <div class="energy-value">${r.value}</div>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+        <div class="energy-compare-panel">
+          <h4>${results.department}｜${results.year2}年</h4>
+          ${top2
+            .map(
+              (r, i) => `
+                <div class="energy-card-item">
+                  <div class="energy-rank">#${i + 1}</div>
+                  <div class="energy-main">
+                    <div class="energy-title">${r.supply_name_zh}</div>
+                    <div class="energy-sub">${r.supply_code}</div>
+                  </div>
+                  <div class="energy-value">${r.value}</div>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </div>
+      <div class="energy-tags-wrap">
+        ${
+          results.common?.length
+            ? `<div class="energy-tag-block"><strong>共同能源：</strong> ${results.common.join("、")}</div>`
+            : ""
+        }
+        ${
+          results.only_year1?.length
+            ? `<div class="energy-tag-block"><strong>${results.year1}年較突出：</strong> ${results.only_year1.join("、")}</div>`
+            : ""
+        }
+        ${
+          results.only_year2?.length
+            ? `<div class="energy-tag-block"><strong>${results.year2}年較突出：</strong> ${results.only_year2.join("、")}</div>`
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  if (results.comparison_type === "departments_same_year") {
+    const top1 = results.top_department1 || [];
+    const top2 = results.top_department2 || [];
+
+    return `
+      <div class="energy-compare-grid">
+        <div class="energy-compare-panel">
+          <h4>${results.department1}${results.year ? `｜${results.year}年` : ""}</h4>
+          ${top1
+            .map(
+              (r, i) => `
+                <div class="energy-card-item">
+                  <div class="energy-rank">#${i + 1}</div>
+                  <div class="energy-main">
+                    <div class="energy-title">${r.supply_name_zh}</div>
+                    <div class="energy-sub">${r.supply_code}</div>
+                  </div>
+                  <div class="energy-value">${r.value}</div>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+        <div class="energy-compare-panel">
+          <h4>${results.department2}${results.year ? `｜${results.year}年` : ""}</h4>
+          ${top2
+            .map(
+              (r, i) => `
+                <div class="energy-card-item">
+                  <div class="energy-rank">#${i + 1}</div>
+                  <div class="energy-main">
+                    <div class="energy-title">${r.supply_name_zh}</div>
+                    <div class="energy-sub">${r.supply_code}</div>
+                  </div>
+                  <div class="energy-value">${r.value}</div>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </div>
+      <div class="energy-tags-wrap">
+        ${
+          results.common?.length
+            ? `<div class="energy-tag-block"><strong>共同能源：</strong> ${results.common.join("、")}</div>`
+            : ""
+        }
+        ${
+          results.only_department1?.length
+            ? `<div class="energy-tag-block"><strong>${results.department1}較突出：</strong> ${results.only_department1.join("、")}</div>`
+            : ""
+        }
+        ${
+          results.only_department2?.length
+            ? `<div class="energy-tag-block"><strong>${results.department2}較突出：</strong> ${results.only_department2.join("、")}</div>`
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  return "";
+}
 function showLoading(element, text = "處理中...") {
   element.innerHTML = `
     <div class="ai-card thinking">

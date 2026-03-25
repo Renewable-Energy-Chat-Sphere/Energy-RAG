@@ -188,8 +188,18 @@ def normalize_energy(text: str):
 # =====================================================
 def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     text = user_text.strip()
+    years = extract_years(text)
+    departments = extract_departments(text)
 
-    # 問整體最多能源
+    # 1. 同部門跨年份比較
+    if len(years) >= 2 and department and ("差" in text or "比較" in text or "差異" in text):
+        return "compare_department_across_years"
+
+    # 2. 同年份跨部門比較
+    if len(departments) >= 2 and ("差" in text or "比較" in text or "差異" in text):
+        return "compare_departments_same_year"
+
+    # 3. 問整體最多能源
     if (
         ("最多" in text or "最大" in text or "排名" in text or "前五" in text or "top" in text.lower())
         and ("能源" in text or energy_name is not None or "資源" in text)
@@ -197,7 +207,7 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     ):
         return "top_energy_overall"
 
-    # 問某部門主要用哪些能源
+    # 4. 問某部門主要用哪些能源
     if department and (
         "主要使用" in text
         or "使用哪些能源" in text
@@ -210,7 +220,7 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     ):
         return "top_energy_by_department"
 
-    # 問某能源用在哪些部門
+    # 5. 問某能源用在哪些部門
     if energy_name and (
         "哪些部門使用" in text
         or "用在哪些部門" in text
@@ -223,7 +233,7 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     ):
         return "top_department_by_energy"
 
-    # 問某部門有沒有使用某能源
+    # 6. 問某部門有沒有使用某能源
     if department and energy_name and (
         "有沒有使用" in text
         or "有沒有用" in text
@@ -235,11 +245,11 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     ):
         return "check_usage"
 
-    # 如果有能源且問部門，但沒明確句型，也視為能源→部門
+    # 7. 如果有能源且問部門，但沒明確句型，也視為能源→部門
     if energy_name and department is None and "部門" in text:
         return "top_department_by_energy"
 
-    # 如果有部門但沒明確句型，也常常是部門→能源
+    # 8. 如果有部門但沒明確句型，也常常是部門→能源
     if department and energy_name is None and ("能源" in text or "資源" in text):
         return "top_energy_by_department"
 
@@ -435,6 +445,169 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
         "results": top,
     }
 
+# =====================================================
+# 取得某年某部門 top energies
+# =====================================================
+def get_top_energies_for_department(department: str, year=None, top_n: int = 5):
+    ratio_records = get_ratio_records(year=year, department=department)
+    ratio_records = sorted(ratio_records, key=lambda x: x.get("value", 0), reverse=True)
+    return ratio_records[:top_n]
+
+
+# =====================================================
+# 年份範圍抽取：支援「85年和113年」「85到113年」
+# =====================================================
+def extract_years(text: str):
+    years = re.findall(r"(?:民國)?(\d{2,3})年", text)
+    if len(years) >= 2:
+        return [int(years[0]), int(years[1])]
+
+    years2 = re.findall(r"\b(8[0-9]|9[0-9]|10[0-9]|11[0-9])\b", text)
+    unique = []
+    for y in years2:
+        y = int(y)
+        if y not in unique:
+            unique.append(y)
+    if len(unique) >= 2:
+        return unique[:2]
+
+    return []
+
+
+# =====================================================
+# 問題：同部門跨年份比較
+# 例：85年和113年工業部門主要能源差異
+# =====================================================
+def answer_compare_department_across_years(department: str, year1: int, year2: int, top_n: int = 5):
+    top1 = get_top_energies_for_department(department, year=year1, top_n=top_n)
+    top2 = get_top_energies_for_department(department, year=year2, top_n=top_n)
+
+    if not top1 and not top2:
+        return {
+            "success": False,
+            "answer": f"找不到 {department} 在 {year1} 年與 {year2} 年的資料。",
+            "sources": [],
+            "results": [],
+            "card_type": "comparison"
+        }
+
+    names1 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top1]
+    names2 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top2]
+
+    set1 = {r["supply_name_zh"] for r in top1}
+    set2 = {r["supply_name_zh"] for r in top2}
+
+    only1 = sorted(set1 - set2)
+    only2 = sorted(set2 - set1)
+    common = sorted(set1 & set2)
+
+    answer = (
+        f"根據已生成的能源資料，{department}在 {year1} 年與 {year2} 年的主要能源結構有差異。"
+        f"\n\n{year1} 年前 {top_n} 項為：{'、'.join(names1) if names1 else '無資料'}。"
+        f"\n\n{year2} 年前 {top_n} 項為：{'、'.join(names2) if names2 else '無資料'}。"
+    )
+
+    if only1:
+        answer += f"\n\n僅在 {year1} 年前段中較突出的能源有：{'、'.join(only1)}。"
+    if only2:
+        answer += f"\n\n僅在 {year2} 年前段中較突出的能源有：{'、'.join(only2)}。"
+    if common:
+        answer += f"\n\n兩個年份共同都在前段的能源有：{'、'.join(common)}。"
+
+    return {
+        "success": True,
+        "answer": answer,
+        "sources": ["energy_rag_all_years_meta.json", "energy_rag_all_years.index"],
+        "results": {
+            "comparison_type": "department_across_years",
+            "department": department,
+            "year1": year1,
+            "year2": year2,
+            "top_year1": top1,
+            "top_year2": top2,
+            "only_year1": only1,
+            "only_year2": only2,
+            "common": common,
+        },
+        "card_type": "comparison"
+    }
+
+
+# =====================================================
+# 問題：同年份跨部門比較
+# 例：113年工業部門和住宅部門主要能源差異
+# =====================================================
+def answer_compare_departments_same_year(dept1: str, dept2: str, year=None, top_n: int = 5):
+    top1 = get_top_energies_for_department(dept1, year=year, top_n=top_n)
+    top2 = get_top_energies_for_department(dept2, year=year, top_n=top_n)
+
+    year_text = f"{year}年" if year else "指定年度"
+
+    if not top1 and not top2:
+        return {
+            "success": False,
+            "answer": f"找不到 {year_text}{dept1} 與 {dept2} 的資料。",
+            "sources": [],
+            "results": [],
+            "card_type": "comparison"
+        }
+
+    names1 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top1]
+    names2 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top2]
+
+    set1 = {r["supply_name_zh"] for r in top1}
+    set2 = {r["supply_name_zh"] for r in top2}
+
+    only1 = sorted(set1 - set2)
+    only2 = sorted(set2 - set1)
+    common = sorted(set1 & set2)
+
+    answer = (
+        f"根據{year_text}已生成的能源資料，{dept1}與{dept2}的主要能源結構有差異。"
+        f"\n\n{dept1} 前 {top_n} 項為：{'、'.join(names1) if names1 else '無資料'}。"
+        f"\n\n{dept2} 前 {top_n} 項為：{'、'.join(names2) if names2 else '無資料'}。"
+    )
+
+    if only1:
+        answer += f"\n\n{dept1} 較突出的能源有：{'、'.join(only1)}。"
+    if only2:
+        answer += f"\n\n{dept2} 較突出的能源有：{'、'.join(only2)}。"
+    if common:
+        answer += f"\n\n兩部門共同都在前段的能源有：{'、'.join(common)}。"
+
+    return {
+        "success": True,
+        "answer": answer,
+        "sources": ["energy_rag_all_years_meta.json", "energy_rag_all_years.index"],
+        "results": {
+            "comparison_type": "departments_same_year",
+            "department1": dept1,
+            "department2": dept2,
+            "year": year,
+            "top_department1": top1,
+            "top_department2": top2,
+            "only_department1": only1,
+            "only_department2": only2,
+            "common": common,
+        },
+        "card_type": "comparison"
+    }
+
+
+# =====================================================
+# 抽兩個部門
+# =====================================================
+def extract_departments(text: str):
+    found = []
+    for dept in DEPARTMENTS:
+        if dept in text and dept not in found:
+            found.append(dept)
+
+    for alias, canonical in sorted(DEPARTMENT_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True):
+        if alias in text and canonical not in found:
+            found.append(canonical)
+
+    return found[:2]
 
 # =====================================================
 # fallback：語意檢索
@@ -474,9 +647,30 @@ def answer_by_semantic_search(user_text: str, year=None):
 # =====================================================
 def answer_energy_question(user_text: str):
     year = extract_year(user_text)
+    years = extract_years(user_text)
     department = normalize_department(user_text)
+    departments = extract_departments(user_text)
     energy_name = normalize_energy(user_text)
     intent = detect_intent(user_text, year=year, department=department, energy_name=energy_name)
+
+    if intent == "compare_department_across_years":
+        target_department = department or (departments[0] if departments else None)
+        if target_department and len(years) >= 2:
+            return answer_compare_department_across_years(
+                target_department,
+                years[0],
+                years[1],
+                top_n=5,
+            )
+
+    if intent == "compare_departments_same_year":
+        if len(departments) >= 2:
+            return answer_compare_departments_same_year(
+                departments[0],
+                departments[1],
+                year=year,
+                top_n=5,
+            )
 
     if intent == "top_energy_overall":
         return answer_top_energy_overall(year=year, top_n=5)
