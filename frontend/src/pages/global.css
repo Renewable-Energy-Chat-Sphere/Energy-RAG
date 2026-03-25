@@ -16,7 +16,6 @@ body {
       transparent 40%
     ),
     linear-gradient(135deg, #0a0f1c 0%, #0f172a 100%);
-  color: #ffffff;
   font-family: "Inter", sans-serif;
   overflow-x: hidden;
 }
