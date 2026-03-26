@@ -27,7 +27,7 @@ export default function EnergyNews() {
       {/* 標題 */}
       <div>
         <h2 className="energy-news-title">
-          <i className="fi fi-rr-megaphone" aria-hidden="true" />
+          <i class="fi fi-br-megaphone"></i>
           <span>能源署最新公告新聞</span>
         </h2>
 

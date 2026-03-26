@@ -89,7 +89,10 @@ export default function Global() {
       {/* ===================== */}
 
       <div className="control-panel">
-        <div className="panel-title">⚙️ 能源控制面板</div>
+        <div className="panel-title">
+         <i className="fi fi-br-settings"></i>
+          能源控制面板
+        </div>
 
         {/* 年份選擇 */}
         <div className="panel-row">
@@ -116,7 +119,7 @@ export default function Global() {
 
         {/* 搜尋框 */}
         <div className="panel-row search-box">
-          <span className="search-icon">🔍</span>
+          <i className="fi fi-br-search search-icon"></i>
 
           <input
             type="text"
@@ -127,7 +130,8 @@ export default function Global() {
         </div>
         <div className="panel-row">
           <div className="ai-box" onClick={() => setShowAI(true)}>
-            🤖 問能源
+            <i className="fi fi-br-comments" style={{ marginRight: "6px" }}></i>
+            問能源
           </div>
         </div>
       </div>
@@ -252,7 +256,13 @@ export default function Global() {
           >
             {/* Header（可拖曳） */}
             <div className="ai-header" onMouseDown={handleMouseDown}>
-              <span className="ai-title">🤖 問能源</span>
+              <span className="ai-title">
+                <i
+                  className="fi fi-br-comments"
+                  style={{ marginRight: "6px" }}
+                ></i>
+                問能源
+              </span>
               <span className="ai-close" onClick={() => setShowAI(false)}>
                 ✕
               </span>
