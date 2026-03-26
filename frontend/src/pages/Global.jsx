@@ -30,6 +30,7 @@ export default function Global() {
   const [showAI, setShowAI] = useState(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const handleMouseDown = () => {
@@ -49,25 +50,57 @@ export default function Global() {
     setDragging(false);
   };
   async function handleAsk() {
-    const res = await fetch("http://127.0.0.1:8000/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        user: question,
-        session_id: "energy_sphere",
-        rag_auto: true,
-      }),
-    });
+    if (!question.trim()) return;
 
-    const data = await res.json();
+    setLoading(true);
+    setAnswer(""); // 清空舊答案
 
-    setAnswer(data.answer || "沒有回應");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user: question,
+          session_id: "energy_sphere",
+          rag_auto: true,
+        }),
+      });
+
+      const data = await res.json();
+
+      // ✨ 打字效果
+      typeWriter(data.answer || "沒有回應");
+    } catch (err) {
+      setAnswer("❌ 發生錯誤");
+    } finally {
+      setLoading(false);
+      setQuestion(""); // 清空輸入
+    }
+  }
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // 防止換行
+      handleAsk();
+    }
+  }
+  function typeWriter(text) {
+    let i = 0;
+
+    const interval = setInterval(() => {
+      setAnswer(text.slice(0, i + 1)); // 🔥用 slice
+
+      i++;
+
+      if (i >= text.length) {
+        clearInterval(interval);
+      }
+    }, 20);
   }
   useEffect(() => {
     if (selection) {
-      setQuestion(`${year}年 ${selection.name} 的主要能源是什麼？`);
+      setQuestion(`${year} ${selection.name} 能源比例`);
     }
   }, [selection]);
   useEffect(() => {
@@ -258,7 +291,7 @@ export default function Global() {
                   className="fi fi-br-comments"
                   style={{ marginRight: "6px" }}
                 ></i>
-                問能源
+                Energy Assistant
               </span>
               <span className="ai-close" onClick={() => setShowAI(false)}>
                 ✕
@@ -270,6 +303,7 @@ export default function Global() {
               placeholder={`例如：${year}年 ${selection?.name || ""} 的能源占比`}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
 
             {/* 按鈕 */}
