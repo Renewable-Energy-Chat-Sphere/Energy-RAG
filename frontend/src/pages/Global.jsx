@@ -49,24 +49,21 @@ export default function Global() {
     setDragging(false);
   };
   async function handleAsk() {
-    const res = await fetch("/ask_rag", {
+    const res = await fetch("http://127.0.0.1:8000/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        question,
-        context: {
-          year,
-          department: selection?.name,
-          code: selection?.code,
-        },
+        user: question,
+        session_id: "energy_sphere",
+        rag_auto: true,
       }),
     });
 
     const data = await res.json();
 
-    setAnswer(data.answer);
+    setAnswer(data.answer || "沒有回應");
   }
   useEffect(() => {
     if (selection) {
@@ -90,7 +87,7 @@ export default function Global() {
 
       <div className="control-panel">
         <div className="panel-title">
-         <i className="fi fi-br-settings"></i>
+          <i className="fi fi-br-settings"></i>
           能源控制面板
         </div>
 

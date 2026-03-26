@@ -534,7 +534,7 @@ body {
   background: #1e293b;
   color: #e2e8f0;
   border: 1px solid #334155;
-  border-radius: 6px;
+  border-radius:20px;
 }
 #main-content.dark .ai-panel button:hover {
   border-color: #f97316;

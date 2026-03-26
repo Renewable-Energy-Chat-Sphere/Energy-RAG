@@ -178,24 +178,31 @@ def chat():
                 }
             )
         except Exception as e:
-            return jsonify(
-                {
-                    "answer": f"⚠️ Energy RAG 錯誤：{e}",
-                    "sources": [],
-                    "results": [],
-                    "session_id": session_id,
-                    "model": "energy_rag",
-                    "uses_openai": False,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "answer": f"⚠️ Energy RAG 錯誤：{e}",
+                        "sources": [],
+                        "results": [],
+                        "session_id": session_id,
+                        "model": "energy_rag",
+                        "uses_openai": False,
+                    }
+                ),
+                500,
+            )
 
     # =====================================================
     # 🧠 模式判斷（聊天 / 分析）
     # =====================================================
-    if is_simple_chat(user_text):
-        mode_prompt = "請用自然語氣簡短回答。"
-    else:
+    def is_analysis_question(text):
+        keywords = ["分析", "報告", "整理", "比較", "趨勢", "analysis", "report"]
+        return any(k in text.lower() for k in keywords)
+
+    if is_analysis_question(user_text):
         mode_prompt = DEFAULT_SYSTEM_PROMPT
+    else:
+        mode_prompt = "請用自然聊天方式回答，不要用報告格式。"
 
     language_prompt = get_language_prompt(user_text)
 
@@ -232,13 +239,13 @@ def chat():
     _store_turn(session_id, user_text, assistant_text)
 
     return jsonify(
-    {
-        "answer": assistant_text,
-        "sources": result.get("sources", []),
-        "results": result.get("results", []),
-        "card_type": result.get("card_type", "default"),
-        "session_id": session_id,
-        "model": "energy_rag",
-        "uses_openai": False,
-    }
-)
+        {
+            "answer": assistant_text,
+            "sources": [],
+            "results": [],
+            "card_type": "default",
+            "session_id": session_id,
+            "model": model,
+            "uses_openai": True,
+        }
+    )
