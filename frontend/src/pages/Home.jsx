@@ -140,21 +140,21 @@ export default function Home() {
               desc: "三維旋轉視覺化能源結構模型",
               detail:
                 "整合近 30 年能源平衡資料，建構三維互動式能源球模型。支援跨年度比較、產業分層結構分析與能源結構相似度研究，讓能源變化趨勢與結構差異一目了然。",
-              img: "/images/sphere.jpg",
+              img: import.meta.env.BASE_URL + "images/sphere.jpg"
             },
             {
               title: "智慧 RAG 查詢",
               desc: "自然語言驅動的能源資料探索",
               detail:
                 "支援文字、網址、文件、影音與表格等多模態資料輸入。透過語意向量化與相似度檢索機制，結合大型語言模型生成具依據且可追溯來源的分析結果，實現精準且可解釋的能源查詢體驗。",
-              img: "/images/analysis.png",
+              img: import.meta.env.BASE_URL + "images/analysis.png",
             },
             {
               title: "主動式能源智慧代理",
               desc: "自動化分析與視覺控制",
               detail:
                 "建構具自主決策能力的 AI Agent，能依據使用者查詢自動啟動分析流程，並同步控制三維能源球進行年度切換、產業聚焦與差異比較，實現理解、推理與視覺操作整合的智慧決策支援。",
-              img: "/images/ai.jpg",
+              img: import.meta.env.BASE_URL + "images/ai.jpg",
             },
           ].map((item, i) => (
             <div className="card reveal" key={i}>

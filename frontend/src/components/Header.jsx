@@ -3,9 +3,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Header() {
-    
   useEffect(() => {
-
     /* ------------------------------
        1. Header 滾動變色
     ------------------------------*/
@@ -17,7 +15,6 @@ export default function Header() {
     };
 
     window.addEventListener("scroll", onScroll);
-
 
     /* ------------------------------
        2. 漢堡選單
@@ -41,7 +38,6 @@ export default function Header() {
     hamburger?.addEventListener("click", toggleMenu);
     overlay?.addEventListener("click", closeMenu);
 
-
     /* ------------------------------
        3. 下拉選單
     ------------------------------*/
@@ -61,7 +57,6 @@ export default function Header() {
 
     dropdownBtn?.addEventListener("click", toggleDropdown);
     window.addEventListener("click", closeDropdown);
-
 
     /* ------------------------------
        4. 深色模式（作用在 main-content）
@@ -93,7 +88,6 @@ export default function Header() {
 
     themeToggle?.addEventListener("click", changeTheme);
 
-
     /* ------------------------------
        5. 清除事件（避免 React 重複註冊）
     ------------------------------*/
@@ -105,9 +99,7 @@ export default function Header() {
       overlay?.removeEventListener("click", closeMenu);
       themeToggle?.removeEventListener("click", changeTheme);
     };
-
   }, []);
-
 
   return (
     <>
@@ -115,24 +107,28 @@ export default function Header() {
       <div id="overlay"></div>
 
       <header>
-
         {/* 左邊 LOGO */}
         <Link to="/" className="logo-link">
-          <div className="logo" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <img src="/images/logo.png" alt="EnerSphere TW Logo" style={{ height: "70px" }} />
-          <span style={{ fontSize: "26px", fontWeight: "700", color: "#f97316" }}>
-            EnerSphere TW
-          </span>
+          <div
+            className="logo"
+            style={{ display: "flex", alignItems: "center", gap: "14px" }}
+          >
+            <img
+              src={import.meta.env.BASE_URL + "images/logo.png"}
+              alt="EnerSphere TW Logo"
+              style={{ height: "70px" }}
+            />
+            <span
+              style={{ fontSize: "26px", fontWeight: "700", color: "#f97316" }}
+            >
+              EnerSphere TW
+            </span>
           </div>
         </Link>
 
-        
-
         {/* 右邊導航 */}
         <div className="nav-right">
-
           <nav>
-            
             <Link to="/">首頁</Link>
 
             {/* Dropdown */}
@@ -151,17 +147,16 @@ export default function Header() {
             <Link to="/contact">聯絡我們</Link>
           </nav>
 
-
           {/* 深色模式 */}
           <div id="themeToggle">🌙</div>
-
         </div>
 
         {/* 漢堡 */}
         <div className="hamburger" role="button">
-          <div></div><div></div><div></div>
+          <div></div>
+          <div></div>
+          <div></div>
         </div>
-
       </header>
     </>
   );
