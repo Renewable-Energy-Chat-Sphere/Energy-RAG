@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect } from "react";
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";

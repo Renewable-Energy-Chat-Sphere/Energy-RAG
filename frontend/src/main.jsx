@@ -11,20 +11,25 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Sign from "./pages/Sign";
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Layout />,
+      children: [
+        { path: "/", element: <Home /> },
+        { path: "/global", element: <Global /> },
+        { path: "/rag", element: <Rag /> },
+        { path: "/contact", element: <Contact /> },
+        { path: "/login", element: <Login /> },
+        { path: "/sign", element: <Sign /> },
+      ],
+    },
+  ],
   {
-    path: "/",
-    element: <Layout />,
-    children: [
-      { path: "/", element: <Home /> },
-      { path: "/global", element: <Global /> },
-      { path: "/rag", element: <Rag /> },
-      { path: "/contact", element: <Contact /> },
-      { path: "/login", element: <Login /> },
-      { path: "/sign", element: <Sign /> },
-    ],
-  },
-]);
+    basename: "/Ener-Sphere", // ⭐⭐⭐ 加這一行（關鍵）
+  }
+);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <RouterProvider router={router} />,

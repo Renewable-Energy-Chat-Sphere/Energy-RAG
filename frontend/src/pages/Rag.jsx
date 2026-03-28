@@ -1,3 +1,4 @@
+import React from "react";
 function sentenceWriter(element, html, delay = 250) {
   element.innerHTML = "";
 

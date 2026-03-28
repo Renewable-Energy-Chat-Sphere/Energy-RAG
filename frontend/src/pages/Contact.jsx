@@ -1,3 +1,4 @@
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSchool, faPeopleGroup } from "@fortawesome/free-solid-svg-icons";
 import BackToTopButton from "../components/BackToTopButton";

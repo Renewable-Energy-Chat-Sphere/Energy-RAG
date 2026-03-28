@@ -1,3 +1,4 @@
+import React from "react";
 // SidePanel.jsx — Clean & Beautiful Info Panel
 export default function SidePanel({ selection, onClear }) {
   // 預設圖片（放在 public/images/energy-default.svg）
