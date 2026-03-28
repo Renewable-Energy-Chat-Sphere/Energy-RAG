@@ -33,6 +33,59 @@ def get_language_prompt(user_text):
 
 
 # =====================================================
+# 🧠 問題模式判斷（最終版🔥）
+# =====================================================
+def detect_query_mode(text):
+    text = text.lower()
+
+    if any(k in text for k in ["分析", "詳細", "整理", "趨勢", "report", "analysis"]):
+        return "analysis"
+
+    if any(
+        k in text
+        for k in ["最多", "哪個", "找出", "最高", "最低", "多少", "which", "max", "top"]
+    ):
+        return "precise"
+
+    return "normal"
+
+
+# =====================================================
+# 🎯 結果強化（最終版🔥）
+# =====================================================
+def enhance_answer_by_mode(answer, mode):
+    if mode == "analysis":
+        return f"""
+## 📊 能源資料完整分析
+
+{answer}
+
+---
+
+### 🔍 綜合說明
+- 已整合所有相關能源數據
+- 包含結構比例、主要能源分布
+- 可觀察長期趨勢與變化方向
+
+### 📈 建議解讀方向
+- 注意高占比能源 → 代表依賴性
+- 觀察變化 → 可能代表產業轉型
+"""
+
+    elif mode == "precise":
+        return f"""
+🎯 **精確查詢結果**
+
+{answer}
+
+✔ 已鎖定最相關數據  
+✔ 僅保留關鍵資訊（避免雜訊）
+"""
+
+    return answer
+
+
+# =====================================================
 # 💬 聊天模式判斷
 # =====================================================
 def is_simple_chat(text):
@@ -163,8 +216,54 @@ def chat():
     # =====================================================
     if is_energy_question(user_text):
         try:
+            mode = detect_query_mode(user_text)  # 🔥核心
+
             result = answer_energy_question(user_text)
             assistant_text = result.get("answer", "（無回應）")
+
+            # 🔥 最終升級（超重要）
+            assistant_text = result.get("answer", "（無回應）")
+
+            # =====================================================
+            # 🔥 真正升級（分析模式用 LLM）
+            # =====================================================
+            if mode == "analysis" and openai_client:
+
+                analysis_prompt = f"""
+            你是一個能源分析專家。
+
+            以下是資料：
+            {assistant_text}
+
+            請做「完整分析」，不要只是列資料：
+
+            1️⃣ 哪些能源最多？排名
+            2️⃣ 結構特徵（集中？分散？）
+            3️⃣ 為什麼會這樣（產業/政策/結構）
+            4️⃣ 有沒有值得注意的現象
+            5️⃣ 給一個總結
+
+            要求：
+            - 條理清楚
+            - 用條列＋段落
+            - 用與使用者相同語言
+            """
+
+                resp = openai_client.responses.create(
+                    model=model,
+                    input=[
+                        {"role": "system", "content": "請使用與使用者相同語言回答"},
+                        {"role": "user", "content": analysis_prompt},
+                    ],
+                    temperature=0.3,
+                    max_output_tokens=1000,
+                )
+
+                assistant_text = resp.output_text.strip()
+
+            # 🔵 精準模式（保留你原本）
+            else:
+                assistant_text = enhance_answer_by_mode(assistant_text, mode)
             _store_turn(session_id, user_text, assistant_text)
 
             return jsonify(
@@ -177,6 +276,7 @@ def chat():
                     "uses_openai": False,
                 }
             )
+
         except Exception as e:
             return (
                 jsonify(

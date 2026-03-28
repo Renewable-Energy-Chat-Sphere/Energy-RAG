@@ -791,7 +791,7 @@ export default function Rag() {
             className={`rag-panel ${tab === "chat" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>訊息</h3>
+              <h3>提問</h3>
 
               <form id="rag-form-chat" className="rag-form">
                 <label>
@@ -799,17 +799,8 @@ export default function Rag() {
                     name="user"
                     rows="1"
                     required
-                    placeholder="請輸入您的問題。"
+                    placeholder="有甚麼想問的嗎?"
                   />
-                </label>
-                <label>
-                  提示詞
-                  <input name="system" placeholder="你是專業助手…" />
-                </label>
-
-                <label className="rag-row">
-                  <input type="checkbox" name="rag_auto" defaultChecked />{" "}
-                  自動偵測網址
                 </label>
                 <button type="submit">送出</button>
               </form>
