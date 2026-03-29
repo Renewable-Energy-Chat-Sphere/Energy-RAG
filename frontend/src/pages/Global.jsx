@@ -207,10 +207,9 @@ export default function Global() {
 
                 return node?.img ? (
                   <img
-                    src={node.img}
+                    src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
                     alt=""
                     className="info-img"
-                    onError={(e) => (e.target.style.display = "none")}
                   />
                 ) : null;
               })()}
@@ -260,10 +259,9 @@ export default function Global() {
 
                 return node?.img ? (
                   <img
-                    src={node.img}
+                    src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
                     alt=""
                     className="hover-img"
-                    onError={(e) => (e.target.style.display = "none")}
                   />
                 ) : null;
               })()}
