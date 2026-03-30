@@ -71,6 +71,47 @@ function renderEnergyTopCards(results) {
 function renderComparisonCards(results) {
   if (!results || typeof results !== "object") return "";
 
+  if (results.comparison_type === "years_overall") {
+  const top1 = results.top_year1 || [];
+  const top2 = results.top_year2 || [];
+
+  return `
+    <div class="energy-compare-grid">
+      <div class="energy-compare-panel">
+        <h4>${results.year1}年</h4>
+        ${top1.map((r, i) => `
+          <div class="energy-card-item">
+            <div class="energy-rank">#${i + 1}</div>
+            <div class="energy-main">
+              <div class="energy-title">${r.supply_name_zh}</div>
+              <div class="energy-sub">${r.supply_code}</div>
+            </div>
+            <div class="energy-value">${r.value}</div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="energy-compare-panel">
+        <h4>${results.year2}年</h4>
+        ${top2.map((r, i) => `
+          <div class="energy-card-item">
+            <div class="energy-rank">#${i + 1}</div>
+            <div class="energy-main">
+              <div class="energy-title">${r.supply_name_zh}</div>
+              <div class="energy-sub">${r.supply_code}</div>
+            </div>
+            <div class="energy-value">${r.value}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+    <div class="energy-tags-wrap">
+      ${results.common?.length ? `<div class="energy-tag-block"><strong>共同能源：</strong> ${results.common.join("、")}</div>` : ""}
+      ${results.only_year1?.length ? `<div class="energy-tag-block"><strong>${results.year1}年較突出：</strong> ${results.only_year1.join("、")}</div>` : ""}
+      ${results.only_year2?.length ? `<div class="energy-tag-block"><strong>${results.year2}年較突出：</strong> ${results.only_year2.join("、")}</div>` : ""}
+    </div>
+  `;
+}
+
   if (results.comparison_type === "department_across_years") {
     const top1 = results.top_year1 || [];
     const top2 = results.top_year2 || [];
