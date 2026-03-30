@@ -9,7 +9,7 @@ import supplyCatalog from "../data/supply_catalog.json";
 import demandSupply from "../data/113_energy_demand_supply.json";
 import hierarchy from "../data/hierarchy.json";
 
-const SUPPLY_RADIUS = 3.25;
+const SUPPLY_RADIUS = 3.02;
 
 /* ===================== */
 /* Supply Map */
@@ -151,8 +151,33 @@ function GridSphere() {
 /* ===================== */
 
 function SupplyNodes({ onHover }) {
+  const { camera } = useThree();
+
+  const BASE = import.meta.env.BASE_URL;
+
+  // ⭐ category → icon mapping
+  const iconMap = {
+    Coal: "coal.png",
+    Oil: "oil.png",
+    Gas: "gas.png",
+    Renewable: "solar.png",     // 可再細分（之後升級）
+    Electricity: "electricity.png",
+    Waste: "biomass.png",
+    Other: "default.png",
+  };
+
   return Object.entries(supplyLayout).map(([id, pos]) => {
     const info = supplyMap[id];
+
+    // ⭐ 抓 category（重點）
+    const category = info?.category || "Other";
+
+    // ⭐ 對應 icon
+    const iconFile = iconMap[category] || "default.png";
+
+    // ⭐ 距離縮放
+    const distance = camera.position.length();
+    const scale = THREE.MathUtils.clamp(8 / distance, 0.6, 1.4);
 
     const position = [
       pos.x * SUPPLY_RADIUS,
@@ -162,26 +187,57 @@ function SupplyNodes({ onHover }) {
 
     return (
       <group key={id} position={position}>
-        <Glow size={0.06} color="#f59e0b" />
+        {/* Glow */}
+        <Glow size={0.08} color="#f59e0b" />
 
-        <mesh
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            onHover({
-              code: id,
-              name: info?.name_zh || id,
-              type: "supply",
-            });
-          }}
-          onPointerOut={() => onHover(null)}
-        >
-          <sphereGeometry args={[0.06, 16, 16]} />
-          <meshStandardMaterial
-            color="#f59e0b"
-            emissive="#f59e0b"
-            emissiveIntensity={0.4}
+        <Html center occlude={false}>
+          <img
+            src={`${BASE}icons/${iconFile}`}
+            alt=""
+            style={{
+              width: `${20 * scale}px`,
+              height: `${20 * scale}px`,
+              objectFit: "contain",
+
+              transition: "all 0.15s ease",
+              filter: "drop-shadow(0 0 4px rgba(0,0,0,0.6))",
+
+              cursor: "pointer",
+              pointerEvents: "auto",
+            }}
+
+            // ⭐ fallback
+            onError={(e) => {
+              if (e.currentTarget.dataset.fallback) return;
+
+              e.currentTarget.dataset.fallback = "true";
+              e.currentTarget.src = `${BASE}icons/default.png`;
+            }}
+
+            // ⭐ hover
+            onMouseEnter={(e) => {
+              e.stopPropagation();
+
+              e.currentTarget.style.transform = "scale(1.4)";
+              e.currentTarget.style.filter =
+                "drop-shadow(0 0 8px rgba(245,158,11,0.8))";
+
+              onHover({
+                code: id,
+                name: info?.name_zh || id,
+                type: "supply",
+              });
+            }}
+
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.filter =
+                "drop-shadow(0 0 4px rgba(0,0,0,0.6))";
+
+              onHover(null);
+            }}
           />
-        </mesh>
+        </Html>
       </group>
     );
   });
