@@ -1,4 +1,3 @@
-import React from "react";
 function sentenceWriter(element, html, delay = 250) {
   element.innerHTML = "";
 
@@ -21,6 +20,37 @@ function sentenceWriter(element, html, delay = 250) {
       }, 50);
     }, index * delay);
   });
+}
+function renderMultiYearCards(results) {
+  if (!Array.isArray(results) || !results.length) return "";
+
+  return `
+    <div class="energy-compare-grid">
+      ${results
+        .map(
+          (item) => `
+            <div class="energy-compare-panel">
+              <h4>${item.year}年</h4>
+              ${(item.top || [])
+                .map(
+                  (r, i) => `
+                    <div class="energy-card-item">
+                      <div class="energy-rank">#${i + 1}</div>
+                      <div class="energy-main">
+                        <div class="energy-title">${r.supply_name_zh}</div>
+                        <div class="energy-sub">${r.supply_code}</div>
+                      </div>
+                      <div class="energy-value">${r.value}</div>
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
 }
 function renderEnergyTopCards(results) {
   if (!Array.isArray(results) || !results.length) return "";
@@ -392,10 +422,11 @@ export default function Rag() {
           body: JSON.stringify(payload),
         });
 
-        const data = await res.json();
+
+        const data = await res.json();   // ⭐ 只留這一個
+
         thinkingWrap.remove();
 
-        // ===== AI 回答 =====
         // ===== AI 回答 =====
         const aiWrap = document.createElement("div");
         aiWrap.className = "rag-message assistant";
@@ -406,38 +437,46 @@ export default function Rag() {
         const card = document.createElement("div");
         card.className = "ai-card";
 
-        const html = marked.parse(data.answer || data.error || "（無回應）");
-        card.innerHTML = html;
+        const answerHtml = marked.parse(
+          data.answer || data.error || "（無回應）"
+        );
 
-                inner.appendChild(card);
+        let extraHtml = "";
+
+        if (data.card_type === "comparison") {
+          extraHtml = renderComparisonCards(data.results);
+
+        } else if (data.card_type === "multi_year") {
+          extraHtml = renderMultiYearCards(data.results);
+
+        } else if (Array.isArray(data.results) && data.results.length) {
+
+          const hasValueCards = data.results.every(
+            (r) =>
+              r &&
+              (r.supply_name_zh || r.demand_name) &&
+              r.value !== undefined
+          );
+
+          if (hasValueCards) {
+            extraHtml = renderEnergyTopCards(data.results);
+          }
+        }
+
+        card.innerHTML = `
+          ${answerHtml}
+          ${extraHtml}
+        `;
+
+        inner.appendChild(card);
         aiWrap.appendChild(inner);
         chatLog.appendChild(aiWrap);
+
         chatLog.scrollTop = chatLog.scrollHeight;
-
-        // ===== 顯示資料依據 / 來源 =====
-        if (data.results?.length) {
-          srcBox.innerHTML = `
-            <div class="source-card">
-              <strong>📌 資料依據：</strong>
-              ${data.results.map((r) => `<div>• ${r.text}</div>`).join("")}
-            </div>
-          `;
-        } else if (data.sources?.length) {
-          srcBox.innerHTML = `
-            <div class="source-card">
-              <strong>📌 來源：</strong>
-              ${data.sources.map((s) => `<div>• ${s}</div>`).join("")}
-            </div>
-          `;
-        } else {
-          srcBox.innerHTML = "";
-        }
-        
       } catch (err) {
-        console.error(err);
+      console.error(err);
       }
-    };
-
+};
     // ⭐ 綁定
     form.addEventListener("submit", handleSubmit);
 
@@ -445,7 +484,8 @@ export default function Rag() {
     return () => {
       form.removeEventListener("submit", handleSubmit);
     };
-  }, []);
+}, []);
+  
 
   /* =========================================================
      WEB — 問網站內容
@@ -791,7 +831,7 @@ export default function Rag() {
             className={`rag-panel ${tab === "chat" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>提問</h3>
+              <h3>訊息</h3>
 
               <form id="rag-form-chat" className="rag-form">
                 <label>
@@ -799,8 +839,17 @@ export default function Rag() {
                     name="user"
                     rows="1"
                     required
-                    placeholder="有甚麼想問的嗎?"
+                    placeholder="請輸入您的問題。"
                   />
+                </label>
+                <label>
+                  提示詞
+                  <input name="system" placeholder="你是專業助手…" />
+                </label>
+
+                <label className="rag-row">
+                  <input type="checkbox" name="rag_auto" defaultChecked />{" "}
+                  自動偵測網址
                 </label>
                 <button type="submit">送出</button>
               </form>

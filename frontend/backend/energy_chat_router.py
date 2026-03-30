@@ -181,7 +181,13 @@ def normalize_energy(text: str):
                     return name
 
     return None
+def extract_years(text: str):
+    import re
 
+    years = re.findall(r"(\d{2,3})\s*年", text)
+    years = [int(y) for y in years]
+
+    return sorted(list(set(years)))
 
 # =====================================================
 # 問題意圖判斷
@@ -190,6 +196,14 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     text = user_text.strip()
     years = extract_years(text)
     departments = extract_departments(text)
+    # 0. 多年份整體最多能源
+    if (
+        len(years) >= 2
+        and ("最多" in text or "最大" in text)
+        and ("能源" in text or "資源" in text)
+        and ("分別" in text or "各自" in text or "各年" in text or "跟" in text or "和" in text)
+        ):
+        return "top_energy_overall"
 
     # 1. 同部門跨年份比較
     if len(years) >= 2 and department and ("差" in text or "比較" in text or "差異" in text):
@@ -473,7 +487,43 @@ def extract_years(text: str):
 
     return []
 
+def answer_multi_year_top_energy(years, top_n=5):
+    results = []
 
+    for y in years:
+        r = answer_top_energy_overall(year=y, top_n=top_n)
+
+        if r["success"]:
+            results.append({
+                "year": y,
+                "top": r["results"]
+            })
+
+    if not results:
+        return {
+            "success": False,
+            "answer": "找不到多年份資料",
+            "results": [],
+        }
+
+    answer = "各年度使用量最多能源如下：\n\n"
+
+    for r in results:
+        names = "、".join(
+            [f"{e['supply_name_zh']}（{round(e['value'],2)}）" for e in r["top"]]
+        )
+        answer += f"{r['year']}年：{names}\n"
+
+    return {
+        "success": True,
+        "answer": answer,
+        "results": results,
+        "card_type": "multi_year",
+        "sources": [
+            "energy_rag_all_years_meta.json",
+            "energy_rag_all_years.index"
+        ]
+    }
 # =====================================================
 # 問題：同部門跨年份比較
 # 例：85年和113年工業部門主要能源差異
@@ -673,6 +723,12 @@ def answer_energy_question(user_text: str):
             )
 
     if intent == "top_energy_overall":
+
+        # ⭐ 多年份
+        if len(years) >= 2:
+            return answer_multi_year_top_energy(years, top_n=5)
+
+        # ⭐ 單年份
         return answer_top_energy_overall(year=year, top_n=5)
 
     if intent == "top_energy_by_department":
