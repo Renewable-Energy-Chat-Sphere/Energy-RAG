@@ -1,25 +1,18 @@
-function sentenceWriter(element, html, delay = 250) {
+function sentenceWriter(element, html, speed = 20) {
   element.innerHTML = "";
 
-  const temp = document.createElement("div");
-  temp.innerHTML = html;
+  let i = 0;
 
-  const nodes = Array.from(temp.childNodes);
+  function typing() {
+    element.innerHTML = html.slice(0, i + 1);
+    i++;
 
-  nodes.forEach((node, index) => {
-    setTimeout(() => {
-      const wrapper = document.createElement("div");
-      wrapper.style.opacity = 0;
+    if (i < html.length) {
+      setTimeout(typing, speed);
+    }
+  }
 
-      wrapper.appendChild(node.cloneNode(true));
-      element.appendChild(wrapper);
-
-      setTimeout(() => {
-        wrapper.style.transition = "opacity 0.4s ease";
-        wrapper.style.opacity = 1;
-      }, 50);
-    }, index * delay);
-  });
+  typing();
 }
 function renderMultiYearCards(results) {
   if (!Array.isArray(results) || !results.length) return "";
@@ -42,11 +35,11 @@ function renderMultiYearCards(results) {
                       </div>
                       <div class="energy-value">${r.value}</div>
                     </div>
-                  `
+                  `,
                 )
                 .join("")}
             </div>
-          `
+          `,
         )
         .join("")}
     </div>
@@ -422,8 +415,7 @@ export default function Rag() {
           body: JSON.stringify(payload),
         });
 
-
-        const data = await res.json();   // ⭐ 只留這一個
+        const data = await res.json(); // ⭐ 只留這一個
 
         thinkingWrap.remove();
 
@@ -438,24 +430,19 @@ export default function Rag() {
         card.className = "ai-card";
 
         const answerHtml = marked.parse(
-          data.answer || data.error || "（無回應）"
+          data.answer || data.error || "（無回應）",
         );
 
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
           extraHtml = renderComparisonCards(data.results);
-
         } else if (data.card_type === "multi_year") {
           extraHtml = renderMultiYearCards(data.results);
-
         } else if (Array.isArray(data.results) && data.results.length) {
-
           const hasValueCards = data.results.every(
             (r) =>
-              r &&
-              (r.supply_name_zh || r.demand_name) &&
-              r.value !== undefined
+              r && (r.supply_name_zh || r.demand_name) && r.value !== undefined,
           );
 
           if (hasValueCards) {
@@ -463,10 +450,12 @@ export default function Rag() {
           }
         }
 
-        card.innerHTML = `
-          ${answerHtml}
-          ${extraHtml}
-        `;
+        // 🔥 先放空
+        card.innerHTML = "";
+
+        // 🔥 用逐行動畫
+        sentenceWriter(card, marked.parse(data.answer), 20);
+        card.insertAdjacentHTML("beforeend", extraHtml);
 
         inner.appendChild(card);
         aiWrap.appendChild(inner);
@@ -474,9 +463,9 @@ export default function Rag() {
 
         chatLog.scrollTop = chatLog.scrollHeight;
       } catch (err) {
-      console.error(err);
+        console.error(err);
       }
-};
+    };
     // ⭐ 綁定
     form.addEventListener("submit", handleSubmit);
 
@@ -484,8 +473,7 @@ export default function Rag() {
     return () => {
       form.removeEventListener("submit", handleSubmit);
     };
-}, []);
-  
+  }, []);
 
   /* =========================================================
      WEB — 問網站內容
@@ -682,74 +670,74 @@ export default function Rag() {
    TABLE — 問 Excel/CSV + 匯出報告
 ========================================================= */
   useEffect(() => {
-  const form = document.getElementById("rag-form-table");
-  if (!form) return;
+    const form = document.getElementById("rag-form-table");
+    if (!form) return;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+      e.preventDefault();
 
-    const file = form.file.files[0];
-    const question = form.question.value.trim();
+      const file = form.file.files[0];
+      const question = form.question.value.trim();
 
-    const out = document.getElementById("out-table");
-    const src = document.getElementById("src-table");
+      const out = document.getElementById("out-table");
+      const src = document.getElementById("src-table");
 
-    showLoading(out, "解析表格中");
-    src.textContent = "";
+      showLoading(out, "解析表格中");
+      src.textContent = "";
 
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("question", question);
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("question", question);
 
-    const res = await fetch(`${API}/ask_table`, {
-      method: "POST",
-      body: fd,
-    });
+      const res = await fetch(`${API}/ask_table`, {
+        method: "POST",
+        body: fd,
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!data.success) {
-      out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
-      return;
-    }
+      if (!data.success) {
+        out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
+        return;
+      }
 
-    if (data.structured_data) {
-      setStructuredData(data.structured_data);
-    }
+      if (data.structured_data) {
+        setStructuredData(data.structured_data);
+      }
 
-    const html = marked.parse(data.answer || "(無回應)");
+      const html = marked.parse(data.answer || "(無回應)");
 
-    let buttons = "";
+      let buttons = "";
 
-    if (data.structured_data) {
-      buttons = `
+      if (data.structured_data) {
+        buttons = `
         <div class="download-section">
           <hr/>
           <p><strong>📊 已生成完整報告</strong></p>
           <button id="excel-btn">下載檔案/報告</button>
         </div>
       `;
-    }
+      }
 
-    out.innerHTML = `
+      out.innerHTML = `
       <div class="ai-card">
         ${html}
         ${buttons}
       </div>
     `;
 
-    setTimeout(() => {
-      const excelBtn = document.getElementById("excel-btn");
+      setTimeout(() => {
+        const excelBtn = document.getElementById("excel-btn");
 
-      if (excelBtn) {
-        excelBtn.onclick = () => {
-          generateExcel(data.structured_data);
-        };
-      }
-    }, 0);
+        if (excelBtn) {
+          excelBtn.onclick = () => {
+            generateExcel(data.structured_data);
+          };
+        }
+      }, 0);
 
-    if (data.sources?.length) {
-      src.innerHTML = `
+      if (data.sources?.length) {
+        src.innerHTML = `
         <div class="source-card">
           <strong>📊 表格來源：</strong>
           ${data.sources
@@ -760,17 +748,16 @@ export default function Rag() {
             .join("")}
         </div>
       `;
-    }
-  };
+      }
+    };
 
-  form.addEventListener("submit", handleSubmit);
+    form.addEventListener("submit", handleSubmit);
 
-  // ⭐⭐⭐ 這裡才會真的生效
-  return () => {
-    form.removeEventListener("submit", handleSubmit);
-  };
-
-}, []);
+    // ⭐⭐⭐ 這裡才會真的生效
+    return () => {
+      form.removeEventListener("submit", handleSubmit);
+    };
+  }, []);
   /* =========================================================
      整個RAG頁面
   ========================================================= */
@@ -842,15 +829,7 @@ export default function Rag() {
                     placeholder="請輸入您的問題。"
                   />
                 </label>
-                <label>
-                  提示詞
-                  <input name="system" placeholder="你是專業助手…" />
-                </label>
-
-                <label className="rag-row">
-                  <input type="checkbox" name="rag_auto" defaultChecked />{" "}
-                  自動偵測網址
-                </label>
+               
                 <button type="submit">送出</button>
               </form>
 
