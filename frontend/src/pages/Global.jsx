@@ -5,8 +5,19 @@ import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
 import hierarchy from "../data/hierarchy.json";
 
-/* ===================== */
-/* 遞迴查找節點（支援多層） */
+import energy113 from "../data/113_energy_demand_supply.json";
+import energy112 from "../data/112_energy_demand_supply.json";
+
+import supplyCatalog from "../data/supply_catalog.json";
+
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+} from "recharts";
+
 /* ===================== */
 function findNodeByCode(code, tree) {
   for (const key in tree) {
@@ -14,11 +25,9 @@ function findNodeByCode(code, tree) {
 
     if (tree[key].children) {
       const found = findNodeByCode(code, tree[key].children);
-
       if (found) return found;
     }
   }
-
   return null;
 }
 
@@ -34,34 +43,109 @@ export default function Global() {
   const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
-  const handleMouseDown = () => {
-    setDragging(true);
-  };
+
+  const handleMouseDown = () => setDragging(true);
 
   const handleMouseMove = (e) => {
     if (!dragging) return;
-
     setPosition((prev) => ({
       x: prev.x + e.movementX,
       y: prev.y + e.movementY,
     }));
   };
 
-  const handleMouseUp = () => {
-    setDragging(false);
+  const handleMouseUp = () => setDragging(false);
+
+  /* ===================== */
+  const CATEGORY_COLOR = {
+    Coal: "#424242",
+    Oil: "#ff9800",
+    Gas: "#03a9f4",
+    Renewable: "#4caf50",
+    Other: "#9e9e9e",
   };
+
+  function getEnergyData() {
+    if (year === "113") return energy113;
+    if (year === "112") return energy112;
+    return energy113;
+  }
+
+  const energyData = getEnergyData();
+
+  /* ===================== */
+  function getEnergyList() {
+    if (!selection) return [];
+
+    const demandData = energyData[selection.code];
+    if (!demandData) return [];
+
+    return Object.entries(demandData)
+      .map(([supplyId, value]) => {
+        const supply = supplyCatalog.find(
+          (s) => s.source_id === supplyId
+        );
+
+        return {
+          id: supplyId,
+          name:
+            supply?.name_zh?.length > 6
+              ? supply.name_zh.slice(0, 6) + "…"
+              : supply?.name_zh || supplyId,
+          fullName: supply?.name_zh || supplyId,
+          value: value,
+          category: supply?.category || "Other",
+        };
+      })
+      .sort((a, b) => b.value - a.value);
+  }
+
+  /* ===================== */
+  function getPieData() {
+    const list = getEnergyList();
+
+    if (list.length === 0) return [];
+
+    const total = list.reduce((a, b) => a + b.value, 0);
+
+    const top = list.slice(0, 6);
+
+    const topWithPercent = top.map((d) => ({
+      ...d,
+      value: d.value / total, // ⭐ 正確比例
+    }));
+
+    const topTotal = top.reduce((a, b) => a + b.value, 0);
+    const others = total - topTotal;
+
+    if (others > 0.0001) {
+      topWithPercent.push({
+        name: "其他",
+        fullName: "其他",
+        value: others / total,
+        category: "Other",
+      });
+    }
+
+    // ⭐ 保證「其他」最後
+    return topWithPercent.sort((a, b) => {
+      if (a.name === "其他") return 1;
+      if (b.name === "其他") return -1;
+      return 0;
+    });
+  }
+
+  /* ===================== */
   async function handleAsk() {
     if (!question.trim()) return;
 
     setLoading(true);
-    setAnswer(""); // 清空舊答案
+    setAnswer("");
 
     try {
       const res = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user: question,
           session_id: "energy_sphere",
@@ -70,40 +154,37 @@ export default function Global() {
       });
 
       const data = await res.json();
-
-      // ✨ 打字效果
       typeWriter(data.answer || "沒有回應");
-    } catch (err) {
+    } catch {
       setAnswer("❌ 發生錯誤");
     } finally {
       setLoading(false);
-      setQuestion(""); // 清空輸入
+      setQuestion("");
     }
   }
+
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // 防止換行
+      e.preventDefault();
       handleAsk();
     }
   }
+
   function typeWriter(text) {
     let i = 0;
-
     const interval = setInterval(() => {
-      setAnswer(text.slice(0, i + 1)); // 🔥用 slice
-
+      setAnswer(text.slice(0, i + 1));
       i++;
-
-      if (i >= text.length) {
-        clearInterval(interval);
-      }
+      if (i >= text.length) clearInterval(interval);
     }, 20);
   }
+
   useEffect(() => {
     if (selection) {
       setQuestion(`${year} ${selection.name} 能源比例`);
     }
   }, [selection]);
+
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
@@ -113,30 +194,23 @@ export default function Global() {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [dragging]);
+
   return (
     <div className="global-page">
-      {/* ===================== */}
-      {/* 上方控制面板 */}
-      {/* ===================== */}
-
       <div className="control-panel">
         <div className="panel-title">
           <i className="fi fi-br-settings"></i>
           能源控制面板
         </div>
 
-        {/* 年份選擇 */}
         <div className="panel-row">
           <label>年份</label>
-
           <select value={year} onChange={(e) => setYear(e.target.value)}>
             <option value="113">113</option>
             <option value="112">112</option>
-            <option value="111">111</option>
           </select>
         </div>
 
-        {/* 供給線開關 */}
         <div className="panel-row">
           <label className="checkbox-row">
             <input
@@ -148,10 +222,8 @@ export default function Global() {
           </label>
         </div>
 
-        {/* 搜尋框 */}
         <div className="panel-row search-box">
           <i className="fi fi-br-search search-icon"></i>
-
           <input
             type="text"
             placeholder="搜尋部門..."
@@ -159,20 +231,16 @@ export default function Global() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+
         <div className="panel-row">
           <div className="ai-box" onClick={() => setShowAI(true)}>
-            <i className="fi fi-br-comments" style={{ marginRight: "6px" }}></i>
+            <i className="fi fi-br-comments"></i>
             問能源
           </div>
         </div>
       </div>
 
-      {/* ===================== */}
-      {/* 下方主區域 */}
-      {/* ===================== */}
-
       <div className="global-layout">
-        {/* 左側：球體 */}
         <div className="globe-area">
           <GlobeVisualizer
             year={year}
@@ -184,17 +252,10 @@ export default function Global() {
           />
         </div>
 
-        {/* 右側：資訊欄 */}
         <div className="info-panel">
           {!selection && (
             <div className="info-empty">
               <h3>請點擊需求節點</h3>
-
-              <p>
-                點擊球體上的 Demand node
-                <br />
-                查看能源資訊
-              </p>
             </div>
           )}
 
@@ -204,7 +265,6 @@ export default function Global() {
 
               {(() => {
                 const node = findNodeByCode(selection.code, hierarchy);
-
                 return node?.img ? (
                   <img
                     src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
@@ -216,65 +276,79 @@ export default function Global() {
 
               <div className="info-content">
                 <h3>常用能源</h3>
-
-                <p>電力、石油、天然氣</p>
+                <p>
+                  {getEnergyList()
+                    .slice(0, 3)
+                    .map((e, i) => (
+                      <span key={i}>
+                        {e.fullName}
+                        {i < 2 ? "、" : ""}
+                      </span>
+                    ))}
+                </p>
 
                 <h3>年度分析</h3>
 
-                <p>
-                  這裡可以放
-                  <br />
-                  {selection.year} 年能源結構比例
-                  <br />
-                  部門需求佔比
-                  <br />
-                  能源趨勢分析
-                </p>
+                <div style={{ width: "100%", overflow: "hidden" }}>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <PieChart width={320} height={300}>
+                      <Pie
+                        data={getPieData()}
+                        dataKey="value"
+                        nameKey="name"
+                        outerRadius={80}
+                        label={false}
+                      >
+                        {getPieData().map((entry, index) => (
+                          <Cell
+                            key={index}
+                            fill={
+                              CATEGORY_COLOR[entry.category] || "#ccc"
+                            }
+                          />
+                        ))}
+                      </Pie>
 
-                <h3>相似度分析</h3>
+                      <Tooltip
+                        formatter={(v) => `${(v * 100).toFixed(1)}%`}
+                      />
 
-                <p>
-                  供給加權相似度
-                  <br />
-                  需求加權相似度
-                  <br />
-                  歐幾里得距離
-                </p>
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="center"
+                        wrapperStyle={{ fontSize: "12px" }}
+                      />
+                    </PieChart>
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
-
-        {/* ===================== */}
-        {/* Hover 卡片 */}
-        {/* ===================== */}
 
         {hover && (
           <div className="hover-overlay">
             <div className="hover-card">
               <div className="hover-header">{hover.name}</div>
 
-              {(() => {
-                const node = findNodeByCode(hover.code, hierarchy);
-
-                return node?.img ? (
-                  <img
-                    src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
-                    alt=""
-                    className="hover-img"
-                  />
-                ) : null;
-              })()}
-
               <div className="hover-content">
                 常用能源：
                 <br />
-                電力、石油、天然氣
+                {getEnergyList()
+                  .slice(0, 3)
+                  .map((e, i) => (
+                    <span key={i}>
+                      {e.fullName}
+                      {i < 2 ? "、" : ""}
+                    </span>
+                  ))}
               </div>
             </div>
           </div>
         )}
       </div>
+
       {showAI && (
         <div className="ai-overlay">
           <div
@@ -283,21 +357,13 @@ export default function Global() {
               transform: `translate(${position.x}px, ${position.y}px)`,
             }}
           >
-            {/* Header（可拖曳） */}
             <div className="ai-header" onMouseDown={handleMouseDown}>
-              <span className="ai-title">
-                <i
-                  className="fi fi-br-comments"
-                  style={{ marginRight: "6px" }}
-                ></i>
-                Energy Assistant
-              </span>
+              <span className="ai-title">Energy Assistant</span>
               <span className="ai-close" onClick={() => setShowAI(false)}>
                 ✕
               </span>
             </div>
 
-            {/* 輸入框 */}
             <textarea
               placeholder={`例如：${year}年 ${selection?.name || ""} 的能源占比`}
               value={question}
@@ -305,14 +371,13 @@ export default function Global() {
               onKeyDown={handleKeyDown}
             />
 
-            {/* 按鈕 */}
             <button onClick={handleAsk}>送出</button>
 
-            {/* 回答 */}
             {answer && <div className="ai-answer">{answer}</div>}
           </div>
         </div>
       )}
+
       <BackToTopButton />
     </div>
   );
