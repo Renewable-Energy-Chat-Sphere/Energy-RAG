@@ -650,7 +650,6 @@ footer {
   text-align: center;
 }
 
-
 .fake-chat {
   margin-top: 20px;
   display: flex;
@@ -752,8 +751,6 @@ footer {
   padding: 80px 10%;
   text-align: center;
 }
-
-
 
 .fake-chat {
   margin-top: 20px;
@@ -1067,4 +1064,22 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+}
+.page-container {
+  max-width: 1200px; /* 控制整體寬度 */
+  margin: 0 auto; /* 置中 */
+  padding: 0 20px; /* 左右留白 */
+}
+.feature-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  justify-content: flex-start; /* ⭐靠左 */
+  text-align: left; /* ⭐保險 */
+
+  font-size: 22px;
+  font-weight: 600;
+  
+  margin-left: 0; /* 確保沒被推開 */
 }

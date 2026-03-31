@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import EnergyNews from "../components/EnergyNews";
 import Dashboard from "../components/Dashboard";
+import ExternalLinks from "../components/ExternalLinks";
+import LinkCarousel from "../components/LinkCarousel";
+
 export default function Home() {
   useEffect(() => {
     /* =========================
@@ -77,7 +80,107 @@ export default function Home() {
       cardsContainer?.removeEventListener("click", onAccordionClick);
     };
   }, []);
+  const activityData = [
+    {
+      img: import.meta.env.BASE_URL + "images/banner1.png",
+      link: "https://save3000.moeaea.gov.tw/subsidy02/index/index.aspx",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner2.png",
+      link: "https://ea03.moeaea.gov.tw/s0307/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner3.png",
+      link: "https://www.moeaea.gov.tw/ECW/populace/home/Home.aspx",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner4.png",
+      link: "https://ea01.moeaea.gov.tw/b0403/Home/Index",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner5.png",
+      link: "https://ea01.moeaea.gov.tw/b0403/Home/Index",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner6.png",
+      link: "https://2050nzea.tw/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner7.png",
+      link: "https://top.energypark.org.tw/topfirm/Services",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner8.png",
+      link: "https://www.go-moea.tw/#gsc.tab=0",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner9.png",
+      link: "https://ea03.moeaea.gov.tw/a0101/02/#/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner10.png",
+      link: "https://www.moeaea.gov.tw/ECW/populace/content/SubMenu.aspx?menu_id=3124",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner11.png",
+      link: "https://ea04.moeaea.gov.tw/c002/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/banner12.png",
+      link: "https://www.moeaea.gov.tw/ECW/populace/content/ContentLink.aspx?menu_id=13235",
+    },
+  ];
 
+  const externalLinks = [
+    {
+      img: import.meta.env.BASE_URL + "images/exter1.png",
+      link: "https://www.gov.tw",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter2.png",
+      link: "https://taiwan.gov.tw",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter3.png",
+      link: "https://www.gov.tw/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter4.png",
+      link: "http://cfcmweb.cy.gov.tw/cfcm_w/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter5.png",
+      link: "https://elearn.hrd.gov.tw/mooc/index.php",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter6.png",
+      link: "https://www.dgpa.gov.tw/mp/archive?uid=327&mid=305",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter7.png",
+      link: "https://sunshine.cy.gov.tw/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter8.png",
+      link: "https://join.gov.tw/policies/index",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter9.png",
+      link: "https://www.einvoice.nat.gov.tw/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter10.png",
+      link: "https://www.ecfa.org.tw/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter11.png",
+      link: "https://greenlifestyle.moenv.gov.tw/",
+    },
+    {
+      img: import.meta.env.BASE_URL + "images/exter12.png",
+      link: "https://www.aac.moj.gov.tw/",
+    },
+  ];
   return (
     <>
       {/* HERO BANNER */}
@@ -126,12 +229,22 @@ export default function Home() {
       <div className="reveal">
         <EnergyNews />
       </div>
+      {/* 活動專區 */}
+      <div className="page-container">
+        <div className="reveal">
+          <LinkCarousel title="活動專區" items={activityData} />
+        </div>
 
-      
-
+        <div className="reveal">
+          <ExternalLinks items={externalLinks} />
+        </div>
+      </div>
       {/* FEATURES */}
       <section id="features" className="section reveal">
-        <h2 style={{ textAlign: "center" }}>系統特色</h2>
+        <h2 className="feature-title">
+          <i className="fi fi-br-computer"></i>
+          系統特色
+        </h2>
 
         <div className="cards">
           {[
@@ -140,7 +253,7 @@ export default function Home() {
               desc: "三維旋轉視覺化能源結構模型",
               detail:
                 "整合近 30 年能源平衡資料，建構三維互動式能源球模型。支援跨年度比較、產業分層結構分析與能源結構相似度研究，讓能源變化趨勢與結構差異一目了然。",
-              img: import.meta.env.BASE_URL + "images/sphere.jpg"
+              img: import.meta.env.BASE_URL + "images/sphere.jpg",
             },
             {
               title: "智慧 RAG 查詢",
