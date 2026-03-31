@@ -95,20 +95,55 @@ ENERGY_SYNONYMS = {
     "廢棄物": "廢棄物",
 }
 
+def should_use_energy_rag(user_text: str):
+    text = user_text.strip()
+
+    year = extract_year(text)
+    years = extract_years(text)
+    department = normalize_department(text)
+    energy_name = normalize_energy(text)
+    intent = detect_intent(
+        text,
+        year=year,
+        department=department,
+        energy_name=energy_name,
+    )
+
+    # 1. 有年份 + 有資料查詢意圖
+    if year is not None or len(years) >= 2:
+        if intent != "semantic_search":
+            return True
+
+    # 2. 有部門 + 能源名，通常是查表
+    if department and energy_name:
+        return True
+
+    # 3. 有部門 + 問主要能源
+    if department and any(k in text for k in ["主要使用", "使用哪些能源", "用哪些能源", "最多"]):
+        return True
+
+    # 4. 有能源 + 問哪些部門
+    if energy_name and "部門" in text:
+        return True
+
+    return False
 
 # =====================================================
 # 判斷是不是能源問題
 # =====================================================
 def is_energy_question(text: str) -> bool:
     keywords = [
-        "能源", "部門", "天然氣", "電力", "煤", "石油",
-        "原油", "熱能", "太陽光電", "風力", "生質能",
-        "使用", "比例", "最多", "最大", "前五", "排名",
-        "哪些部門", "哪些能源", "有沒有用", "有用到",
-        "工業部門", "運輸部門", "農業部門", "服務業部門", "住宅部門",
-        "工業", "運輸", "交通", "農業", "服務業", "住宅", "住家", "家庭",
-        "瓦斯", "電", "油", "煤炭", "風電", "太陽能",
-        "D2", "D40", "D47", "D50", "D68",
+        "部門",
+        "使用哪些能源",
+        "主要使用",
+        "哪些部門使用",
+        "用在哪些部門",
+        "有沒有使用",
+        "有沒有用",
+        "最多能源",
+        "能源資料",
+        "比例",
+        "排名",
     ]
     return any(k in text for k in keywords)
 

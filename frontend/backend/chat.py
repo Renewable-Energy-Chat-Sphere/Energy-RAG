@@ -1,4 +1,4 @@
-from energy_chat_router import is_energy_question, answer_energy_question
+from energy_chat_router import should_use_energy_rag, answer_energy_question
 import re
 import time
 from collections import defaultdict, deque
@@ -212,7 +212,7 @@ def chat():
     # =====================================================
     # ⚡ Energy RAG Router
     # =====================================================
-    if is_energy_question(user_text):
+    if should_use_energy_rag(user_text):
         try:
             mode = detect_query_mode(user_text)  # 🔥核心
 
