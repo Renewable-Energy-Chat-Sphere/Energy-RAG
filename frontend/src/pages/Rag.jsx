@@ -257,7 +257,7 @@ export default function Rag() {
   const [tab, setTab] = useState("chat");
   const [structuredData, setStructuredData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const API = "http://127.0.0.1:8000";
+  const API = `${window.location.protocol}//${window.location.hostname}:8000`;
 
   async function generateFile(reportData = structuredData) {
     if (!reportData) {

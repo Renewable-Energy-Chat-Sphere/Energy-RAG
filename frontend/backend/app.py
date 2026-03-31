@@ -376,4 +376,4 @@ def get_energy_news():
 if __name__ == "__main__":
     print("🚀 Flask 啟動：http://127.0.0.1:8000")
     print("📌 API：/chat /ask_web /ask_pdf /ask_av /export_pdf")
-    app.run(host="127.0.0.1", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000)
