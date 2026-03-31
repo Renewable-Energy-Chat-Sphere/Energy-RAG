@@ -162,11 +162,11 @@ export default function Home() {
     },
     {
       img: import.meta.env.BASE_URL + "images/exter8.png",
-      link: "https://taiwan.gov.tw",
+      link: "https://join.gov.tw/policies/index",
     },
     {
       img: import.meta.env.BASE_URL + "images/exter9.png",
-      link: "https://join.gov.tw/policies/index",
+      link: "https://www.einvoice.nat.gov.tw/",
     },
     {
       img: import.meta.env.BASE_URL + "images/exter10.png",
