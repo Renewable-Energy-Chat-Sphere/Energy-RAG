@@ -8,8 +8,6 @@ import Home from "./pages/Home";
 import Global from "./pages/Global";
 import Rag from "./pages/Rag";
 import Contact from "./pages/Contact";
-import Login from "./pages/Login";
-import Sign from "./pages/Sign";
 
 const router = createBrowserRouter(
   [
@@ -21,8 +19,6 @@ const router = createBrowserRouter(
         { path: "/global", element: <Global /> },
         { path: "/rag", element: <Rag /> },
         { path: "/contact", element: <Contact /> },
-        { path: "/login", element: <Login /> },
-        { path: "/sign", element: <Sign /> },
       ],
     },
   ],

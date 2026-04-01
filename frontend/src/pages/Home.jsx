@@ -217,11 +217,7 @@ export default function Home() {
           <p>結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台</p>
         </div>
 
-        <div className="hero-banner-login">
-          <Link to="/login">
-            <button className="hero-login-btn">登入 / 註冊</button>
-          </Link>
-        </div>
+        
       </section>
       {/*真正有功能的儀表板*/}
       <Dashboard />
