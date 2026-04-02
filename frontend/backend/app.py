@@ -75,7 +75,7 @@ def dashboard():
             renewable = int(renewable_match.group(1).replace(",", ""))
         else:
             renewable = 20
-            
+
         return {
             "power": power,
             "renewable": renewable,
@@ -93,12 +93,6 @@ def dashboard():
             "carbon": 12000,
             "timestamp": "error",
         }
-
-
-# 🔥 Debug 模式安全啟動 Scheduler
-if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-    print("🔥 Scheduler starting...")
-    start_scheduler()
 
 
 # ====================================
@@ -364,10 +358,36 @@ def get_energy_news():
     try:
         with open("energy_news_cache.json", "r", encoding="utf-8") as f:
             data = json.load(f)
+
+        # 👉 如果是空的 → fallback
+        if not data.get("items"):
+            raise ValueError("cache empty")
+
         return jsonify(data)
+
     except Exception as e:
-        print("讀取公告錯誤:", e)
-        return jsonify({"source": "經濟部能源署", "items": []})
+        print("⚠️ cache失敗，改抓RSS:", e)
+
+        import feedparser
+
+        feed = feedparser.parse(
+            "https://www.moeaea.gov.tw/ECW/NewsRSS.aspx?kind=1",
+            request_headers={"User-Agent": "Mozilla/5.0"},
+        )
+
+        data = {
+            "source": "經濟部能源署",
+            "items": [
+                {
+                    "title": e.title,
+                    "link": e.link,
+                    "published": getattr(e, "published", ""),
+                }
+                for e in feed.entries[:5]
+            ],
+        }
+
+        return jsonify(data)
 
 
 # ====================================
@@ -376,4 +396,8 @@ def get_energy_news():
 if __name__ == "__main__":
     print("🚀 Flask 啟動：http://127.0.0.1:8000")
     print("📌 API：/chat /ask_web /ask_pdf /ask_av /export_pdf")
+
+    print("🔥 Scheduler starting...")
+    start_scheduler()  # ✅ 加在這裡
+
     app.run(host="0.0.0.0", port=8000)
