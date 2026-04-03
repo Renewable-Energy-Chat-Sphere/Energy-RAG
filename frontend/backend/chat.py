@@ -264,6 +264,24 @@ def chat():
             # 🔵 精準模式（保留你原本）
             else:
                 assistant_text = enhance_answer_by_mode(assistant_text, mode)
+                # =====================================
+                # 📎 自動加資料來源（完整版🔥）
+                # =====================================
+                import re
+
+                years = re.findall(r"(?:民國)?(\d{2,3})年", user_text)
+                years = sorted(list(set(years)))
+
+                if len(years) == 1:
+                    assistant_text += f"\n\n📎 資料來源：民國{years[0]}年能源平衡表"
+
+                elif len(years) >= 2:
+                    year_text = "、".join([f"民國{y}年" for y in years])
+                    assistant_text += f"\n\n📎 資料來源：{year_text}能源平衡表"
+
+                else:
+                    assistant_text += "\n\n📎 資料來源：能源平衡表資料庫"
+                    
             _store_turn(session_id, user_text, assistant_text)
 
             return jsonify(
