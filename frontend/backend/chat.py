@@ -218,12 +218,11 @@ def chat():
 
             result = answer_energy_question(user_text)
             assistant_text = result.get("answer", "（無回應）")
+
             def humanize_answer(text):
                 return text.replace("根據相關年度已生成的能源資料", "我幫你查了一下")
-            assistant_text = humanize_answer(assistant_text)
 
-            # 🔥 最終升級（超重要）
-            assistant_text = result.get("answer", "（無回應）")
+            assistant_text = humanize_answer(assistant_text)
 
             # =====================================================
             # 🔥 真正升級（分析模式用 LLM）

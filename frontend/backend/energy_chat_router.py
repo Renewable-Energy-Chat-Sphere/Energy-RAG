@@ -98,10 +98,12 @@ ENERGY_SYNONYMS = {
 def should_use_energy_rag(user_text: str):
     text = user_text.strip()
 
+    # === 基本解析 ===
     year = extract_year(text)
     years = extract_years(text)
     department = normalize_department(text)
     energy_name = normalize_energy(text)
+
     intent = detect_intent(
         text,
         year=year,
@@ -109,23 +111,63 @@ def should_use_energy_rag(user_text: str):
         energy_name=energy_name,
     )
 
-    # 1. 有年份 + 有資料查詢意圖
+    # =====================================================
+    # 🎯 1. 明確查數據（最重要）
+    # =====================================================
     if year is not None or len(years) >= 2:
         if intent != "semantic_search":
             return True
 
-    # 2. 有部門 + 能源名，通常是查表
+    # =====================================================
+    # 🎯 2. 部門 + 能源（一定是查表）
+    # =====================================================
     if department and energy_name:
         return True
 
-    # 3. 有部門 + 問主要能源
-    if department and any(k in text for k in ["主要使用", "使用哪些能源", "用哪些能源", "最多"]):
+    # =====================================================
+    # 🎯 3. 部門 → 問能源
+    # =====================================================
+    if department and any(k in text for k in [
+        "主要使用", "使用哪些能源", "用哪些能源",
+        "主要用什麼", "最多", "前幾", "排名"
+    ]):
         return True
 
-    # 4. 有能源 + 問哪些部門
-    if energy_name and "部門" in text:
+    # =====================================================
+    # 🎯 4. 能源 → 問部門
+    # =====================================================
+    if energy_name and any(k in text for k in [
+        "哪些部門", "誰在用", "用在哪", "使用情況"
+    ]):
         return True
 
+    # =====================================================
+    # 🎯 5. 有「能源語意」但沒完全命中
+    # =====================================================
+    energy_keywords = [
+        "能源", "用電", "耗能", "電力",
+        "天然氣", "石油", "煤", "再生能源",
+        "使用量", "比例", "結構"
+    ]
+
+    if any(k in text for k in energy_keywords):
+        return True
+
+    # =====================================================
+    # ❌ 6. 明顯聊天（避免誤觸 RAG）
+    # =====================================================
+    casual_keywords = [
+        "你好", "嗨", "hello", "hi",
+        "你是誰", "可以做什麼",
+        "謝謝", "thanks"
+    ]
+
+    if any(k.lower() in text.lower() for k in casual_keywords):
+        return False
+
+    # =====================================================
+    # 🎯 fallback（保守策略）
+    # =====================================================
     return False
 
 # =====================================================
@@ -217,10 +259,12 @@ def normalize_energy(text: str):
 
     return None
 def extract_years(text: str):
-    import re
-
-    years = re.findall(r"(\d{2,3})\s*年", text)
+    years = re.findall(r"(?:民國)?(\d{2,3})年", text)
     years = [int(y) for y in years]
+
+    # 補：支援單獨數字（85 113）
+    years2 = re.findall(r"\b(8[0-9]|9[0-9]|10[0-9]|11[0-9])\b", text)
+    years += [int(y) for y in years2]
 
     return sorted(list(set(years)))
 
@@ -377,7 +421,7 @@ def answer_top_energy_by_department(department: str, year=None, top_n: int = 5):
     year_text = f"{year}年" if year else "各年度"
     answer = (
         f"根據{year_text}已生成的能源資料，{department}主要使用的能源包括："
-        + "、".join([f"{r['supply_name_zh']}（{r['value']}）" for r in top])
+        + "、".join([f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top])
         + "。"
     )
 
@@ -413,7 +457,7 @@ def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5)
         dept = r["demand_name"]
         if dept not in seen:
             seen.add(dept)
-            answer_parts.append(f"{dept}（{r['value']}）")
+            answer_parts.append(f"{dept}（{round(r['value'],2)}%）")
 
     year_text = f"{year}年" if year else "各年度"
     answer = (
@@ -451,7 +495,7 @@ def answer_check_usage(department: str, energy_name: str, year=None):
 
     return {
         "success": True,
-        "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（{best['value']}）。",
+        "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（（{round(best['value'],2)}%）。",
         "sources": ["energy_rag_all_years_meta.json"],
         "results": [best],
     }
@@ -492,7 +536,7 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
     year_text = f"民國{year}年" if year else "指定年度"
     answer = (
         f"根據{year_text}已生成的能源資料，使用量最多的能源包括："
-        + "、".join([f"{r['supply_name_zh']}（{round(r['value'], 2)}）" for r in top])
+        + "、".join([f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top])
         + "。"
     )
 
@@ -512,24 +556,6 @@ def get_top_energies_for_department(department: str, year=None, top_n: int = 5):
     return ratio_records[:top_n]
 
 
-# =====================================================
-# 年份範圍抽取：支援「85年和113年」「85到113年」
-# =====================================================
-def extract_years(text: str):
-    years = re.findall(r"(?:民國)?(\d{2,3})年", text)
-    if len(years) >= 2:
-        return [int(years[0]), int(years[1])]
-
-    years2 = re.findall(r"\b(8[0-9]|9[0-9]|10[0-9]|11[0-9])\b", text)
-    unique = []
-    for y in years2:
-        y = int(y)
-        if y not in unique:
-            unique.append(y)
-    if len(unique) >= 2:
-        return unique[:2]
-
-    return []
 
 def answer_multi_year_top_energy(years, top_n=5):
     results = []
@@ -554,7 +580,7 @@ def answer_multi_year_top_energy(years, top_n=5):
 
     for r in results:
         names = "、".join(
-            [f"{e['supply_name_zh']}（{round(e['value'],2)}）" for e in r["top"]]
+            [f"{e['supply_name_zh']}（{round(e['value'],2)}%）" for e in r["top"]]
         )
         answer += f"{r['year']}年：{names}\n"
 
@@ -606,12 +632,12 @@ def answer_compare_years_overall(years, top_n=5):
 
     answer += f"**{year1}年**\n"
     for r in top1:
-        answer += f"- {r['supply_name_zh']}（{round(r['value'], 2)}）\n"
+        answer += f"- {r['supply_name_zh']}（{round(r['value'], 2)}%）\n"
     answer += "\n"
 
     answer += f"**{year2}年**\n"
     for r in top2:
-        answer += f"- {r['supply_name_zh']}（{round(r['value'], 2)}）\n"
+        answer += f"- {r['supply_name_zh']}（{round(r['value'], 2)}%）\n"
     answer += "\n"
 
     if common:
@@ -654,8 +680,8 @@ def answer_compare_department_across_years(department: str, year1: int, year2: i
             "card_type": "comparison"
         }
 
-    names1 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top1]
-    names2 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top2]
+    names1 = [f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top1]
+    names2 = [f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top2]
 
     set1 = {r["supply_name_zh"] for r in top1}
     set2 = {r["supply_name_zh"] for r in top2}
@@ -715,8 +741,8 @@ def answer_compare_departments_same_year(dept1: str, dept2: str, year=None, top_
             "card_type": "comparison"
         }
 
-    names1 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top1]
-    names2 = [f"{r['supply_name_zh']}（{r['value']}）" for r in top2]
+    names1 = [f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top1]
+    names2 = [f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top2]
 
     set1 = {r["supply_name_zh"] for r in top1}
     set2 = {r["supply_name_zh"] for r in top2}
