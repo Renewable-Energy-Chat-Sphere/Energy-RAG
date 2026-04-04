@@ -189,6 +189,32 @@ def is_energy_question(text: str) -> bool:
     ]
     return any(k in text for k in keywords)
 
+def extract_top_n(text: str):
+    text = text.lower()
+
+    # 🎯 最多 / 最大 → 1筆
+    if "最多" in text or "最大" in text:
+        return 1
+
+    # 🎯 前幾（中文）
+    m = re.search(r"前(\d+)", text)
+    if m:
+        return int(m.group(1))
+
+    # 🎯 top3 / top 5
+    m = re.search(r"top\s*(\d+)", text)
+    if m:
+        return int(m.group(1))
+
+    # 🎯 前幾（中文數字）
+    if "前五" in text:
+        return 5
+    if "前三" in text:
+        return 3
+    if "前十" in text:
+        return 10
+
+    return 5  # 預設
 
 # =====================================================
 # 年份抽取
@@ -303,10 +329,12 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
 
     # 3. 問整體最多能源
     if (
-        ("最多" in text or "最大" in text or "排名" in text or "前五" in text or "top" in text.lower())
-        and ("能源" in text or energy_name is not None or "資源" in text)
-        and department is None
-    ):
+            ("最多" in text or "最大" in text or "排名" in text 
+            or "前" in text   # ⭐關鍵！
+            or "top" in text.lower())
+            and ("能源" in text or "使用量" in text or energy_name is not None or "資源" in text)
+            and department is None
+        ):
         return "top_energy_overall"
 
     # 4. 問某部門主要用哪些能源
@@ -354,8 +382,14 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     # 8. 如果有部門但沒明確句型，也常常是部門→能源
     if department and energy_name is None and ("能源" in text or "資源" in text):
         return "top_energy_by_department"
-
+    
+    #  fallback（避免掉到 semantic_search）
+    if year and ("能源" in text or "使用量" in text or "前" in text):
+        return "top_energy_overall"
+    
     return "semantic_search"
+
+
 
 
 # =====================================================
@@ -457,7 +491,7 @@ def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5)
         dept = r["demand_name"]
         if dept not in seen:
             seen.add(dept)
-            answer_parts.append(f"{dept}（{round(r['value'],2)}%）")
+            answer_parts.append(dept)
 
     year_text = f"{year}年" if year else "各年度"
     answer = (
@@ -754,9 +788,10 @@ def answer_energy_question(user_text: str):
     departments = extract_departments(user_text)
     energy_name = normalize_energy(user_text)
     intent = detect_intent(user_text, year=year, department=department, energy_name=energy_name)
+    top_n = extract_top_n(user_text)
     
     if intent == "compare_years_overall":
-        return answer_compare_years_overall(years, top_n=5)
+        return answer_compare_years_overall(years, top_n=top_n)
 
     if intent == "compare_department_across_years":
         target_department = department or (departments[0] if departments else None)
@@ -764,7 +799,7 @@ def answer_energy_question(user_text: str):
             return answer_compare_department_across_years(
                 target_department,
                 years,
-                top_n=5,
+                top_n=top_n,
             )
 
     if intent == "compare_departments_same_year":
@@ -772,23 +807,23 @@ def answer_energy_question(user_text: str):
             return answer_compare_departments_same_year(
                 departments,
                 year=year,
-                top_n=5,
+                top_n=top_n,
             )
 
     if intent == "top_energy_overall":
 
         # ⭐ 多年份
         if len(years) >= 2:
-            return answer_multi_year_top_energy(years, top_n=5)
+            return answer_multi_year_top_energy(years, top_n=top_n)
 
         # ⭐ 單年份
-        return answer_top_energy_overall(year=year, top_n=5)
+        return answer_top_energy_overall(year=year, top_n=top_n)
 
     if intent == "top_energy_by_department":
-        return answer_top_energy_by_department(department, year=year, top_n=5)
+        return answer_top_energy_by_department(department, year=year, top_n=top_n)
 
     if intent == "top_department_by_energy":
-        return answer_top_department_by_energy(energy_name, year=year, top_n=5)
+        return answer_top_department_by_energy(energy_name, year=year, top_n=top_n)
 
     if intent == "check_usage":
         return answer_check_usage(department, energy_name, year=year)

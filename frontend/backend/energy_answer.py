@@ -7,7 +7,6 @@ META_PATH = PROCESSED_DIR / "energy_rag_core_meta.json"
 
 records = json.loads(META_PATH.read_text(encoding="utf-8"))
 
-
 # ===============================
 # 🔍 工具函式
 # ===============================
