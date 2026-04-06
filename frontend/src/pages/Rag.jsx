@@ -470,10 +470,6 @@ export default function Rag() {
         const card = document.createElement("div");
         card.className = "ai-card";
 
-        const answerHtml = marked.parse(
-          data.answer || data.error || "（無回應）",
-        );
-
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
@@ -494,8 +490,46 @@ export default function Rag() {
         // 🔥 先放空
         card.innerHTML = "";
 
-        // 🔥 用逐行動畫
-        sentenceWriter(card, marked.parse(data.answer), 20);
+        // ⭐ 先解析 HTML
+        let answerHtml = marked.parse(data.answer || "");
+
+        // =====================================
+        // 📎 資料來源 icon + tooltip（🔥新增）
+        // =====================================
+        const sourceMatch = answerHtml.match(/📎 資料來源：(.+)/);
+
+        if (sourceMatch) {
+          const sourceText = sourceMatch[1];
+
+          const years = sourceText.match(/民國\d+年/g) || [];
+
+          const tooltipItems = years
+            .map((y) => `<div>計算公式如下：<br>
+            將「${y}」年度能源平衡表的各能源使用量(x)除以該年度的總使用量(M)，得到各能源的使用比例。<br>
+            <img 
+                src="/Ener-Sphere/images/formula.png"
+              />
+            </div>`)
+            .join("");
+
+          const sourceHtml = `
+            <div class="source-row">
+              📎 ${sourceText}
+              <span class="source-icon">ⓘ</span>
+              <div class="source-tooltip">
+                ${tooltipItems}
+              </div>
+            </div>
+          `;
+
+          // ⭐ 替換原本純文字
+          answerHtml = answerHtml.replace(/📎 資料來源：.+/, sourceHtml);
+        }
+
+        // 🔥 打字動畫（用新的）
+        sentenceWriter(card, answerHtml, 20);
+
+        // 原本卡片（保留）
         card.insertAdjacentHTML("beforeend", extraHtml);
 
         inner.appendChild(card);
