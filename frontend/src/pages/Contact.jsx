@@ -14,6 +14,7 @@ export default function Contact() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -47,11 +48,11 @@ export default function Contact() {
           message: "",
         });
       } else {
-        alert("❌ 送出失敗");
+        setErrorMsg("送出失敗，請稍後再試");
       }
     } catch (err) {
       console.error(err);
-      alert("⚠️ 無法連線後端");
+      setErrorMsg("無法連線伺服器");
     }
 
     setLoading(false); // 🔥 結束動畫
@@ -223,6 +224,28 @@ export default function Contact() {
                 setTimeout(() => {
                   setShowSuccess(false);
                 }, 300); // 等動畫跑完
+              }}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="error-modal">
+          <div className="error-card">
+            <h3>❌ 發生錯誤</h3>
+            <p>{errorMsg}</p>
+
+            <button
+              className="success-btn"
+              onClick={() => {
+                const modal = document.querySelector(".error-modal");
+                modal.classList.remove("show");
+
+                setTimeout(() => {
+                  setErrorMsg("");
+                }, 300);
               }}
             >
               關閉
@@ -407,6 +430,32 @@ export default function Contact() {
   0% { content: "."; }
   33% { content: ".."; }
   66% { content: "..."; }
+}
+  .error-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.error-card {
+  background: #1e293b;
+  color: white;
+  padding: 25px;
+  border-radius: 16px;
+  width: 320px;
+  text-align: center;
+  border: 1px solid rgba(255,0,0,0.3);
+}
+
+.error-card h3 {
+  color: #ef4444;
 }
       `}</style>
     </section>
