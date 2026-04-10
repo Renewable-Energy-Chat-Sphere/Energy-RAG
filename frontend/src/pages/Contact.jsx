@@ -1,9 +1,61 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSchool, faPeopleGroup } from "@fortawesome/free-solid-svg-icons";
 import BackToTopButton from "../components/BackToTopButton";
 import { faClipboardList } from "@fortawesome/free-solid-svg-icons";
 export default function Contact() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    feeling: "",
+    message: "",
+  });
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [submittedData, setSubmittedData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setLoading(true); // 🔥 開始動畫
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        setSubmittedData(form);
+        setShowSuccess(true);
+
+        setForm({
+          name: "",
+          email: "",
+          phone: "",
+          feeling: "",
+          message: "",
+        });
+      } else {
+        alert("❌ 送出失敗");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("⚠️ 無法連線後端");
+    }
+
+    setLoading(false); // 🔥 結束動畫
+  };
   return (
     <section id="contact" className="contact-section">
       <div className="contact-container">
@@ -56,20 +108,38 @@ export default function Contact() {
               </h3>
             </div>
 
-            <form id="contactForm">
+            <form onSubmit={handleSubmit}>
               <label>
                 姓名
-                <input type="text" required />
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  required
+                  onChange={handleChange}
+                />
               </label>
 
               <label>
                 電子郵件
-                <input type="email" required />
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  required
+                  onChange={handleChange}
+                />
               </label>
 
               <label>
                 電話號碼
-                <input type="tel" required />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  required
+                  onChange={handleChange}
+                />
               </label>
 
               <label>
@@ -78,7 +148,13 @@ export default function Contact() {
                   {["非常滿意", "滿意", "一般", "不滿意", "非常不滿意"].map(
                     (item) => (
                       <label key={item}>
-                        <input type="radio" name="feeling" value={item} />
+                        <input
+                          type="radio"
+                          name="feeling"
+                          value={item}
+                          checked={form.feeling === item}
+                          onChange={handleChange}
+                        />
                         {item}
                       </label>
                     ),
@@ -88,11 +164,19 @@ export default function Contact() {
 
               <label>
                 待改進之處
-                <textarea rows="4"></textarea>
+                <textarea
+                  name="message"
+                  value={form.message}
+                  rows="4"
+                  onChange={handleChange}
+                />
               </label>
-
-              <button type="submit" className="contact-btn">
-                送出 Send
+              <button
+                type="submit"
+                className={`contact-btn ${loading ? "loading" : ""}`}
+                disabled={loading}
+              >
+                {loading ? "寄送中" : "送出 Send"}
               </button>
             </form>
           </div>
@@ -100,7 +184,52 @@ export default function Contact() {
       </div>
 
       <BackToTopButton />
+      {showSuccess && (
+        <div className="success-modal">
+          <div className="success-card">
+            <h3>✅ 已成功送出！</h3>
 
+            <p className="success-text">以下是您填寫的資訊：</p>
+
+            <div className="success-info">
+              <p>
+                <strong>姓名：</strong>
+                {submittedData?.name}
+              </p>
+              <p>
+                <strong>Email：</strong>
+                {submittedData?.email}
+              </p>
+              <p>
+                <strong>電話：</strong>
+                {submittedData?.phone}
+              </p>
+              <p>
+                <strong>滿意度：</strong>
+                {submittedData?.feeling}
+              </p>
+              <p>
+                <strong>內容：</strong>
+                {submittedData?.message}
+              </p>
+            </div>
+
+            <button
+              className="success-btn"
+              onClick={() => {
+                const modal = document.querySelector(".success-modal");
+                modal.classList.remove("show");
+
+                setTimeout(() => {
+                  setShowSuccess(false);
+                }, 300); // 等動畫跑完
+              }}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
       {/* CSS */}
       <style>{`
         .contact-section {
@@ -212,6 +341,72 @@ export default function Contact() {
 
 .contact-btn:active {
   transform: scale(0.97);
+}
+  .success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.success-card {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(12px);
+
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+
+  padding: 30px;
+  border-radius: 16px;
+  width: 350px;
+  text-align: center;
+}
+  .success-btn {
+  margin-top: 15px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0d2c6e, #2563eb);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.success-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+}
+
+.success-btn:active {
+  transform: scale(0.95);
+}
+  .success-text {
+  color: var(--text);
+  opacity: 0.9;
+}
+  .contact-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* loading 三點動畫 */
+.contact-btn.loading::after {
+  content: "...";
+  animation: dots 1s steps(3, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: "."; }
+  33% { content: ".."; }
+  66% { content: "..."; }
 }
       `}</style>
     </section>

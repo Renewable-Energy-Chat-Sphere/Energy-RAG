@@ -41,6 +41,53 @@ app.config.update(
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
+import smtplib
+from email.mime.text import MIMEText
+
+
+@app.route("/contact", methods=["POST"])
+def contact():
+    data = request.json
+
+    name = data.get("name")
+    email = data.get("email")
+    phone = data.get("phone")
+    feeling = data.get("feeling")
+    message = data.get("message")
+
+    # 📩 信件內容
+    content = f"""
+📩 EnerSphere 聯絡表單
+
+姓名: {name}
+Email: {email}
+電話: {phone}
+滿意度: {feeling}
+
+建議內容:
+{message}
+"""
+
+    msg = MIMEText(content, "plain", "utf-8")
+    msg["Subject"] = "📩 EnerSphere 使用者回饋"
+    msg["From"] = "rag412402@gmail.com"
+    msg["To"] = "rag412402@gmail.com"
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+
+        # ⚠️ 這裡改成你的 Gmail + 應用程式密碼
+        server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
+
+        server.send_message(msg)
+        server.quit()
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print("❌ 寄信失敗:", e)
+        return jsonify({"status": "error", "message": str(e)})
 
 
 from bs4 import BeautifulSoup  # 加在最上面 import 區
