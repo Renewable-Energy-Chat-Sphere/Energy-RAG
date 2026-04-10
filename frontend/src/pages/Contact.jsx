@@ -81,10 +81,10 @@ export default function Contact() {
 
             <div className="info-block">
               <strong>專案成員</strong>
-              <p>陳相叡｜412402165@m365.fju.edu.tw</p>
-              <p>周子芹｜412402036@m365.fju.edu.tw</p>
-              <p>呂羿辰｜412402244@m365.fju.edu.tw</p>
-              <p>張宇承｜412402335@m365.fju.edu.tw</p>
+              <p>陳相叡｜412402165@cloud.fju.edu.tw</p>
+              <p>周子芹｜412402036@cloud.fju.edu.tw</p>
+              <p>呂羿辰｜412402244@cloud.fju.edu.tw</p>
+              <p>張宇承｜412402335@cloud.fju.edu.tw</p>
             </div>
 
             <h3 className="section-title">
