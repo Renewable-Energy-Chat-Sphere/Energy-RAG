@@ -3,13 +3,58 @@ import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 
-import supplyLayout from "../data/supply_layout.json";
-import demandLayout from "../data/demand_layout.json";
 import supplyCatalog from "../data/supply_catalog.json";
-import demandSupply from "../data/113_energy_demand_supply.json";
 import hierarchy from "../data/hierarchy.json";
 
 const SUPPLY_RADIUS = 3.02;
+
+/* ===================== */
+/* 🔥 動態載入所有年份資料 */
+/* ===================== */
+
+const supplyLayoutsRaw = import.meta.glob(
+  "../data/supply_layout_*.json",
+  { eager: true }
+);
+
+const demandLayoutsRaw = import.meta.glob(
+  "../data/demand_layout_*.json",
+  { eager: true }
+);
+
+const demandSupplyRaw = import.meta.glob(
+  "../data/*_energy_demand_supply.json",
+  { eager: true }
+);
+
+/* ===================== */
+/* 🔥 轉成 year mapping */
+/* ===================== */
+
+const supplyLayouts = {};
+const demandLayouts = {};
+const demandSupplyData = {};
+
+Object.keys(supplyLayoutsRaw).forEach((path) => {
+  const match = path.match(/supply_layout_(\d+)\.json/);
+  if (match) {
+    supplyLayouts[match[1]] = supplyLayoutsRaw[path].default;
+  }
+});
+
+Object.keys(demandLayoutsRaw).forEach((path) => {
+  const match = path.match(/demand_layout_(\d+)\.json/);
+  if (match) {
+    demandLayouts[match[1]] = demandLayoutsRaw[path].default;
+  }
+});
+
+Object.keys(demandSupplyRaw).forEach((path) => {
+  const match = path.match(/(\d+)_energy_demand_supply\.json/);
+  if (match) {
+    demandSupplyData[match[1]] = demandSupplyRaw[path].default;
+  }
+});
 
 /* ===================== */
 /* Supply Map */
@@ -76,7 +121,7 @@ function Label({ position, text, baseSize = 14 }) {
 }
 
 /* ===================== */
-/* Glow（縮小版） */
+/* Glow */
 /* ===================== */
 
 function Glow({ size, color }) {
@@ -86,6 +131,90 @@ function Glow({ size, color }) {
       <meshBasicMaterial transparent opacity={0.08} color={color} />
     </mesh>
   );
+}
+/* ===================== */
+/* Supply Nodes（支援年份） */
+/* ===================== */
+
+function SupplyNodes({ year, onHover }) {
+  const { camera } = useThree();
+
+  const BASE = import.meta.env.BASE_URL;
+
+  const supplyLayout = supplyLayouts[year];
+
+  if (!supplyLayout) return null;
+
+  const iconMap = {
+    Coal: "coal.png",
+    Oil: "oil.png",
+    Gas: "gas.png",
+    Renewable: "solar.png",
+    Electricity: "electricity.png",
+    Waste: "biomass.png",
+    Other: "default.png",
+  };
+
+  return Object.entries(supplyLayout).map(([id, pos]) => {
+    const info = supplyMap[id];
+    const category = info?.category || "Other";
+    const iconFile = iconMap[category] || "default.png";
+
+    const distance = camera.position.length();
+    const scale = THREE.MathUtils.clamp(8 / distance, 0.6, 1.4);
+
+    const position = [
+      pos.x * SUPPLY_RADIUS,
+      pos.y * SUPPLY_RADIUS,
+      pos.z * SUPPLY_RADIUS,
+    ];
+
+    return (
+      <group key={id} position={position}>
+        <Glow size={0.08} color="#f59e0b" />
+
+        <Html center occlude={false}>
+          <img
+            src={`${BASE}icons/${iconFile}`}
+            alt=""
+            style={{
+              width: `${20 * scale}px`,
+              height: `${20 * scale}px`,
+              objectFit: "contain",
+              transition: "all 0.15s ease",
+              filter: "drop-shadow(0 0 4px rgba(0,0,0,0.6))",
+              cursor: "pointer",
+              pointerEvents: "auto",
+            }}
+            onError={(e) => {
+              if (e.currentTarget.dataset.fallback) return;
+              e.currentTarget.dataset.fallback = "true";
+              e.currentTarget.src = `${BASE}icons/default.png`;
+            }}
+            onMouseEnter={(e) => {
+              e.stopPropagation();
+              e.currentTarget.style.transform = "scale(1.4)";
+              e.currentTarget.style.filter =
+                "drop-shadow(0 0 8px rgba(245,158,11,0.8))";
+
+              onHover({
+                code: id,
+                name: info?.name_zh || id,
+                type: "supply",
+              });
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.filter =
+                "drop-shadow(0 0 4px rgba(0,0,0,0.6))";
+
+              onHover(null);
+            }}
+          />
+        </Html>
+      </group>
+    );
+  });
 }
 
 /* ===================== */
@@ -106,7 +235,13 @@ function GridSphere() {
 
     for (let j = 0; j <= 64; j++) {
       const lon = (j / 64) * Math.PI * 2;
-      points.push(new THREE.Vector3(r * Math.cos(lon), y, r * Math.sin(lon)));
+      points.push(
+        new THREE.Vector3(
+          r * Math.cos(lon),
+          y,
+          r * Math.sin(lon)
+        )
+      );
     }
 
     const geo = new THREE.BufferGeometry().setFromPoints(points);
@@ -145,109 +280,15 @@ function GridSphere() {
 
   return <group>{lines}</group>;
 }
-
 /* ===================== */
-/* Supply Nodes */
-/* ===================== */
-
-function SupplyNodes({ onHover }) {
-  const { camera } = useThree();
-
-  const BASE = import.meta.env.BASE_URL;
-
-  // ⭐ category → icon mapping
-  const iconMap = {
-    Coal: "coal.png",
-    Oil: "oil.png",
-    Gas: "gas.png",
-    Renewable: "solar.png",     // 可再細分（之後升級）
-    Electricity: "electricity.png",
-    Waste: "biomass.png",
-    Other: "default.png",
-  };
-
-  return Object.entries(supplyLayout).map(([id, pos]) => {
-    const info = supplyMap[id];
-
-    // ⭐ 抓 category（重點）
-    const category = info?.category || "Other";
-
-    // ⭐ 對應 icon
-    const iconFile = iconMap[category] || "default.png";
-
-    // ⭐ 距離縮放
-    const distance = camera.position.length();
-    const scale = THREE.MathUtils.clamp(8 / distance, 0.6, 1.4);
-
-    const position = [
-      pos.x * SUPPLY_RADIUS,
-      pos.y * SUPPLY_RADIUS,
-      pos.z * SUPPLY_RADIUS,
-    ];
-
-    return (
-      <group key={id} position={position}>
-        {/* Glow */}
-        <Glow size={0.08} color="#f59e0b" />
-
-        <Html center occlude={false}>
-          <img
-            src={`${BASE}icons/${iconFile}`}
-            alt=""
-            style={{
-              width: `${20 * scale}px`,
-              height: `${20 * scale}px`,
-              objectFit: "contain",
-
-              transition: "all 0.15s ease",
-              filter: "drop-shadow(0 0 4px rgba(0,0,0,0.6))",
-
-              cursor: "pointer",
-              pointerEvents: "auto",
-            }}
-
-            // ⭐ fallback
-            onError={(e) => {
-              if (e.currentTarget.dataset.fallback) return;
-
-              e.currentTarget.dataset.fallback = "true";
-              e.currentTarget.src = `${BASE}icons/default.png`;
-            }}
-
-            // ⭐ hover
-            onMouseEnter={(e) => {
-              e.stopPropagation();
-
-              e.currentTarget.style.transform = "scale(1.4)";
-              e.currentTarget.style.filter =
-                "drop-shadow(0 0 8px rgba(245,158,11,0.8))";
-
-              onHover({
-                code: id,
-                name: info?.name_zh || id,
-                type: "supply",
-              });
-            }}
-
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.filter =
-                "drop-shadow(0 0 4px rgba(0,0,0,0.6))";
-
-              onHover(null);
-            }}
-          />
-        </Html>
-      </group>
-    );
-  });
-}
-
-/* ===================== */
-/* Demand Nodes */
+/* Demand Nodes（支援年份） */
 /* ===================== */
 
-function DemandNodes({ lod, onHover, onSelect }) {
+function DemandNodes({ year, lod, onHover, onSelect }) {
+  const demandLayout = demandLayouts[year];
+
+  if (!demandLayout) return null;
+
   return Object.entries(demandLayout).map(([id, pos]) => {
     const level = demandLevel[id];
 
@@ -290,17 +331,14 @@ function DemandNodes({ lod, onHover, onSelect }) {
           />
         </mesh>
 
-        {/* LOD0 */}
         {lod === 0 && level === 1 && (
           <Label position={[0, size + 0.18, 0]} text={demandName[id]} baseSize={18} />
         )}
 
-        {/* LOD1 */}
         {lod === 1 && level === 2 && (
           <Label position={[0, size + 0.14, 0]} text={demandName[id]} baseSize={12} />
         )}
 
-        {/* 🔥 LOD2（新增） */}
         {lod === 2 && level === 3 && (
           <Label position={[0, size + 0.1, 0]} text={demandName[id]} baseSize={10} />
         )}
@@ -309,12 +347,19 @@ function DemandNodes({ lod, onHover, onSelect }) {
   });
 }
 
+
 /* ===================== */
-/* Supply Flow Lines */
+/* Supply Flow Lines（支援年份） */
 /* ===================== */
 
-function SupplyFlowLines({ selected, lod }) {
+function SupplyFlowLines({ year, selected, lod }) {
   if (!selected) return null;
+
+  const demandLayout = demandLayouts[year];
+  const supplyLayout = supplyLayouts[year];
+  const demandSupply = demandSupplyData[year];
+
+  if (!demandLayout || !supplyLayout || !demandSupply) return null;
 
   const level = demandLevel[selected.code];
 
@@ -348,12 +393,11 @@ function SupplyFlowLines({ selected, lod }) {
     );
   });
 }
-
 /* ===================== */
-/* Scene */
+/* Scene（加入 year） */
 /* ===================== */
 
-function Scene({ onHover, onSelect, selected }) {
+function Scene({ year, onHover, onSelect, selected }) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
 
@@ -372,29 +416,47 @@ function Scene({ onHover, onSelect, selected }) {
 
       <GridSphere />
 
-      <SupplyNodes onHover={onHover} />
+      {/* ⭐ 這三個全部加 year */}
+      <SupplyNodes year={year} onHover={onHover} />
 
-      <DemandNodes lod={lod} onHover={onHover} onSelect={onSelect} />
+      <DemandNodes
+        year={year}
+        lod={lod}
+        onHover={onHover}
+        onSelect={onSelect}
+      />
 
-      <SupplyFlowLines selected={selected} lod={lod} />
+      <SupplyFlowLines
+        year={year}
+        selected={selected}
+        lod={lod}
+      />
 
       <OrbitControls enablePan={false} />
     </>
   );
 }
 
+
 /* ===================== */
-/* Main */
+/* Main（接收 year） */
 /* ===================== */
 
 export default function GlobeVisualizer({
+  year,
   onHover,
   onSelect,
   selected,
 }) {
+  // 防止資料還沒載入
+  if (!supplyLayouts[year] || !demandLayouts[year]) {
+    return null;
+  }
+
   return (
     <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
       <Scene
+        year={year}
         onHover={onHover}
         onSelect={onSelect}
         selected={selected}
