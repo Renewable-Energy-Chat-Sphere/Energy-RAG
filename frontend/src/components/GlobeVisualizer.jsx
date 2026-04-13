@@ -62,7 +62,7 @@ function Label({ position, text, baseSize = 14 }) {
       <div
         style={{
           fontSize: baseSize * scale + "px",
-          color: "white",
+          color: "black",
           opacity: 0.8,
           textShadow: "0 0 6px rgba(0,0,0,0.6)",
           pointerEvents: "none",

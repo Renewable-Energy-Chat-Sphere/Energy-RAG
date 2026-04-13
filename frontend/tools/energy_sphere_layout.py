@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import os
+import re
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "src", "data")
@@ -17,219 +18,226 @@ DEMAND_MIN_DIST = 0.12
 
 
 # =========================
-# 讀取 distance matrix
+# 取得年份
 # =========================
+
+def extract_year(filename):
+    match = re.match(r"(\d+)_energy_euclidean_distance\.json", filename)
+    return int(match.group(1)) if match else 0
+
 
 files = [f for f in os.listdir(DATA_DIR) if "energy_euclidean_distance" in f]
+files.sort(key=extract_year)
 
-matrices = []
+print("Processing files:", files)
 
-for f in files:
 
-    with open(os.path.join(DATA_DIR, f), "r", encoding="utf-8") as file:
-
-        data = json.load(file)
-        supply = data["Supply"]
-
-        keys = sorted(supply.keys(), key=lambda x: int(x[1:]))
-
-        matrix = np.array([
-            [supply[i].get(j, 0) for j in keys]
-            for i in keys
-        ])
-
-        matrices.append(matrix)
-
-dist_matrix = np.mean(matrices, axis=0)
-
-N = len(keys)
-
-print("Loaded years:", len(matrices))
-print("Supply nodes:", N)
+prev_points = None
 
 
 # =========================
-# Fibonacci sphere seed
+# 主迴圈（每年）
 # =========================
 
-points = np.zeros((N, 3))
+for filename in files:
 
-phi = np.pi * (3 - np.sqrt(5))
+    year = extract_year(filename)
 
-for i in range(N):
+    print(f"\n=== {year} 年 ===")
 
-    y = 1 - (i/(N-1))*2
-    r = np.sqrt(1-y*y)
+    # =========================
+    # Load distance
+    # =========================
 
-    theta = phi*i
+    with open(os.path.join(DATA_DIR, filename), "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-    x = np.cos(theta)*r
-    z = np.sin(theta)*r
+    supply = data["Supply"]
 
-    points[i] = [x, y, z]
+    keys = sorted(supply.keys(), key=lambda x: int(x[1:]))
 
+    dist_matrix = np.array([
+        [supply[i].get(j, 0) for j in keys]
+        for i in keys
+    ])
 
-# =========================
-# Force layout optimization
-# =========================
+    N = len(keys)
 
-for step in range(ITERATIONS):
+    # =========================
+    # 初始化位置
+    # =========================
 
-    forces = np.zeros((N, 3))
+    if prev_points is None:
+        print("  使用 Fibonacci 初始球")
 
-    for i in range(N):
+        points = np.zeros((N, 3))
+        phi = np.pi * (3 - np.sqrt(5))
 
-        for j in range(i+1, N):
+        for i in range(N):
+            y = 1 - (i/(N-1))*2
+            r = np.sqrt(1-y*y)
+            theta = phi*i
+            x = np.cos(theta)*r
+            z = np.sin(theta)*r
+            points[i] = [x, y, z]
 
-            diff = points[i] - points[j]
-            dist = np.linalg.norm(diff) + 1e-6
+    else:
+        print("  使用上一年結果")
 
-            direction = diff/dist
+        noise = np.random.normal(0, 0.01, prev_points.shape)
+        points = prev_points + noise
+        points /= np.linalg.norm(points, axis=1)[:, None]
 
-            target = dist_matrix[i][j]
+    # =========================
+    # 優化
+    # =========================
 
-            sim_force = SIM_WEIGHT * (dist-target) * direction
-            rep_force = REPULSION * (direction/(dist*dist))
+    for step in range(ITERATIONS):
 
-            min_force = np.zeros(3)
+        forces = np.zeros((N, 3))
 
-            if dist < MIN_DIST:
-                min_force = 0.2*(MIN_DIST-dist)*direction
+        for i in range(N):
+            for j in range(i+1, N):
 
-            total = sim_force + rep_force + min_force
-
-            forces[i] += total
-            forces[j] -= total
-
-    points += LR * forces
-
-    points /= np.linalg.norm(points, axis=1)[:, None]
-
-    if step % 200 == 0:
-        print("iteration", step)
-
-print("Supply optimization done")
-
-
-# =========================
-# 輸出 supply layout
-# =========================
-
-supply_layout = {}
-
-for i, k in enumerate(keys):
-
-    supply_layout[k] = {
-        "x": float(points[i][0]),
-        "y": float(points[i][1]),
-        "z": float(points[i][2])
-    }
-
-with open(os.path.join(DATA_DIR, "supply_layout.json"), "w", encoding="utf-8") as f:
-    json.dump(supply_layout, f, indent=2)
-
-print("Saved supply_layout.json")
-
-
-# =========================
-# 讀 demand supply mapping
-# =========================
-
-demand_file = os.path.join(DATA_DIR, "113_energy_demand_supply.json")
-
-if not os.path.exists(demand_file):
-
-    print("No demand file found")
-    exit()
-
-with open(demand_file, "r", encoding="utf-8") as f:
-    demand_data = json.load(f)
-
-
-# =========================
-# Demand barycenter
-# =========================
-
-supply_vec = {
-    k: np.array([v["x"], v["y"], v["z"]])
-    for k, v in supply_layout.items()
-}
-
-demand_layout = {}
-
-for demand, supplies in demand_data.items():
-
-    pos = np.zeros(3)
-    total = 0
-
-    for s, w in supplies.items():
-
-        if s not in supply_vec:
-            continue
-
-        weight = w ** 1.5
-
-        pos += supply_vec[s] * weight
-        total += weight
-
-    if total == 0:
-        continue
-
-    pos /= total
-    pos /= np.linalg.norm(pos)
-
-    demand_layout[demand] = pos
-
-
-# =========================
-# Demand collision avoidance
-# =========================
-
-d_keys = list(demand_layout.keys())
-
-for _ in range(80):
-
-    for i in range(len(d_keys)):
-
-        for j in range(i+1, len(d_keys)):
-
-            a = demand_layout[d_keys[i]]
-            b = demand_layout[d_keys[j]]
-
-            diff = a - b
-            dist = np.linalg.norm(diff) + 1e-6
-
-            if dist < DEMAND_MIN_DIST:
-
+                diff = points[i] - points[j]
+                dist = np.linalg.norm(diff) + 1e-6
                 direction = diff/dist
 
-                move = DEMAND_REPULSION * (DEMAND_MIN_DIST - dist)
+                target = dist_matrix[i][j]
 
-                a += direction * move
-                b -= direction * move
+                sim_force = SIM_WEIGHT * (dist-target) * direction
+                rep_force = REPULSION * (direction/(dist*dist))
 
-                a /= np.linalg.norm(a)
-                b /= np.linalg.norm(b)
+                min_force = np.zeros(3)
+                if dist < MIN_DIST:
+                    min_force = 0.2*(MIN_DIST-dist)*direction
 
-                demand_layout[d_keys[i]] = a
-                demand_layout[d_keys[j]] = b
+                total = sim_force + rep_force + min_force
 
+                forces[i] += total
+                forces[j] -= total
 
-# =========================
-# 輸出 demand layout
-# =========================
+        points += LR * forces
+        points /= np.linalg.norm(points, axis=1)[:, None]
 
-output = {}
+        if step % 300 == 0:
+            print("  iteration", step)
 
-for k, v in demand_layout.items():
+    print("  Supply optimization done")
 
-    output[k] = {
-        "x": float(v[0]),
-        "y": float(v[1]),
-        "z": float(v[2])
+    # =========================
+    # 存 supply
+    # =========================
+
+    supply_layout = {}
+
+    for i, k in enumerate(keys):
+        supply_layout[k] = {
+            "x": float(points[i][0]),
+            "y": float(points[i][1]),
+            "z": float(points[i][2])
+        }
+
+    supply_path = os.path.join(DATA_DIR, f"supply_layout_{year}.json")
+
+    with open(supply_path, "w", encoding="utf-8") as f:
+        json.dump(supply_layout, f, indent=2)
+
+    print("  Saved", supply_path)
+
+    # =========================
+    # Demand（同年）
+    # =========================
+
+    demand_file = os.path.join(DATA_DIR, f"{year}_energy_demand_supply.json")
+
+    if not os.path.exists(demand_file):
+        print("  ❌ 找不到 demand data")
+        continue
+
+    with open(demand_file, "r", encoding="utf-8") as f:
+        demand_data = json.load(f)
+
+    supply_vec = {
+        k: np.array([v["x"], v["y"], v["z"]])
+        for k, v in supply_layout.items()
     }
 
-with open(os.path.join(DATA_DIR, "demand_layout.json"), "w", encoding="utf-8") as f:
-    json.dump(output, f, indent=2)
+    demand_layout = {}
 
-print("Saved demand_layout.json")
+    for demand, supplies in demand_data.items():
+
+        pos = np.zeros(3)
+        total = 0
+
+        for s, w in supplies.items():
+
+            if s not in supply_vec:
+                continue
+
+            weight = w ** 1.5
+            pos += supply_vec[s] * weight
+            total += weight
+
+        if total == 0:
+            continue
+
+        pos /= total
+        pos /= np.linalg.norm(pos)
+
+        demand_layout[demand] = pos
+
+    # =========================
+    # collision
+    # =========================
+
+    d_keys = list(demand_layout.keys())
+
+    for _ in range(80):
+        for i in range(len(d_keys)):
+            for j in range(i+1, len(d_keys)):
+
+                a = demand_layout[d_keys[i]]
+                b = demand_layout[d_keys[j]]
+
+                diff = a - b
+                dist = np.linalg.norm(diff) + 1e-6
+
+                if dist < DEMAND_MIN_DIST:
+
+                    direction = diff/dist
+                    move = DEMAND_REPULSION * (DEMAND_MIN_DIST - dist)
+
+                    a += direction * move
+                    b -= direction * move
+
+                    a /= np.linalg.norm(a)
+                    b /= np.linalg.norm(b)
+
+                    demand_layout[d_keys[i]] = a
+                    demand_layout[d_keys[j]] = b
+
+    # =========================
+    # 存 demand
+    # =========================
+
+    output = {}
+
+    for k, v in demand_layout.items():
+        output[k] = {
+            "x": float(v[0]),
+            "y": float(v[1]),
+            "z": float(v[2])
+        }
+
+    demand_path = os.path.join(DATA_DIR, f"demand_layout_{year}.json")
+
+    with open(demand_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2)
+
+    print("  Saved", demand_path)
+
+    prev_points = points.copy()
+
+
+print("\n全部年份完成 ✅")
