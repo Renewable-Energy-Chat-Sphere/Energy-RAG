@@ -12,19 +12,17 @@ const SUPPLY_RADIUS = 3.02;
 /* 🔥 動態載入所有年份資料 */
 /* ===================== */
 
-const supplyLayoutsRaw = import.meta.glob(
-  "../data/supply_layout_*.json",
-  { eager: true }
-);
+const supplyLayoutsRaw = import.meta.glob("../data/supply_layout_*.json", {
+  eager: true,
+});
 
-const demandLayoutsRaw = import.meta.glob(
-  "../data/demand_layout_*.json",
-  { eager: true }
-);
+const demandLayoutsRaw = import.meta.glob("../data/demand_layout_*.json", {
+  eager: true,
+});
 
 const demandSupplyRaw = import.meta.glob(
   "../data/*_energy_demand_supply.json",
-  { eager: true }
+  { eager: true },
 );
 
 /* ===================== */
@@ -97,6 +95,10 @@ function Label({ position, text, baseSize = 14 }) {
   const distance = camera.position.length();
   const scale = THREE.MathUtils.clamp(8 / distance, 0.6, 1.6);
 
+  const isDark = document
+    .getElementById("main-content")
+    ?.classList.contains("dark");
+
   function formatText(text) {
     if (!text) return "";
     return text.length > 4 ? text.slice(0, 4) + "..." : text;
@@ -107,9 +109,11 @@ function Label({ position, text, baseSize = 14 }) {
       <div
         style={{
           fontSize: baseSize * scale + "px",
-          color: "black",
-          opacity: 0.8,
-          textShadow: "0 0 6px rgba(0,0,0,0.6)",
+          color: isDark ? "#ffffff" : "#000000",
+          opacity: 0.95,
+          textShadow: isDark
+            ? "0 0 10px rgba(255,255,255,0.9)"
+            : "0 0 6px rgba(0,0,0,0.6)",
           pointerEvents: "none",
           whiteSpace: "nowrap",
         }}
@@ -235,21 +239,15 @@ function GridSphere() {
 
     for (let j = 0; j <= 64; j++) {
       const lon = (j / 64) * Math.PI * 2;
-      points.push(
-        new THREE.Vector3(
-          r * Math.cos(lon),
-          y,
-          r * Math.sin(lon)
-        )
-      );
+      points.push(new THREE.Vector3(r * Math.cos(lon), y, r * Math.sin(lon)));
     }
 
     const geo = new THREE.BufferGeometry().setFromPoints(points);
 
     lines.push(
       <line key={"lat" + i} geometry={geo}>
-        <lineBasicMaterial color="#64748b" />
-      </line>
+        <lineBasicMaterial color="#64748b" transparent opacity={0.2} />
+      </line>,
     );
   }
 
@@ -258,14 +256,14 @@ function GridSphere() {
     const points = [];
 
     for (let j = -32; j <= 32; j++) {
-      const lat = (j / 32) * Math.PI / 2;
+      const lat = ((j / 32) * Math.PI) / 2;
 
       points.push(
         new THREE.Vector3(
           3 * Math.cos(lat) * Math.cos(lon),
           3 * Math.sin(lat),
-          3 * Math.cos(lat) * Math.sin(lon)
-        )
+          3 * Math.cos(lat) * Math.sin(lon),
+        ),
       );
     }
 
@@ -273,8 +271,8 @@ function GridSphere() {
 
     lines.push(
       <line key={"lon" + i} geometry={geo}>
-        <lineBasicMaterial color="#64748b" />
-      </line>
+        <lineBasicMaterial color="#94a3b8" transparent opacity={0.25} />
+      </line>,
     );
   }
 
@@ -332,21 +330,32 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
         </mesh>
 
         {lod === 0 && level === 1 && (
-          <Label position={[0, size + 0.18, 0]} text={demandName[id]} baseSize={18} />
+          <Label
+            position={[0, size + 0.18, 0]}
+            text={demandName[id]}
+            baseSize={18}
+          />
         )}
 
         {lod === 1 && level === 2 && (
-          <Label position={[0, size + 0.14, 0]} text={demandName[id]} baseSize={12} />
+          <Label
+            position={[0, size + 0.14, 0]}
+            text={demandName[id]}
+            baseSize={12}
+          />
         )}
 
         {lod === 2 && level === 3 && (
-          <Label position={[0, size + 0.1, 0]} text={demandName[id]} baseSize={10} />
+          <Label
+            position={[0, size + 0.1, 0]}
+            text={demandName[id]}
+            baseSize={10}
+          />
         )}
       </group>
     );
   });
 }
-
 
 /* ===================== */
 /* Supply Flow Lines（支援年份） */
@@ -379,7 +388,7 @@ function SupplyFlowLines({ year, selected, lod }) {
     const p1 = new THREE.Vector3(
       s.x * SUPPLY_RADIUS,
       s.y * SUPPLY_RADIUS,
-      s.z * SUPPLY_RADIUS
+      s.z * SUPPLY_RADIUS,
     );
 
     const p2 = new THREE.Vector3(d.x * 3, d.y * 3, d.z * 3);
@@ -426,28 +435,18 @@ function Scene({ year, onHover, onSelect, selected }) {
         onSelect={onSelect}
       />
 
-      <SupplyFlowLines
-        year={year}
-        selected={selected}
-        lod={lod}
-      />
+      <SupplyFlowLines year={year} selected={selected} lod={lod} />
 
       <OrbitControls enablePan={false} />
     </>
   );
 }
 
-
 /* ===================== */
 /* Main（接收 year） */
 /* ===================== */
 
-export default function GlobeVisualizer({
-  year,
-  onHover,
-  onSelect,
-  selected,
-}) {
+export default function GlobeVisualizer({ year, onHover, onSelect, selected }) {
   // 防止資料還沒載入
   if (!supplyLayouts[year] || !demandLayouts[year]) {
     return null;
