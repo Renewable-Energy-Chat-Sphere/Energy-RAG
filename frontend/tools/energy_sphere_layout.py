@@ -67,8 +67,8 @@ for filename in files:
     # 初始化位置
     # =========================
 
-    if prev_points is None:
-        print("  使用 Fibonacci 初始球")
+    if prev_points is None or len(prev_points) != N:
+        print("  使用 Fibonacci 初始球（重新初始化）")
 
         points = np.zeros((N, 3))
         phi = np.pi * (3 - np.sqrt(5))
@@ -87,7 +87,7 @@ for filename in files:
         noise = np.random.normal(0, 0.01, prev_points.shape)
         points = prev_points + noise
         points /= np.linalg.norm(points, axis=1)[:, None]
-
+        
     # =========================
     # 優化
     # =========================
@@ -175,7 +175,7 @@ for filename in files:
             if s not in supply_vec:
                 continue
 
-            weight = w ** 1.5
+            weight = w 
             pos += supply_vec[s] * weight
             total += weight
 

@@ -5,8 +5,6 @@ import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
 import hierarchy from "../data/hierarchy.json";
 
-import energy113 from "../data/113_energy_demand_supply.json";
-import energy112 from "../data/112_energy_demand_supply.json";
 
 import supplyCatalog from "../data/supply_catalog.json";
 
@@ -17,6 +15,21 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+
+const energyFiles = import.meta.glob("../data/*_energy_demand_supply.json", {
+  eager: true
+});
+
+const energyMap = {};
+
+Object.entries(energyFiles).forEach(([path, module]) => {
+  const match = path.match(/(\d+)_energy_demand_supply\.json/);
+  if (match) {
+    energyMap[match[1]] = module.default;
+  }
+});
+
+const years = Object.keys(energyMap).sort((a, b) => b - a);
 
 /* ===================== */
 function findNodeByCode(code, tree) {
@@ -65,14 +78,13 @@ export default function Global() {
     Other: "#9e9e9e",
   };
 
-  function getEnergyData() {
-    if (year === "113") return energy113;
-    if (year === "112") return energy112;
-    return energy113;
+
+  
+
+  function getEnergyData(year) {
+    return energyMap[year] || {};
   }
-
-  const energyData = getEnergyData();
-
+  const energyData = getEnergyData(year);
   /* ===================== */
   function getEnergyList() {
     if (!selection) return [];
@@ -206,8 +218,11 @@ export default function Global() {
         <div className="panel-row">
           <label>年份</label>
           <select value={year} onChange={(e) => setYear(e.target.value)}>
-            <option value="113">113</option>
-            <option value="112">112</option>
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
           </select>
         </div>
 
