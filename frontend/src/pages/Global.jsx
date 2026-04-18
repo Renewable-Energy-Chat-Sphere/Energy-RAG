@@ -232,8 +232,8 @@ export default function Global() {
               type="checkbox"
               checked={showSupply}
               onChange={() => setShowSupply(!showSupply)}
-            />
-            顯示供給線
+              style={{ marginRight: "5px" }}  
+            />顯示供給線
           </label>
         </div>
 
@@ -249,8 +249,7 @@ export default function Global() {
 
         <div className="panel-row">
           <div className="ai-box" onClick={() => setShowAI(true)}>
-            <i className="fi fi-br-comments"></i>
-            問能源
+            <i className="fi fi-br-comments"  style={{ marginRight: "5px" }}></i>點我詢問能源
           </div>
         </div>
       </div>
@@ -270,7 +269,7 @@ export default function Global() {
         <div className="info-panel">
           {!selection && (
             <div className="info-empty">
-              <h3>請點擊需求節點</h3>
+              <h3>請點擊模型節點查看資訊</h3>
             </div>
           )}
 

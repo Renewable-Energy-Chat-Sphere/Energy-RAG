@@ -93,7 +93,16 @@ function Label({ position, text, baseSize = 14 }) {
   const { camera } = useThree();
 
   const distance = camera.position.length();
-  const scale = THREE.MathUtils.clamp(8 / distance, 0.6, 1.6);
+
+  let fontSizeFactor = 1;
+
+  if (distance > 6) {
+    fontSizeFactor = 1;
+  } else if (distance > 3) {
+    fontSizeFactor = 1.3;
+  } else {
+    fontSizeFactor = 1.5;
+  }
 
   const isDark = document
     .getElementById("main-content")
@@ -101,21 +110,36 @@ function Label({ position, text, baseSize = 14 }) {
 
   function formatText(text) {
     if (!text) return "";
-    return text.length > 4 ? text.slice(0, 4) + "..." : text;
+    return text.length > 5 ? text.slice(0, 5) + "..." : text;
   }
 
   return (
-    <Html position={position} center occlude={false}>
+    <Html
+      position={position}
+      center
+      occlude={false}
+      style={{
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: 0,
+      }}
+    >
       <div
         style={{
-          fontSize: baseSize * scale + "px",
+          fontSize: baseSize * fontSizeFactor + "px",
           color: isDark ? "#ffffff" : "#000000",
-          opacity: 0.95,
-          textShadow: isDark
-            ? "0 0 10px rgba(255,255,255,0.9)"
-            : "0 0 6px rgba(0,0,0,0.6)",
-          pointerEvents: "none",
+          opacity: 0.9,
           whiteSpace: "nowrap",
+          letterSpacing: "0.5px",
+          transition: "font-size 0.2s ease",
+
+          textShadow: isDark
+            ? "0 0 6px rgba(255,255,255,0.5)"
+            : "0 0 4px rgba(0,0,0,0.4)",
+
+          background: "transparent",
+          padding: "0px",
+          backdropFilter: "none",
         }}
       >
         {formatText(text)}
@@ -130,12 +154,44 @@ function Label({ position, text, baseSize = 14 }) {
 
 function Glow({ size, color }) {
   return (
-    <mesh>
-      <sphereGeometry args={[size * 1.3, 16, 16]} />
-      <meshBasicMaterial transparent opacity={0.08} color={color} />
-    </mesh>
+    <group>
+      {/* 外層大光暈 */}
+      <mesh>
+        <sphereGeometry args={[size * 2.2, 16, 16]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.1}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* 中層光暈 */}
+      <mesh>
+        <sphereGeometry args={[size * 1.6, 16, 16]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.1}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* 核心光點 */}
+      <mesh>
+        <sphereGeometry args={[size, 16, 16]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.4}
+          roughness={0.3}
+          metalness={0.2}
+        />
+      </mesh>
+    </group>
   );
 }
+
 /* ===================== */
 /* Supply Nodes（支援年份） */
 /* ===================== */
@@ -165,7 +221,7 @@ function SupplyNodes({ year, onHover }) {
     const iconFile = iconMap[category] || "default.png";
 
     const distance = camera.position.length();
-    const scale = THREE.MathUtils.clamp(8 / distance, 0.6, 1.4);
+    const scale = THREE.MathUtils.clamp(10 / distance, 0.4, 1.8);
 
     const position = [
       pos.x * SUPPLY_RADIUS,
@@ -185,10 +241,17 @@ function SupplyNodes({ year, onHover }) {
               width: `${20 * scale}px`,
               height: `${20 * scale}px`,
               objectFit: "contain",
-              transition: "all 0.15s ease",
-              filter: "drop-shadow(0 0 4px rgba(0,0,0,0.6))",
+              transition: "transform 0.25s ease, filter 0.25s ease",
               cursor: "pointer",
               pointerEvents: "auto",
+
+              /* ✨ 重點：改成「發光物件感」 */
+              filter:
+                category === "Renewable"
+                  ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
+                  : category === "Coal"
+                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
             }}
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
@@ -197,9 +260,12 @@ function SupplyNodes({ year, onHover }) {
             }}
             onMouseEnter={(e) => {
               e.stopPropagation();
-              e.currentTarget.style.transform = "scale(1.4)";
+
+              /* ❌ 不再做「放大 UI」感 */
+              e.currentTarget.style.transform = "translateY(-2px) scale(1.1)";
+
               e.currentTarget.style.filter =
-                "drop-shadow(0 0 8px rgba(245,158,11,0.8))";
+                "drop-shadow(0 0 14px rgba(255,255,255,0.25))";
 
               onHover({
                 code: id,
@@ -208,9 +274,14 @@ function SupplyNodes({ year, onHover }) {
               });
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.transform = "translateY(0px) scale(1)";
+
               e.currentTarget.style.filter =
-                "drop-shadow(0 0 4px rgba(0,0,0,0.6))";
+                category === "Renewable"
+                  ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
+                  : category === "Coal"
+                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
 
               onHover(null);
             }}
@@ -246,7 +317,7 @@ function GridSphere() {
 
     lines.push(
       <line key={"lat" + i} geometry={geo}>
-        <lineBasicMaterial color="#64748b" transparent opacity={0.2} />
+        <lineBasicMaterial color="#64748b" transparent opacity={0.3} />
       </line>,
     );
   }
@@ -271,13 +342,14 @@ function GridSphere() {
 
     lines.push(
       <line key={"lon" + i} geometry={geo}>
-        <lineBasicMaterial color="#94a3b8" transparent opacity={0.25} />
+        <lineBasicMaterial color="#94a3b8" transparent opacity={0.3} />
       </line>,
     );
   }
 
   return <group>{lines}</group>;
 }
+
 /* ===================== */
 /* Demand Nodes（支援年份） */
 /* ===================== */
@@ -379,29 +451,91 @@ function SupplyFlowLines({ year, selected, lod }) {
   const ratio = demandSupply[selected.code];
   if (!ratio) return null;
 
-  return Object.entries(ratio).map(([supply]) => {
-    const s = supplyLayout[supply];
-    const d = demandLayout[selected.code];
+  const d = demandLayout[selected.code];
+  if (!d) return null;
 
-    if (!s || !d) return null;
+  const shrink = 0.01;
 
-    const p1 = new THREE.Vector3(
-      s.x * SUPPLY_RADIUS,
-      s.y * SUPPLY_RADIUS,
-      s.z * SUPPLY_RADIUS,
+  // 球面轉換
+  const toSphere = (v, radius) => {
+    return new THREE.Vector3(v.x, v.y, v.z)
+      .normalize()
+      .multiplyScalar(radius);
+  };
+
+  // 高拱弧線
+  const createHighArc = (start, end, radius, height = 1.2, segments = 64) => {
+    const curve = new THREE.QuadraticBezierCurve3(start, height.mid, end);
+
+    return new THREE.TubeGeometry(
+      curve,
+      segments,
+      0.01,
+      8,
+      false
     );
+  };
 
-    const p2 = new THREE.Vector3(d.x * 3, d.y * 3, d.z * 3);
+  return Object.entries(ratio)
+    .map(([supply, raw]) => {
+      const s = supplyLayout[supply];
+      if (!s) return null;
 
-    const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      const strength = Math.pow(raw || 0, 0.6);
 
-    return (
-      <line key={supply} geometry={geo}>
-        <lineBasicMaterial color="#ff0000" transparent opacity={0.7} />
-      </line>
-    );
-  });
+      // 球面位置
+      const start = toSphere(s, SUPPLY_RADIUS * 1);
+      const end = toSphere(d, SUPPLY_RADIUS * 1);
+
+      // 距離計算
+      const distance = start.distanceTo(end);
+      const normalizedDist = THREE.MathUtils.clamp(
+        distance / (SUPPLY_RADIUS * 2),
+        0,
+        1
+      );
+
+      // 非線性拉伸
+      const curvedDist = Math.pow(normalizedDist, 1);
+
+      // 弧度控制
+      const heightValue =
+        0.1 +
+        curvedDist * 2 +
+        strength * 0.5;
+
+      // 控制中點抬升
+      const mid = new THREE.Vector3()
+        .addVectors(start, end)
+        .multiplyScalar(0.5)
+        .normalize()
+        .multiplyScalar(SUPPLY_RADIUS * (1 + heightValue));
+
+      const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+
+      const geo = new THREE.TubeGeometry(
+        curve,
+        64,
+        0.01,
+        8,
+        false
+      );
+
+      return (
+        <mesh key={supply} geometry={geo}>
+          <meshStandardMaterial
+            color="#fbbf24"
+            emissive="#fbbf24"
+            emissiveIntensity={strength}
+            transparent
+            opacity={0.9}
+          />
+        </mesh>
+      );
+    })
+    .filter(Boolean);
 }
+
 /* ===================== */
 /* Scene（加入 year） */
 /* ===================== */
