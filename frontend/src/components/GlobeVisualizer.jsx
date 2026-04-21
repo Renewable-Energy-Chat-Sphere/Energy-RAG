@@ -156,15 +156,6 @@ function Glow({ size, color }) {
   return (
     <group>
       {/* 外層大光暈 */}
-      <mesh>
-        <sphereGeometry args={[size * 2.2, 16, 16]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.1}
-          depthWrite={false}
-        />
-      </mesh>
 
       {/* 中層光暈 */}
       <mesh>
@@ -172,20 +163,8 @@ function Glow({ size, color }) {
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.1}
+          opacity={0.15}
           depthWrite={false}
-        />
-      </mesh>
-
-      {/* 核心光點 */}
-      <mesh>
-        <sphereGeometry args={[size, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.4}
-          roughness={0.3}
-          metalness={0.2}
         />
       </mesh>
     </group>
@@ -218,6 +197,16 @@ function SupplyNodes({ year, onHover }) {
   return Object.entries(supplyLayout).map(([id, pos]) => {
     const info = supplyMap[id];
     const category = info?.category || "Other";
+
+    const CATEGORY_COLOR = {
+      Coal: "#9ca3af",
+      Oil: "#f97316",
+      Gas: "#38bdf8",
+      Renewable: "#4ade80",
+      Electricity: "#facc15",
+      Waste: "#a78bfa",
+      Other: "#94a3b8",
+    };
     const iconFile = iconMap[category] || "default.png";
 
     const distance = camera.position.length();
@@ -231,7 +220,7 @@ function SupplyNodes({ year, onHover }) {
 
     return (
       <group key={id} position={position}>
-        <Glow size={0.08} color="#f59e0b" />
+        <Glow size={0.08} color={CATEGORY_COLOR[category] || "#94a3b8"} />
 
         <Html center occlude={false}>
           <img
@@ -250,8 +239,8 @@ function SupplyNodes({ year, onHover }) {
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
-                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
+                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
             }}
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
@@ -280,8 +269,8 @@ function SupplyNodes({ year, onHover }) {
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
-                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
+                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
 
               onHover(null);
             }}
@@ -432,7 +421,13 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
 /* ===================== */
 /* Supply Flow Lines（支援年份） */
 /* ===================== */
-
+function getColor(value) {
+  return new THREE.Color().setHSL(
+    (1 - value) * 0.4, // 綠 → 紅
+    1,
+    0.5,
+  );
+}
 function SupplyFlowLines({ year, selected, lod }) {
   if (!selected) return null;
 
@@ -458,22 +453,14 @@ function SupplyFlowLines({ year, selected, lod }) {
 
   // 球面轉換
   const toSphere = (v, radius) => {
-    return new THREE.Vector3(v.x, v.y, v.z)
-      .normalize()
-      .multiplyScalar(radius);
+    return new THREE.Vector3(v.x, v.y, v.z).normalize().multiplyScalar(radius);
   };
 
   // 高拱弧線
   const createHighArc = (start, end, radius, height = 1.2, segments = 64) => {
     const curve = new THREE.QuadraticBezierCurve3(start, height.mid, end);
 
-    return new THREE.TubeGeometry(
-      curve,
-      segments,
-      0.01,
-      8,
-      false
-    );
+    return new THREE.TubeGeometry(curve, segments, 0.01, 8, false);
   };
 
   return Object.entries(ratio)
@@ -481,8 +468,15 @@ function SupplyFlowLines({ year, selected, lod }) {
       const s = supplyLayout[supply];
       if (!s) return null;
 
-      const strength = Math.pow(raw || 0, 0.6);
+      const values = Object.values(ratio);
 
+      const min = Math.min(...values);
+      const max = Math.max(...Object.values(ratio));
+
+      const normalized = raw / (max || 1);
+
+      // 👉 拉開差距
+      const strength = 0.3 + Math.pow(normalized, 0.5) * 0.7;
       // 球面位置
       const start = toSphere(s, SUPPLY_RADIUS * 1);
       const end = toSphere(d, SUPPLY_RADIUS * 1);
@@ -492,17 +486,14 @@ function SupplyFlowLines({ year, selected, lod }) {
       const normalizedDist = THREE.MathUtils.clamp(
         distance / (SUPPLY_RADIUS * 2),
         0,
-        1
+        1,
       );
 
       // 非線性拉伸
       const curvedDist = Math.pow(normalizedDist, 1);
 
       // 弧度控制
-      const heightValue =
-        0.1 +
-        curvedDist * 2 +
-        strength * 0.5;
+      const heightValue = 0.4 + curvedDist * 0.5 + strength * 0.2;
 
       // 控制中點抬升
       const mid = new THREE.Vector3()
@@ -513,22 +504,16 @@ function SupplyFlowLines({ year, selected, lod }) {
 
       const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
 
-      const geo = new THREE.TubeGeometry(
-        curve,
-        64,
-        0.01,
-        8,
-        false
-      );
-
+      const geo = new THREE.TubeGeometry(curve, 32, 0.005, 6, false);
+      const color = getColor(strength);
       return (
         <mesh key={supply} geometry={geo}>
           <meshStandardMaterial
-            color="#fbbf24"
-            emissive="#fbbf24"
-            emissiveIntensity={strength}
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.3 + strength * 0.7}
             transparent
-            opacity={0.9}
+            opacity={0.4 + strength * 0.6}
           />
         </mesh>
       );
@@ -540,7 +525,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 /* Scene（加入 year） */
 /* ===================== */
 
-function Scene({ year, onHover, onSelect, selected }) {
+function Scene({ year, onHover, onSelect, selected, showFlow }) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
 
@@ -569,7 +554,9 @@ function Scene({ year, onHover, onSelect, selected }) {
         onSelect={onSelect}
       />
 
-      <SupplyFlowLines year={year} selected={selected} lod={lod} />
+      {showFlow && (
+        <SupplyFlowLines year={year} selected={selected} lod={lod} />
+      )}
 
       <OrbitControls enablePan={false} />
     </>
@@ -580,7 +567,13 @@ function Scene({ year, onHover, onSelect, selected }) {
 /* Main（接收 year） */
 /* ===================== */
 
-export default function GlobeVisualizer({ year, onHover, onSelect, selected }) {
+export default function GlobeVisualizer({
+  year,
+  onHover,
+  onSelect,
+  selected,
+  showFlow,
+}) {
   // 防止資料還沒載入
   if (!supplyLayouts[year] || !demandLayouts[year]) {
     return null;
@@ -593,6 +586,7 @@ export default function GlobeVisualizer({ year, onHover, onSelect, selected }) {
         onHover={onHover}
         onSelect={onSelect}
         selected={selected}
+        showFlow={showFlow}
       />
     </Canvas>
   );
