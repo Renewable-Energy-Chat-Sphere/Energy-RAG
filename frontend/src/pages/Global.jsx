@@ -5,19 +5,12 @@ import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
 import hierarchy from "../data/hierarchy.json";
 
-
 import supplyCatalog from "../data/supply_catalog.json";
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
 const energyFiles = import.meta.glob("../data/*_energy_demand_supply.json", {
-  eager: true
+  eager: true,
 });
 
 const energyMap = {};
@@ -31,22 +24,23 @@ Object.entries(energyFiles).forEach(([path, module]) => {
 
 const years = Object.keys(energyMap).sort((a, b) => b - a);
 
-/* ===================== */
-function findNodeByCode(code, tree) {
-  for (const key in tree) {
-    if (key === code) return tree[key];
-
-    if (tree[key].children) {
-      const found = findNodeByCode(code, tree[key].children);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
 export default function Global() {
-  const [selection, setSelection] = useState(null);
-  const [hover, setHover] = useState(null);
+  /* ===================== */
+  function findNodeByCode(code, tree) {
+    for (const key in tree) {
+      if (key === code) return tree[key];
+
+      if (tree[key].children) {
+        const found = findNodeByCode(code, tree[key].children);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  const [hovered, setHovered] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [showFlow, setShowFlow] = useState(true);
+
   const [year, setYear] = useState("113");
   const [showSupply, setShowSupply] = useState(false);
   const [search, setSearch] = useState("");
@@ -56,7 +50,13 @@ export default function Global() {
   const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  const onHover = (data) => {
+    setHovered(data);
+  };
 
+  const onSelect = (data) => {
+    setSelected(data);
+  };
   const handleMouseDown = () => setDragging(true);
 
   const handleMouseMove = (e) => {
@@ -78,25 +78,20 @@ export default function Global() {
     Other: "#9e9e9e",
   };
 
-
-  
-
   function getEnergyData(year) {
     return energyMap[year] || {};
   }
   const energyData = getEnergyData(year);
   /* ===================== */
   function getEnergyList() {
-    if (!selection) return [];
+    if (!selected) return [];
 
-    const demandData = energyData[selection.code];
+    const demandData = energyData[selected.code];
     if (!demandData) return [];
 
     return Object.entries(demandData)
       .map(([supplyId, value]) => {
-        const supply = supplyCatalog.find(
-          (s) => s.source_id === supplyId
-        );
+        const supply = supplyCatalog.find((s) => s.source_id === supplyId);
 
         return {
           id: supplyId,
@@ -192,10 +187,10 @@ export default function Global() {
   }
 
   useEffect(() => {
-    if (selection) {
-      setQuestion(`${year} ${selection.name} 能源比例`);
+    if (selected) {
+      setQuestion(`${year} ${selected.name} 能源比例`);
     }
-  }, [selection]);
+  }, [selected]);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
@@ -218,22 +213,22 @@ export default function Global() {
         <div className="panel-row">
           <label>年份</label>
           <select value={year} onChange={(e) => setYear(e.target.value)}>
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="panel-row">
-          <label className="checkbox-row">
+          <label style={{ marginLeft: "10px", color: "#fff" }}>
             <input
               type="checkbox"
-              checked={showSupply}
-              onChange={() => setShowSupply(!showSupply)}
-              style={{ marginRight: "5px" }}  
-            />顯示供給線
+              checked={showFlow}
+              onChange={(e) => setShowFlow(e.target.checked)}
+            />
+            顯示供給線
           </label>
         </div>
 
@@ -249,7 +244,8 @@ export default function Global() {
 
         <div className="panel-row">
           <div className="ai-box" onClick={() => setShowAI(true)}>
-            <i className="fi fi-br-comments"  style={{ marginRight: "5px" }}></i>點我詢問能源
+            <i className="fi fi-br-comments" style={{ marginRight: "5px" }}></i>
+            點我詢問能源
           </div>
         </div>
       </div>
@@ -258,27 +254,26 @@ export default function Global() {
         <div className="globe-area">
           <GlobeVisualizer
             year={year}
-            showSupply={showSupply}
-            search={search}
-            selected={selection}
-            onSelect={setSelection}
-            onHover={setHover}
+            onHover={onHover}
+            onSelect={onSelect}
+            selected={selected}
+            showFlow={showFlow}
           />
         </div>
 
         <div className="info-panel">
-          {!selection && (
+          {!selected && (
             <div className="info-empty">
               <h3>請點擊模型節點查看資訊</h3>
             </div>
           )}
 
-          {selection && (
+          {selected && (
             <div className="info-card">
-              <h2>{selection.name}</h2>
+              <h2>{selected.name}</h2>
 
               {(() => {
-                const node = findNodeByCode(selection.code, hierarchy);
+                const node = findNodeByCode(selected.code, hierarchy);
                 return node?.img ? (
                   <img
                     src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
@@ -316,16 +311,12 @@ export default function Global() {
                         {getPieData().map((entry, index) => (
                           <Cell
                             key={index}
-                            fill={
-                              CATEGORY_COLOR[entry.category] || "#ccc"
-                            }
+                            fill={CATEGORY_COLOR[entry.category] || "#ccc"}
                           />
                         ))}
                       </Pie>
 
-                      <Tooltip
-                        formatter={(v) => `${(v * 100).toFixed(1)}%`}
-                      />
+                      <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
 
                       <Legend
                         layout="horizontal"
@@ -341,10 +332,10 @@ export default function Global() {
           )}
         </div>
 
-        {hover && (
+        {hovered && (
           <div className="hover-overlay">
             <div className="hover-card">
-              <div className="hover-header">{hover.name}</div>
+              <div className="hover-header">{hovered.name}</div>
 
               <div className="hover-content">
                 常用能源：
@@ -379,7 +370,7 @@ export default function Global() {
             </div>
 
             <textarea
-              placeholder={`例如：${year}年 ${selection?.name || ""} 的能源占比`}
+              placeholder={`例如：${year}年 ${selected?.name || ""} 的能源占比`}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={handleKeyDown}
