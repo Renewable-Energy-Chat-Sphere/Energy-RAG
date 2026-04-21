@@ -258,6 +258,7 @@ export default function Global() {
             onSelect={onSelect}
             selected={selected}
             showFlow={showFlow}
+            hovered={hovered}
           />
         </div>
 

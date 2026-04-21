@@ -525,7 +525,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 /* Scene（加入 year） */
 /* ===================== */
 
-function Scene({ year, onHover, onSelect, selected, showFlow }) {
+function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
 
@@ -545,7 +545,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow }) {
       <GridSphere />
 
       {/* ⭐ 這三個全部加 year */}
-      <SupplyNodes year={year} onHover={onHover} />
+      <SupplyNodes year={year} onHover={onHover} hovered={hovered} />
 
       <DemandNodes
         year={year}
@@ -573,21 +573,115 @@ export default function GlobeVisualizer({
   onSelect,
   selected,
   showFlow,
+  hovered, // ⭐ 加這個
 }) {
+  const [showLegendDetail, setShowLegendDetail] = useState(false);
   // 防止資料還沒載入
   if (!supplyLayouts[year] || !demandLayouts[year]) {
     return null;
   }
 
   return (
-    <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
-      <Scene
-        year={year}
-        onHover={onHover}
-        onSelect={onSelect}
-        selected={selected}
-        showFlow={showFlow}
-      />
-    </Canvas>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      {/* 🌍 3D 球 */}
+      <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
+        <Scene
+          year={year}
+          onHover={onHover}
+          onSelect={onSelect}
+          selected={selected}
+          showFlow={showFlow}
+          hovered={hovered}
+        />
+      </Canvas>
+      <div
+        style={{
+          position: "absolute",
+          left: "20px",
+          top: "80px",
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            width: "180px",
+            padding: "12px",
+            borderRadius: "12px",
+            background: "rgba(0,0,0,0.6)",
+            color: "#fff",
+            fontSize: "12px",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          {/* 標題 */}
+          <div style={{ marginBottom: "8px", fontWeight: "bold" }}>
+            能源流強度
+          </div>
+
+          {/* 漸層 */}
+          <div
+            style={{
+              height: "10px",
+              borderRadius: "5px",
+              background:
+                "linear-gradient(to right, #22c55e, #facc15, #ef4444)",
+              marginBottom: "6px",
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "8px",
+            }}
+          >
+            <span>低</span>
+            <span>高</span>
+          </div>
+
+          {/* 下拉按鈕 */}
+          <div
+            style={{
+              cursor: "pointer",
+              fontSize: "11px",
+              opacity: 0.8,
+            }}
+            onClick={() => setShowLegendDetail(!showLegendDetail)}
+          >
+            {showLegendDetail ? "▲ 收起說明" : "▼ 查看說明"}
+          </div>
+
+          {/* 展開內容 */}
+          <div
+            style={{
+              maxHeight: showLegendDetail ? "200px" : "0px",
+              opacity: showLegendDetail ? 1 : 0,
+              overflow: "hidden",
+              transition: "all 0.35s ease",
+              marginTop: showLegendDetail ? "8px" : "0px",
+            }}
+          >
+            <div
+              style={{
+                lineHeight: "1.6",
+                fontSize: "11px",
+                opacity: 0.9,
+              }}
+            >
+              <div>• 顏色依能源使用比例經正規化後計算</div>
+              <div>• 綠色：低使用比例</div>
+              <div>• 黃色：中等比例</div>
+              <div>• 紅色：高使用比例</div>
+
+              <div style={{ marginTop: "6px" }}>※ 每個部門皆獨立進行正規化</div>
+              <div>※ 顏色代表相對強度</div>
+              <div>※ 與節點位置（相似度）不同</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* ⭐ ⭐ ⭐ 這裡才是你要放的 */}
+    </div>
   );
 }

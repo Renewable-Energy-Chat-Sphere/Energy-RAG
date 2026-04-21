@@ -164,7 +164,6 @@ nav .dropdown-btn:hover {
 }
 
 .dropdown-content {
-  display: none;
   position: absolute;
   top: 110%;
   left: 0;
@@ -174,16 +173,19 @@ nav .dropdown-btn:hover {
   min-width: 180px;
   z-index: 150;
 
+  max-height: 0; /* ⭐ 新增 */
   opacity: 0;
   transform: translateY(-10px);
+  overflow: hidden; /* ⭐ 新增 */
+
   transition:
-    opacity 0.3s ease,
+    max-height 0.35s ease,
+    /* ⭐ 新增 */ opacity 0.3s ease,
     transform 0.3s ease;
-  pointer-events: none;
 }
 
 .dropdown.show .dropdown-content {
-  display: block;
+   max-height: 200px; 
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
@@ -1080,6 +1082,6 @@ body {
 
   font-size: 22px;
   font-weight: 600;
-  
+
   margin-left: 0; /* 確保沒被推開 */
 }
