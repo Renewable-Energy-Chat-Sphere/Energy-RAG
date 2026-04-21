@@ -26,7 +26,6 @@ from tables import tables_bp
 # 🔥 加回 scheduler
 from scheduler import start_scheduler
 
-
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
