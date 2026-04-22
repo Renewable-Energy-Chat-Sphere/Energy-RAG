@@ -180,18 +180,17 @@ def ask_pdf():
 # ====================================
 # 3. AV 問答
 # ====================================
-@app.route("/ask_av", methods=["POST"])
-def ask_av():
-    question = (request.form.get("question") or "").strip()
-    file = request.files.get("file")
-
-    if not question:
-        return jsonify({"error": "❌ 必須提供問題內容"}), 400
-    if not file:
-        return jsonify({"error": "❌ 請上傳音訊或影片檔案"}), 400
-
-    answer, sources = qa_over_av(question, file)
-    return jsonify({"answer": answer, "sources": sources})
+#@app.route("/ask_av", methods=["POST"])
+#def ask_av():
+#    question = (request.form.get("question") or "").strip()
+#    file = request.files.get("file")
+#
+#    if not question:
+#        return jsonify({"error": "❌ 必須提供問題內容"}), 400
+#    if not file:
+#        return jsonify({"error": "❌ 請上傳音訊或影片檔案"}), 400
+#    answer, sources = qa_over_av(question, file)
+#    return jsonify({"answer": answer, "sources": sources})
 
 
 # ====================================
