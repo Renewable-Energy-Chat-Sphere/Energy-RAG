@@ -9,7 +9,7 @@ import hierarchy from "../data/hierarchy.json";
 const SUPPLY_RADIUS = 3.02;
 
 /* ===================== */
-/* 🔥 動態載入所有年份資料 */
+/* 動態載入所有年份資料 */
 /* ===================== */
 
 const supplyLayoutsRaw = import.meta.glob("../data/supply_layout_*.json", {
@@ -26,7 +26,7 @@ const demandSupplyRaw = import.meta.glob(
 );
 
 /* ===================== */
-/* 🔥 轉成 year mapping */
+/* 轉成 year mapping */
 /* ===================== */
 
 const supplyLayouts = {};
@@ -172,7 +172,7 @@ function Glow({ size, color }) {
 }
 
 /* ===================== */
-/* Supply Nodes（支援年份） */
+/* Supply Nodes */
 /* ===================== */
 
 function SupplyNodes({ year, onHover }) {
@@ -340,7 +340,7 @@ function GridSphere() {
 }
 
 /* ===================== */
-/* Demand Nodes（支援年份） */
+/* Demand Nodes */
 /* ===================== */
 
 function DemandNodes({ year, lod, onHover, onSelect }) {
@@ -419,15 +419,15 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
 }
 
 /* ===================== */
-/* Supply Flow Lines（支援年份） */
+/* Supply Flow Lines*/
 /* ===================== */
+
 function getColor(value) {
-  return new THREE.Color().setHSL(
-    (1 - value) * 0.4, // 綠 → 紅
-    1,
-    0.5,
-  );
+  if (value < 0.33) return new THREE.Color("#0ea5e9");
+  if (value < 0.66) return new THREE.Color("#facc15");
+  return new THREE.Color("#dc2626");
 }
+
 function SupplyFlowLines({ year, selected, lod }) {
   if (!selected) return null;
 
@@ -477,6 +477,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 
       // 👉 拉開差距
       const strength = 0.3 + Math.pow(normalized, 0.5) * 0.7;
+      
       // 球面位置
       const start = toSphere(s, SUPPLY_RADIUS * 1);
       const end = toSphere(d, SUPPLY_RADIUS * 1);
@@ -505,15 +506,15 @@ function SupplyFlowLines({ year, selected, lod }) {
       const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
 
       const geo = new THREE.TubeGeometry(curve, 32, 0.005, 6, false);
-      const color = getColor(strength);
+      const color = getColor(normalized);
       return (
         <mesh key={supply} geometry={geo}>
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={0.3 + strength * 0.7}
+            emissiveIntensity={0.6 + strength * 0.8}
             transparent
-            opacity={0.4 + strength * 0.6}
+            opacity={0.5 + strength * 0.5}
           />
         </mesh>
       );
@@ -522,7 +523,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 }
 
 /* ===================== */
-/* Scene（加入 year） */
+/* Scene */
 /* ===================== */
 
 function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
@@ -564,7 +565,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
 }
 
 /* ===================== */
-/* Main（接收 year） */
+/* Main */
 /* ===================== */
 
 export default function GlobeVisualizer({
@@ -573,7 +574,7 @@ export default function GlobeVisualizer({
   onSelect,
   selected,
   showFlow,
-  hovered, // ⭐ 加這個
+  hovered,
 }) {
   const [showLegendDetail, setShowLegendDetail] = useState(false);
   // 防止資料還沒載入
@@ -594,19 +595,20 @@ export default function GlobeVisualizer({
           hovered={hovered}
         />
       </Canvas>
+
       <div
         style={{
           position: "absolute",
-          left: "20px",
-          top: "80px",
+          left: "40px",
+          top: "40px",
           zIndex: 10,
         }}
       >
         <div
           style={{
-            width: "180px",
-            padding: "12px",
-            borderRadius: "12px",
+            width: "200px",
+            padding: "15px",
+            borderRadius: "20px",
             background: "rgba(0,0,0,0.6)",
             color: "#fff",
             fontSize: "12px",
@@ -614,18 +616,15 @@ export default function GlobeVisualizer({
           }}
         >
           {/* 標題 */}
-          <div style={{ marginBottom: "8px", fontWeight: "bold" }}>
-            能源流強度
-          </div>
+          <div style={{marginBottom: "10px"}}>能源連線強度</div>
 
           {/* 漸層 */}
           <div
             style={{
               height: "10px",
-              borderRadius: "5px",
-              background:
-                "linear-gradient(to right, #22c55e, #facc15, #ef4444)",
-              marginBottom: "6px",
+              borderRadius: "10px",
+              background: "linear-gradient(to right, #0ea5e9, #facc15, #dc2626)",
+              marginBottom: "5px",
             }}
           />
 
@@ -644,7 +643,7 @@ export default function GlobeVisualizer({
           <div
             style={{
               cursor: "pointer",
-              fontSize: "11px",
+              fontSize: "12px",
               opacity: 0.8,
             }}
             onClick={() => setShowLegendDetail(!showLegendDetail)}
@@ -664,24 +663,21 @@ export default function GlobeVisualizer({
           >
             <div
               style={{
-                lineHeight: "1.6",
-                fontSize: "11px",
+                lineHeight: "1.5",
+                fontSize: "12px",
                 opacity: 0.9,
               }}
             >
-              <div>• 顏色依能源使用比例經正規化後計算</div>
-              <div>• 綠色：低使用比例</div>
-              <div>• 黃色：中等比例</div>
-              <div>• 紅色：高使用比例</div>
+              <div>顏色依能源使用比例區分：</div>
+              <div>青色 - 使用比例較低</div>
+              <div>黃色 - 使用比例普通</div>
+              <div>紅色 - 使用比例較高</div>
 
-              <div style={{ marginTop: "6px" }}>※ 每個部門皆獨立進行正規化</div>
-              <div>※ 顏色代表相對強度</div>
-              <div>※ 與節點位置（相似度）不同</div>
+              <div style={{ marginTop: "10px" }}>※ 顏色僅代表相對強度，與節點位置分布（相似度）不同</div>
             </div>
           </div>
         </div>
       </div>
-      {/* ⭐ ⭐ ⭐ 這裡才是你要放的 */}
     </div>
   );
 }

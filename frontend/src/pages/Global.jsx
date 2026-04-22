@@ -49,6 +49,7 @@ export default function Global() {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const onHover = (data) => {
     setHovered(data);
@@ -69,7 +70,6 @@ export default function Global() {
 
   const handleMouseUp = () => setDragging(false);
 
-  /* ===================== */
   const CATEGORY_COLOR = {
     Coal: "#424242",
     Oil: "#ff9800",
@@ -82,32 +82,70 @@ export default function Global() {
     return energyMap[year] || {};
   }
   const energyData = getEnergyData(year);
-  /* ===================== */
-  function getEnergyList() {
-    if (!selected) return [];
 
-    const demandData = energyData[selected.code];
-    if (!demandData) return [];
+  function getDemandName(code) {
+    function search(nodeMap) {
+      for (const key in nodeMap) {
+        const node = nodeMap[key];
 
-    return Object.entries(demandData)
-      .map(([supplyId, value]) => {
-        const supply = supplyCatalog.find((s) => s.source_id === supplyId);
+        if (key === code) return node.name;
 
-        return {
-          id: supplyId,
-          name:
-            supply?.name_zh?.length > 6
-              ? supply.name_zh.slice(0, 6) + "…"
-              : supply?.name_zh || supplyId,
-          fullName: supply?.name_zh || supplyId,
-          value: value,
-          category: supply?.category || "Other",
-        };
-      })
-      .sort((a, b) => b.value - a.value);
+        if (node.children) {
+          const found = search(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    return search(hierarchy) || code;
   }
 
-  /* ===================== */
+  function getEnergyList(node = selected) {
+    if (!node) return [];
+
+    // 需求對供給關聯
+    if (!node.code.startsWith("S")) {
+      const demandData = energyData[node.code];
+      if (!demandData) return [];
+
+      return Object.entries(demandData)
+        .map(([supplyId, value]) => {
+          const supply = supplyCatalog.find(
+            (s) => s.source_id === supplyId
+          );
+
+          const name = supply?.name_zh || supplyId;
+
+          return {
+            id: supplyId,
+            name,
+            fullName: name,
+            value,
+          };
+        })
+        .sort((a, b) => b.value - a.value);
+    }
+
+    // 供給對需求關聯
+    const result = [];
+
+    Object.entries(energyData).forEach(([dCode, supplies]) => {
+      if (supplies[node.code]) {
+        const name = getDemandName(dCode);
+
+        result.push({
+          id: dCode,
+          name,
+          fullName: name,
+          value: supplies[node.code],
+        });
+      }
+    });
+
+    return result.sort((a, b) => b.value - a.value);
+  }
+
   function getPieData() {
     const list = getEnergyList();
 
@@ -119,7 +157,7 @@ export default function Global() {
 
     const topWithPercent = top.map((d) => ({
       ...d,
-      value: d.value / total, // ⭐ 正確比例
+      value: d.value / total,
     }));
 
     const topTotal = top.reduce((a, b) => a + b.value, 0);
@@ -134,7 +172,6 @@ export default function Global() {
       });
     }
 
-    // ⭐ 保證「其他」最後
     return topWithPercent.sort((a, b) => {
       if (a.name === "其他") return 1;
       if (b.name === "其他") return -1;
@@ -251,7 +288,15 @@ export default function Global() {
       </div>
 
       <div className="global-layout">
-        <div className="globe-area">
+        <div
+          className="globe-area"
+          onMouseMove={(e) => {
+            setMousePos({
+              x: e.clientX,
+              y: e.clientY,
+            });
+          }}
+        >
           <GlobeVisualizer
             year={year}
             onHover={onHover}
@@ -287,7 +332,7 @@ export default function Global() {
               <div className="info-content">
                 <h3>常用能源</h3>
                 <p>
-                  {getEnergyList()
+                  {(selected?.code?.startsWith("S") ? [] : getEnergyList())
                     .slice(0, 3)
                     .map((e, i) => (
                       <span key={i}>
@@ -334,22 +379,44 @@ export default function Global() {
         </div>
 
         {hovered && (
-          <div className="hover-overlay">
+          <div
+            className="hover-overlay"
+            style={{
+              left: mousePos.x + 15,
+              top: mousePos.y + 15,
+            }}
+          >
             <div className="hover-card">
               <div className="hover-header">{hovered.name}</div>
 
-              <div className="hover-content">
-                常用能源：
-                <br />
-                {getEnergyList()
-                  .slice(0, 3)
-                  .map((e, i) => (
-                    <span key={i}>
-                      {e.fullName}
-                      {i < 2 ? "、" : ""}
-                    </span>
-                  ))}
-              </div>
+              {hovered?.code?.startsWith("S") ? (
+                <div className="hover-content">
+                  相關需求項目：
+                  <br />
+                  {getEnergyList(hovered)
+                    .slice(0, 3)
+                    .map((d, i) => (
+                      <span key={i}>
+                        {d.name}
+                        {i < 2 ? "、" : ""}
+                      </span>
+                    ))}
+                </div>
+              ) : (
+
+                <div className="hover-content">
+                  相關能源供給：
+                  <br />
+                  {getEnergyList(hovered)
+                    .slice(0, 3)
+                    .map((s, i) => (
+                      <span key={i}>
+                        {s.fullName}
+                        {i < 2 ? "、" : ""}
+                      </span>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         )}

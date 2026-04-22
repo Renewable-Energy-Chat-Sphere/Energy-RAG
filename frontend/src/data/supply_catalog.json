@@ -129,7 +129,7 @@
     "key": "motor_gasoline",
     "category": "Oil",
     "name_en": "Motor Gasoline",
-    "name_zh": "(丙烷混合氣)",
+    "name_zh": "丙烷混合氣",
     "source_id": "S19"
   },
   {
@@ -157,7 +157,7 @@
     "key": "other_petroleum_products",
     "category": "Oil",
     "name_en": "Other Petroleum Products",
-    "name_zh": "(無鉛汽油)",
+    "name_zh": "無鉛汽油",
     "source_id": "S23"
   },
   {
