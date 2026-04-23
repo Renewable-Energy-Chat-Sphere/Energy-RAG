@@ -11,7 +11,6 @@ export default function Contact() {
     feeling: "",
     message: "",
   });
-  const API = `${window.location.protocol}//${window.location.hostname}:8000`;
   const [showSuccess, setShowSuccess] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +26,7 @@ export default function Contact() {
     setLoading(true); // 🔥 開始動畫
 
     try {
-      const res = await fetch(`${API}/chat`, {
+      const res = await fetch("http://127.0.0.1:8000/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -257,9 +257,8 @@ export default function Rag() {
   const [tab, setTab] = useState("chat");
   const [structuredData, setStructuredData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const API =
-    import.meta.env.VITE_API_URL ||
-    `${window.location.protocol}//${window.location.hostname}:8000`;
+  const API = `${window.location.origin}/api`;
+
   async function generateFile(reportData = structuredData) {
     if (!reportData) {
       alert("沒有可匯出的結構化資料");

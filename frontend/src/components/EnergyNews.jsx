@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 export default function EnergyNews() {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const API = `${window.location.protocol}//${window.location.hostname}:8000`;
+
   useEffect(() => {
-    fetch(`${API}/energy-news`)
+    fetch("http://127.0.0.1:8000/energy-news")
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);

@@ -13,11 +13,10 @@ import {
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
-  const API = `${window.location.protocol}//${window.location.hostname}:8000`;
 
   useEffect(() => {
     const fetchData = () => {
-      fetch(`${API}/dashboard`)
+      fetch("http://127.0.0.1:8000/dashboard")
         .then((res) => res.json())
         .then((d) => {
           setData(d);

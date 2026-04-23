@@ -584,8 +584,6 @@ def get_energy_news():
 # 入口
 # ====================================
 if __name__ == "__main__":
-    print("🚀 Flask 啟動：http://127.0.0.1:8000")
-    print("📌 API：/chat /ask_web /ask_pdf /ask_av /export_pdf")
 
     print("🔥 Scheduler starting...")
     start_scheduler()  # ✅ 加在這裡

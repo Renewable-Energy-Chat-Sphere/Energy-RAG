@@ -8,7 +8,6 @@ import hierarchy from "../data/hierarchy.json";
 import supplyCatalog from "../data/supply_catalog.json";
 
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-const API = `${window.location.protocol}//${window.location.hostname}:8000`;
 
 const energyFiles = import.meta.glob("../data/*_energy_demand_supply.json", {
   eager: true,
@@ -197,7 +196,7 @@ export default function Global() {
     setAnswer("");
 
     try {
-      const res = await fetch(`${API}/chat`, {
+      const res = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

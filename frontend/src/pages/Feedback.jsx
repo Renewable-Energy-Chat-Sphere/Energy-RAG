@@ -4,10 +4,9 @@ export default function Feedback() {
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState("全部");
   const [selected, setSelected] = useState(null);
-  const API = `${window.location.protocol}//${window.location.hostname}:8000`;
 
   useEffect(() => {
-    fetch("${API}/get_feedback")
+    fetch("http://127.0.0.1:8000/get_feedback")
       .then((res) => res.json())
       .then((data) => setList(data))
       .catch(() => setList([]));

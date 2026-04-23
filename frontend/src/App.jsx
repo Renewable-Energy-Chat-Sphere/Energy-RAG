@@ -38,7 +38,7 @@ export default function App() {
 
       <main id="main-content">
         <Routes>
-          <Route path="/" element={<div style={{color:"red"}}>TEST OK</div>} />
+          <Route path="/" element={<Home />} />
 
           {/* 🔥 這行才是關鍵 */}
           <Route path="/global" element={<AutoGlobal />} />
