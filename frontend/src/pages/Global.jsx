@@ -76,11 +76,13 @@ export default function Global() {
   const handleMouseUp = () => setDragging(false);
 
   const CATEGORY_COLOR = {
-    Coal: "#424242",
-    Oil: "#ff9800",
-    Gas: "#03a9f4",
-    Renewable: "#4caf50",
-    Other: "#9e9e9e",
+    Renewable: "#F4511E",
+    Waste: "#43A047",
+    Coal: "#1E88E5",
+    Oil: "#D81B60",
+    Gas: "#FDD835",
+    Electricity: "#00E5FF",
+    Other: "#3949AB",
   };
 
   function getEnergyData(year) {
@@ -127,6 +129,7 @@ export default function Global() {
             name,
             fullName: name,
             value,
+            category: supply?.category || "Other",
           };
         })
         .sort((a, b) => b.value - a.value);
@@ -144,6 +147,7 @@ export default function Global() {
           name,
           fullName: name,
           value: supplies[node.code],
+          category: "Other",
         });
       }
     });
@@ -341,11 +345,13 @@ export default function Global() {
               {(() => {
                 const node = findNodeByCode(selected.code, hierarchy);
                 return node?.img ? (
-                  <img
-                    src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
-                    alt=""
-                    className="info-img"
-                  />
+                  <div className="img-box">
+                    <img
+                      src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
+                      alt=""
+                      className="info-img"
+                    />
+                  </div>
                 ) : null;
               })()}
 
@@ -364,15 +370,21 @@ export default function Global() {
 
                 <h3>年度分析</h3>
 
-                <div style={{ width: "100%", overflow: "hidden" }}>
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    <PieChart width={320} height={300}>
+                <div className="pie-container">
+                    <PieChart width={300} height={300}>
                       <Pie
                         data={getPieData()}
                         dataKey="value"
                         nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
                         outerRadius={80}
-                        label={false}
+                        paddingAngle={3}
+                        cornerRadius={6}
+                        stroke="#fff"
+                        strokeWidth={2}
+                        labelLine={false}
                       >
                         {getPieData().map((entry, index) => (
                           <Cell
@@ -394,7 +406,6 @@ export default function Global() {
                   </div>
                 </div>
               </div>
-            </div>
           )}
         </div>
 
@@ -413,28 +424,32 @@ export default function Global() {
                 <div className="hover-content">
                   相關需求項目：
                   <br />
-                  {getEnergyList(hovered)
-                    .slice(0, 3)
-                    .map((d, i) => (
+                  {(() => {
+                    const list = getEnergyList(hovered).slice(0, 3);
+
+                    return list.map((d, i) => (
                       <span key={i}>
                         {d.name}
-                        {i < 2 ? "、" : ""}
+                        {i !== list.length - 1 ? "、" : ""}
                       </span>
-                    ))}
+                    ));
+                  })()}
                 </div>
               ) : (
 
                 <div className="hover-content">
                   相關能源供給：
                   <br />
-                  {getEnergyList(hovered)
-                    .slice(0, 3)
-                    .map((s, i) => (
+                  {(() => {
+                    const list = getEnergyList(hovered).slice(0, 3);
+
+                    return list.map((d, i) => (
                       <span key={i}>
-                        {s.fullName}
-                        {i < 2 ? "、" : ""}
+                        {d.name}
+                        {i !== list.length - 1 ? "、" : ""}
                       </span>
-                    ))}
+                    ));
+                  })()}
                 </div>
               )}
             </div>

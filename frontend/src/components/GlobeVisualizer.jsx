@@ -687,8 +687,8 @@ export default function GlobeVisualizer({
               <div>青色（{"< 0.25"}）- 低</div>
               <div>綠色（{"< 0.5"}）- 偏低</div>
               <div>黃色（{"< 0.75"}）- 中等</div>
-              <div>橘色（{"< 0.9"}）- 偏高</div>
-              <div>紅色（{"≥ 0.9"}）- 高</div>
+              <div>橘色（{"< 1"}）- 高</div>
+              <div>紅色（{"= 1"}）- 最高</div>
 
               <div style={{ marginTop: "10px" }}>※ 顏色代表相對強度，與節點位置分布（相似度）不同</div>
             </div>

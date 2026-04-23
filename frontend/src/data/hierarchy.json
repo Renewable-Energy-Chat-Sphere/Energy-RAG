@@ -35,7 +35,7 @@
         "img": "/images/D21.png",
         "children": {
           "D22": { "name": "水泥及其製品製造業", "level": 3, "img": "/images/D22.png" },
-          "D23": { "name": "其他", "level": 3, "img": "/images/D23.png" }
+          "D23": { "name": "其他非金屬礦物製品製造業", "level": 3, "img": "/images/D23.png" }
         }
       },
 
@@ -57,7 +57,7 @@
       "D36": { "name": "其他製造業", "level": 2, "img": "/images/D36.png" },
       "D37": { "name": "用水供應及污染整治業", "level": 2, "img": "/images/D37.png" },
       "D38": { "name": "營建工程業", "level": 2, "img": "/images/D38.png" },
-      "D39": { "name": "其他", "level": 2, "img": "/images/D39.png" }
+      "D39": { "name": "其他工業", "level": 2, "img": "/images/D39.png" }
     }
   },
 
@@ -71,7 +71,7 @@
       "D43": { "name": "鐵路", "level": 2, "img": "/images/D43.png" },
       "D44": { "name": "管線運輸", "level": 2, "img": "/images/D44.png" },
       "D45": { "name": "國內水運", "level": 2, "img": "/images/D45.png" },
-      "D46": { "name": "其他", "level": 2, "img": "/images/D46.png" }
+      "D46": { "name": "其他運輸業", "level": 2, "img": "/images/D46.png" }
     }
   },
 
@@ -111,7 +111,7 @@
       "D64": { "name": "教育業", "level": 2, "img": "/images/D64.png" },
       "D65": { "name": "醫療保健及社會工作服務業", "level": 2, "img": "/images/D65.png" },
       "D66": { "name": "藝術、娛樂及休閒服務業", "level": 2, "img": "/images/D66.png" },
-      "D67": { "name": "其他", "level": 2, "img": "/images/D67.png" }
+      "D67": { "name": "其他服務業", "level": 2, "img": "/images/D67.png" }
     }
   },
 
