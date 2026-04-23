@@ -262,14 +262,14 @@
     "key": "indigenous",
     "category": "Gas",
     "name_en": "(Indigenous)",
-    "name_zh": "(自產)天然氣",
+    "name_zh": "(自產) 天然氣",
     "source_id": "S38"
   },
   {
     "key": "imported",
     "category": "Gas",
     "name_en": "(Imported)",
-    "name_zh": "(進口)液化天然氣",
+    "name_zh": "(進口) 液化天然氣",
     "source_id": "S39"
   },
   {
