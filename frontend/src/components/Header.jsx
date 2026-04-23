@@ -130,19 +130,7 @@ export default function Header() {
         <div className="nav-right">
           <nav>
             <Link to="/">首頁</Link>
-
-            {/* Dropdown */}
-            <div className="dropdown">
-              <div className="dropdown-btn" tabIndex="0">
-                能源視覺化 ▼
-              </div>
-              <div className="dropdown-content">
-                <Link to="/global">視覺化總覽</Link>
-                <Link to="/global">視覺化細節1</Link>
-                <Link to="/global">視覺化細節2</Link>
-              </div>
-            </div>
-
+            <Link to="/global">視覺化總覽</Link>
             <Link to="/rag">智慧查詢</Link>
             <Link to="/contact">聯絡我們</Link>
             <Link to="/Feedback">回饋分析</Link>
