@@ -10,5 +10,65 @@
     "priority": "高",
     "reply": "很抱歉造成您的不滿，我們將儘速協助您解決問題，請稍候，會有專人與您聯繫。",
     "status": "closed"
+  },
+  {
+    "name": "1x",
+    "email": "ethan930919@gmail.com",
+    "phone": "0900000000",
+    "feeling": "非常不滿意",
+    "message": "測試之 加油 請給我成功",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "高",
+    "reply": "很抱歉造成您的不滿，我們將儘速協助您解決問題，請稍候，會有專人與您聯繫。",
+    "status": "open"
+  },
+  {
+    "name": "歐斯鼎",
+    "email": "ethan930919@gmail.com",
+    "phone": "0900000000",
+    "feeling": "非常滿意",
+    "message": "哲學!!",
+    "sentiment": "正面",
+    "category": "其他",
+    "priority": "低",
+    "reply": "感謝您的回饋，我們會持續優化系統體驗！",
+    "status": "open"
+  },
+  {
+    "name": "王冠云",
+    "email": "ethan930919@gmail.com",
+    "phone": "0900000000",
+    "feeling": "不滿意",
+    "message": "雖然還是有可取之處，但大部分不是我需要的，請你們加強改進(測試中測試中)\n",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "中",
+    "reply": "感謝您的回饋，我們已收到您的問題，將盡快進行改善。",
+    "status": "open"
+  },
+  {
+    "name": "Pretendnolisten",
+    "email": "rag412402@gmail.com",
+    "phone": "0900000000",
+    "feeling": "一般",
+    "message": "系統不錯但有點卡，希望可以更順",
+    "sentiment": "中立",
+    "category": "建議",
+    "priority": "低",
+    "reply": "感謝您的寶貴建議，我們會納入未來優化方向。",
+    "status": "open"
+  },
+  {
+    "name": "Pretendnolisten",
+    "email": "rag412402@gmail.com",
+    "phone": "0900000000",
+    "feeling": "不滿意",
+    "message": "登入一直失敗，真的不知道問題在哪",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "中",
+    "reply": "感謝您的回饋，我們已收到您的問題，將盡快進行改善。",
+    "status": "open"
   }
 ]

@@ -48,12 +48,16 @@ from email.mime.text import MIMEText
 def contact():
     import json, os, smtplib
     from email.mime.text import MIMEText
+    from datetime import datetime
+    from openai import OpenAI
+
+    client = OpenAI()  # 🔥 用你 .env 裡的 API KEY
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
 
     # =========================
-    # 📥 讀 JSON（標準格式）
+    # 📥 讀 JSON
     # =========================
     def load_data():
         if not os.path.exists(FILE_PATH):
@@ -77,7 +81,7 @@ def contact():
     message = data.get("message") or ""
 
     # =========================
-    # 🤖 Agent 分析（升級版）
+    # 🤖 Agent 判斷
     # =========================
     def analyze(feeling, message):
         if "非常不滿意" in feeling or len(message) > 40:
@@ -91,21 +95,48 @@ def contact():
     sentiment, category, priority = analyze(feeling, message)
 
     # =========================
-    # 🤖 自動回覆
+    # 🤖 AI 自動回覆（🔥升級）
     # =========================
-    def auto_reply():
-        if feeling == "非常不滿意":
-            return "很抱歉造成您的不滿，我們將儘速協助您解決問題，請稍候，會有專人與您聯繫。"
-        if sentiment == "負面":
-            return "感謝您的回饋，我們已收到您的問題，將盡快進行改善。"
-        if category == "建議":
-            return "感謝您的寶貴建議，我們會納入未來優化方向。"
-        return "感謝您的回饋，我們會持續優化系統體驗！"
+    def generate_reply_ai(message):
+        try:
+            res = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """
+                你是一位真人客服（不是機器人），請用自然語氣回覆使用者。
 
-    reply_text = auto_reply()
+                規則：
+                - 不要每次都用一樣開頭
+                - 回覆要像人說話（可以有變化）
+                - 長度 1~2 句
+                - 如果是負面情緒 → 要有同理心
+                - 如果是正面 → 可以簡單感謝
+                """
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""
+                使用者回饋：
+                {message}
+
+                請直接回覆使用者（不要解釋）
+                """
+                    }
+                ],
+                temperature=0.9
+            )
+
+            return res.choices[0].message.content.strip()
+
+        except:
+            return "感謝您的回饋，我們會儘快處理。"
+
+    reply_text = generate_reply_ai(message)
 
     # =========================
-    # 💾 存入 JSON（標準陣列）
+    # 💾 存資料（🔥加 timestamp）
     # =========================
     data_list = load_data()
 
@@ -119,14 +150,15 @@ def contact():
         "category": category,
         "priority": priority,
         "reply": reply_text,
-        "status": "open"   # ⭐ 可控制是否顯示
+        "status": "open",
+        "timestamp": datetime.now().isoformat()  # ⭐ 新增
     }
 
     data_list.append(new_record)
     save_data(data_list)
 
     # =========================
-    # 📩 寄信給你（通知）
+    # 📩 通知你
     # =========================
     msg = MIMEText(f"""
 新回饋通知
@@ -144,12 +176,12 @@ AI分析:
 
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
-    server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
+    server.login("rag412402@gmail.com", "你的應用密碼")
 
     server.send_message(msg)
 
     # =========================
-    # 📬 回覆使用者（🔥重點）
+    # 📬 回覆使用者
     # =========================
     reply_msg = MIMEText(reply_text, "plain", "utf-8")
     reply_msg["Subject"] = "您的回饋已收到"
@@ -160,81 +192,6 @@ AI分析:
     server.quit()
 
     return jsonify({"status": "success"})
-
-
-# =========================
-# 📊 讀取（給前端）
-# =========================
-@app.route("/get_feedback")
-def get_feedback():
-    import json, os
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
-
-    if not os.path.exists(FILE_PATH):
-        return jsonify([])
-
-    try:
-        with open(FILE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except:
-        data = []
-
-    return jsonify(data)
-
-
-# =========================
-# ✅ 標記已解決
-# =========================
-@app.route("/resolve_feedback", methods=["POST"])
-def resolve_feedback():
-    import json, os
-
-    index = request.json.get("index")
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
-
-    data = []
-
-    with open(FILE_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    if 0 <= index < len(data):
-        data[index]["status"] = "closed"
-
-    with open(FILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    return jsonify({"status": "ok"})
-
-
-# =========================
-# ❌ 刪除
-# =========================
-@app.route("/delete_feedback", methods=["POST"])
-def delete_feedback():
-    import json, os
-
-    index = request.json.get("index")
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
-
-    data = []
-
-    with open(FILE_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    if 0 <= index < len(data):
-        data.pop(index)
-
-    with open(FILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    return jsonify({"status": "ok"})
-from bs4 import BeautifulSoup  # 加在最上面 import 區
 
 
 @app.route("/dashboard", methods=["GET"])

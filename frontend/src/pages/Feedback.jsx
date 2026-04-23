@@ -12,10 +12,21 @@ export default function Feedback() {
       .catch(() => setList([]));
   }, []);
 
+  // =========================
+  // 🔥 排序（高優先 → 上面）
+  // =========================
+  const sortedList = [...list].sort((a, b) => {
+    const order = { 高: 3, 中: 2, 低: 1 };
+    return (order[b.priority] || 0) - (order[a.priority] || 0);
+  });
+
+  // =========================
+  // 🔥 篩選
+  // =========================
   const filteredList =
     filter === "全部"
-      ? list
-      : list.filter(
+      ? sortedList
+      : sortedList.filter(
           (item) => item.sentiment?.trim() === filter.trim()
         );
 
@@ -70,6 +81,11 @@ export default function Feedback() {
                   {item.priority === "高" && (
                     <span className="tag high">🔥</span>
                   )}
+
+                  {/* ⭐ 新增 status */}
+                  <span className={`status ${item.status}`}>
+                    {item.status === "closed" ? "已完成" : "處理中"}
+                  </span>
                 </div>
               </div>
             ))}
@@ -77,7 +93,7 @@ export default function Feedback() {
         )}
       </div>
 
-      {/* 🔥 詳細展開（像 Gmail） */}
+      {/* Modal */}
       {selected && (
         <div className="modal">
           <div className="modal-card">
@@ -104,7 +120,24 @@ export default function Feedback() {
               {selected.priority === "高" && (
                 <span className="tag high">🔥 高優先</span>
               )}
+
+              {/* ⭐ status */}
+              <span className={`status ${selected.status}`}>
+                {selected.status === "closed" ? "已完成" : "處理中"}
+              </span>
             </div>
+
+            {/* ⭐ AI 回覆 */}
+            {selected.reply && (
+              <>
+                <p style={{ marginTop: "10px" }}>
+                  <strong>🤖 系統回覆：</strong>
+                </p>
+                <div className="reply-box">
+                  {selected.reply}
+                </div>
+              </>
+            )}
 
             <button onClick={() => setSelected(null)}>
               關閉
@@ -150,10 +183,9 @@ export default function Feedback() {
           color: white;
         }
 
-        /* Gmail列表 */
         .row-card {
           display: grid;
-          grid-template-columns: 1fr 1fr 3fr 1fr;
+          grid-template-columns: 1fr 1fr 3fr 2fr;
           background: #e9dfd5;
           padding: 12px 16px;
           border-radius: 10px;
@@ -186,26 +218,28 @@ export default function Feedback() {
           font-size: 12px;
         }
 
-        .tag.正面 {
-          background: #22c55e;
+        .tag.正面 { background: #22c55e; color: white; }
+        .tag.中立 { background: #facc15; }
+        .tag.負面 { background: #ef4444; color: white; }
+        .tag.high { background: #ef4444; color: white; }
+
+        /* ⭐ status */
+        .status {
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 12px;
+        }
+
+        .status.open {
+          background: #3b82f6;
           color: white;
         }
 
-        .tag.中立 {
-          background: #facc15;
-        }
-
-        .tag.負面 {
-          background: #ef4444;
+        .status.closed {
+          background: #9ca3af;
           color: white;
         }
 
-        .tag.high {
-          background: #ef4444;
-          color: white;
-        }
-
-        /* Modal */
         .modal {
           position: fixed;
           top: 0;
@@ -230,6 +264,13 @@ export default function Feedback() {
           padding: 10px;
           border-radius: 8px;
           margin: 10px 0;
+        }
+
+        .reply-box {
+          background: #dbeafe;
+          padding: 10px;
+          border-radius: 8px;
+          margin-top: 10px;
         }
 
         button {
