@@ -145,6 +145,7 @@ export default function Header() {
 
             <Link to="/rag">智慧查詢</Link>
             <Link to="/contact">聯絡我們</Link>
+            <Link to="/Feedback">回饋分析</Link>
           </nav>
 
           {/* 深色模式 */}

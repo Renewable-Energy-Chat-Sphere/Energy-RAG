@@ -46,49 +46,194 @@ from email.mime.text import MIMEText
 
 @app.route("/contact", methods=["POST"])
 def contact():
+    import json, os, smtplib
+    from email.mime.text import MIMEText
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
+
+    # =========================
+    # 📥 讀 JSON（標準格式）
+    # =========================
+    def load_data():
+        if not os.path.exists(FILE_PATH):
+            return []
+        try:
+            with open(FILE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return []
+
+    def save_data(data):
+        with open(FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
     data = request.json
 
     name = data.get("name")
     email = data.get("email")
     phone = data.get("phone")
     feeling = data.get("feeling")
-    message = data.get("message")
+    message = data.get("message") or ""
 
-    # 📩 信件內容
-    content = f"""
-📩 EnerSphere 聯絡表單
+    # =========================
+    # 🤖 Agent 分析（升級版）
+    # =========================
+    def analyze(feeling, message):
+        if "非常不滿意" in feeling or len(message) > 40:
+            return "負面", "問題", "高"
+        if "不滿意" in feeling:
+            return "負面", "問題", "中"
+        if "希望" in message:
+            return "中立", "建議", "低"
+        return "正面", "其他", "低"
+
+    sentiment, category, priority = analyze(feeling, message)
+
+    # =========================
+    # 🤖 自動回覆
+    # =========================
+    def auto_reply():
+        if feeling == "非常不滿意":
+            return "很抱歉造成您的不滿，我們將儘速協助您解決問題，請稍候，會有專人與您聯繫。"
+        if sentiment == "負面":
+            return "感謝您的回饋，我們已收到您的問題，將盡快進行改善。"
+        if category == "建議":
+            return "感謝您的寶貴建議，我們會納入未來優化方向。"
+        return "感謝您的回饋，我們會持續優化系統體驗！"
+
+    reply_text = auto_reply()
+
+    # =========================
+    # 💾 存入 JSON（標準陣列）
+    # =========================
+    data_list = load_data()
+
+    new_record = {
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "feeling": feeling,
+        "message": message,
+        "sentiment": sentiment,
+        "category": category,
+        "priority": priority,
+        "reply": reply_text,
+        "status": "open"   # ⭐ 可控制是否顯示
+    }
+
+    data_list.append(new_record)
+    save_data(data_list)
+
+    # =========================
+    # 📩 寄信給你（通知）
+    # =========================
+    msg = MIMEText(f"""
+新回饋通知
 
 姓名: {name}
-Email: {email}
-電話: {phone}
-滿意度: {feeling}
+內容: {message}
 
-建議內容:
-{message}
-"""
+AI分析:
+{sentiment} / {category} / {priority}
+""", "plain", "utf-8")
 
-    msg = MIMEText(content, "plain", "utf-8")
-    msg["Subject"] = "📩 EnerSphere 使用者回饋"
+    msg["Subject"] = "EnerSphere 新回饋"
     msg["From"] = "rag412402@gmail.com"
     msg["To"] = "rag412402@gmail.com"
 
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
+
+    server.send_message(msg)
+
+    # =========================
+    # 📬 回覆使用者（🔥重點）
+    # =========================
+    reply_msg = MIMEText(reply_text, "plain", "utf-8")
+    reply_msg["Subject"] = "您的回饋已收到"
+    reply_msg["From"] = "rag412402@gmail.com"
+    reply_msg["To"] = email
+
+    server.send_message(reply_msg)
+    server.quit()
+
+    return jsonify({"status": "success"})
+
+
+# =========================
+# 📊 讀取（給前端）
+# =========================
+@app.route("/get_feedback")
+def get_feedback():
+    import json, os
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
+
+    if not os.path.exists(FILE_PATH):
+        return jsonify([])
+
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
+        with open(FILE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except:
+        data = []
 
-        # ⚠️ 這裡改成你的 Gmail + 應用程式密碼
-        server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
-
-        server.send_message(msg)
-        server.quit()
-
-        return jsonify({"status": "success"})
-
-    except Exception as e:
-        print("❌ 寄信失敗:", e)
-        return jsonify({"status": "error", "message": str(e)})
+    return jsonify(data)
 
 
+# =========================
+# ✅ 標記已解決
+# =========================
+@app.route("/resolve_feedback", methods=["POST"])
+def resolve_feedback():
+    import json, os
+
+    index = request.json.get("index")
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
+
+    data = []
+
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if 0 <= index < len(data):
+        data[index]["status"] = "closed"
+
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return jsonify({"status": "ok"})
+
+
+# =========================
+# ❌ 刪除
+# =========================
+@app.route("/delete_feedback", methods=["POST"])
+def delete_feedback():
+    import json, os
+
+    index = request.json.get("index")
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
+
+    data = []
+
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if 0 <= index < len(data):
+        data.pop(index)
+
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return jsonify({"status": "ok"})
 from bs4 import BeautifulSoup  # 加在最上面 import 區
 
 
