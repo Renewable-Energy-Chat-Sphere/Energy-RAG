@@ -56,8 +56,13 @@ export default function Global() {
   };
 
   const onSelect = (data) => {
-    setSelected(data);
+    if (selected?.code === data.code) {
+      setSelected(null);
+    } else {
+      setSelected(data);
+    }
   };
+
   const handleMouseDown = () => setDragging(true);
 
   const handleMouseMove = (e) => {
@@ -259,11 +264,12 @@ export default function Global() {
         </div>
 
         <div className="panel-row">
-          <label style={{ marginLeft: "10px", color: "#fff" }}>
+          <label style={{ marginLeft: "10px", marginRight: "10px" }}>
             <input
               type="checkbox"
               checked={showFlow}
               onChange={(e) => setShowFlow(e.target.checked)}
+              style={{ marginRight: "5px" }}
             />
             顯示供給線
           </label>
@@ -316,6 +322,20 @@ export default function Global() {
 
           {selected && (
             <div className="info-card">
+              {/* 關閉按鈕 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "15px",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                }}
+                onClick={() => setSelected(null)}
+              >
+                ✕
+              </div>
               <h2>{selected.name}</h2>
 
               {(() => {

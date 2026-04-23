@@ -32,6 +32,7 @@ const demandSupplyRaw = import.meta.glob(
 const supplyLayouts = {};
 const demandLayouts = {};
 const demandSupplyData = {};
+const globalMaxCache = {};
 
 Object.keys(supplyLayoutsRaw).forEach((path) => {
   const match = path.match(/supply_layout_(\d+)\.json/);
@@ -175,12 +176,18 @@ function Glow({ size, color }) {
 /* Supply Nodes */
 /* ===================== */
 
-function SupplyNodes({ year, onHover }) {
+function SupplyNodes({ year, onHover, selected }) {
   const { camera } = useThree();
 
   const BASE = import.meta.env.BASE_URL;
 
   const supplyLayout = supplyLayouts[year];
+
+  const demandSupply = demandSupplyData[year];
+
+  const activeSupply = selected
+    ? Object.keys(demandSupply?.[selected.code] || {})
+    : null;
 
   if (!supplyLayout) return null;
 
@@ -220,7 +227,9 @@ function SupplyNodes({ year, onHover }) {
 
     return (
       <group key={id} position={position}>
-        <Glow size={0.08} color={CATEGORY_COLOR[category] || "#94a3b8"} />
+        {(!selected || activeSupply?.includes(id)) && (
+          <Glow size={0.08} color={CATEGORY_COLOR[category] || "#94a3b8"} />
+        )}
 
         <Html center occlude={false}>
           <img
@@ -234,13 +243,19 @@ function SupplyNodes({ year, onHover }) {
               cursor: "pointer",
               pointerEvents: "auto",
 
-              /* ✨ 重點：改成「發光物件感」 */
+              /* 光暈 */
               filter:
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
                     ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
                     : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
+              
+              /* 未被選中時隱藏 */
+              opacity:
+                !selected || activeSupply?.includes(id)
+                  ? 1
+                  : 0.1,
             }}
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
@@ -250,7 +265,6 @@ function SupplyNodes({ year, onHover }) {
             onMouseEnter={(e) => {
               e.stopPropagation();
 
-              /* ❌ 不再做「放大 UI」感 */
               e.currentTarget.style.transform = "translateY(-2px) scale(1.1)";
 
               e.currentTarget.style.filter =
@@ -423,9 +437,23 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
 /* ===================== */
 
 function getColor(value) {
-  if (value < 0.33) return new THREE.Color("#0ea5e9");
-  if (value < 0.66) return new THREE.Color("#facc15");
-  return new THREE.Color("#dc2626");
+  const colors = [
+    new THREE.Color("#06b6d4"),
+    new THREE.Color("#22c55e"),
+    new THREE.Color("#facc15"),
+    new THREE.Color("#f97316"),
+    new THREE.Color("#ef4444"),
+  ];
+
+  const scaled = value * (colors.length - 1);
+  const index = Math.floor(scaled);
+  const t = scaled - index;
+
+  if (index >= colors.length - 1) {
+    return colors[colors.length - 1];
+  }
+
+  return colors[index].clone().lerp(colors[index + 1], t);
 }
 
 function SupplyFlowLines({ year, selected, lod }) {
@@ -449,72 +477,60 @@ function SupplyFlowLines({ year, selected, lod }) {
   const d = demandLayout[selected.code];
   if (!d) return null;
 
-  const shrink = 0.01;
+  const toSphere = (v, r) =>
+    new THREE.Vector3(v.x, v.y, v.z).normalize().multiplyScalar(r);
 
-  // 球面轉換
-  const toSphere = (v, radius) => {
-    return new THREE.Vector3(v.x, v.y, v.z).normalize().multiplyScalar(radius);
-  };
-
-  // 高拱弧線
-  const createHighArc = (start, end, radius, height = 1.2, segments = 64) => {
-    const curve = new THREE.QuadraticBezierCurve3(start, height.mid, end);
-
-    return new THREE.TubeGeometry(curve, segments, 0.01, 8, false);
-  };
-
-  return Object.entries(ratio)
-    .map(([supply, raw]) => {
+  return Object.entries(ratio).map(([supply, raw], index, arr) => {
       const s = supplyLayout[supply];
       if (!s) return null;
 
       const values = Object.values(ratio);
-
-      const min = Math.min(...values);
-      const max = Math.max(...Object.values(ratio));
-
+      const max = Math.max(...values);
       const normalized = raw / (max || 1);
 
-      // 👉 拉開差距
-      const strength = 0.3 + Math.pow(normalized, 0.5) * 0.7;
-      
-      // 球面位置
-      const start = toSphere(s, SUPPLY_RADIUS * 1);
-      const end = toSphere(d, SUPPLY_RADIUS * 1);
+      const adjusted = Math.pow(normalized, 1.5);
+      const color = getColor(adjusted);
 
-      // 距離計算
-      const distance = start.distanceTo(end);
-      const normalizedDist = THREE.MathUtils.clamp(
-        distance / (SUPPLY_RADIUS * 2),
-        0,
-        1,
-      );
+      const start = toSphere(s, SUPPLY_RADIUS);
+      const end = toSphere(d, SUPPLY_RADIUS);
 
-      // 非線性拉伸
-      const curvedDist = Math.pow(normalizedDist, 1);
+      // 旋轉軸
+      const axis = new THREE.Vector3().crossVectors(start, end).normalize();
+      const angle = start.angleTo(end);
 
-      // 弧度控制
-      const heightValue = 0.4 + curvedDist * 0.5 + strength * 0.2;
+      const normalizedDist = angle / Math.PI;
 
-      // 控制中點抬升
-      const mid = new THREE.Vector3()
-        .addVectors(start, end)
-        .multiplyScalar(0.5)
-        .normalize()
-        .multiplyScalar(SUPPLY_RADIUS * (1 + heightValue));
+      // 距離控制
+      const heightFactor = 0.08 + Math.pow(normalizedDist, 2) * 0.12;
 
-      const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+      const segments = 40;
+      const points = [];
 
-      const geo = new THREE.TubeGeometry(curve, 32, 0.005, 6, false);
-      const color = getColor(normalized);
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+
+        // 沿球面旋轉
+        const p = start.clone().applyAxisAngle(axis, angle * t);
+
+        // 中間抬高
+        const lift = Math.sin(Math.PI * t) * heightFactor;
+
+        p.normalize().multiplyScalar(SUPPLY_RADIUS * (1 + lift));
+
+        points.push(p);
+      }
+
+      const curve = new THREE.CatmullRomCurve3(points);
+      const geo = new THREE.TubeGeometry(curve, 64, 0.015, 10, false);
+
       return (
         <mesh key={supply} geometry={geo}>
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={0.6 + strength * 0.8}
+            emissiveIntensity={0.5}
             transparent
-            opacity={0.5 + strength * 0.5}
+            opacity={0.7}
           />
         </mesh>
       );
@@ -545,8 +561,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
 
       <GridSphere />
 
-      {/* ⭐ 這三個全部加 year */}
-      <SupplyNodes year={year} onHover={onHover} hovered={hovered} />
+      <SupplyNodes year={year} onHover={onHover} hovered={hovered} selected={selected} />
 
       <DemandNodes
         year={year}
@@ -584,7 +599,7 @@ export default function GlobeVisualizer({
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      {/* 🌍 3D 球 */}
+      {/* 3D 球 */}
       <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
         <Scene
           year={year}
@@ -623,7 +638,7 @@ export default function GlobeVisualizer({
             style={{
               height: "10px",
               borderRadius: "10px",
-              background: "linear-gradient(to right, #0ea5e9, #facc15, #dc2626)",
+              background: "linear-gradient(to right, #06b6d4 20%, #22c55e 40%, #facc15 60%, #f97316 80%, #ef4444 100%)",
               marginBottom: "5px",
             }}
           />
@@ -632,7 +647,7 @@ export default function GlobeVisualizer({
             style={{
               display: "flex",
               justifyContent: "space-between",
-              marginBottom: "8px",
+              marginBottom: "5px",
             }}
           >
             <span>低</span>
@@ -668,12 +683,14 @@ export default function GlobeVisualizer({
                 opacity: 0.9,
               }}
             >
-              <div>顏色依能源使用比例區分：</div>
-              <div>青色 - 使用比例較低</div>
-              <div>黃色 - 使用比例普通</div>
-              <div>紅色 - 使用比例較高</div>
+              <div style={{marginBottom: "5px"}}>顏色依同一項目中所有能源使用比例正規化 (0-1) 後，以連續漸層呈現：</div>
+              <div>青色（{"< 0.25"}）- 低</div>
+              <div>綠色（{"< 0.5"}）- 偏低</div>
+              <div>黃色（{"< 0.75"}）- 中等</div>
+              <div>橘色（{"< 0.9"}）- 偏高</div>
+              <div>紅色（{"≥ 0.9"}）- 高</div>
 
-              <div style={{ marginTop: "10px" }}>※ 顏色僅代表相對強度，與節點位置分布（相似度）不同</div>
+              <div style={{ marginTop: "10px" }}>※ 顏色代表相對強度，與節點位置分布（相似度）不同</div>
             </div>
           </div>
         </div>
