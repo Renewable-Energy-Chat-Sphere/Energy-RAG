@@ -152,6 +152,7 @@ export default function Feedback() {
           display: flex;
           justify-content: center;
           padding: 40px;
+          color: var(--text);
         }
 
         .feedback-container {
@@ -162,8 +163,10 @@ export default function Feedback() {
         h2 {
           text-align: center;
           margin-bottom: 20px;
+          color: var(--section-title-color);
         }
 
+        /* 🔘 篩選按鈕 */
         .filter-bar {
           text-align: center;
           margin-bottom: 20px;
@@ -173,31 +176,45 @@ export default function Feedback() {
           margin: 0 6px;
           padding: 6px 14px;
           border-radius: 999px;
-          border: none;
-          background: #e5e7eb;
+          border: 1px solid var(--card-border);
+          background: var(--card-bg);
+          color: var(--text);
           cursor: pointer;
+          transition: 0.3s;
+        }
+
+        .filter-bar button:hover {
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-soft);
         }
 
         .filter-bar .active {
-          background: #2563eb;
+          background: linear-gradient(135deg, #0d2c6e, #2563eb);
           color: white;
+          border: none;
         }
 
+        /* 📦 列表卡片 */
         .row-card {
           display: grid;
           grid-template-columns: 1fr 1fr 3fr 2fr;
-          background: #e9dfd5;
+          background: var(--card-bg);
+          border: 1px solid var(--card-border);
+          backdrop-filter: var(--glass);
           padding: 12px 16px;
-          border-radius: 10px;
-          margin-bottom: 8px;
+          border-radius: 12px;
+          margin-bottom: 10px;
           cursor: pointer;
-          transition: 0.2s;
+          transition: 0.3s ease;
+          color: var(--text);
         }
 
         .row-card:hover {
-          background: #ddd4ca;
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-soft);
         }
 
+        /* 文字 */
         .name {
           font-weight: bold;
         }
@@ -206,28 +223,38 @@ export default function Feedback() {
           opacity: 0.8;
         }
 
+        /* 🏷 tags */
         .tags {
           display: flex;
           gap: 6px;
           align-items: center;
+          flex-wrap: wrap;
         }
 
         .tag {
           padding: 3px 8px;
           border-radius: 6px;
           font-size: 12px;
+          font-weight: 500;
         }
 
+        /* 情緒 */
         .tag.正面 { background: #22c55e; color: white; }
-        .tag.中立 { background: #facc15; }
+        .tag.中立 { background: #facc15; color: black; }
         .tag.負面 { background: #ef4444; color: white; }
-        .tag.high { background: #ef4444; color: white; }
 
-        /* ⭐ status */
+        /* 高優先 */
+        .tag.high {
+          background: #ef4444;
+          color: white;
+        }
+
+        /* 狀態 */
         .status {
           padding: 3px 8px;
           border-radius: 6px;
           font-size: 12px;
+          font-weight: 500;
         }
 
         .status.open {
@@ -240,56 +267,82 @@ export default function Feedback() {
           color: white;
         }
 
+        /* 📭 空狀態 */
+        .empty-box {
+          text-align: center;
+          padding: 30px;
+          background: var(--card-bg);
+          border: 1px solid var(--card-border);
+          border-radius: 12px;
+          color: var(--text);
+        }
+
+        /* =========================
+          🪟 Modal
+        ========================= */
         .modal {
           position: fixed;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(0,0,0,0.5);
+          background: rgba(0,0,0,0.6);
           display: flex;
           justify-content: center;
           align-items: center;
+          z-index: 9999;
         }
 
+        /* Modal 卡片 */
         .modal-card {
-          background: #e9dfd5;
-          padding: 20px;
-          border-radius: 12px;
-          width: 400px;
+          background: var(--card-bg);
+          color: var(--text);
+          border: 1px solid var(--card-border);
+          backdrop-filter: var(--glass);
+          padding: 24px;
+          border-radius: 16px;
+          width: 420px;
+          box-shadow: var(--shadow-soft);
         }
 
+        /* 訊息區 */
         .message-box {
-          background: #ddd4ca;
-          padding: 10px;
+          background: rgba(255,255,255,0.05);
+          padding: 12px;
           border-radius: 8px;
           margin: 10px 0;
         }
 
+        /* AI 回覆 */
         .reply-box {
-          background: #dbeafe;
-          padding: 10px;
+          background: rgba(37, 99, 235, 0.1);
+          padding: 12px;
           border-radius: 8px;
           margin-top: 10px;
         }
 
+        /* 🔘 按鈕 */
         button {
-          margin-top: 10px;
-          padding: 8px 16px;
+          margin-top: 12px;
+          padding: 10px 18px;
           border: none;
-          border-radius: 8px;
-          background: #2563eb;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #0d2c6e, #2563eb);
           color: white;
+          font-weight: 600;
           cursor: pointer;
+          transition: all 0.3s ease;
         }
 
-        .empty-box {
-          text-align: center;
-          padding: 30px;
-          background: #eee;
-          border-radius: 10px;
+        button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
         }
-      `}</style>
+
+        button:active {
+          transform: scale(0.95);
+        }
+        `}</style>
     </div>
   );
 }
