@@ -44,21 +44,18 @@ import smtplib
 from email.mime.text import MIMEText
 
 
+# =========================
+# 📩 Contact
+# =========================
 @app.route("/contact", methods=["POST"])
 def contact():
     import json, os, smtplib
     from email.mime.text import MIMEText
-    from datetime import datetime
-    from openai import OpenAI
-
-    client = OpenAI()  # 🔥 用你 .env 裡的 API KEY
+    from flask import request, jsonify
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
 
-    # =========================
-    # 📥 讀 JSON
-    # =========================
     def load_data():
         if not os.path.exists(FILE_PATH):
             return []
@@ -72,17 +69,15 @@ def contact():
         with open(FILE_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    data = request.json
+    data = request.json or {}
 
-    name = data.get("name")
-    email = data.get("email")
-    phone = data.get("phone")
-    feeling = data.get("feeling")
-    message = data.get("message") or ""
+    name = data.get("name", "")
+    email = data.get("email", "")
+    phone = data.get("phone", "")
+    feeling = data.get("feeling", "")
+    message = data.get("message", "")
 
-    # =========================
-    # 🤖 Agent 判斷
-    # =========================
+    # 🤖 分析
     def analyze(feeling, message):
         if "非常不滿意" in feeling or len(message) > 40:
             return "負面", "問題", "高"
@@ -94,50 +89,19 @@ def contact():
 
     sentiment, category, priority = analyze(feeling, message)
 
-    # =========================
-    # 🤖 AI 自動回覆（🔥升級）
-    # =========================
-    def generate_reply_ai(message):
-        try:
-            res = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": """
-                你是一位真人客服（不是機器人），請用自然語氣回覆使用者。
+    # 🤖 回覆
+    def auto_reply():
+        if feeling == "非常不滿意":
+            return "很抱歉造成您的不滿，我們將儘速協助您解決問題。"
+        if sentiment == "負面":
+            return "感謝您的回饋，我們已收到您的問題，將盡快改善。"
+        if category == "建議":
+            return "感謝您的建議，我們會納入優化方向。"
+        return "感謝您的回饋，我們會持續優化系統！"
 
-                規則：
-                - 不要每次都用一樣開頭
-                - 回覆要像人說話（可以有變化）
-                - 長度 1~2 句
-                - 如果是負面情緒 → 要有同理心
-                - 如果是正面 → 可以簡單感謝
-                """
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""
-                使用者回饋：
-                {message}
+    reply_text = auto_reply()
 
-                請直接回覆使用者（不要解釋）
-                """
-                    }
-                ],
-                temperature=0.9
-            )
-
-            return res.choices[0].message.content.strip()
-
-        except:
-            return "感謝您的回饋，我們會儘快處理。"
-
-    reply_text = generate_reply_ai(message)
-
-    # =========================
-    # 💾 存資料（🔥加 timestamp）
-    # =========================
+    # 💾 存 JSON
     data_list = load_data()
 
     new_record = {
@@ -150,48 +114,118 @@ def contact():
         "category": category,
         "priority": priority,
         "reply": reply_text,
-        "status": "open",
-        "timestamp": datetime.now().isoformat()  # ⭐ 新增
+        "status": "open"
     }
 
     data_list.append(new_record)
     save_data(data_list)
 
-    # =========================
-    # 📩 通知你
-    # =========================
-    msg = MIMEText(f"""
+    # 📩 寄信
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
+
+        msg = MIMEText(f"""
 新回饋通知
 
 姓名: {name}
 內容: {message}
 
-AI分析:
+分析:
 {sentiment} / {category} / {priority}
 """, "plain", "utf-8")
 
-    msg["Subject"] = "EnerSphere 新回饋"
-    msg["From"] = "rag412402@gmail.com"
-    msg["To"] = "rag412402@gmail.com"
+        msg["Subject"] = "EnerSphere 新回饋"
+        msg["From"] = "rag412402@gmail.com"
+        msg["To"] = "rag412402@gmail.com"
 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login("rag412402@gmail.com", "你的應用密碼")
+        server.send_message(msg)
 
-    server.send_message(msg)
+        if email:
+            reply_msg = MIMEText(reply_text, "plain", "utf-8")
+            reply_msg["Subject"] = "您的回饋已收到"
+            reply_msg["From"] = "rag412402@gmail.com"
+            reply_msg["To"] = email
 
-    # =========================
-    # 📬 回覆使用者
-    # =========================
-    reply_msg = MIMEText(reply_text, "plain", "utf-8")
-    reply_msg["Subject"] = "您的回饋已收到"
-    reply_msg["From"] = "rag412402@gmail.com"
-    reply_msg["To"] = email
+            server.send_message(reply_msg)
 
-    server.send_message(reply_msg)
-    server.quit()
+        server.quit()
+
+    except Exception as e:
+        print("❌ Email錯誤:", e)
 
     return jsonify({"status": "success"})
+
+
+# =========================
+# 📊 讀取
+# =========================
+@app.route("/get_feedback")
+def get_feedback():
+    import json, os
+    from flask import jsonify
+
+    FILE_PATH = os.path.join(os.path.dirname(__file__), "feedback.json")
+
+    if not os.path.exists(FILE_PATH):
+        return jsonify([])
+
+    try:
+        with open(FILE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except:
+        data = []
+
+    return jsonify(data)
+
+
+# =========================
+# ✅ 標記完成
+# =========================
+@app.route("/resolve_feedback", methods=["POST"])
+def resolve_feedback():
+    import json, os
+    from flask import request, jsonify
+
+    index = request.json.get("index")
+
+    FILE_PATH = os.path.join(os.path.dirname(__file__), "feedback.json")
+
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if 0 <= index < len(data):
+        data[index]["status"] = "closed"
+
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return jsonify({"status": "ok"})
+
+
+# =========================
+# ❌ 刪除
+# =========================
+@app.route("/delete_feedback", methods=["POST"])
+def delete_feedback():
+    import json, os
+    from flask import request, jsonify
+
+    index = request.json.get("index")
+
+    FILE_PATH = os.path.join(os.path.dirname(__file__), "feedback.json")
+
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if 0 <= index < len(data):
+        data.pop(index)
+
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return jsonify({"status": "ok"})
 
 
 @app.route("/dashboard", methods=["GET"])
