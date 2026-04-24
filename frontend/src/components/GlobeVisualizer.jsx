@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -262,8 +262,8 @@ function SupplyNodes({ year, onHover, selected }) {
                 dot > 0
                   ? !selected || activeSupply?.includes(id)
                     ? 1
-                    : 0.3
-                  : 0.1,
+                    : 0.2
+                  : 0.05,
             }}
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
@@ -565,8 +565,6 @@ function SupplyFlowLines({ year, selected, lod }) {
 function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const globeRef = useRef();
 
   useFrame(() => {
     const d = camera.position.length();
@@ -574,57 +572,45 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
     if (d > 7) setLOD(0);
     else if (d > 5) setLOD(1);
     else setLOD(2);
-
-    // ⭐⭐⭐ 自轉控制
-    const isInteracting = hovered || selected || isDragging;
-
-    if (globeRef.current && !isInteracting) {
-      globeRef.current.rotation.y += 0.002;
-    }
   });
 
   return (
     <>
-      <group ref={globeRef}>
-        <ambientLight intensity={0.6} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <mesh>
-          <sphereGeometry args={[3, 64, 64]} />
-          <meshPhysicalMaterial
-            color="#e5e7eb"
-            transparent
-            opacity={0.15} // 🔥 半透明
-            roughness={0.2}
-            metalness={0.1}
-            clearcoat={1}
-            clearcoatRoughness={0.05}
-          />
-        </mesh>
-        <GridSphere />
-
-        <SupplyNodes
-          year={year}
-          onHover={onHover}
-          hovered={hovered}
-          selected={selected}
+      <ambientLight intensity={0.6} />
+      <pointLight position={[10, 10, 10]} intensity={1} />
+      <mesh>
+        <sphereGeometry args={[3, 64, 64]} />
+        <meshPhysicalMaterial
+          color="#e5e7eb"
+          transparent
+          opacity={0.15} // 🔥 半透明
+          roughness={0.2}
+          metalness={0.1}
+          clearcoat={1}
+          clearcoatRoughness={0.05}
         />
+      </mesh>
+      <GridSphere />
 
-        <DemandNodes
-          year={year}
-          lod={lod}
-          onHover={onHover}
-          onSelect={onSelect}
-        />
-
-        {showFlow && (
-          <SupplyFlowLines year={year} selected={selected} lod={lod} />
-        )}
-      </group>
-      <OrbitControls
-        enablePan={false}
-        onStart={() => setIsDragging(true)}
-        onEnd={() => setIsDragging(false)}
+      <SupplyNodes
+        year={year}
+        onHover={onHover}
+        hovered={hovered}
+        selected={selected}
       />
+
+      <DemandNodes
+        year={year}
+        lod={lod}
+        onHover={onHover}
+        onSelect={onSelect}
+      />
+
+      {showFlow && (
+        <SupplyFlowLines year={year} selected={selected} lod={lod} />
+      )}
+
+      <OrbitControls enablePan={false} />
     </>
   );
 }
