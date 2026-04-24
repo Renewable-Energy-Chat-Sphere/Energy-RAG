@@ -118,9 +118,7 @@ export default function Global() {
 
       return Object.entries(demandData)
         .map(([supplyId, value]) => {
-          const supply = supplyCatalog.find(
-            (s) => s.source_id === supplyId
-          );
+          const supply = supplyCatalog.find((s) => s.source_id === supplyId);
 
           const name = supply?.name_zh || supplyId;
 
@@ -369,43 +367,50 @@ export default function Global() {
                 </p>
 
                 <h3>年度分析</h3>
+                <p class="chart-note">
+                  本圖為該部門內能源使用比例（以部門總能源為基準）
+                  <br />
+                  <span class="sub-note">
+                    *總和 = 100%，與智慧查詢之全國占比不同
+                  </span>
+                </p>
 
                 <div className="pie-container">
-                    <PieChart width={300} height={300}>
-                      <Pie
-                        data={getPieData()}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={30}
-                        outerRadius={80}
-                        paddingAngle={3}
-                        cornerRadius={6}
-                        stroke="#fff"
-                        strokeWidth={2}
-                        labelLine={false}
-                      >
-                        {getPieData().map((entry, index) => (
-                          <Cell
-                            key={index}
-                            fill={CATEGORY_COLOR[entry.category] || "#ccc"}
-                          />
-                        ))}
-                      </Pie>
+                  <PieChart width={300} height={300}>
+                    <Pie
+                      data={getPieData()}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={30}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      cornerRadius={6}
+                      stroke="#fff"
+                      strokeWidth={2}
+                      labelLine={false}
+                    >
+                      {getPieData().map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={CATEGORY_COLOR[entry.category] || "#ccc"}
+                        />
+                      ))}
+                    </Pie>
 
-                      <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
+                    <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
 
-                      <Legend
-                        layout="horizontal"
-                        verticalAlign="bottom"
-                        align="center"
-                        wrapperStyle={{ fontSize: "12px" }}
-                      />
-                    </PieChart>
-                  </div>
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      wrapperStyle={{ fontSize: "12px" }}
+                    />
+                  </PieChart>
                 </div>
               </div>
+            </div>
           )}
         </div>
 
@@ -436,7 +441,6 @@ export default function Global() {
                   })()}
                 </div>
               ) : (
-
                 <div className="hover-content">
                   相關能源供給：
                   <br />
