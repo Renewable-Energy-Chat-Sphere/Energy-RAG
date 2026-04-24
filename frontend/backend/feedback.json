@@ -24,30 +24,6 @@
     "status": "open"
   },
   {
-    "name": "Pretendnolisten",
-    "email": "rag412402@gmail.com",
-    "phone": "0900000000",
-    "feeling": "一般",
-    "message": "系統不錯但有點卡，希望可以更順",
-    "sentiment": "中立",
-    "category": "建議",
-    "priority": "低",
-    "reply": "感謝您的寶貴建議，我們會納入未來優化方向。",
-    "status": "open"
-  },
-  {
-    "name": "Pretendnolisten",
-    "email": "rag412402@gmail.com",
-    "phone": "0900000000",
-    "feeling": "不滿意",
-    "message": "登入一直失敗，真的不知道問題在哪",
-    "sentiment": "負面",
-    "category": "問題",
-    "priority": "中",
-    "reply": "感謝您的回饋，我們已收到您的問題，將盡快進行改善。",
-    "status": "open"
-  },
-  {
     "name": "弧菌之",
     "email": "ethan930919@gmail.com",
     "phone": "0900000000",
@@ -60,11 +36,23 @@
     "status": "open"
   },
   {
-    "name": "Pretendnolisten",
-    "email": "rag412402@gmail.com",
+    "name": "1x",
+    "email": "ethan930919@gmail.com",
     "phone": "0900000000",
     "feeling": "一般",
-    "message": "5p 2kefwdqwdq",
+    "message": "希望可以增加功能",
+    "sentiment": "中立",
+    "category": "建議",
+    "priority": "低",
+    "reply": "感謝您的建議，我們會納入優化方向。",
+    "status": "open"
+  },
+  {
+    "name": "安俞真",
+    "email": "ethan930919@gmail.com",
+    "phone": "0900000000",
+    "feeling": "非常滿意",
+    "message": "我用網站用得很開心，會多開幾場演唱會",
     "sentiment": "正面",
     "category": "其他",
     "priority": "低",
@@ -75,12 +63,24 @@
     "name": "Pretendnolisten",
     "email": "rag412402@gmail.com",
     "phone": "0900000000",
-    "feeling": "一般",
-    "message": "希望是最後一次測試",
-    "sentiment": "中立",
-    "category": "建議",
-    "priority": "低",
-    "reply": "感謝您的建議，我們會納入優化方向。",
+    "feeling": "不滿意",
+    "message": "請保證沒有bug 不然我用起來很卡",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "中",
+    "reply": "了解你的困擾，我們會盡快檢查並改善這個問題",
+    "status": "open"
+  },
+  {
+    "name": "1x啦",
+    "email": "ethan930919@gmail.com",
+    "phone": "0900000000",
+    "feeling": "非常不滿意",
+    "message": "我覺得可以再加強，使用者介面不夠直觀，且怎麼沒有登入功能？我直接就看到你們的分析了!",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "高",
+    "reply": "很抱歉造成您的不滿，我們會盡快協助處理 🙏",
     "status": "open"
   }
 ]

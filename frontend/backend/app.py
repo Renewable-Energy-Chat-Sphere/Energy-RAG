@@ -56,6 +56,9 @@ def contact():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
 
+    # =========================
+    # 📥 JSON
+    # =========================
     def load_data():
         if not os.path.exists(FILE_PATH):
             return []
@@ -77,7 +80,9 @@ def contact():
     feeling = data.get("feeling", "")
     message = data.get("message", "")
 
+    # =========================
     # 🤖 分析
+    # =========================
     def analyze(feeling, message):
         if "非常不滿意" in feeling or len(message) > 40:
             return "負面", "問題", "高"
@@ -89,19 +94,92 @@ def contact():
 
     sentiment, category, priority = analyze(feeling, message)
 
-    # 🤖 回覆
+    # =========================
+    # 🤖 fallback 回覆（AI掛掉用）
+    # =========================
     def auto_reply():
         if feeling == "非常不滿意":
-            return "很抱歉造成您的不滿，我們將儘速協助您解決問題。"
+            return "很抱歉造成您的不滿，我們會盡快協助處理 🙏"
         if sentiment == "負面":
-            return "感謝您的回饋，我們已收到您的問題，將盡快改善。"
+            return "了解你的困擾，我們會盡快檢查並改善這個問題"
         if category == "建議":
-            return "感謝您的建議，我們會納入優化方向。"
-        return "感謝您的回饋，我們會持續優化系統！"
+            return "這個建議很不錯，我們會納入優化方向 👍"
+        return "謝謝你的回饋，我們會持續優化體驗 😄"
 
-    reply_text = auto_reply()
+    # =========================
+    # 🤖 AI 回覆（真人客服版🔥）
+    # =========================
+    def generate_reply():
+        try:
+            from openai import OpenAI
+            client = OpenAI()
 
+            res = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": f"""
+你是一位「真人客服」，不是機器人。
+
+🎯 任務：
+根據使用者內容自然回覆
+
+🔥 規則：
+- 每次回覆都要不同（避免模板）
+- 不要每次都用「感謝您的回饋」
+- 可以口語一點（像人聊天）
+- 長度 1~2 句
+
+📊 情境：
+情緒：{sentiment}
+類型：{category}
+優先級：{priority}
+
+👉 回覆方式：
+
+【負面】
+- 要有同理心（理解、抱歉）
+- 可以安撫
+
+【建議】
+- 要肯定（這個想法不錯）
+- 可以說會考慮
+
+【正面】
+- 輕鬆回應（可加 emoji）
+
+🚫 禁止：
+- 模板句
+- 每次一樣開頭
+
+👉 直接回覆，不要解釋
+"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""
+使用者說：
+{message}
+"""
+                    }
+                ],
+                temperature=1.1
+            )
+
+            reply = res.choices[0].message.content.strip()
+            print("🔥 AI回覆:", reply)
+            return reply
+
+        except Exception as e:
+            print("⚠ AI 回覆失敗:", e)
+            return auto_reply()
+
+    reply_text = generate_reply()
+
+    # =========================
     # 💾 存 JSON
+    # =========================
     data_list = load_data()
 
     new_record = {
@@ -120,28 +198,41 @@ def contact():
     data_list.append(new_record)
     save_data(data_list)
 
+    # =========================
     # 📩 寄信
+    # =========================
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
+        print("🔥 開始寄信")
 
-        msg = MIMEText(f"""
-新回饋通知
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+
+        server.login("rag412402@gmail.com", "你的AppPassword")
+
+        # 管理員通知
+        admin_msg = MIMEText(f"""
+📩 EnerSphere 新回饋
 
 姓名: {name}
-內容: {message}
+Email: {email}
+電話: {phone}
+
+內容:
+{message}
 
 分析:
 {sentiment} / {category} / {priority}
 """, "plain", "utf-8")
 
-        msg["Subject"] = "EnerSphere 新回饋"
-        msg["From"] = "rag412402@gmail.com"
-        msg["To"] = "rag412402@gmail.com"
+        admin_msg["Subject"] = "EnerSphere 新回饋通知"
+        admin_msg["From"] = "rag412402@gmail.com"
+        admin_msg["To"] = "rag412402@gmail.com"
 
-        server.send_message(msg)
+        server.send_message(admin_msg)
 
+        # 使用者回覆
         if email:
             reply_msg = MIMEText(reply_text, "plain", "utf-8")
             reply_msg["Subject"] = "您的回饋已收到"
@@ -226,6 +317,7 @@ def delete_feedback():
         json.dump(data, f, ensure_ascii=False, indent=2)
 
     return jsonify({"status": "ok"})
+
 
 
 @app.route("/dashboard", methods=["GET"])
