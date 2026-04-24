@@ -51,7 +51,16 @@
 
       "D30": { "name": "金屬製品製造業", "level": 2, "img": "/images/D30.png" },
       "D31": { "name": "機械設備製造及維修業", "level": 2, "img": "/images/D31.png" },
-      "D32": { "name": "電子產品及電力設備製造業", "level": 2, "img": "/images/D32.png" },
+      
+      "D32": {
+        "name": "電子產品及電力設備製造業",
+        "level": 2,
+        "img": "/images/D32.png",
+        "children": {
+          "D33": { "name": "電子零組件製造業", "level": 3, "img": "/images/D33.png" }
+        }
+      },
+
       "D34": { "name": "運輸工具及其零件製造業", "level": 2, "img": "/images/D34.png" },
       "D35": { "name": "精密光學醫學設備及鐘錶製造業", "level": 2, "img": "/images/D35.png" },
       "D36": { "name": "其他製造業", "level": 2, "img": "/images/D36.png" },

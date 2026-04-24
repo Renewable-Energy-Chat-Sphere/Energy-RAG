@@ -8,13 +8,17 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 export default function Dashboard() {
-  
-  /* STYLES */
   const [isDark, setIsDark] = useState(false);
+  const [data, setData] = useState(null);
+  const [history, setHistory] = useState([]);
 
+  /* THEME CHECK */
   useEffect(() => {
     const checkDark = () => {
       const dark = document
@@ -39,21 +43,21 @@ export default function Dashboard() {
   }, []);
 
   const theme = isDark
-  ? {
-      card: "#1e293b",
-      card2: "#111827",
-      text: "#f8fafc",
-      muted: "#94a3b8",
-      border: "#334155",
-    }
-  : {
-      bg: "#f1f5f9",
-      card: "#ffffff",
-      card2: "#f8fafc",
-      text: "#0f172a",
-      muted: "#64748b",
-      border: "#e5e7eb",
-    };
+    ? {
+        card: "#1e293b",
+        card2: "#111827",
+        text: "#f8fafc",
+        muted: "#94a3b8",
+        border: "#334155",
+      }
+    : {
+        bg: "#f1f5f9",
+        card: "#ffffff",
+        card2: "#f8fafc",
+        text: "#0f172a",
+        muted: "#64748b",
+        border: "#e5e7eb",
+      };
 
   const styles = {
     topSection: {
@@ -90,11 +94,11 @@ export default function Dashboard() {
     kpi: {
       background: theme.card,
       borderRadius: 30,
-      padding: 30,
+      padding: "30px 40px",
       boxShadow: isDark
         ? "0 8px 30px rgba(0,0,0,0.6)"
         : "0 4px 20px rgba(0,0,0,0.08)",
-      border: `1px solid ${theme.border}`,
+      border: `2px solid ${theme.border}`,
     },
 
     kpiHeader: {
@@ -113,8 +117,9 @@ export default function Dashboard() {
     },
 
     kpiTitle: {
-      fontSize: 14,
-      color: isDark ? "#9ca3af" : theme.muted, // 🔥 小字柔化
+      fontSize: 18,
+      fontWeight: "bold",
+      color: isDark ? "#9ca3af" : theme.muted,
     },
 
     kpiValue: {
@@ -132,12 +137,12 @@ export default function Dashboard() {
     /* card */
     card: {
       background: theme.card,
-      borderRadius: 40,
-      padding: "40px 60px",
+      borderRadius: 50,
+      padding: 50,
       boxShadow: isDark
         ? "0 8px 30px rgba(0,0,0,0.6)"
         : "0 4px 20px rgba(0,0,0,0.08)",
-      border: `1px solid ${theme.border}`,
+      border: `2px solid ${theme.border}`,
     },
 
     flex: {
@@ -158,30 +163,15 @@ export default function Dashboard() {
       padding: 10,
       borderRadius: "50%",
       background: theme.card,
-    },
-
-    circle: {
-      width: 300,
-      height: 300,
-      borderRadius: "50%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      boxShadow: isDark
-        ? "0 8px 30px rgba(0,0,0,0.6)"
-        : "0 4px 20px rgba(0,0,0,0.1)",
+      position: "relative",
     },
 
     innerCircle: {
-      width: 200,
-      height: 200,
       borderRadius: "50%",
-      background: theme.card2,
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      border: `1px solid ${theme.border}`,
     },
 
     circleText: {
@@ -196,7 +186,28 @@ export default function Dashboard() {
       color: isDark ? "#9ca3af" : theme.muted,
     },
 
-    /* status */
+    titleRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 15,
+    },
+
+    sectionTitle: {
+      margin: 10,
+      fontSize: 28,
+      fontWeight: "bold",
+      color: isDark ? "#f1f5f9" : theme.text,
+    },
+
+    titleIcon: {
+      margin: 10,
+      fontSize: 28,
+      lineHeight: 1,
+      display: "flex",
+      alignItems: "center",
+    },
+
     statusGrid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -208,53 +219,31 @@ export default function Dashboard() {
       display: "flex",
       alignItems: "center",
       gap: 20,
-      padding: 20,
-      borderRadius: 20,
+      padding: 30,
+      borderRadius: 30,
       background: theme.card2,
-      border: `1px solid ${theme.border}`,
       color: isDark ? "#e5e7eb" : theme.text,
     },
 
     dot: {
-      width: 20,
-      height: 20,
+      width: 25,
+      height: 25,
       marginLeft: 30,
       marginRight: 20,
-      borderRadius: 10,
+      borderRadius: 50,
     },
 
-    /* energy */
+    /* energy card */
     energyCard: {
-      borderRadius: 20,
+      borderRadius: 40,
       overflow: "hidden",
       background: theme.card2,
-      border: `1px solid ${theme.border}`,
+      border: `2px solid ${theme.border}`,
       boxShadow: isDark
         ? "0 6px 20px rgba(0,0,0,0.5)"
         : "0 4px 20px rgba(0,0,0,0.08)",
     },
-
-    energyHeader: {
-      color: isDark ? "#f1f5f9" : theme.text,
-      padding: 20,
-      fontWeight: "bold",
-    },
-
-    barBg: {
-      height: 8,
-      background: isDark ? "#1e293b" : theme.border,
-      borderRadius: 10,
-      margin: "10px 0",
-    },
-
-    bar: {
-      height: "100%",
-      borderRadius: 10,
-    },
   };
-
-  const [data, setData] = useState(null);
-  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     const fetchData = () => {
@@ -283,49 +272,86 @@ export default function Dashboard() {
 
   if (!data) return null;
 
+  // 假數據
+  const fakeEnergy = {
+    nuclear: 7.5,
+    coal: 28.0,
+    gas: 42.0,
+    renewable: 10.0,
+    hydro: 9.0,
+    oil: 4.5
+  };
+
+  const energySource = data.energy || fakeEnergy;
+
   const reserve = ((data.peak - data.power) / data.peak) * 100;
+
   const getColor = (r) => {
-    const value = Number(r); 
     if (r >= 10) return "#22c55e";
     if (r >= 6) return "#facc15";
     if (r < 3) return "#f97316";
     return "#ef4444";
   };
 
+  const energyMap = {
+    nuclear: { label: "核能發電", color: "#8b5cf6", icon: "fi fi-br-radiation" },
+    coal: { label: "燃煤發電", color: "#ef4444", icon: "fi fi-br-fireplace" },
+    gas: { label: "燃氣發電", color: "#f59e0b", icon: "fi fi-br-flame" },
+    renewable: { label: "再生能源", color: "#22c55e", icon: "fi fi-br-leaf" },
+    hydro: { label: "水力發電", color: "#06b6d4", icon: "fi fi-br-water" },
+    oil: { label: "燃油發電", color: "#f97316", icon: "fi fi-br-oil-can" },
+  };
+
+  const energyData = Object.entries(energySource).map(([key, value]) => ({
+    title: energyMap[key]?.label || key,
+    value: Number(value),
+    color: energyMap[key]?.color || "#999",
+    icon: energyMap[key]?.icon || "fi fi-rr-bolt",
+  }));
+
   return (
     <div style={styles.page}>
-      <div style={ styles.topSection }>
-        {/* KPI */}
+      <div style={styles.topSection}>
         <div style={styles.grid4}>
-          <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="⚡" color="#f97316" styles={styles} />
-          <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="📊" color="#22c55e" styles={styles} />
-          <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="🔌" color="#3b82f6" styles={styles} />
-          <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="⏱" color="#ec4899" styles={styles} />
+          <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="fi fi-br-bolt" color="#f97316" styles={styles} />
+          <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="fi fi-br-battery-half" color="#22c55e" styles={styles} />
+          <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="fi fi-br-plug" color="#3b82f6" styles={styles} />
+          <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="fi fi-br-time-fast" color="#ec4899" styles={styles} />
         </div>
 
-      <div style={{ marginTop: 50 }}>
-        <div style={styles.flex}>
-          {/* 左：圓環 */}
+        <div style={{ marginTop: 50, ...styles.flex }}>
           <div style={styles.circleSection}>
             <div style={styles.circleOuter}>
-              <div
-                style={{
-                  ...styles.circle,
-                  background: `conic-gradient(${getColor(reserve)} ${reserve}%, #e5e7eb 0%)`
-                }}
-              >
-                <div style={styles.innerCircle}>
-                  <div style={styles.circleText}>{reserve.toFixed(1)}%</div>
-                  <div style={styles.circleSub}>備轉容量率</div>
-                </div>
+              <ResponsiveContainer width={400} height={400}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { value: reserve },
+                      { value: 100 - reserve },
+                    ]}
+                    dataKey="value"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={100}
+                    outerRadius={180}
+                    cornerRadius={18}
+                    paddingAngle={4}
+                    stroke="none"
+                  >
+                    <Cell fill={getColor(reserve)} />
+                    <Cell fill={isDark ? "#334155" : "#e5e7eb"} />
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+
+              <div style={{ ...styles.innerCircle, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
+                <div style={styles.circleText}>{reserve.toFixed(1)}%</div>
+                <div style={styles.circleSub}>備轉容量率</div>
               </div>
             </div>
           </div>
 
-          {/* 右：卡片 */}
           <div style={{ ...styles.card, flex: 1.5 }}>
-            <h2 style={styles.sectionTitle}>即時電力狀態</h2>
-
             <div style={styles.statusGrid}>
               <StatusCard color="#22c55e" title="綠燈" desc="備轉容量率 ≥ 10%" styles={styles} />
               <StatusCard color="#facc15" title="黃燈" desc="6% ≤ 備轉容量率 < 10%" styles={styles} />
@@ -334,26 +360,25 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      </div>
 
-        {/* 發電來源分布 */}
         <div style={{ marginTop: 30 }}>
-          <h2 style={styles.sectionTitle}>發電來源分布</h2>
+          <div style={styles.titleRow}>
+            <i className="fi fi-br-chart-simple" style={{ ...styles.titleIcon, color: "#3b82f6" }}></i>
+            <p style={styles.sectionTitle}>發電來源分布</p>
+          </div>
 
           <div style={styles.grid3}>
-            <EnergyCard title="核能發電" value={0} color="#9333ea" styles={styles} />
-            <EnergyCard title="燃煤發電" value={24} color="#334155" styles={styles} />
-            <EnergyCard title="燃氣發電" value={59} color="#0ea5e9" styles={styles} />
-            <EnergyCard title="再生能源" value={7} color="#22c55e" styles={styles} />
-            <EnergyCard title="水力發電" value={3} color="#06b6d4" styles={styles} />
-            <EnergyCard title="燃油發電" value={0} color="#7c2d12" styles={styles} />
+            {energyData.map((e) => (
+              <EnergyCard key={e.title} {...e} styles={styles} />
+            ))}
           </div>
         </div>
 
-        {/* 用電趨勢 */}
         <div style={{ ...styles.card, marginTop: 30 }}>
-          <h2 style={styles.sectionTitle}>今日用電趨勢圖</h2>
-
+          <div style={styles.titleRow}>
+            <i className="fi fi-br-tachometer-fast" style={{ ...styles.titleIcon, color: "#22c55e" }}></i>
+            <p style={styles.sectionTitle}>即時用電趨勢圖</p>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={history}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -396,7 +421,9 @@ function KPI({ title, value, unit, icon, color, styles }) {
   return (
     <div style={styles.kpi}>
       <div style={styles.kpiHeader}>
-        <div style={{ ...styles.icon, background: color + "20", color }}>{icon}</div>
+        <div style={{ lineHeight: 1, color, fontSize: 24 }}>
+          <i className={icon}></i>
+        </div>
         <div style={styles.kpiTitle}>{title}</div>
       </div>
 
@@ -413,25 +440,70 @@ function StatusCard({ color, title, desc, styles }) {
       <div style={{ ...styles.dot, background: color }} />
       <div>
         <div style={{ fontWeight: "bold" }}>{title}</div>
-        <div style={{ fontSize: 12 }}>{desc}</div>
+        <div style={{ fontSize: 14 }}>{desc}</div>
       </div>
     </div>
   );
 }
 
-function EnergyCard({ title, value, color, styles }) {
+function EnergyCard({ title, value, color, icon, styles }) {
   return (
-    <div style={styles.energyCard}>
-      <div style={{ ...styles.energyHeader, background: color }}>
-        {title}
-      </div>
-
-      <div style={{ padding: 15 }}>
-        <div style={styles.barBg}>
-          <div style={{ ...styles.bar, width: value + "%", background: color }} />
+    <div
+      style={{
+        ...styles.energyCard,
+        padding: "30px 40px",
+        transition: "all 0.25s ease",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-6px)";
+        e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = "";
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            lineHeight: 1,
+            color,
+            fontSize: 24,
+          }}
+        >
+          <i className={icon}></i>
         </div>
 
-        <div style={{ fontWeight: "bold" }}>{value}%</div>
+        <div style={{ fontWeight: "bold", fontSize: 20 }}>{title}</div>
+      </div>
+
+      <div style={{ marginTop: 10, fontSize: 24, fontWeight: "bold", color }}>
+        {value.toFixed(1)}%
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        <div
+          style={{
+            height: 10,
+            borderRadius: 10,
+            background: "#e5e7eb",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: value + "%",
+              height: "100%",
+              borderRadius: 10,
+              background: `linear-gradient(90deg, ${color}, ${color}aa)`,
+              transition: "width 0.6s ease",
+            }}
+          />
+        </div>
       </div>
     </div>
   );

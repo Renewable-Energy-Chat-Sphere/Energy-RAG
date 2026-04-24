@@ -159,9 +159,6 @@ function Label({ position, worldPosition, text, baseSize = 14 }) {
 function Glow({ size, color }) {
   return (
     <group>
-      {/* 外層大光暈 */}
-
-      {/* 中層光暈 */}
       <mesh>
         <sphereGeometry args={[size * 1.6, 16, 16]} />
         <meshBasicMaterial
@@ -667,7 +664,7 @@ export default function GlobeVisualizer({
           }}
         >
           {/* 標題 */}
-          <div style={{ marginBottom: "10px" }}>能源連線強度</div>
+          <div style={{ marginBottom: "10px" }}>供需連線強度</div>
 
           {/* 漸層 */}
           <div
@@ -721,8 +718,7 @@ export default function GlobeVisualizer({
               }}
             >
               <div style={{ marginBottom: "5px" }}>
-                顏色依同一項目中所有能源使用比例正規化 (0-1)
-                後，以連續漸層呈現：
+                顏色以連續漸層呈現依同一項目中所有單位比例正規化 (0-1) 後之結果：
               </div>
               <div>青色（{"< 0.25"}）- 低</div>
               <div>綠色（{"< 0.5"}）- 偏低</div>

@@ -159,9 +159,8 @@ export default function Global() {
     if (list.length === 0) return [];
 
     const total = list.reduce((a, b) => a + b.value, 0);
-
-    const top = list.slice(0, 6);
-
+    const sorted = [...list].sort((a, b) => b.value - a.value);
+    const top = sorted.slice(0, 6);
     const topWithPercent = top.map((d) => ({
       ...d,
       value: d.value / total,
@@ -169,9 +168,10 @@ export default function Global() {
 
     const topTotal = top.reduce((a, b) => a + b.value, 0);
     const others = total - topTotal;
+    const result = [...topWithPercent].sort((a, b) => b.value - a.value);
 
     if (others > 0.0001) {
-      topWithPercent.push({
+      result.push({
         name: "其他",
         fullName: "其他",
         value: others / total,
@@ -179,10 +179,11 @@ export default function Global() {
       });
     }
 
-    return topWithPercent.sort((a, b) => {
+    return result.sort((a, b) => {
       if (a.name === "其他") return 1;
       if (b.name === "其他") return -1;
-      return 0;
+
+      return b.value - a.value;
     });
   }
 
@@ -383,12 +384,11 @@ export default function Global() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={30}
-                      outerRadius={80}
-                      paddingAngle={3}
+                      innerRadius={40}
+                      outerRadius={100}
+                      paddingAngle={4}
                       cornerRadius={6}
-                      stroke="#fff"
-                      strokeWidth={2}
+                      stroke="none"
                       labelLine={false}
                     >
                       {getPieData().map((entry, index) => (
@@ -402,10 +402,23 @@ export default function Global() {
                     <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
 
                     <Legend
-                      layout="horizontal"
-                      verticalAlign="bottom"
-                      align="center"
-                      wrapperStyle={{ fontSize: "12px" }}
+                      content={() => (
+                        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px", fontSize: 12 }}>
+                          {getPieData().slice(0, 6).map((item, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                              <span
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  background: CATEGORY_COLOR[item.category] || "#ccc",
+                                  marginRight: 4,
+                                }}
+                              />
+                              {item.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     />
                   </PieChart>
                 </div>
