@@ -90,11 +90,13 @@ Object.entries(hierarchy).forEach(([code, node]) => {
 /* Label（縮放 + 截斷） */
 /* ===================== */
 
-function Label({ position, text, baseSize = 14 }) {
+function Label({ position, worldPosition, text, baseSize = 14 }) {
   const { camera } = useThree();
 
   const distance = camera.position.length();
-
+  const camDir = camera.position.clone().normalize();
+  const nodeDir = new THREE.Vector3(...worldPosition).normalize();
+  const dot = camDir.dot(nodeDir);
   let fontSizeFactor = 1;
 
   if (distance > 6) {
@@ -129,7 +131,8 @@ function Label({ position, text, baseSize = 14 }) {
         style={{
           fontSize: baseSize * fontSizeFactor + "px",
           color: isDark ? "#ffffff" : "#000000",
-          opacity: 0.9,
+          opacity: dot > 0 ? 0.9 : 0.15,
+          filter: dot > 0 ? "none" : "brightness(0.6)",
           whiteSpace: "nowrap",
           letterSpacing: "0.5px",
           transition: "font-size 0.2s ease",
@@ -202,6 +205,15 @@ function SupplyNodes({ year, onHover, selected }) {
   };
 
   return Object.entries(supplyLayout).map(([id, pos]) => {
+    const position = [
+      pos.x * (SUPPLY_RADIUS * 1.05),
+      pos.y * (SUPPLY_RADIUS * 1.05),
+      pos.z * (SUPPLY_RADIUS * 1.05),
+    ];
+    const camDir = camera.position.clone().normalize();
+    const nodeDir = new THREE.Vector3(...position).normalize();
+    const dot = camDir.dot(nodeDir);
+
     const info = supplyMap[id];
     const category = info?.category || "Other";
 
@@ -219,12 +231,6 @@ function SupplyNodes({ year, onHover, selected }) {
     const distance = camera.position.length();
     const scale = THREE.MathUtils.clamp(10 / distance, 0.4, 1.8);
 
-    const position = [
-      pos.x * SUPPLY_RADIUS,
-      pos.y * SUPPLY_RADIUS,
-      pos.z * SUPPLY_RADIUS,
-    ];
-
     return (
       <group key={id} position={position}>
         {(!selected || activeSupply?.includes(id)) && (
@@ -240,8 +246,8 @@ function SupplyNodes({ year, onHover, selected }) {
               height: `${20 * scale}px`,
               objectFit: "contain",
               transition: "transform 0.25s ease, filter 0.25s ease",
-              cursor: "pointer",
-              pointerEvents: "auto",
+              pointerEvents: dot > 0 ? "auto" : "none",
+              cursor: dot > 0 ? "pointer" : "default",
 
               /* 光暈 */
               filter:
@@ -250,12 +256,9 @@ function SupplyNodes({ year, onHover, selected }) {
                   : category === "Coal"
                     ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
                     : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
-              
+
               /* 未被選中時隱藏 */
-              opacity:
-                !selected || activeSupply?.includes(id)
-                  ? 1
-                  : 0.1,
+              opacity: dot > 0 ? 1 : 0.2,
             }}
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
@@ -358,6 +361,7 @@ function GridSphere() {
 /* ===================== */
 
 function DemandNodes({ year, lod, onHover, onSelect }) {
+  const { camera } = useThree();
   const demandLayout = demandLayouts[year];
 
   if (!demandLayout) return null;
@@ -370,16 +374,20 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
     if (lod === 2 && level !== 3) return null;
 
     const size = level === 1 ? 0.1 : level === 2 ? 0.075 : 0.06;
-    const radius = level === 1 ? 2.9 : level === 2 ? 3.0 : 3.1;
+    const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
 
     const position = [pos.x * radius, pos.y * radius, pos.z * radius];
 
+    const camDir = camera.position.clone().normalize();
+    const nodeDir = new THREE.Vector3(...position).normalize();
+    const dot = camDir.dot(nodeDir);
     return (
       <group key={id} position={position}>
         <Glow size={size} color="#3b82f6" />
 
         <mesh
           onPointerOver={(e) => {
+            if (dot <= 0) return; // ❌ 背面直接不觸發
             e.stopPropagation();
             onHover({
               code: id,
@@ -389,6 +397,7 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
           }}
           onPointerOut={() => onHover(null)}
           onClick={(e) => {
+            if (dot <= 0) return; // 🔥 關鍵：擋背面點擊
             e.stopPropagation();
             onSelect({
               code: id,
@@ -400,29 +409,31 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
           <meshStandardMaterial
             color="#3b82f6"
             emissive="#3b82f6"
-            emissiveIntensity={0.3}
+            emissiveIntensity={dot > 0 ? 0.5 : 0.1}
+            transparent
+            opacity={dot > 0 ? 1 : 0.2}
           />
         </mesh>
-
         {lod === 0 && level === 1 && (
           <Label
             position={[0, size + 0.18, 0]}
+            worldPosition={position}
             text={demandName[id]}
             baseSize={18}
           />
         )}
-
         {lod === 1 && level === 2 && (
           <Label
             position={[0, size + 0.14, 0]}
+            worldPosition={position}
             text={demandName[id]}
             baseSize={12}
           />
         )}
-
         {lod === 2 && level === 3 && (
           <Label
             position={[0, size + 0.1, 0]}
+            worldPosition={position}
             text={demandName[id]}
             baseSize={10}
           />
@@ -457,6 +468,7 @@ function getColor(value) {
 }
 
 function SupplyFlowLines({ year, selected, lod }) {
+  const { camera } = useThree();
   if (!selected) return null;
 
   const demandLayout = demandLayouts[year];
@@ -480,7 +492,8 @@ function SupplyFlowLines({ year, selected, lod }) {
   const toSphere = (v, r) =>
     new THREE.Vector3(v.x, v.y, v.z).normalize().multiplyScalar(r);
 
-  return Object.entries(ratio).map(([supply, raw], index, arr) => {
+  return Object.entries(ratio)
+    .map(([supply, raw], index, arr) => {
       const s = supplyLayout[supply];
       if (!s) return null;
 
@@ -491,9 +504,11 @@ function SupplyFlowLines({ year, selected, lod }) {
       const adjusted = Math.pow(normalized, 1.5);
       const color = getColor(adjusted);
 
-      const start = toSphere(s, SUPPLY_RADIUS);
-      const end = toSphere(d, SUPPLY_RADIUS);
-
+      const start = toSphere(s, SUPPLY_RADIUS * 1.05);
+      const end = toSphere(d, SUPPLY_RADIUS * 1.05);
+      const camDir = camera.position.clone().normalize();
+      const nodeDir = start.clone().normalize();
+      const dot = camDir.dot(nodeDir);
       // 旋轉軸
       const axis = new THREE.Vector3().crossVectors(start, end).normalize();
       const angle = start.angleTo(end);
@@ -528,9 +543,9 @@ function SupplyFlowLines({ year, selected, lod }) {
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={0.5}
+            emissiveIntensity={0.6}
             transparent
-            opacity={0.7}
+            opacity={0.8}
           />
         </mesh>
       );
@@ -558,10 +573,26 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
     <>
       <ambientLight intensity={0.6} />
       <pointLight position={[10, 10, 10]} intensity={1} />
-
+      <mesh>
+        <sphereGeometry args={[3, 64, 64]} />
+        <meshPhysicalMaterial
+          color="#e5e7eb"
+          transparent
+          opacity={0.15} // 🔥 半透明
+          roughness={0.2}
+          metalness={0.1}
+          clearcoat={1}
+          clearcoatRoughness={0.05}
+        />
+      </mesh>
       <GridSphere />
 
-      <SupplyNodes year={year} onHover={onHover} hovered={hovered} selected={selected} />
+      <SupplyNodes
+        year={year}
+        onHover={onHover}
+        hovered={hovered}
+        selected={selected}
+      />
 
       <DemandNodes
         year={year}
@@ -631,14 +662,15 @@ export default function GlobeVisualizer({
           }}
         >
           {/* 標題 */}
-          <div style={{marginBottom: "10px"}}>能源連線強度</div>
+          <div style={{ marginBottom: "10px" }}>能源連線強度</div>
 
           {/* 漸層 */}
           <div
             style={{
               height: "10px",
               borderRadius: "10px",
-              background: "linear-gradient(to right, #06b6d4 20%, #22c55e 40%, #facc15 60%, #f97316 80%, #ef4444 100%)",
+              background:
+                "linear-gradient(to right, #06b6d4 20%, #22c55e 40%, #facc15 60%, #f97316 80%, #ef4444 100%)",
               marginBottom: "5px",
             }}
           />
@@ -683,14 +715,19 @@ export default function GlobeVisualizer({
                 opacity: 0.9,
               }}
             >
-              <div style={{marginBottom: "5px"}}>顏色依同一項目中所有能源使用比例正規化 (0-1) 後，以連續漸層呈現：</div>
+              <div style={{ marginBottom: "5px" }}>
+                顏色依同一項目中所有能源使用比例正規化 (0-1)
+                後，以連續漸層呈現：
+              </div>
               <div>青色（{"< 0.25"}）- 低</div>
               <div>綠色（{"< 0.5"}）- 偏低</div>
               <div>黃色（{"< 0.75"}）- 中等</div>
               <div>橘色（{"< 1"}）- 高</div>
               <div>紅色（{"= 1"}）- 最高</div>
 
-              <div style={{ marginTop: "10px" }}>※ 顏色代表相對強度，與節點位置分布（相似度）不同</div>
+              <div style={{ marginTop: "10px" }}>
+                ※ 顏色代表相對強度，與節點位置分布（相似度）不同
+              </div>
             </div>
           </div>
         </div>
