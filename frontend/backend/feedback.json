@@ -94,5 +94,30 @@
     "priority": "中",
     "reply": "了解你的困擾，我們會盡快檢查並改善這個問題",
     "status": "open"
+  },
+  {
+    "name": "陳相叡",
+    "email": "sherrychen940507@gmail.com",
+    "phone": "0906825360",
+    "feeling": "不滿意",
+    "message": "not good",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "中",
+    "reply": "抱歉聽到你有不好的體驗，我們會努力改進。",
+    "status": "open",
+    "timestamp": "2026-04-24T11:39:11.669840"
+  },
+  {
+    "name": "陳相叡",
+    "email": "sherrychen940507@gmail.com",
+    "phone": "0906825360",
+    "feeling": "不滿意",
+    "message": "not good",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "中",
+    "reply": "聽起來你遇到了問題，真抱歉讓你感到不滿意。要不要跟我詳細說說發生了什麼？",
+    "status": "open"
   }
 ]
