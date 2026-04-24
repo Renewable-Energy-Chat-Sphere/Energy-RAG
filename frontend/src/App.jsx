@@ -1,34 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { HashRouter as Router } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 import Home from "./pages/Home";
 import Global from "./pages/Global";
-import MobileGlobal from "./pages/MobileGlobal";
 import Rag from "./pages/Rag";
 
 /* 🔥 自動判斷裝置 */
 function AutoGlobal() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    window.matchMedia("(max-width: 768px)").matches
+  );
 
   useEffect(() => {
-    const check = () => {
-      const mobile =
-        window.innerWidth <= 768 ||
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const media = window.matchMedia("(max-width: 768px)");
 
-      setIsMobile(mobile);
+    const listener = (e) => {
+      setIsMobile(e.matches);
     };
 
-    check();
-    window.addEventListener("resize", check);
+    media.addEventListener("change", listener);
 
-    return () => window.removeEventListener("resize", check);
+    return () => media.removeEventListener("change", listener);
   }, []);
 
-  return isMobile ? <MobileGlobal /> : <Global />;
+  // ✅ 改這裡（重點）
+  return <Global isMobile={isMobile} />;
 }
 
 export default function App() {

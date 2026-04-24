@@ -2,11 +2,12 @@ import React from "react";
 import { useEffect, useState } from "react";
 
 export default function EnergyNews() {
+  const API = "/api";
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/energy-news")
+    fetch(`${API}/energy-news`)
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);

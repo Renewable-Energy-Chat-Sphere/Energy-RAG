@@ -24,7 +24,7 @@ Object.entries(energyFiles).forEach(([path, module]) => {
 
 const years = Object.keys(energyMap).sort((a, b) => b - a);
 
-export default function Global() {
+export default function Global({ isMobile }) {
   /* ===================== */
   function findNodeByCode(code, tree) {
     for (const key in tree) {
@@ -195,7 +195,7 @@ export default function Global() {
     setAnswer("");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/chat", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -296,9 +296,10 @@ export default function Global() {
         </div>
       </div>
 
-      <div className="global-layout">
+      <div className={isMobile ? "mobile-layout" : "global-layout"}>
         <div
           className="globe-area"
+
           onMouseMove={(e) => {
             setMousePos({
               x: e.clientX,
@@ -306,6 +307,7 @@ export default function Global() {
             });
           }}
         >
+        
           <GlobeVisualizer
             year={year}
             onHover={onHover}
@@ -315,165 +317,194 @@ export default function Global() {
             hovered={hovered}
           />
         </div>
+        {isMobile && (
+  <div className="mobile-bottom-panel">
+    {!selected && (
+      <div className="info-empty">
+        <h3>點擊球體查看資訊</h3>
+      </div>
+    )}
 
-        <div className="info-panel">
-          {!selected && (
-            <div className="info-empty">
-              <h3>請點擊模型節點查看資訊</h3>
-            </div>
-          )}
+    {selected && (
+      <div className="info-card">
+        <h2>{selected.name}</h2>
 
-          {selected && (
-            <div className="info-card">
-              {/* 關閉按鈕 */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: "20px",
-                  right: "15px",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                }}
-                onClick={() => setSelected(null)}
-              >
-                ✕
+        <p>
+          {(selected?.code?.startsWith("S") ? [] : getEnergyList())
+            .slice(0, 3)
+            .map((e, i) => (
+              <span key={i}>
+                {e.fullName}
+                {i < 2 ? "、" : ""}
+              </span>
+            ))}
+        </p>
+      </div>
+    )}
+  </div>
+)}
+        
+        {!isMobile && (
+          <div className="info-panel">
+            {!selected && (
+              <div className="info-empty">
+                <h3>請點擊模型節點查看資訊</h3>
               </div>
-              <h2>{selected.name}</h2>
+            )}
 
-              {(() => {
-                const node = findNodeByCode(selected.code, hierarchy);
-                return node?.img ? (
-                  <div className="img-box">
-                    <img
-                      src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
-                      alt=""
-                      className="info-img"
-                    />
-                  </div>
-                ) : null;
-              })()}
-
-              <div className="info-content">
-                <h3>常用能源</h3>
-                <p>
-                  {(selected?.code?.startsWith("S") ? [] : getEnergyList())
-                    .slice(0, 3)
-                    .map((e, i) => (
-                      <span key={i}>
-                        {e.fullName}
-                        {i < 2 ? "、" : ""}
-                      </span>
-                    ))}
-                </p>
-
-                <h3>年度分析</h3>
-                <p class="chart-note">
-                  本圖為該部門內能源使用比例（以部門總能源為基準）
-                  <br />
-                  <span class="sub-note">
-                    *總和 = 100%，與智慧查詢之全國占比不同
-                  </span>
-                </p>
-
-                <div className="pie-container">
-                  <PieChart width={300} height={300}>
-                    <Pie
-                      data={getPieData()}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={40}
-                      outerRadius={100}
-                      paddingAngle={4}
-                      cornerRadius={6}
-                      stroke="none"
-                      labelLine={false}
-                    >
-                      {getPieData().map((entry, index) => (
-                        <Cell
-                          key={index}
-                          fill={CATEGORY_COLOR[entry.category] || "#ccc"}
-                        />
-                      ))}
-                    </Pie>
-
-                    <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
-
-                    <Legend
-                      content={() => (
-                        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px", fontSize: 12 }}>
-                          {getPieData().slice(0, 6).map((item, i) => (
-                            <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                              <span
-                                style={{
-                                  width: 8,
-                                  height: 8,
-                                  background: CATEGORY_COLOR[item.category] || "#ccc",
-                                  marginRight: 4,
-                                }}
-                              />
-                              {item.name}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    />
-                  </PieChart>
+            {selected && (
+              <div className="info-card">
+                {/* 關閉按鈕 */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "20px",
+                    right: "15px",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                  }}
+                  onClick={() => setSelected(null)}
+                >
+                  ✕
                 </div>
+                <h2>{selected.name}</h2>
+
+                {(() => {
+                  const node = findNodeByCode(selected.code, hierarchy);
+                  return node?.img ? (
+                    <div className="img-box">
+                      <img
+                        src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
+                        alt=""
+                        className="info-img"
+                      />
+                    </div>
+                  ) : null;
+                })()}
+
+                <div className="info-content">
+                  <h3>常用能源</h3>
+                  <p>
+                    {(selected?.code?.startsWith("S") ? [] : getEnergyList())
+                      .slice(0, 3)
+                      .map((e, i) => (
+                        <span key={i}>
+                          {e.fullName}
+                          {i < 2 ? "、" : ""}
+                        </span>
+                      ))}
+                  </p>
+
+                  <h3>年度分析</h3>
+                  <p className="chart-note">
+                    本圖為該部門內能源使用比例（以部門總能源為基準）
+                    <br />
+                    <span className="sub-note">
+                      *總和 = 100%，與智慧查詢之全國占比不同
+                    </span>
+                  </p>
+                  
+
+                  <div className="pie-container">
+                    <PieChart width={300} height={300}>
+                      <Pie
+                        data={getPieData()}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={100}
+                        paddingAngle={4}
+                        cornerRadius={6}
+                        stroke="none"
+                        labelLine={false}
+                      >
+                        {getPieData().map((entry, index) => (
+                          <Cell
+                            key={index}
+                            fill={CATEGORY_COLOR[entry.category] || "#ccc"}
+                          />
+                        ))}
+                      </Pie>
+
+                      <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
+
+                      <Legend
+                        content={() => (
+                          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px", fontSize: 12 }}>
+                            {getPieData().slice(0, 6).map((item, i) => (
+                              <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                                <span
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                    background: CATEGORY_COLOR[item.category] || "#ccc",
+                                    marginRight: 4,
+                                  }}
+                                />
+                                {item.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      />
+                    </PieChart>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+          {hovered && (
+            <div
+              className="hover-overlay"
+              style={{
+                left: mousePos.x + 15,
+                top: mousePos.y + 15,
+              }}
+            >
+              <div className="hover-card">
+                <div className="hover-header">{hovered.name}</div>
+
+                {hovered?.code?.startsWith("S") ? (
+                  <div className="hover-content">
+                    相關需求項目：
+                    <br />
+                    {(() => {
+                      const list = getEnergyList(hovered).slice(0, 3);
+
+                      return list.map((d, i) => (
+                        <span key={i}>
+                          {d.name}
+                          {i !== list.length - 1 ? "、" : ""}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                ) : (
+                  <div className="hover-content">
+                    相關能源供給：
+                    <br />
+                    {(() => {
+                      const list = getEnergyList(hovered).slice(0, 3);
+
+                      return list.map((d, i) => (
+                        <span key={i}>
+                          {d.name}
+                          {i !== list.length - 1 ? "、" : ""}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
-
-        {hovered && (
-          <div
-            className="hover-overlay"
-            style={{
-              left: mousePos.x + 15,
-              top: mousePos.y + 15,
-            }}
-          >
-            <div className="hover-card">
-              <div className="hover-header">{hovered.name}</div>
-
-              {hovered?.code?.startsWith("S") ? (
-                <div className="hover-content">
-                  相關需求項目：
-                  <br />
-                  {(() => {
-                    const list = getEnergyList(hovered).slice(0, 3);
-
-                    return list.map((d, i) => (
-                      <span key={i}>
-                        {d.name}
-                        {i !== list.length - 1 ? "、" : ""}
-                      </span>
-                    ));
-                  })()}
-                </div>
-              ) : (
-                <div className="hover-content">
-                  相關能源供給：
-                  <br />
-                  {(() => {
-                    const list = getEnergyList(hovered).slice(0, 3);
-
-                    return list.map((d, i) => (
-                      <span key={i}>
-                        {d.name}
-                        {i !== list.length - 1 ? "、" : ""}
-                      </span>
-                    ));
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
+      
       {showAI && (
         <div className="ai-overlay">
           <div
