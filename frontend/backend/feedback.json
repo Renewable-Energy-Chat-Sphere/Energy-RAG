@@ -82,5 +82,17 @@
     "priority": "高",
     "reply": "很抱歉造成您的不滿，我們會盡快協助處理 🙏",
     "status": "open"
+  },
+  {
+    "name": "沈輝恩",
+    "email": "rag412402@gmail.com",
+    "phone": "0900000000",
+    "feeling": "不滿意",
+    "message": "請加入登入功能",
+    "sentiment": "負面",
+    "category": "問題",
+    "priority": "中",
+    "reply": "了解你的困擾，我們會盡快檢查並改善這個問題",
+    "status": "open"
   }
 ]

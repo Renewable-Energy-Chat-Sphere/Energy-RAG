@@ -209,7 +209,7 @@ def contact():
         server.starttls()
         server.ehlo()
 
-        server.login("rag412402@gmail.com", "你的AppPassword")
+        server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
 
         # 管理員通知
         admin_msg = MIMEText(f"""
