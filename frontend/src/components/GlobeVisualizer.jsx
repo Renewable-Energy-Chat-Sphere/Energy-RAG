@@ -258,7 +258,12 @@ function SupplyNodes({ year, onHover, selected }) {
                     : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
 
               /* 未被選中時隱藏 */
-              opacity: dot > 0 ? 1 : 0.2,
+              opacity:
+                dot > 0
+                  ? !selected || activeSupply?.includes(id)
+                    ? 1
+                    : 0.3
+                  : 0.1,
             }}
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
