@@ -20,7 +20,7 @@ export default function EnergyNews() {
     <section
       className="energy-news"
       style={{
-        maxWidth: "1100px",
+        maxWidth: "1200px",
         margin: "48px auto",
         position: "relative",
         paddingBottom: "90px",

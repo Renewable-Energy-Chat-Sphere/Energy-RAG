@@ -107,8 +107,12 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  const energySource = data.energy;
-  const reserve = ((data.peak - data.power) / data.peak) * 100;
+  const energySource = data.energy || {};
+
+  const reserve =
+    data.peak && data.power
+      ? ((data.peak - data.power) / data.peak) * 100
+      : 0;
 
   const getColor = (r) => {
     if (r >= 10) return "#22c55e";
@@ -206,7 +210,10 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={history}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
+              <XAxis
+                dataKey="time"
+                tickFormatter={(value, index) => (index === 0 ? "" : value)}
+              />
               <YAxis />
               <Tooltip />
               <Legend />

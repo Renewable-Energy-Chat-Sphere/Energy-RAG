@@ -274,6 +274,76 @@
   box-shadow: 0 12px 40px rgba(0,0,0,0.7);
 }
 
+.recharts-cartesian-grid line {
+  stroke: #94a3b8;
+  opacity: 0.4;
+}
+
+.recharts-cartesian-axis-tick-value {
+  font-size: 16px;
+  fill: #94a3b8;
+}
+
+.recharts-legend-item text {
+  font-size: 14px;
+  font-weight: bold;
+  fill: #64748b;
+}
+
+.dashboard-page.dark .recharts-legend-item text {
+  fill: #cbd5f5;
+}
+
+.recharts-default-tooltip {
+  border-radius: 16px !important;
+  background: rgba(255,255,255,0.9) !important;
+  border: none !important;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2) !important;
+  backdrop-filter: blur(12px);
+  padding: 10px 14px !important;
+}
+
+.dashboard-page.dark .recharts-default-tooltip {
+  background: rgba(30,41,59,0.95) !important;
+  color: #f1f5f9 !important;
+}
+
+.recharts-line path {
+  filter: drop-shadow(0 0 6px rgba(59,130,246,0.5));
+}
+
+.recharts-line:nth-of-type(2) path {
+  filter: drop-shadow(0 0 6px rgba(34,197,94,0.5));
+}
+
+.recharts-active-dot circle {
+  r: 6;
+  stroke: #fff;
+  stroke-width: 2px;
+}
+
+.recharts-tooltip-cursor {
+  stroke: #94a3b8;
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.recharts-wrapper {
+  padding-top: 10px;
+}
+
+* {
+  outline: none !important;
+  border: none !important;
+}
+
+.recharts-wrapper,
+.recharts-cartesian-grid line,
+.recharts-line path,
+.recharts-tooltip-cursor {
+  outline: none !important;
+}
+
 .blue { color: #3b82f6; }
 .green { color: #22c55e; }
 
