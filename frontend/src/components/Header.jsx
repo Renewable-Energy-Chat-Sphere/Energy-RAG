@@ -9,7 +9,7 @@ export default function Header() {
     const header = document.querySelector("header");
 
     const onScroll = () => {
-      if (!header) return; // ✅ 防炸
+      if (!header) return;
 
       if (window.scrollY > 50) header.classList.add("scrolled");
       else header.classList.remove("scrolled");
@@ -47,13 +47,11 @@ export default function Header() {
 
     const toggleDropdown = (e) => {
       e.stopPropagation();
-      if (!dropdown) return;
-      dropdown.classList.toggle("show");
+      dropdown?.classList.toggle("show");
     };
 
     const closeDropdown = (e) => {
       if (!dropdown) return;
-
       if (!dropdown.contains(e.target)) {
         dropdown.classList.remove("show");
       }
@@ -63,22 +61,28 @@ export default function Header() {
     window.addEventListener("click", closeDropdown);
 
     /* ------------------------------
-       4. 深色模式
+       4. 🌙 深色模式（完整修正版）
     ------------------------------*/
     const themeToggle = document.getElementById("themeToggle");
     const main = document.getElementById("main-content");
 
     const savedTheme = localStorage.getItem("theme");
 
+    // 🔥 初始化（頁面重整也會套用）
     if (savedTheme === "dark") {
       main?.classList.add("dark");
-      if (themeToggle) themeToggle.textContent = "☀️"; // ✅ 防炸
+      document.body.classList.add("dark"); // 🔥 關鍵
+      if (themeToggle) themeToggle.textContent = "☀️";
     } else {
-      if (themeToggle) themeToggle.textContent = "🌙"; // ✅ 防炸
+      main?.classList.remove("dark");
+      document.body.classList.remove("dark");
+      if (themeToggle) themeToggle.textContent = "🌙";
     }
 
+    // 🔥 切換
     const changeTheme = () => {
       main?.classList.toggle("dark");
+      document.body.classList.toggle("dark"); // 🔥 關鍵
 
       if (main?.classList.contains("dark")) {
         if (themeToggle) themeToggle.textContent = "☀️";
@@ -116,7 +120,13 @@ export default function Header() {
               alt="EnerSphere TW Logo"
               style={{ height: "70px" }}
             />
-            <span style={{ fontSize: "26px", fontWeight: "700", color: "#f97316" }}>
+            <span
+              style={{
+                fontSize: "26px",
+                fontWeight: "700",
+                color: "#f97316",
+              }}
+            >
               EnerSphere TW
             </span>
           </div>
@@ -134,8 +144,9 @@ export default function Header() {
           <div id="themeToggle">🌙</div>
         </div>
 
+        {/* 🔥 修正 class → className */}
         <div className="hamburger">
-          <i class="fi fi-rr-menu-burger"></i>
+          <i className="fi fi-rr-menu-burger"></i>
         </div>
       </header>
     </>
