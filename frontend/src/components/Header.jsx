@@ -134,10 +134,8 @@ export default function Header() {
           <div id="themeToggle">🌙</div>
         </div>
 
-        <div className="hamburger" role="button">
-          <div></div>
-          <div></div>
-          <div></div>
+        <div className="hamburger">
+          <i class="fi fi-rr-menu-burger"></i>
         </div>
       </header>
     </>
