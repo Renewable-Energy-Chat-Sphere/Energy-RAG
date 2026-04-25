@@ -23,6 +23,7 @@ body {
   flex-direction: column;
   gap: 18px;
   padding: 24px 40px 40px 40px;
+  padding-top: 70px;
 }
 
 /* 控制面板 */
@@ -614,11 +615,6 @@ body {
 @media (max-width: 768px) {
   .hamburger {
     display: block;
-  }
-}
-@media (max-width: 768px) {
-  #main-content {
-    padding-top: 70px;
   }
 }
 @media (max-width: 768px) {

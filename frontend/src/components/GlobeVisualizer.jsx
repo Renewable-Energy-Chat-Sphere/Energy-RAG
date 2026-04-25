@@ -1,4 +1,10 @@
-import React, { useState } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback
+} from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -624,6 +630,16 @@ export default function GlobeVisualizer({
   showFlow,
   hovered,
 }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [showLegendDetail, setShowLegendDetail] = useState(false);
   // 防止資料還沒載入
   if (!supplyLayouts[year] || !demandLayouts[year]) {
@@ -633,7 +649,13 @@ export default function GlobeVisualizer({
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       {/* 3D 球 */}
-      <Canvas camera={{ position: [0, 0, 8], fov: 50 }}>
+
+      <Canvas
+        camera={{
+          position: [0, isMobile ? -0.8 : 0, isMobile ? 11 : 8],
+          fov: isMobile ? 65 : 50,
+        }}
+      >
         <Scene
           year={year}
           onHover={onHover}
