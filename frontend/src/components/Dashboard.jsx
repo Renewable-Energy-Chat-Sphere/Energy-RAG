@@ -12,6 +12,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import "./Dashboard.css";
 
 export default function Dashboard() {
   const [isDark, setIsDark] = useState(false);
@@ -41,209 +42,6 @@ export default function Dashboard() {
     return () => observer.disconnect();
   }, []);
 
-  const theme = isDark
-    ? {
-        card: "#1e293b",
-        card2: "#111827",
-        text: "#f8fafc",
-        muted: "#94a3b8",
-        border: "#334155",
-      }
-    : {
-        bg: "#f1f5f9",
-        card: "#ffffff",
-        card2: "#f8fafc",
-        text: "#0f172a",
-        muted: "#64748b",
-        border: "#e5e7eb",
-      };
-
-  const styles = {
-    topSection: {
-      padding: 60,
-      background: theme.card,
-      color: isDark ? "#e5e7eb" : theme.text,
-    },
-
-    page: {
-      background: theme.bg,
-      minHeight: "100vh",
-      fontFamily: "Inter, Noto Sans TC",
-      color: isDark ? "#e5e7eb" : theme.text,
-    },
-
-    sectionTitle: {
-      marginBottom: 15,
-      color: isDark ? "#f1f5f9" : theme.text,
-    },
-
-    grid4: {
-      display: "grid",
-      gridTemplateColumns: "repeat(4,1fr)",
-      gap: 20,
-    },
-
-    grid3: {
-      display: "grid",
-      gridTemplateColumns: "repeat(3,1fr)",
-      gap: 20,
-    },
-
-    /* KPI */
-    kpi: {
-      background: theme.card,
-      borderRadius: 30,
-      padding: "30px 40px",
-      boxShadow: isDark
-        ? "0 8px 30px rgba(0,0,0,0.6)"
-        : "0 4px 20px rgba(0,0,0,0.08)",
-      border: `2px solid ${theme.border}`,
-    },
-
-    kpiHeader: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-    },
-
-    icon: {
-      width: 40,
-      height: 40,
-      borderRadius: 10,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    kpiTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: isDark ? "#9ca3af" : theme.muted,
-    },
-
-    kpiValue: {
-      fontSize: 28,
-      fontWeight: "bold",
-      marginTop: 10,
-      color: isDark ? "#f9fafb" : theme.text,
-    },
-
-    unit: {
-      fontSize: 14,
-      color: isDark ? "#e5e7eb" : theme.text,
-    },
-
-    /* card */
-    card: {
-      background: theme.card,
-      borderRadius: 50,
-      padding: 50,
-      boxShadow: isDark
-        ? "0 8px 30px rgba(0,0,0,0.6)"
-        : "0 4px 20px rgba(0,0,0,0.08)",
-      border: `2px solid ${theme.border}`,
-    },
-
-    flex: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 40,
-    },
-
-    circleSection: {
-      flex: 1,
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-    },
-
-    circleOuter: {
-      padding: 10,
-      borderRadius: "50%",
-      background: theme.card,
-      position: "relative",
-    },
-
-    innerCircle: {
-      borderRadius: "50%",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    circleText: {
-      fontSize: 36,
-      fontWeight: "bold",
-      letterSpacing: "1px",
-      color: isDark ? "#f9fafb" : theme.text,
-    },
-
-    circleSub: {
-      fontSize: 18,
-      color: isDark ? "#9ca3af" : theme.muted,
-    },
-
-    titleRow: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 15,
-    },
-
-    sectionTitle: {
-      margin: 10,
-      fontSize: 28,
-      fontWeight: "bold",
-      color: isDark ? "#f1f5f9" : theme.text,
-    },
-
-    titleIcon: {
-      margin: 10,
-      fontSize: 28,
-      lineHeight: 1,
-      display: "flex",
-      alignItems: "center",
-    },
-
-    statusGrid: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 20,
-    },
-
-    statusCard: {
-      fontSize: 18,
-      display: "flex",
-      alignItems: "center",
-      gap: 20,
-      padding: 30,
-      borderRadius: 30,
-      background: theme.card2,
-      color: isDark ? "#e5e7eb" : theme.text,
-    },
-
-    dot: {
-      width: 25,
-      height: 25,
-      marginLeft: 30,
-      marginRight: 20,
-      borderRadius: 50,
-    },
-
-    /* energy card */
-    energyCard: {
-      borderRadius: 40,
-      overflow: "hidden",
-      background: theme.card2,
-      border: `2px solid ${theme.border}`,
-      boxShadow: isDark
-        ? "0 6px 20px rgba(0,0,0,0.5)"
-        : "0 4px 20px rgba(0,0,0,0.08)",
-    },
-  };
-
   useEffect(() => {
     const fetchData = () => {
       fetch("http://127.0.0.1:8000/dashboard")
@@ -251,7 +49,12 @@ export default function Dashboard() {
         .then((d) => {
           setData(d);
 
-          const time = d.timestamp?.split(" ")[1];
+          const time = new Date(d.timestamp).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          });
 
           setHistory((prev) => [
             ...prev.slice(-20),
@@ -259,6 +62,39 @@ export default function Dashboard() {
               time,
               load: d.power,
               capacity: d.peak,
+            },
+          ]);
+        })
+        .catch(() => {
+          const fakeEnergy = {
+            nuclear: 7.5,
+            coal: 28.0,
+            gas: 42.0,
+            renewable: 10.0,
+            hydro: 9.0,
+            oil: 4.5,
+          };
+
+          setData({
+            peak: 5000,
+            power: 3000,
+            timestamp: "2026-04-25 23:00:00",
+            energy: fakeEnergy,
+          });
+
+          const currentTime = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          });
+
+          setHistory((prev) => [
+            ...prev.slice(-20),
+            {
+              time: currentTime,
+              load: 3000,
+              capacity: 5000,
             },
           ]);
         });
@@ -271,18 +107,7 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  // 假數據
-  const fakeEnergy = {
-    nuclear: 7.5,
-    coal: 28.0,
-    gas: 42.0,
-    renewable: 10.0,
-    hydro: 9.0,
-    oil: 4.5
-  };
-
-  const energySource = data.energy || fakeEnergy;
-
+  const energySource = data.energy;
   const reserve = ((data.peak - data.power) / data.peak) * 100;
 
   const getColor = (r) => {
@@ -309,18 +134,19 @@ export default function Dashboard() {
   }));
 
   return (
-    <div style={styles.page}>
-      <div style={styles.topSection}>
-        <div style={styles.grid4}>
-          <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="fi fi-br-bolt" color="#f97316" styles={styles} />
-          <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="fi fi-br-battery-half" color="#22c55e" styles={styles} />
-          <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="fi fi-br-plug" color="#3b82f6" styles={styles} />
-          <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="fi fi-br-time-fast" color="#ec4899" styles={styles} />
+    <div className={`dashboard-page ${isDark ? "dark" : ""}`}>
+      <div className="top-section">
+
+        <div className="grid4">
+          <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="fi fi-br-bolt" color="#f97316" />
+          <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="fi fi-br-battery-half" color="#22c55e" />
+          <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="fi fi-br-plug" color="#3b82f6" />
+          <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="fi fi-br-time-fast" color="#ec4899" />
         </div>
 
-        <div style={{ marginTop: 50, ...styles.flex }}>
-          <div style={styles.circleSection}>
-            <div style={styles.circleOuter}>
+        <div className="flex-section">
+          <div className="circle-section">
+            <div className="circle-outer">
               <ResponsiveContainer width={400} height={400}>
                 <PieChart>
                   <Pie
@@ -343,41 +169,40 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
 
-              <div style={{ ...styles.innerCircle, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
-                <div style={styles.circleText}>{reserve.toFixed(1)}%</div>
-                <div style={styles.circleSub}>備轉容量率</div>
+              <div className="circle-center">
+                <div className="circle-text">{reserve.toFixed(1)}%</div>
+                <div className="circle-sub">備轉容量率</div>
               </div>
             </div>
           </div>
 
-          <div style={{ ...styles.card, flex: 1.5 }}>
-            <div style={styles.statusGrid}>
-              <StatusCard color="#22c55e" title="綠燈" desc="備轉容量率 ≥ 10%" styles={styles} />
-              <StatusCard color="#facc15" title="黃燈" desc="6% ≤ 備轉容量率 < 10%" styles={styles} />
-              <StatusCard color="#f97316" title="橘燈" desc="備轉容量率 < 6%" styles={styles} />
-              <StatusCard color="#ef4444" title="紅燈" desc="限電警戒" styles={styles} />
-            </div>
+          <div className="status-wrapper">
+            <StatusCard color="#22c55e" title="綠燈" desc="備轉容量率 ≥ 10%" />
+            <StatusCard color="#facc15" title="黃燈" desc="6% ≤ 備轉容量率 < 10%" />
+            <StatusCard color="#f97316" title="橘燈" desc="備轉容量率 < 6%" />
+            <StatusCard color="#ef4444" title="紅燈" desc="限電警戒" />
           </div>
         </div>
 
-        <div style={{ marginTop: 30 }}>
-          <div style={styles.titleRow}>
-            <i className="fi fi-br-chart-simple" style={{ ...styles.titleIcon, color: "#3b82f6" }}></i>
-            <p style={styles.sectionTitle}>發電來源分布</p>
+        <div className="energy-section">
+          <div className="title-row">
+            <i className="fi fi-br-chart-simple title-icon blue"></i>
+            <div className="section-title">發電來源分布</div>
           </div>
 
-          <div style={styles.grid3}>
+          <div className="grid3">
             {energyData.map((e) => (
-              <EnergyCard key={e.title} {...e} styles={styles} />
+              <EnergyCard key={e.title}  {...e} />
             ))}
           </div>
         </div>
 
-        <div style={{ ...styles.card, marginTop: 30 }}>
-          <div style={styles.titleRow}>
-            <i className="fi fi-br-tachometer-fast" style={{ ...styles.titleIcon, color: "#22c55e" }}></i>
-            <p style={styles.sectionTitle}>即時用電趨勢圖</p>
+        <div className="chart-card">
+          <div className="title-row">
+            <i className="fi fi-br-tachometer-fast title-icon green"></i>
+            <div className="section-title">即時用電趨勢圖</div>
           </div>
+
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={history}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -386,123 +211,57 @@ export default function Dashboard() {
               <Tooltip />
               <Legend />
 
-              {/* 用電量 */}
-              <Line
-                type="monotone"
-                dataKey="load"
-                name="用電量"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                dot={false}
-              />
-
-              {/* 供電能力 */}
-              <Line
-                type="monotone"
-                dataKey="capacity"
-                name="供電能力"
-                stroke="#22c55e"
-                strokeDasharray="5 5"
-                strokeWidth={2}
-                dot={false}
-              />
+              <Line type="monotone" dataKey="load" name="用電量" stroke="#3b82f6" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="capacity" name="供電能力" stroke="#22c55e" strokeDasharray="5 5" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
+
       </div>
     </div>
   );
 }
 
-/* COMPONENTS */
-
-function KPI({ title, value, unit, icon, color, styles }) {
+function KPI({ title, value, unit, icon, color }) {
   return (
-    <div style={styles.kpi}>
-      <div style={styles.kpiHeader}>
-        <div style={{ lineHeight: 1, color, fontSize: 24 }}>
-          <i className={icon}></i>
-        </div>
-        <div style={styles.kpiTitle}>{title}</div>
+    <div className="kpi">
+      <div className="kpi-header">
+        <i className={icon} style={{ color }}></i>
+        <div className="kpi-title">{title}</div>
       </div>
-
-      <div style={styles.kpiValue}>
-        {value} <span style={styles.unit}>{unit}</span>
+      <div className="kpi-value">
+        {value} <span className="unit">{unit}</span>
       </div>
     </div>
   );
 }
 
-function StatusCard({ color, title, desc, styles }) {
+function StatusCard({ color, title, desc }) {
   return (
-    <div style={{ ...styles.statusCard, background: color + "20" }}>
-      <div style={{ ...styles.dot, background: color }} />
+    <div className="status-card" style={{ background: color + "20" }}>
+      <div className="dot" style={{ background: color }} />
       <div>
-        <div style={{ fontWeight: "bold" }}>{title}</div>
-        <div style={{ fontSize: 14 }}>{desc}</div>
+        <div className="bold">{title}</div>
+        <div className="small">{desc}</div>
       </div>
     </div>
   );
 }
 
-function EnergyCard({ title, value, color, icon, styles }) {
+function EnergyCard({ title, value, color, icon }) {
   return (
-    <div
-      style={{
-        ...styles.energyCard,
-        padding: "30px 40px",
-        transition: "all 0.25s ease",
-        cursor: "pointer",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-6px)";
-        e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "none";
-        e.currentTarget.style.boxShadow = "";
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            lineHeight: 1,
-            color,
-            fontSize: 24,
-          }}
-        >
-          <i className={icon}></i>
-        </div>
-
-        <div style={{ fontWeight: "bold", fontSize: 20 }}>{title}</div>
+    <div className="energy-card">
+      <div className="energy-top">
+        <i className={icon} style={{ color }}></i>
+        <div className="energy-title" style={{ color }}>{title}</div>
       </div>
 
-      <div style={{ marginTop: 10, fontSize: 24, fontWeight: "bold", color }}>
+      <div className="energy-value" style={{ color }}>
         {value.toFixed(1)}%
       </div>
 
-      <div style={{ marginTop: 10 }}>
-        <div
-          style={{
-            height: 10,
-            borderRadius: 10,
-            background: "#e5e7eb",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: value + "%",
-              height: "100%",
-              borderRadius: 10,
-              background: `linear-gradient(90deg, ${color}, ${color}aa)`,
-              transition: "width 0.6s ease",
-            }}
-          />
-        </div>
+      <div className="bar">
+        <div className="bar-inner" style={{ width: value + "%", background: color }} />
       </div>
     </div>
   );
