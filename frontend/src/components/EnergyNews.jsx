@@ -20,10 +20,10 @@ export default function EnergyNews() {
     <section
       className="energy-news"
       style={{
-        maxWidth: "1100px",
+        maxWidth: "1200px",
         margin: "48px auto",
         position: "relative",
-        paddingBottom: "90px", // ⭐ 預留空間給浮動按鈕
+        paddingBottom: "90px",
       }}
     >
       {/* 標題 */}
@@ -65,7 +65,7 @@ export default function EnergyNews() {
         新聞資料來源：經濟部能源署
       </small>
 
-      {/* ⭐ 右下角浮動按鈕 */}
+      {/* 右下角浮動按鈕 */}
       <button
         onClick={() =>
           window.open(

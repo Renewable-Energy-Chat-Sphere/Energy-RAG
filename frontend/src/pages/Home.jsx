@@ -6,12 +6,11 @@ import EnergyNews from "../components/EnergyNews";
 import Dashboard from "../components/Dashboard";
 import ExternalLinks from "../components/ExternalLinks";
 import LinkCarousel from "../components/LinkCarousel";
+import "../pages/home.css";
 
 export default function Home() {
   useEffect(() => {
-    /* =========================
-       Reveal Observer
-    ========================== */
+    /* Reveal Observer */
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -26,9 +25,7 @@ export default function Home() {
     const revealElements = document.querySelectorAll(".reveal");
     revealElements.forEach((el) => observer.observe(el));
 
-    /* =========================
-       Accordion
-    ========================== */
+    /* Accordion */
     const cardsContainer = document.querySelector(".cards");
 
     const onAccordionClick = (e) => {
@@ -47,10 +44,9 @@ export default function Home() {
     };
 
     cardsContainer?.addEventListener("click", onAccordionClick);
+    console.log("clicked accordion");
 
-    /* =========================
-       數字滾動動畫
-    ========================== */
+    /* 數字滾動動畫 */
     const animateValue = (el) => {
       const raw = el.innerText;
       const number = parseFloat(raw.replace(/[^\d.]/g, ""));
@@ -183,7 +179,6 @@ export default function Home() {
   ];
   return (
     <>
-      {/* HERO BANNER */}
       <section
         className="hero-banner"
         style={{
@@ -216,32 +211,20 @@ export default function Home() {
           </h1>
           <p>結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台</p>
         </div>
-
-        
       </section>
-      {/*真正有功能的儀表板*/}
-      <Dashboard />
+
+      {/* Dashboard */}
+      <div className="reveal">
+        <Dashboard />
+      </div>
+      
       {/* Energy News */}
       <div className="reveal">
         <EnergyNews />
       </div>
-      {/* 活動專區 */}
-      <div className="page-container">
-        <div className="reveal">
-          <LinkCarousel title="活動專區" items={activityData} />
-        </div>
 
-        <div className="reveal">
-          <ExternalLinks items={externalLinks} />
-        </div>
-      </div>
       {/* FEATURES */}
       <section id="features" className="section reveal">
-        <h2 className="feature-title">
-          <i className="fi fi-br-computer"></i>
-          系統特色
-        </h2>
-
         <div className="cards">
           {[
             {
@@ -284,6 +267,17 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* 活動專區 */}
+      <div className="page-container">
+        <div className="reveal">
+          <LinkCarousel title="活動專區" items={activityData} />
+        </div>
+
+        <div className="reveal">
+          <ExternalLinks items={externalLinks} />
+        </div>
+      </div>
 
       <BackToTopButton />
     </>
