@@ -14,9 +14,8 @@ import hierarchy from "../data/hierarchy.json";
 
 const SUPPLY_RADIUS = 3.02;
 
-/* ===================== */
+
 /* 動態載入所有年份資料 */
-/* ===================== */
 
 const supplyLayoutsRaw = import.meta.glob("../data/supply_layout_*.json", {
   eager: true,
@@ -31,9 +30,8 @@ const demandSupplyRaw = import.meta.glob(
   { eager: true },
 );
 
-/* ===================== */
+
 /* 轉成 year mapping */
-/* ===================== */
 
 const supplyLayouts = {};
 const demandLayouts = {};
@@ -61,18 +59,16 @@ Object.keys(demandSupplyRaw).forEach((path) => {
   }
 });
 
-/* ===================== */
+
 /* Supply Map */
-/* ===================== */
 
 const supplyMap = {};
 supplyCatalog.forEach((s) => {
   supplyMap[s.source_id] = s;
 });
 
-/* ===================== */
+
 /* Build hierarchy */
-/* ===================== */
 
 const demandLevel = {};
 const demandName = {};
@@ -92,13 +88,11 @@ Object.entries(hierarchy).forEach(([code, node]) => {
   buildLevel(node, code);
 });
 
-/* ===================== */
+
 /* Label（縮放 + 截斷） */
-/* ===================== */
 
 function Label({ position, worldPosition, text, baseSize = 14 }) {
   const { camera } = useThree();
-
   const distance = camera.position.length();
   const camDir = camera.position.clone().normalize();
   const nodeDir = new THREE.Vector3(...worldPosition).normalize();
@@ -158,9 +152,8 @@ function Label({ position, worldPosition, text, baseSize = 14 }) {
   );
 }
 
-/* ===================== */
+
 /* Glow */
-/* ===================== */
 
 function Glow({ size, color }) {
   return (
@@ -178,22 +171,95 @@ function Glow({ size, color }) {
   );
 }
 
-/* ===================== */
+
+/* Grid Sphere */
+
+function GridSphere() {
+  const lines = [];
+  const latSegments = 12;
+  const lonSegments = 24;
+
+  for (let i = 1; i < latSegments; i++) {
+    const lat = Math.PI * (i / latSegments - 0.5);
+    const y = 3 * Math.sin(lat);
+    const r = 3 * Math.cos(lat);
+    const points = [];
+
+    for (let j = 0; j <= 64; j++) {
+      const lon = (j / 64) * Math.PI * 2;
+      points.push(new THREE.Vector3(r * Math.cos(lon), y, r * Math.sin(lon)));
+    }
+
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+
+    lines.push(
+      <line key={"lat" + i} geometry={geo}>
+        <lineBasicMaterial color="#64748b" transparent opacity={0.3} />
+      </line>,
+    );
+  }
+
+  for (let i = 0; i < lonSegments; i++) {
+    const lon = (i / lonSegments) * Math.PI * 2;
+    const points = [];
+
+    for (let j = -32; j <= 32; j++) {
+      const lat = ((j / 32) * Math.PI) / 2;
+
+      points.push(
+        new THREE.Vector3(
+          3 * Math.cos(lat) * Math.cos(lon),
+          3 * Math.sin(lat),
+          3 * Math.cos(lat) * Math.sin(lon),
+        ),
+      );
+    }
+
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+
+    lines.push(
+      <line key={"lon" + i} geometry={geo}>
+        <lineBasicMaterial color="#94a3b8" transparent opacity={0.3} />
+      </line>,
+    );
+  }
+
+  return <group>{lines}</group>;
+}
+
+
 /* Supply Nodes */
-/* ===================== */
 
-function SupplyNodes({ year, onHover, selected }) {
+function SupplyNodes({ year, onHover, onSelect, selected }) {
   const { camera } = useThree();
-
   const BASE = import.meta.env.BASE_URL;
-
   const supplyLayout = supplyLayouts[year];
-
   const demandSupply = demandSupplyData[year];
 
-  const activeSupply = selected
-    ? Object.keys(demandSupply?.[selected.code] || {})
-    : null;
+  let activeSupply = null;
+
+  if (selected) {
+    if (selected.type === "demand") {
+      activeSupply = Object.keys(demandSupply?.[selected.code] || {});
+    } else if (selected.type === "supply") {
+
+      const relatedDemands = Object.entries(demandSupply)
+        .filter(([dCode, supplies]) => supplies[selected.code])
+        .map(([dCode]) => dCode);
+
+      const relatedSupplies = new Set();
+
+      relatedDemands.forEach((dCode) => {
+        Object.keys(demandSupply[dCode] || {}).forEach((s) => {
+          relatedSupplies.add(s);
+        });
+      });
+
+      relatedSupplies.add(selected.code);
+
+      activeSupply = Array.from(relatedSupplies);
+    }
+  }
 
   if (!supplyLayout) return null;
 
@@ -257,8 +323,8 @@ function SupplyNodes({ year, onHover, selected }) {
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
-                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
+                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
 
               /* 未被選中時隱藏 */
               opacity:
@@ -268,11 +334,22 @@ function SupplyNodes({ year, onHover, selected }) {
                     : 0.2
                   : 0.05,
             }}
+
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
               e.currentTarget.dataset.fallback = "true";
               e.currentTarget.src = `${BASE}icons/default.png`;
             }}
+
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect({
+                code: id,
+                name: info?.name_zh || id,
+                type: "supply",
+              });
+            }}
+
             onMouseEnter={(e) => {
               e.stopPropagation();
 
@@ -287,15 +364,15 @@ function SupplyNodes({ year, onHover, selected }) {
                 type: "supply",
               });
             }}
+
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0px) scale(1)";
-
               e.currentTarget.style.filter =
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
-                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
+                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
 
               onHover(null);
             }}
@@ -306,73 +383,26 @@ function SupplyNodes({ year, onHover, selected }) {
   });
 }
 
-/* ===================== */
-/* Grid Sphere */
-/* ===================== */
 
-function GridSphere() {
-  const lines = [];
-  const latSegments = 12;
-  const lonSegments = 24;
-
-  for (let i = 1; i < latSegments; i++) {
-    const lat = Math.PI * (i / latSegments - 0.5);
-    const y = 3 * Math.sin(lat);
-    const r = 3 * Math.cos(lat);
-
-    const points = [];
-
-    for (let j = 0; j <= 64; j++) {
-      const lon = (j / 64) * Math.PI * 2;
-      points.push(new THREE.Vector3(r * Math.cos(lon), y, r * Math.sin(lon)));
-    }
-
-    const geo = new THREE.BufferGeometry().setFromPoints(points);
-
-    lines.push(
-      <line key={"lat" + i} geometry={geo}>
-        <lineBasicMaterial color="#64748b" transparent opacity={0.3} />
-      </line>,
-    );
-  }
-
-  for (let i = 0; i < lonSegments; i++) {
-    const lon = (i / lonSegments) * Math.PI * 2;
-    const points = [];
-
-    for (let j = -32; j <= 32; j++) {
-      const lat = ((j / 32) * Math.PI) / 2;
-
-      points.push(
-        new THREE.Vector3(
-          3 * Math.cos(lat) * Math.cos(lon),
-          3 * Math.sin(lat),
-          3 * Math.cos(lat) * Math.sin(lon),
-        ),
-      );
-    }
-
-    const geo = new THREE.BufferGeometry().setFromPoints(points);
-
-    lines.push(
-      <line key={"lon" + i} geometry={geo}>
-        <lineBasicMaterial color="#94a3b8" transparent opacity={0.3} />
-      </line>,
-    );
-  }
-
-  return <group>{lines}</group>;
-}
-
-/* ===================== */
 /* Demand Nodes */
-/* ===================== */
 
-function DemandNodes({ year, lod, onHover, onSelect }) {
+function DemandNodes({ year, lod, onHover, onSelect, selected }) {
   const { camera } = useThree();
   const demandLayout = demandLayouts[year];
 
   if (!demandLayout) return null;
+
+  let activeDemand = null;
+
+  if (selected) {
+    if (selected.type === "demand") {
+      activeDemand = [selected.code];
+    } else if (selected.type === "supply") {
+      activeDemand = Object.entries(demandSupplyData[year] || {})
+        .filter(([dCode, supplies]) => supplies[selected.code])
+        .map(([dCode]) => dCode);
+    }
+  }
 
   return Object.entries(demandLayout).map(([id, pos]) => {
     const level = demandLevel[id];
@@ -380,6 +410,11 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
     if (lod === 0 && level !== 1) return null;
     if (lod === 1 && level !== 2) return null;
     if (lod === 2 && level !== 3) return null;
+
+    // 過濾未被選中的需求
+    if (selected && activeDemand && !activeDemand.includes(id)) {
+      return null;
+    }
 
     const size = level === 1 ? 0.1 : level === 2 ? 0.075 : 0.06;
     const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
@@ -389,13 +424,14 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
     const camDir = camera.position.clone().normalize();
     const nodeDir = new THREE.Vector3(...position).normalize();
     const dot = camDir.dot(nodeDir);
+
     return (
       <group key={id} position={position}>
         <Glow size={size} color="#3b82f6" />
 
         <mesh
           onPointerOver={(e) => {
-            if (dot <= 0) return; // ❌ 背面直接不觸發
+            if (dot <= 0) return;
             e.stopPropagation();
             onHover({
               code: id,
@@ -405,11 +441,12 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
           }}
           onPointerOut={() => onHover(null)}
           onClick={(e) => {
-            if (dot <= 0) return; // 🔥 關鍵：擋背面點擊
+            if (dot <= 0) return;
             e.stopPropagation();
             onSelect({
               code: id,
               name: demandName[id] || id,
+              type: "demand",
             });
           }}
         >
@@ -422,6 +459,7 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
             opacity={dot > 0 ? 1 : 0.2}
           />
         </mesh>
+
         {lod === 0 && level === 1 && (
           <Label
             position={[0, size + 0.18, 0]}
@@ -451,9 +489,8 @@ function DemandNodes({ year, lod, onHover, onSelect }) {
   });
 }
 
-/* ===================== */
+
 /* Supply Flow Lines*/
-/* ===================== */
 
 function getColor(value) {
   const colors = [
@@ -476,7 +513,8 @@ function getColor(value) {
 }
 
 function SupplyFlowLines({ year, selected, lod }) {
-  const { camera } = useThree();
+  console.log("selected:", selected);
+
   if (!selected) return null;
 
   const demandLayout = demandLayouts[year];
@@ -485,45 +523,68 @@ function SupplyFlowLines({ year, selected, lod }) {
 
   if (!demandLayout || !supplyLayout || !demandSupply) return null;
 
-  const level = demandLevel[selected.code];
+  const reverseMap = {};
 
-  if (lod === 0 && level !== 1) return null;
-  if (lod === 1 && level !== 2) return null;
-  if (lod === 2 && level !== 3) return null;
+  Object.entries(demandSupply).forEach(([demandCode, supplies]) => {
+    Object.entries(supplies).forEach(([supplyCode, value]) => {
+      if (!reverseMap[supplyCode]) reverseMap[supplyCode] = {};
+      reverseMap[supplyCode][demandCode] = value;
+    });
+  });
 
-  const ratio = demandSupply[selected.code];
+  let ratio;
+  let isReverse = false;
+
+  if (selected.type === "demand") {
+    ratio = demandSupply[selected.code];
+  } else if (selected.type === "supply") {
+    ratio = reverseMap[selected.code];
+    isReverse = true;
+  }
+
   if (!ratio) return null;
 
-  const d = demandLayout[selected.code];
-  if (!d) return null;
+  if (selected.type === "demand") {
+    const level = demandLevel[selected.code];
+
+    if (lod === 0 && level !== 1) return null;
+    if (lod === 1 && level !== 2) return null;
+    if (lod === 2 && level !== 3) return null;
+  }
 
   const toSphere = (v, r) =>
     new THREE.Vector3(v.x, v.y, v.z).normalize().multiplyScalar(r);
 
+  const values = Object.values(ratio);
+  const max = Math.max(...values);
+
   return Object.entries(ratio)
-    .map(([supply, raw], index, arr) => {
-      const s = supplyLayout[supply];
-      if (!s) return null;
+    .map(([targetCode, raw]) => {
+      let s, d;
 
-      const values = Object.values(ratio);
-      const max = Math.max(...values);
+      if (!isReverse) {
+        // 需求對供給
+        s = supplyLayout[targetCode];
+        d = demandLayout[selected.code];
+      } else {
+        // 供給對需求
+        s = supplyLayout[selected.code];
+        d = demandLayout[targetCode];
+      }
+
+      if (!s || !d) return null;
+
       const normalized = raw / (max || 1);
-
       const adjusted = Math.pow(normalized, 1.5);
       const color = getColor(adjusted);
 
       const start = toSphere(s, SUPPLY_RADIUS * 1.05);
       const end = toSphere(d, SUPPLY_RADIUS * 1.05);
-      const camDir = camera.position.clone().normalize();
-      const nodeDir = start.clone().normalize();
-      const dot = camDir.dot(nodeDir);
-      // 旋轉軸
+
       const axis = new THREE.Vector3().crossVectors(start, end).normalize();
       const angle = start.angleTo(end);
 
       const normalizedDist = angle / Math.PI;
-
-      // 距離控制
       const heightFactor = 0.08 + Math.pow(normalizedDist, 2) * 0.12;
 
       const segments = 40;
@@ -531,11 +592,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 
       for (let i = 0; i <= segments; i++) {
         const t = i / segments;
-
-        // 沿球面旋轉
         const p = start.clone().applyAxisAngle(axis, angle * t);
-
-        // 中間抬高
         const lift = Math.sin(Math.PI * t) * heightFactor;
 
         p.normalize().multiplyScalar(SUPPLY_RADIUS * (1 + lift));
@@ -547,7 +604,7 @@ function SupplyFlowLines({ year, selected, lod }) {
       const geo = new THREE.TubeGeometry(curve, 64, 0.015, 10, false);
 
       return (
-        <mesh key={supply} geometry={geo}>
+        <mesh key={targetCode} geometry={geo}>
           <meshStandardMaterial
             color={color}
             emissive={color}
@@ -561,9 +618,8 @@ function SupplyFlowLines({ year, selected, lod }) {
     .filter(Boolean);
 }
 
-/* ===================== */
+
 /* Scene */
-/* ===================== */
 
 function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
   const { camera } = useThree();
@@ -600,6 +656,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
         onHover={onHover}
         hovered={hovered}
         selected={selected}
+        onSelect={onSelect}
       />
 
       <DemandNodes
@@ -618,9 +675,8 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
   );
 }
 
-/* ===================== */
+
 /* Main */
-/* ===================== */
 
 export default function GlobeVisualizer({
   year,
@@ -685,10 +741,8 @@ export default function GlobeVisualizer({
             backdropFilter: "blur(8px)",
           }}
         >
-          {/* 標題 */}
           <div style={{ marginBottom: "10px" }}>供需連線強度</div>
 
-          {/* 漸層 */}
           <div
             style={{
               height: "10px",
@@ -710,7 +764,6 @@ export default function GlobeVisualizer({
             <span>高</span>
           </div>
 
-          {/* 下拉按鈕 */}
           <div
             style={{
               cursor: "pointer",
@@ -722,7 +775,6 @@ export default function GlobeVisualizer({
             {showLegendDetail ? "▲ 收起說明" : "▼ 查看說明"}
           </div>
 
-          {/* 展開內容 */}
           <div
             style={{
               maxHeight: showLegendDetail ? "200px" : "0px",
