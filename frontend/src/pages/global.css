@@ -112,6 +112,7 @@ body {
 @media (max-width: 768px) {
   .global-layout {
     display: block;  /* 🔥 關鍵 */
+    background: #f8fafc;
   }
 }
 
@@ -684,17 +685,18 @@ body {
 @media (max-width: 768px) {
   .info-panel {
     width: 100%;
-    color: white;
     margin-top: 20px;   /* 🔥 這行 */
   }
 }
 @media (max-width: 768px) {
   .global-page {
     padding-top: 0 !important;   /* 🔥 只手機拿掉 */
+    background: #f8fafc;
   }
 }
 @media (max-width: 768px) {
   body {
+    background: #f8fafc;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;   /* 🔥 改這裡 */
