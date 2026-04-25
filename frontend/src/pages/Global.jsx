@@ -317,38 +317,39 @@ export default function Global({ isMobile }) {
             hovered={hovered}
           />
         </div>
+
         {isMobile && (
-  <div className="mobile-bottom-panel">
-    {!selected && (
-      <div className="info-empty">
-        <h3>點擊球體查看資訊</h3>
-      </div>
-    )}
+          <div className="mobile-bottom-panel">
+            {!selected && (
+              <div className="info-empty">
+                <h3>點擊球體查看資訊</h3>
+              </div>
+            )}
 
-    {selected && (
-      <div className="info-card">
-        <h2>{selected.name}</h2>
+            {selected && (
+              <div className="info-card">
+                <h2>{selected.name}</h2>
 
-        <p>
-          {(selected?.code?.startsWith("S") ? [] : getEnergyList())
-            .slice(0, 3)
-            .map((e, i) => (
-              <span key={i}>
-                {e.fullName}
-                {i < 2 ? "、" : ""}
-              </span>
-            ))}
-        </p>
-      </div>
-    )}
-  </div>
-)}
+                <p>
+                  {(selected?.code?.startsWith("S") ? [] : getEnergyList())
+                    .slice(0, 3)
+                    .map((e, i) => (
+                      <span key={i}>
+                        {e.fullName}
+                        {i < 2 ? "、" : ""}
+                      </span>
+                    ))}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
         
         {!isMobile && (
           <div className="info-panel">
             {!selected && (
               <div className="info-empty">
-                <h3>請點擊模型節點查看資訊</h3>
+                <h3>點擊模型節點查看資訊</h3>
               </div>
             )}
 

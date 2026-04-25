@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import "./LinkCarousel.css"; // ⭐直接用同一份 CSS
+import "./LinkCarousel.css";
 
 export default function ExternalLinks({ items }) {
   const scrollRef = useRef();

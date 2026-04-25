@@ -12,13 +12,12 @@ import {
   Pie,
   Cell,
 } from "recharts";
-const API = "/api";
+
 export default function Dashboard() {
   const [isDark, setIsDark] = useState(false);
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
 
-  /* THEME CHECK */
   useEffect(() => {
     const checkDark = () => {
       const dark = document
@@ -247,7 +246,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = () => {
-      fetch(`${API}/dashboard`)
+      fetch("http://127.0.0.1:8000/dashboard")
         .then((res) => res.json())
         .then((d) => {
           setData(d);
