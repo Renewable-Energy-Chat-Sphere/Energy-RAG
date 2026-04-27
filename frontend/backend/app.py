@@ -5,14 +5,16 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import io
-import requests
+import os, json, re, pickle
+from datetime import datetime
+from flask import request, jsonify
 
 # 🔮 Predict 專用（新增）
 from prophet import Prophet
 import pandas as pd
-import re
 
-from datetime import datetime
+
+
 
 load_dotenv()
 
@@ -49,24 +51,108 @@ import smtplib
 from email.mime.text import MIMEText
 
 # =========================
-# 🔮 Predict Department Energy (FINAL FIX)
+# 🔮 Predict Department Energy (TREE EXPAND + CACHE VERSION 🔥)
 # =========================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "../src/data")
 
+# 🔥 模型儲存位置
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
+SERIES_CACHE = {}
+MODEL_CACHE = {}
+
+# =========================
+# 🧠 hierarchy 載入
+# =========================
+HIERARCHY_PATH = os.path.join(DATA_DIR, "hierarchy.json")
+
+def load_hierarchy():
+    with open(HIERARCHY_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+HIERARCHY = load_hierarchy()
+
+# =========================
+# 🧠 建立 mapping
+# =========================
+def build_dept_map(hierarchy):
+    mapping = {}
+
+    def traverse(obj):
+        for code, val in obj.items():
+            name = val["name"]
+
+            mapping[name] = code
+            mapping[name.replace("部門", "")] = code
+            mapping[name.replace("業", "")] = code
+
+            if "children" in val:
+                traverse(val["children"])
+
+    traverse(hierarchy)
+    return mapping
+
+DEPT_NAME_MAP = build_dept_map(HIERARCHY)
+
+# =========================
+# 🔥 找子節點
+# =========================
+def get_descendants(target_code, hierarchy):
+    result = set()
+
+    def traverse(obj):
+        for code, val in obj.items():
+            if code == target_code:
+                collect(val)
+            if "children" in val:
+                traverse(val["children"])
+
+    def collect(node):
+        for c, v in node.get("children", {}).items():
+            result.add(c)
+            collect(v)
+
+    traverse(hierarchy)
+    return result
+
+# =========================
+# 🔥 展開部門
+# =========================
+def expand_depts(dept_code):
+    expanded = set([dept_code])
+    expanded.update(get_descendants(dept_code, HIERARCHY))
+    return expanded
+
+# =========================
+# 🧠 判斷部門
+# =========================
+def detect_depts(question):
+    matches = []
+
+    for name, code in DEPT_NAME_MAP.items():
+        if name in question:
+            matches.append((name, code))
+
+    if matches:
+        matches.sort(key=lambda x: len(x[0]), reverse=True)
+        best = matches[0][1]
+        return expand_depts(best)
+
+    return None
+
+# =========================
+# 📥 讀 JSON
+# =========================
 def load_all_years():
     data = {}
-
-    if not os.path.exists(DATA_DIR):
-        print("❌ DATA_DIR 不存在:", DATA_DIR)
-        return {}
 
     for file in os.listdir(DATA_DIR):
         if file.endswith("_energy_demand_supply.json"):
             try:
-                year = int(file.split("_")[0])  # 民國年
+                year = int(file.split("_")[0])
                 with open(os.path.join(DATA_DIR, file), "r", encoding="utf-8") as f:
                     data[year] = json.load(f)
             except:
@@ -74,65 +160,44 @@ def load_all_years():
 
     return dict(sorted(data.items()))
 
-
 def normalize(data):
     result = {}
-
     for dept, energies in data.items():
         total = sum(energies.values())
-
-        result[dept] = {}
-        for e, v in energies.items():
-            result[dept][e] = v / total if total > 0 else 0
-
+        result[dept] = {e: v / total if total else 0 for e, v in energies.items()}
     return result
 
+# =========================
+# 🔥 初始化（含快取）
+# =========================
+def init_data(force_retrain=False):
+    global SERIES_CACHE, MODEL_CACHE
 
-# ⭐ 重點：統一轉西元給 Prophet
-def predict_series(years, values, target_year):
-    try:
-        # 👉 民國 → 西元
-        years_ad = [y + 1911 for y in years]
+    print("⚡ 初始化資料...")
 
-        df = pd.DataFrame({
-            "ds": pd.to_datetime([str(y) for y in years_ad]),
-            "y": values
-        })
+    model_path = os.path.join(MODEL_DIR, "models.pkl")
+    series_path = os.path.join(MODEL_DIR, "series.pkl")
 
-        model = Prophet()
-        model.fit(df)
+    # 🔥 先讀模型
+    if not force_retrain:
+        try:
+            with open(model_path, "rb") as f:
+                MODEL_CACHE = pickle.load(f)
 
-        periods = max(1, target_year - max(years_ad))
+            with open(series_path, "rb") as f:
+                SERIES_CACHE = pickle.load(f)
 
-        future = model.make_future_dataframe(periods=periods, freq='Y')
-        forecast = model.predict(future)
+            print("✅ 已載入模型（不用重訓）")
+            return
+        except:
+            print("⚠️ 沒有模型，開始訓練...")
 
-        return float(forecast.iloc[-1]["yhat"])
-
-    except Exception as e:
-        print("❌ Prophet error:", e)
-        return 0
-
-
-def run_prediction(target_year):
+    # 🔥 訓練
     all_data = load_all_years()
+    normalized = {y: normalize(d) for y, d in all_data.items()}
 
-    if not all_data:
-        return {}
-
-    # 👉 轉西元後再比較
-    filtered = {
-        y: d for y, d in all_data.items()
-        if (y + 1911) < target_year
-    }
-
-    if len(filtered) < 3:
-        return {}
-
-    normalized = {y: normalize(d) for y, d in filtered.items()}
-
-    result = {}
     series = {}
+    models = {}
 
     for year, data in normalized.items():
         for dept, energies in data.items():
@@ -150,28 +215,71 @@ def run_prediction(target_year):
         if len(s["years"]) < 3:
             continue
 
-        pred = predict_series(s["years"], s["values"], target_year)
+        try:
+            years_ad = [y + 1911 for y in s["years"]]
+
+            df = pd.DataFrame({
+                "ds": pd.to_datetime([str(y) for y in years_ad]),
+                "y": s["values"]
+            })
+
+            model = Prophet()
+            model.fit(df)
+
+            models[key] = model
+
+        except:
+            continue
+
+    SERIES_CACHE = series
+    MODEL_CACHE = models
+
+    # 🔥 存模型
+    with open(model_path, "wb") as f:
+        pickle.dump(MODEL_CACHE, f)
+
+    with open(series_path, "wb") as f:
+        pickle.dump(SERIES_CACHE, f)
+
+    print(f"✅ 訓練完成並儲存模型 ({len(MODEL_CACHE)} 個)")
+
+# =========================
+# 📈 預測
+# =========================
+def run_prediction(target_year, dept_filters=None):
+    result = {}
+
+    for key, model in MODEL_CACHE.items():
 
         dept, energy = key.split("_")
 
-        if dept not in result:
-            result[dept] = {}
-
-        result[dept][energy] = max(pred, 0)
-
-    # 👉 正規化回 100%
-    for dept in result:
-        total = sum(result[dept].values())
-        if total == 0:
+        if dept_filters and dept not in dept_filters:
             continue
 
-        for e in result[dept]:
-            result[dept][e] = result[dept][e] / total * 100
+        years = SERIES_CACHE[key]["years"]
+        years_ad = [y + 1911 for y in years]
+
+        periods = max(1, target_year - max(years_ad))
+
+        future = model.make_future_dataframe(periods=periods, freq='Y')
+        forecast = model.predict(future)
+
+        pred = float(forecast.iloc[-1]["yhat"])
+
+        result.setdefault(dept, {})
+        result[dept][energy] = max(pred, 0)
+
+    for dept in result:
+        total = sum(result[dept].values())
+        if total:
+            for e in result[dept]:
+                result[dept][e] = result[dept][e] / total * 100
 
     return result
 
-
-# ⭐ 支援：民國 / 西元 / 今年 / 明年
+# =========================
+# 🧠 年份解析
+# =========================
 def parse_year(text):
     now = datetime.now().year
 
@@ -183,34 +291,30 @@ def parse_year(text):
     match = re.search(r"\d+", text)
     if match:
         y = int(match.group())
-
-        # 👉 民國判斷
-        if y < 1911:
-            return y + 1911
-
-        return y
+        return y if y > 1911 else y + 1911
 
     return None
 
-
+# =========================
+# 🌐 API
+# =========================
 @app.route("/predict_department_energy", methods=["POST"])
 def predict_department_energy():
+
     data = request.json or {}
     question = data.get("question", "")
 
     target_year = parse_year(question)
+    dept_filters = detect_depts(question)
 
     if not target_year:
-        return jsonify({"error": "請輸入年份，例如 2025、114 或 明年"})
+        return jsonify({"error": "請輸入年份，例如 2025 或 明年"})
 
-    result = run_prediction(target_year)
-
-    if not result:
-        return jsonify({"error": "資料不足或預測失敗"})
+    result = run_prediction(target_year, dept_filters)
 
     summary = []
-    for dept, energies in list(result.items())[:3]:
-        top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:2]
+    for dept, energies in result.items():
+        top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
         summary.append({
             "dept": dept,
@@ -846,8 +950,11 @@ def get_energy_news():
 # ====================================
 if __name__ == "__main__":
 
+    print("🔥 初始化預測資料...")
+    init_data()   # 🔥 加這行（關鍵）
+
     print("🔥 Scheduler starting...")
-    start_scheduler()  # ✅ 加在這裡
+    start_scheduler()
 
     app.run(host="0.0.0.0", port=8000)
 
