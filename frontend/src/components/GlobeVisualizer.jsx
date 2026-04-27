@@ -3,7 +3,7 @@ import React, {
   useEffect,
   useRef,
   useMemo,
-  useCallback
+  useCallback,
 } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
@@ -13,7 +13,6 @@ import supplyCatalog from "../data/supply_catalog.json";
 import hierarchy from "../data/hierarchy.json";
 
 const SUPPLY_RADIUS = 3.02;
-
 
 /* 動態載入所有年份資料 */
 
@@ -29,7 +28,6 @@ const demandSupplyRaw = import.meta.glob(
   "../data/*_energy_demand_supply.json",
   { eager: true },
 );
-
 
 /* 轉成 year mapping */
 
@@ -59,14 +57,12 @@ Object.keys(demandSupplyRaw).forEach((path) => {
   }
 });
 
-
 /* Supply Map */
 
 const supplyMap = {};
 supplyCatalog.forEach((s) => {
   supplyMap[s.source_id] = s;
 });
-
 
 /* Build hierarchy */
 
@@ -87,7 +83,6 @@ function buildLevel(node, code) {
 Object.entries(hierarchy).forEach(([code, node]) => {
   buildLevel(node, code);
 });
-
 
 /* Label（縮放 + 截斷） */
 
@@ -152,7 +147,6 @@ function Label({ position, worldPosition, text, baseSize = 14 }) {
   );
 }
 
-
 /* Glow */
 
 function Glow({ size, color }) {
@@ -170,7 +164,6 @@ function Glow({ size, color }) {
     </group>
   );
 }
-
 
 /* Grid Sphere */
 
@@ -227,7 +220,6 @@ function GridSphere() {
   return <group>{lines}</group>;
 }
 
-
 /* Supply Nodes */
 
 function SupplyNodes({ year, onHover, onSelect, selected }) {
@@ -242,7 +234,6 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
     if (selected.type === "demand") {
       activeSupply = Object.keys(demandSupply?.[selected.code] || {});
     } else if (selected.type === "supply") {
-
       const relatedDemands = Object.entries(demandSupply)
         .filter(([dCode, supplies]) => supplies[selected.code])
         .map(([dCode]) => dCode);
@@ -323,8 +314,8 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
-                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
+                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
 
               /* 未被選中時隱藏 */
               opacity:
@@ -334,13 +325,11 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
                     : 0.2
                   : 0.05,
             }}
-
             onError={(e) => {
               if (e.currentTarget.dataset.fallback) return;
               e.currentTarget.dataset.fallback = "true";
               e.currentTarget.src = `${BASE}icons/default.png`;
             }}
-
             onClick={(e) => {
               e.stopPropagation();
               onSelect({
@@ -349,7 +338,6 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
                 type: "supply",
               });
             }}
-
             onMouseEnter={(e) => {
               e.stopPropagation();
 
@@ -364,15 +352,14 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
                 type: "supply",
               });
             }}
-
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0px) scale(1)";
               e.currentTarget.style.filter =
                 category === "Renewable"
                   ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
                   : category === "Coal"
-                  ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                  : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
+                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
+                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
 
               onHover(null);
             }}
@@ -382,7 +369,6 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
     );
   });
 }
-
 
 /* Demand Nodes */
 
@@ -489,7 +475,6 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
   });
 }
 
-
 /* Supply Flow Lines*/
 
 function getColor(value) {
@@ -552,36 +537,53 @@ function SupplyFlowLines({ year, selected, lod }) {
     if (lod === 2 && level !== 3) return null;
   }
 
-  const toSphere = (v, r) =>
-    new THREE.Vector3(v.x, v.y, v.z).normalize().multiplyScalar(r);
-
+  const toSphere = (v, r) => new THREE.Vector3(v.x, v.y, v.z).multiplyScalar(r);
   const values = Object.values(ratio);
   const max = Math.max(...values);
 
   return Object.entries(ratio)
     .map(([targetCode, raw]) => {
-      let s, d;
+      // 🔥 固定：供給 → 需求（不要再用 isReverse）
+      let supplyPos, demandPos;
 
-      if (!isReverse) {
-        // 需求對供給
-        s = supplyLayout[targetCode];
-        d = demandLayout[selected.code];
+      if (selected.type === "supply") {
+        supplyPos = supplyLayout[selected.code];
+        demandPos = demandLayout[targetCode];
       } else {
-        // 供給對需求
-        s = supplyLayout[selected.code];
-        d = demandLayout[targetCode];
+        // 🔥 點 demand 時反過來
+        supplyPos = supplyLayout[targetCode];
+        demandPos = demandLayout[selected.code];
       }
 
-      if (!s || !d) return null;
+      if (!supplyPos || !demandPos) return null;
 
+      // 🔥 過濾不存在的點（超重要）
+      if (!supplyPos || !demandPos) return null;
       const normalized = raw / (max || 1);
       const adjusted = Math.pow(normalized, 1.5);
       const color = getColor(adjusted);
 
-      const start = toSphere(s, SUPPLY_RADIUS * 1.05);
-      const end = toSphere(d, SUPPLY_RADIUS * 1.05);
+      const start = toSphere(supplyPos, SUPPLY_RADIUS * 1.05);
 
-      const axis = new THREE.Vector3().crossVectors(start, end).normalize();
+      // 🔥 用需求自己的半徑（關鍵）
+      const demandCode =
+        selected.type === "supply" ? targetCode : selected.code;
+
+      const level = demandLevel[demandCode];
+      if (lod === 0 && level !== 1) return null;
+      if (lod === 1 && level !== 2) return null;
+      if (lod === 2 && level !== 3) return null;
+
+      const demandRadius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
+
+      const end = toSphere(demandPos, demandRadius);
+
+      const axis = new THREE.Vector3().crossVectors(start, end);
+
+      // 🔥 防止爆掉（關鍵）
+      if (axis.length() < 0.0001) return null;
+
+      axis.normalize();
       const angle = start.angleTo(end);
 
       const normalizedDist = angle / Math.PI;
@@ -617,7 +619,6 @@ function SupplyFlowLines({ year, selected, lod }) {
     })
     .filter(Boolean);
 }
-
 
 /* Scene */
 
@@ -674,7 +675,6 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
     </>
   );
 }
-
 
 /* Main */
 
@@ -792,7 +792,8 @@ export default function GlobeVisualizer({
               }}
             >
               <div style={{ marginBottom: "5px" }}>
-                顏色以連續漸層呈現依同一項目中所有單位比例正規化 (0-1) 後之結果：
+                顏色以連續漸層呈現依同一項目中所有單位比例正規化 (0-1)
+                後之結果：
               </div>
               <div>青色（{"< 0.25"}）- 低</div>
               <div>綠色（{"< 0.5"}）- 偏低</div>

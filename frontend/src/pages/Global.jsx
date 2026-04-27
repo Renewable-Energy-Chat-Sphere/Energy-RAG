@@ -274,7 +274,7 @@ export default function Global({ isMobile }) {
               onChange={(e) => setShowFlow(e.target.checked)}
               style={{ marginRight: "5px" }}
             />
-            顯示供給線
+            顯示連線
           </label>
         </div>
 
