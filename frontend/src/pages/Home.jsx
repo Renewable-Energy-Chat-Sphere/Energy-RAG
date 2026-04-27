@@ -232,7 +232,7 @@ export default function Home() {
               desc: "三維旋轉視覺化能源結構模型",
               detail:
                 "整合近 30 年能源平衡資料，建構三維互動式能源球模型。支援跨年度比較、產業分層結構分析與能源結構相似度研究，讓能源變化趨勢與結構差異一目了然。",
-              img: import.meta.env.BASE_URL + "images/sphere.jpg",
+              img: import.meta.env.BASE_URL + "images/sphere.png",
             },
             {
               title: "智慧 RAG 查詢",
