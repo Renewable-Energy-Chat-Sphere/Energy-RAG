@@ -2,7 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 
 export default function EnergyNews() {
-  const API = "/api";
+  const API = "http://127.0.0.1:8000";
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   
