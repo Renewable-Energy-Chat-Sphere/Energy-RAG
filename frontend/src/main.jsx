@@ -9,6 +9,7 @@ import Global from "./pages/Global";
 import Rag from "./pages/Rag";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
+import Prediction from "./pages/Prediction";
 
 
 const router = createBrowserRouter(
@@ -22,6 +23,7 @@ const router = createBrowserRouter(
         { path: "/rag", element: <Rag /> },
         { path: "/contact", element: <Contact /> },
         { path: "/Feedback", element: <Feedback /> },
+        { path: "/prediction", element: <Prediction /> }
       ],
     },
   ],

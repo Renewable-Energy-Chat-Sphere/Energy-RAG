@@ -7,6 +7,11 @@ from flask_cors import CORS
 import io
 import requests
 
+# 🔮 Predict 專用（新增）
+from prophet import Prophet
+import pandas as pd
+import re
+
 from datetime import datetime
 
 load_dotenv()
@@ -27,7 +32,7 @@ from tables import tables_bp
 from scheduler import start_scheduler
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
 
@@ -43,7 +48,180 @@ app.register_blueprint(tables_bp)
 import smtplib
 from email.mime.text import MIMEText
 
+# =========================
+# 🔮 Predict Department Energy (FINAL FIX)
+# =========================
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "../src/data")
+
+
+def load_all_years():
+    data = {}
+
+    if not os.path.exists(DATA_DIR):
+        print("❌ DATA_DIR 不存在:", DATA_DIR)
+        return {}
+
+    for file in os.listdir(DATA_DIR):
+        if file.endswith("_energy_demand_supply.json"):
+            try:
+                year = int(file.split("_")[0])  # 民國年
+                with open(os.path.join(DATA_DIR, file), "r", encoding="utf-8") as f:
+                    data[year] = json.load(f)
+            except:
+                continue
+
+    return dict(sorted(data.items()))
+
+
+def normalize(data):
+    result = {}
+
+    for dept, energies in data.items():
+        total = sum(energies.values())
+
+        result[dept] = {}
+        for e, v in energies.items():
+            result[dept][e] = v / total if total > 0 else 0
+
+    return result
+
+
+# ⭐ 重點：統一轉西元給 Prophet
+def predict_series(years, values, target_year):
+    try:
+        # 👉 民國 → 西元
+        years_ad = [y + 1911 for y in years]
+
+        df = pd.DataFrame({
+            "ds": pd.to_datetime([str(y) for y in years_ad]),
+            "y": values
+        })
+
+        model = Prophet()
+        model.fit(df)
+
+        periods = max(1, target_year - max(years_ad))
+
+        future = model.make_future_dataframe(periods=periods, freq='Y')
+        forecast = model.predict(future)
+
+        return float(forecast.iloc[-1]["yhat"])
+
+    except Exception as e:
+        print("❌ Prophet error:", e)
+        return 0
+
+
+def run_prediction(target_year):
+    all_data = load_all_years()
+
+    if not all_data:
+        return {}
+
+    # 👉 轉西元後再比較
+    filtered = {
+        y: d for y, d in all_data.items()
+        if (y + 1911) < target_year
+    }
+
+    if len(filtered) < 3:
+        return {}
+
+    normalized = {y: normalize(d) for y, d in filtered.items()}
+
+    result = {}
+    series = {}
+
+    for year, data in normalized.items():
+        for dept, energies in data.items():
+            for e, v in energies.items():
+
+                key = f"{dept}_{e}"
+
+                if key not in series:
+                    series[key] = {"years": [], "values": []}
+
+                series[key]["years"].append(year)
+                series[key]["values"].append(v)
+
+    for key, s in series.items():
+        if len(s["years"]) < 3:
+            continue
+
+        pred = predict_series(s["years"], s["values"], target_year)
+
+        dept, energy = key.split("_")
+
+        if dept not in result:
+            result[dept] = {}
+
+        result[dept][energy] = max(pred, 0)
+
+    # 👉 正規化回 100%
+    for dept in result:
+        total = sum(result[dept].values())
+        if total == 0:
+            continue
+
+        for e in result[dept]:
+            result[dept][e] = result[dept][e] / total * 100
+
+    return result
+
+
+# ⭐ 支援：民國 / 西元 / 今年 / 明年
+def parse_year(text):
+    now = datetime.now().year
+
+    if "今年" in text:
+        return now
+    if "明年" in text:
+        return now + 1
+
+    match = re.search(r"\d+", text)
+    if match:
+        y = int(match.group())
+
+        # 👉 民國判斷
+        if y < 1911:
+            return y + 1911
+
+        return y
+
+    return None
+
+
+@app.route("/predict_department_energy", methods=["POST"])
+def predict_department_energy():
+    data = request.json or {}
+    question = data.get("question", "")
+
+    target_year = parse_year(question)
+
+    if not target_year:
+        return jsonify({"error": "請輸入年份，例如 2025、114 或 明年"})
+
+    result = run_prediction(target_year)
+
+    if not result:
+        return jsonify({"error": "資料不足或預測失敗"})
+
+    summary = []
+    for dept, energies in list(result.items())[:3]:
+        top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:2]
+
+        summary.append({
+            "dept": dept,
+            "top": top
+        })
+
+    return jsonify({
+        "year": target_year,
+        "prediction": result,
+        "summary": summary
+    })
 # =========================
 # 📩 Contact
 # =========================
@@ -672,3 +850,5 @@ if __name__ == "__main__":
     start_scheduler()  # ✅ 加在這裡
 
     app.run(host="0.0.0.0", port=8000)
+
+
