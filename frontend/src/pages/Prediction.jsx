@@ -1,15 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+// ✅ 改這裡（重點🔥）
+import hierarchy from "../data/hierarchy.json";
+import supplyCatalog from "../data/supply_catalog.json";
 
 export default function Prediction() {
   const [question, setQuestion] = useState("");
-  const [result, setResult] = useState("");
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const [deptMap, setDeptMap] = useState({});
+  const [energyMap, setEnergyMap] = useState({});
+
+  // =========================
+  // 📥 載入 JSON（改成 import🔥）
+  // =========================
+  useEffect(() => {
+    // 🔹 hierarchy
+    const map = {};
+
+    const traverse = (obj) => {
+      Object.entries(obj).forEach(([key, val]) => {
+        map[key] = val.name;
+        if (val.children) traverse(val.children);
+      });
+    };
+
+    traverse(hierarchy);
+    setDeptMap(map);
+
+    // 🔹 supply catalog
+    const energy = {};
+    supplyCatalog.forEach(item => {
+      energy[item.source_id] = item.name_zh;
+    });
+    setEnergyMap(energy);
+
+  }, []);
+
+  // =========================
+  // 🔮 預測
+  // =========================
   const runPredict = async () => {
     if (!question) return alert("請輸入問題");
 
     setLoading(true);
-    setResult("");
+    setData(null);
 
     try {
       const res = await fetch("http://127.0.0.1:8000/predict_department_energy", {
@@ -20,41 +56,25 @@ export default function Prediction() {
         body: JSON.stringify({ question })
       });
 
-      const data = await res.json();
+      const result = await res.json();
 
-      if (data.error) {
-        setResult("❌ " + data.error);
+      if (result.error) {
+        setData({ error: result.error });
         setLoading(false);
         return;
       }
 
-      let output = "";
-      output += `您的問題：\n${question}\n\n`;
-      output += `預測模擬建議：\n`;
-
-      data.summary.forEach(item => {
-        output += `【${item.dept}】\n`;
-
-        item.top.forEach(t => {
-          output += `- ${t[0]}：${t[1].toFixed(2)}%\n`;
-        });
-
-        output += "\n";
-      });
-
-      output += `（預測年份：${data.year}）`;
-
-      setResult(output);
+      setData(result);
 
     } catch (err) {
-      setResult("❌ API 連線失敗");
+      setData({ error: "API 連線失敗" });
     }
 
     setLoading(false);
   };
 
   return (
-    <div style={{ padding: "100px 20px", color: "white" }}>
+    <div style={{ padding: "100px 20px", color: "white", maxWidth: "900px", margin: "auto" }}>
       <h2>🔮 能源預測</h2>
 
       <input
@@ -86,11 +106,68 @@ export default function Prediction() {
         開始預測
       </button>
 
-      {loading && <p style={{ marginTop: "10px" }}>⏳ 預測中...</p>}
+      {loading && <p style={{ marginTop: "20px" }}>⏳ 預測中...</p>}
 
-      <pre style={{ marginTop: "20px", whiteSpace: "pre-wrap" }}>
-        {result}
-      </pre>
+      {data?.error && (
+        <p style={{ marginTop: "20px", color: "#ef4444" }}>
+          ❌ {data.error}
+        </p>
+      )}
+
+      {data && !data.error && (
+        <div style={{ marginTop: "30px" }}>
+          
+          <div style={{ marginBottom: "20px", color: "#94a3b8" }}>
+            您的問題：{question}
+          </div>
+
+          {data.summary.map((item, i) => (
+            <div
+              key={i}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                padding: "20px",
+                borderRadius: "12px",
+                marginBottom: "15px"
+              }}
+            >
+              <h3>
+                🏭 {deptMap[item.dept] || item.dept}
+              </h3>
+
+              {item.top.map((t, idx) => (
+                <div key={idx}>
+                  🔹 {energyMap[t[0]] || t[0]}：{t[1].toFixed(1)}%
+                </div>
+              ))}
+
+              <div style={{ marginTop: "10px", color: "#94a3b8" }}>
+                📊 分析：{getAnalysis(item.top, energyMap)}
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: "10px", color: "#64748b" }}>
+            預測年份：{data.year}
+          </div>
+
+        </div>
+      )}
     </div>
   );
+}
+
+// =========================
+// 🔥 分析
+// =========================
+function getAnalysis(top, energyMap) {
+  if (!top || top.length === 0) return "資料不足";
+
+  const main = energyMap[top[0][0]];
+
+  if (main?.includes("電")) return "電力需求上升，顯示電氣化趨勢";
+  if (main?.includes("氣")) return "氣體能源使用增加，可能與能源轉型有關";
+  if (main?.includes("煤")) return "煤炭仍占重要比例，但長期可能下降";
+
+  return "能源結構正在變化";
 }
