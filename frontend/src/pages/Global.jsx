@@ -250,48 +250,41 @@ export default function Global({ isMobile }) {
   return (
     <div className="global-page">
       <div className="control-panel">
-        <div className="panel-title">
-          <i className="fi fi-br-settings"></i>
-          能源控制面板
-        </div>
-
         <div className="panel-row">
-          <label>年份</label>
-          <select value={year} onChange={(e) => setYear(e.target.value)}>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
+          <span className="title-content">
+            <i className="fi fi-br-settings"></i>能源控制面板
+          </span>
 
-        <div className="panel-row">
-          <label style={{ marginLeft: "10px", marginRight: "10px" }}>
+          <div className="label-group">
+            <label>年份</label>
+            <select value={year} onChange={(e) => setYear(e.target.value)}>
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          <label>
             <input
               type="checkbox"
               checked={showFlow}
               onChange={(e) => setShowFlow(e.target.checked)}
-              style={{ marginRight: "5px" }}
             />
             顯示連線
           </label>
-        </div>
 
-        <div className="panel-row search-box">
-          <i className="fi fi-br-search search-icon"></i>
-          <input
-            type="text"
-            placeholder="搜尋部門..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+          <div className="search-box">
+            <i className="fi fi-br-search search-icon"></i>
+            <input
+              type="text"
+              placeholder="搜尋部門..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
 
-        <div className="panel-row">
           <div className="ai-box" onClick={() => setShowAI(true)}>
-            <i className="fi fi-br-comments" style={{ marginRight: "5px" }}></i>
-            點我詢問能源
+            <i className="fi fi-br-comments" style={{ marginRight: "10px" }}></i>點我詢問能源
           </div>
         </div>
       </div>

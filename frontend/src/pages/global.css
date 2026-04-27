@@ -21,48 +21,70 @@ body {
 .global-page {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 24px 40px 40px 40px;
+  gap: 30px;
+  padding: 30px 40px 40px 40px;
 }
 
 /* 控制面板 */
 .control-panel {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(18px);
-  border: 1px solid rgba(120, 180, 255, 0.4);
+  border: 1px solid rgba(120, 180, 255, 0.4) !important;
+  border-radius: 30px;
   box-shadow:
     0 0 25px rgba(90, 168, 255, 0.25),
     inset 0 0 20px rgba(120, 180, 255, 0.12);
 }
-.panel-title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  opacity: 0.9;
+
+.title-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1;
+  font-weight: bold;
+}
+
+.panel-row > * {
+  flex-shrink: 0;
 }
 
 .panel-row {
   display: flex;
   align-items: center;
+  white-space: nowrap;
+  gap: 40px;
+  padding: 20px;
+}
+
+.label-group {
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
+  white-space: nowrap;
 }
 
 .panel-row select {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(150, 200, 255, 0.5);
+  border: 1px solid rgba(150, 200, 255, 0.5) !important;
   border-radius: 10px;
-  padding: 6px 12px;
+  padding: 5px 14px;
   color: #000;
   outline: none;
 }
 
+input[type="checkbox"] {
+  transform: scale(1.5);
+  margin-right: 10px;
+}
+
 /* 搜尋框 */
 .search-box {
+  width: 20%;
   position: relative;
+  line-height: 1;
   border-radius: 16px;
-  padding: 6px 14px;
+  padding: 10px 16px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(120, 180, 255, 0.4);
+  border: 1px solid rgba(120, 180, 255, 0.4) !important;
   backdrop-filter: blur(12px);
   transition: 0.3s ease;
 }
@@ -97,7 +119,7 @@ body {
 
 @media (max-width: 768px) {
   .global-layout {
-    display: block;  /* 🔥 關鍵 */
+    display: block;
     background: transparent; 
   }
 }
@@ -106,11 +128,11 @@ body {
 .globe-area {
   width: 70%;
   height: 100%;
-  border-radius: 36px;
+  border-radius: 40px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(150, 200, 255, 0.35);
+  border: 1px solid rgba(120, 180, 255, 0.4) !important;
   box-shadow:
     0 0 40px rgba(90, 168, 255, 0.25),
     inset 0 0 30px rgba(120, 180, 255, 0.1);
@@ -125,15 +147,14 @@ body {
 .info-panel {
   width: 30%;
   height: 100%;
-  padding: 26px;
-  border-radius: 30px;
+  padding: 30px;
+  border-radius: 40px;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(120, 180, 255, 0.4);
+  border: 1px solid rgba(120, 180, 255, 0.4) !important;
   box-shadow:
     0 0 30px rgba(90, 168, 255, 0.25),
     inset 0 0 25px rgba(120, 180, 255, 0.1);
-
   overflow-y: auto;
 }
 
@@ -199,11 +220,8 @@ body {
     rgba(18, 25, 45, 0.97),
     rgba(25, 35, 65, 0.95)
   );
-
   backdrop-filter: blur(18px);
-
   border: 1px solid rgba(120, 200, 255, 0.7);
-
   box-shadow:
     0 0 30px rgba(90, 168, 255, 0.4),
     0 20px 60px rgba(0, 0, 0, 0.8);
@@ -294,7 +312,7 @@ body {
   min-height: 100px;
   padding: 10px;
   border-radius: 10px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #e5e7eb !important;
   font-size: 14px;
   resize: vertical;
   outline: none;
@@ -313,9 +331,9 @@ body {
 .ai-panel button {
   align-self: flex-end;
   margin-top: 15px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid #ffcfad;
+  padding: 8px 24px;
+  border-radius: 18px;
+  border: 1px solid #ffcfad !important;
   background: #fcf2eb;
   color: #9a3412;
   font-size: 12px;
@@ -410,16 +428,15 @@ body {
 .ai-box {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 4px 16px;
   border-radius: 20px;
-  border: 1px solid #ffcfad;
+  border: 1px solid #ffcfad !important;
   background: #fcf2eb;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
-/* hover 發光 */
 .ai-box:hover {
   border-color: rgb(249, 115, 22);
   box-shadow: 0 0 8px rgba(245, 121, 54, 0.5);
@@ -546,7 +563,7 @@ body {
 .mobile-layout {
   position: relative;
   width: 100%;
-  min-height: calc(100dvh - 70px);  /* 🔥 正解 */
+  min-height: calc(100dvh - 70px);
   overflow: hidden;
 }
 
@@ -560,24 +577,19 @@ body {
   z-index: 10;
   padding: 16px;
   overflow-y: auto;
-
   height: 100%;
   max-height: 100dvh;     
-
   background: rgba(255,255,255,0.95);
   border-radius: 20px 20px 0 0;
-
   padding: 16px;
   overflow-y: auto;
-
   box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
   backdrop-filter: blur(10px);
 }
 
 @media (max-width: 768px) {
-
   #main-content.dark .mobile-bottom-panel {
-    background: rgba(15, 23, 42, 0.95);   /* 🔥 深色 */
+    background: rgba(15, 23, 42, 0.95);
     color: #e2e8f0;
   }
 
@@ -649,46 +661,43 @@ body {
 }
 
 @media (max-width: 768px) {
-
   nav {
     position: fixed;
     top: 0;
     left: 0;
-    width: 70%;              /* 👉 寬度 */
+    width: 70%;
     height: 100vh;
-
     background: rgba(13,44,110,0.95);
     backdrop-filter: blur(12px);
-
     display: flex;
-    flex-direction: column;  /* 👉 直向 */
+    flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-
-    padding: 80px 20px;      /* 👉 頭部空間 */
-
-    transform: translateX(-100%);  /* 👉 預設藏起來 */
+    padding: 80px 20px;
+    transform: translateX(-100%);
     transition: transform 0.3s ease;
     overflow-y: auto;
     z-index: 1001;
   }
 
   nav.open {
-    transform: translateX(0);   /* 👉 滑出 */
+    transform: translateX(0);
   }
   
 }
+
 @media (max-width: 768px) {
   nav a {
     display: block;
     font-size: 18px;
     margin-bottom: 20px;
-    writing-mode: horizontal-tb;  /* 🔥 關鍵（避免直排） */
+    writing-mode: horizontal-tb;
   }
   nav a i {
     color: #f97316 !important;
   }
 }
+
 #overlay {
   position: fixed;
   top: 0;
@@ -698,7 +707,6 @@ body {
   background: rgba(0,0,0,0.4);
   opacity: 0;
   pointer-events: none;
-
   transition: 0.3s;
   z-index: 1000;
 }
@@ -707,28 +715,25 @@ body {
   opacity: 1;
   pointer-events: auto;
 }
+
 @media (max-width: 768px) {
   .info-panel {
     width: 100%;
-    margin-top: 20px;   /* 🔥 這行 */
+    margin-top: 20px;
   }
 }
-@media (max-width: 768px) {
 
-  /* 淺色模式 */
+@media (max-width: 768px) {
   .global-page {
     background: transparent !important; 
   }
-
 }
-@media (max-width: 768px) {
 
-  /* 🔥 整個 layout */
+@media (max-width: 768px) {
   #main-content.dark .global-layout {
-    background: #0f172a;   /* 跟 body 一樣 */
+    background: #0f172a;
   }
 
-  /* 🔥 球體容器 */
   #main-content.dark .globe-area {
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid rgba(71, 85, 105, 0.6);
@@ -737,34 +742,34 @@ body {
       inset 0 0 20px rgba(0,0,0,0.3);
   }
 
-  /* 🌙 詳細資訊面板 */
   #main-content.dark .mobile-bottom-panel {
-    background: rgba(15, 23, 42, 0.85);   /* 🔥 深色玻璃 */
+    background: rgba(15, 23, 42, 0.85); 
     color: #e2e8f0;
     border: 1px solid rgba(71, 85, 105, 0.5);
     backdrop-filter: blur(12px);
   }
+
   #main-content.dark .mobile-bottom-panel h2,
   #main-content.dark .mobile-bottom-panel p {
     color: #e2e8f0;
   }
+
   #main-content.dark .control-panel {
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(71, 85, 105, 0.5);
-
-  /* ❌ 拿掉 glow */
   box-shadow:
     inset 0 0 15px rgba(0,0,0,0.4);
   }
-
 }
+
 @media (max-width: 768px) {
   body {
     background: transparent; 
     display: flex;
     flex-direction: column;
-    min-height: 100dvh;   /* 🔥 改這裡 */
+    min-height: 100dvh;
   }
+
   body.dark {
   background: #0f172a;
   }
@@ -774,11 +779,13 @@ body {
     min-height: 100dvh;
   }
 }
+
 @media (max-width: 768px) {
   footer {
     display: none;
   }
 }
+
 @media (max-width: 768px) {
   .global-page {
     padding: 0;  
