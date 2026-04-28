@@ -235,7 +235,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
       activeSupply = Object.keys(demandSupply?.[selected.code] || {});
     } else if (selected.type === "supply") {
       const relatedDemands = Object.entries(demandSupply)
-        .filter(([dCode, supplies]) => supplies[selected.code])
+        .filter(([dCode, supplies]) => (supplies?.[selected.code] ?? 0) > 0)
         .map(([dCode]) => dCode);
 
       const relatedSupplies = new Set();
@@ -320,7 +320,9 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
               /* 未被選中時隱藏 */
               opacity:
                 dot > 0
-                  ? !selected || activeSupply?.includes(id)
+                  ? !selected ||
+                    selected.type === "supply" ||
+                    activeSupply?.includes(id)
                     ? 1
                     : 0.2
                   : 0.05,
@@ -385,7 +387,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
       activeDemand = [selected.code];
     } else if (selected.type === "supply") {
       activeDemand = Object.entries(demandSupplyData[year] || {})
-        .filter(([dCode, supplies]) => supplies[selected.code])
+        .filter(([dCode, supplies]) => supplies[selected.code] > 0)
         .map(([dCode]) => dCode);
     }
   }
@@ -396,11 +398,6 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
     if (lod === 0 && level !== 1) return null;
     if (lod === 1 && level !== 2) return null;
     if (lod === 2 && level !== 3) return null;
-
-    // 過濾未被選中的需求
-    if (selected && activeDemand && !activeDemand.includes(id)) {
-      return null;
-    }
 
     const size = level === 1 ? 0.1 : level === 2 ? 0.075 : 0.06;
     const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
@@ -442,7 +439,15 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
             emissive="#3b82f6"
             emissiveIntensity={dot > 0 ? 0.5 : 0.1}
             transparent
-            opacity={dot > 0 ? 1 : 0.2}
+            opacity={
+              dot > 0
+                ? !selected ||
+                  selected.type === "demand" ||
+                  activeDemand?.includes(id)
+                  ? 1
+                  : 0.2
+                : 0.05
+            }
           />
         </mesh>
 
@@ -641,9 +646,9 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
       <mesh>
         <sphereGeometry args={[3, 64, 64]} />
         <meshPhysicalMaterial
-          color="#e5e7eb"
+          color="#4e97f1"
           transparent
-          opacity={0.15} // 🔥 半透明
+          opacity={0.2} // 🔥 半透明
           roughness={0.2}
           metalness={0.1}
           clearcoat={1}
@@ -665,6 +670,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
         lod={lod}
         onHover={onHover}
         onSelect={onSelect}
+        selected={selected} // ⭐⭐⭐ 加這行
       />
 
       {showFlow && (
