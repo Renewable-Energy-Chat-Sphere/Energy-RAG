@@ -646,7 +646,9 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
       <mesh>
         <sphereGeometry args={[3, 64, 64]} />
         <meshPhysicalMaterial
-          color="#4e97f1"
+          color="#0073ff"
+          emissive="#3b82f6"
+          emissiveIntensity={0.8}
           transparent
           opacity={0.2} // 🔥 半透明
           roughness={0.2}
