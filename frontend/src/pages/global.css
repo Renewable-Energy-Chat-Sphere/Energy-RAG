@@ -12,7 +12,7 @@ body {
       rgba(180, 120, 255, 0.12),
       transparent 40%
     ),
-    linear-gradient(135deg, #0a0f1c 0%, #0f172a 100%);
+    linear-gradient(135deg, #0a0f1c 0%, 100%);
   font-family: "Inter", sans-serif;
   overflow-x: hidden;
 }
@@ -589,7 +589,7 @@ input[type="checkbox"] {
 
 @media (max-width: 768px) {
   #main-content.dark .mobile-bottom-panel {
-    background: rgba(15, 23, 42, 0.95);
+    background: #1f2937;
     color: #e2e8f0;
   }
 
@@ -604,21 +604,44 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 768px) {
+
   .control-panel {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 12px;
-    margin-bottom: 20px;
+    padding: 16px;
   }
 
   .panel-row {
+    display: flex;
+    flex-direction: column; 
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  /* 每個區塊撐滿 */
+  .panel-row > * {
+    width: 100%;
+  }
+
+  /* label + select 一組 */
+  .label-group {
     width: 100%;
     justify-content: space-between;
   }
 
+  /* checkbox */
+  .panel-row label {
+    display: flex;
+    align-items: center;
+  }
+
+  /* 搜尋框 */
   .search-box {
     width: 100%;
+  }
+
+  /* AI 按鈕 */
+  .ai-box {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -689,7 +712,7 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
   nav a {
     display: block;
-    font-size: 18px;
+    font-size: 15px;
     margin-bottom: 20px;
     writing-mode: horizontal-tb;
   }
@@ -719,7 +742,9 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
   .info-panel {
     width: 100%;
-    margin-top: 20px;
+    height: 100%;
+    margin-top: 30px;
+    border-radius: 28px;
   }
 }
 
@@ -731,7 +756,13 @@ input[type="checkbox"] {
 
 @media (max-width: 768px) {
   #main-content.dark .global-layout {
-    background: #0f172a;
+    background: #1f2937;
+  }
+
+  #main-content.dark .info-panel {
+    background: #1f2937;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   #main-content.dark .globe-area {
@@ -743,7 +774,7 @@ input[type="checkbox"] {
   }
 
   #main-content.dark .mobile-bottom-panel {
-    background: rgba(15, 23, 42, 0.85); 
+    background: rgba(15, 23, 42, 0.6); 
     color: #e2e8f0;
     border: 1px solid rgba(71, 85, 105, 0.5);
     backdrop-filter: blur(12px);
@@ -755,7 +786,7 @@ input[type="checkbox"] {
   }
 
   #main-content.dark .control-panel {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(71, 85, 105, 0.5);
   box-shadow:
     inset 0 0 15px rgba(0,0,0,0.4);
@@ -771,7 +802,7 @@ input[type="checkbox"] {
   }
 
   body.dark {
-  background: #0f172a;
+    background: #1f2937;
   }
 
   .global-page {
@@ -789,6 +820,5 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
   .global-page {
     padding: 0;  
-    gap: 0;   
   }
 }
