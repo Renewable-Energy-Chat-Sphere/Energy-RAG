@@ -14,8 +14,6 @@ import hierarchy from "../data/hierarchy.json";
 
 const SUPPLY_RADIUS = 3.02;
 
-/* 動態載入所有年份資料 */
-
 const supplyLayoutsRaw = import.meta.glob("../data/supply_layout_*.json", {
   eager: true,
 });
@@ -28,8 +26,6 @@ const demandSupplyRaw = import.meta.glob(
   "../data/*_energy_demand_supply.json",
   { eager: true },
 );
-
-/* 轉成 year mapping */
 
 const supplyLayouts = {};
 const demandLayouts = {};
@@ -84,7 +80,33 @@ Object.entries(hierarchy).forEach(([code, node]) => {
   buildLevel(node, code);
 });
 
-/* Label（縮放 + 截斷） */
+const DEPT_COLOR = {
+  D2: "#3b82f6",
+  D40: "#22c55e",
+  D47: "#eab308",
+  D50: "#f97316",
+  D68: "#ef4444",
+};
+
+function getRootDept(code) {
+  let current = code;
+
+  while (current) {
+    if (DEPT_COLOR[current]) return current;
+
+    const parent = Object.entries(hierarchy).find(([pCode, node]) => {
+      if (!node.children) return false;
+      return node.children[current];
+    });
+
+    if (!parent) return null;
+    current = parent[0];
+  }
+
+  return null;
+}
+
+/* Label */
 
 function Label({ position, worldPosition, text, baseSize = 14 }) {
   const { camera } = useThree();
@@ -399,9 +421,11 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
     if (lod === 1 && level !== 2) return null;
     if (lod === 2 && level !== 3) return null;
 
+    const root = getRootDept(id);
+    const deptColor = DEPT_COLOR[root] || "#3b82f6";
+
     const size = level === 1 ? 0.1 : level === 2 ? 0.075 : 0.06;
     const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
-
     const position = [pos.x * radius, pos.y * radius, pos.z * radius];
 
     const camDir = camera.position.clone().normalize();
@@ -410,7 +434,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
 
     return (
       <group key={id} position={position}>
-        <Glow size={size} color="#3b82f6" />
+        <Glow size={size} color={deptColor} />
 
         <mesh
           onPointerOver={(e) => {
@@ -434,9 +458,10 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           }}
         >
           <sphereGeometry args={[size, 16, 16]} />
+
           <meshStandardMaterial
-            color="#3b82f6"
-            emissive="#3b82f6"
+            color={deptColor}
+            emissive={deptColor}
             emissiveIntensity={dot > 0 ? 0.5 : 0.1}
             transparent
             opacity={
@@ -451,6 +476,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           />
         </mesh>
 
+        {/* Label */}
         {lod === 0 && level === 1 && (
           <Label
             position={[0, size + 0.18, 0]}
@@ -548,21 +574,18 @@ function SupplyFlowLines({ year, selected, lod }) {
 
   return Object.entries(ratio)
     .map(([targetCode, raw]) => {
-      // 🔥 固定：供給 → 需求（不要再用 isReverse）
       let supplyPos, demandPos;
 
       if (selected.type === "supply") {
         supplyPos = supplyLayout[selected.code];
         demandPos = demandLayout[targetCode];
       } else {
-        // 🔥 點 demand 時反過來
         supplyPos = supplyLayout[targetCode];
         demandPos = demandLayout[selected.code];
       }
 
       if (!supplyPos || !demandPos) return null;
 
-      // 🔥 過濾不存在的點（超重要）
       if (!supplyPos || !demandPos) return null;
       const normalized = raw / (max || 1);
       const adjusted = Math.pow(normalized, 1.5);
@@ -570,7 +593,6 @@ function SupplyFlowLines({ year, selected, lod }) {
 
       const start = toSphere(supplyPos, SUPPLY_RADIUS * 1.05);
 
-      // 🔥 用需求自己的半徑（關鍵）
       const demandCode =
         selected.type === "supply" ? targetCode : selected.code;
 
@@ -580,12 +602,9 @@ function SupplyFlowLines({ year, selected, lod }) {
       if (lod === 2 && level !== 3) return null;
 
       const demandRadius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
-
       const end = toSphere(demandPos, demandRadius);
-
       const axis = new THREE.Vector3().crossVectors(start, end);
 
-      // 🔥 防止爆掉（關鍵）
       if (axis.length() < 0.0001) return null;
 
       axis.normalize();
@@ -601,9 +620,7 @@ function SupplyFlowLines({ year, selected, lod }) {
         const t = i / segments;
         const p = start.clone().applyAxisAngle(axis, angle * t);
         const lift = Math.sin(Math.PI * t) * heightFactor;
-
         p.normalize().multiplyScalar(SUPPLY_RADIUS * (1 + lift));
-
         points.push(p);
       }
 
@@ -650,7 +667,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
           emissive="#3b82f6"
           emissiveIntensity={0.8}
           transparent
-          opacity={0.2} // 🔥 半透明
+          opacity={0.2}
           roughness={0.2}
           metalness={0.1}
           clearcoat={1}
@@ -672,7 +689,7 @@ function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
         lod={lod}
         onHover={onHover}
         onSelect={onSelect}
-        selected={selected} // ⭐⭐⭐ 加這行
+        selected={selected}
       />
 
       {showFlow && (
@@ -704,8 +721,8 @@ export default function GlobeVisualizer({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  
   const [showLegendDetail, setShowLegendDetail] = useState(false);
-  // 防止資料還沒載入
   if (!supplyLayouts[year] || !demandLayouts[year]) {
     return null;
   }
