@@ -140,18 +140,11 @@ export default function Dashboard() {
   return (
     <div className={`dashboard-page ${isDark ? "dark" : ""}`}>
       <div className="top-section">
-
-        <div className="grid4">
-          <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="fi fi-br-bolt" color="#f97316" />
-          <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="fi fi-br-battery-half" color="#22c55e" />
-          <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="fi fi-br-plug" color="#3b82f6" />
-          <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="fi fi-br-time-fast" color="#ec4899" />
-        </div>
-
         <div className="flex-section">
+        
           <div className="circle-section">
             <div className="circle-outer">
-              <ResponsiveContainer width={400} height={400}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={[
@@ -161,8 +154,8 @@ export default function Dashboard() {
                     dataKey="value"
                     cx="50%"
                     cy="50%"
-                    innerRadius={100}
-                    outerRadius={180}
+                    innerRadius={60}
+                    outerRadius={100}
                     cornerRadius={18}
                     paddingAngle={4}
                     stroke="none"
@@ -179,6 +172,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          
 
           <div className="status-wrapper">
             <StatusCard color="#22c55e" title="綠燈" desc="備轉容量率 ≥ 10%" />
@@ -186,6 +180,12 @@ export default function Dashboard() {
             <StatusCard color="#f97316" title="橘燈" desc="備轉容量率 < 6%" />
             <StatusCard color="#ef4444" title="紅燈" desc="限電警戒" />
           </div>
+        </div>
+        <div className="grid4">
+            <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="fi fi-br-bolt" color="#f97316" />
+            <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="fi fi-br-battery-half" color="#22c55e" />
+            <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="fi fi-br-plug" color="#3b82f6" />
+            <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="fi fi-br-time-fast" color="#ec4899" />
         </div>
 
         <div className="energy-section">

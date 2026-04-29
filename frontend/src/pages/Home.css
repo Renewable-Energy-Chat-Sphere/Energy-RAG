@@ -154,9 +154,10 @@ body {
 }
 
 /* RWD（手機）*/
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .cards {
     grid-template-columns: 1fr;
+    margin: 0px 20px;
   }
 
   .hero-banner h1 {

@@ -21,7 +21,7 @@ export default function EnergyNews() {
       className="energy-news"
       style={{
         maxWidth: "1200px",
-        margin: "48px auto",
+        margin: "48px 20px auto",
         position: "relative",
         paddingBottom: "90px",
       }}

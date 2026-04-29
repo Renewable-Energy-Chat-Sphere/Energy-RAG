@@ -214,7 +214,7 @@ export default function Home() {
       </section>
 
       {/* Dashboard */}
-      <div className="reveal">
+      <div className="dashboard-wrapper reveal">
         <Dashboard />
       </div>
       

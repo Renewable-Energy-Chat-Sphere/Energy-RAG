@@ -18,7 +18,7 @@
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 40px;
+  gap: 20px;
 }
 
 .grid3 {
@@ -28,8 +28,8 @@
 }
 
 .kpi {
-  border-radius: 40px;
-  padding: 30px 50px;
+  border-radius: 28px;
+  padding: 20px 24px;
   background: #ffffff;
   border: 2px solid #b0bec5;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -59,13 +59,13 @@
 .kpi-title {
   display: flex;
   align-items: center;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
   color: #64748b;
 }
 
 .kpi-value {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: bold;
   margin-top: 10px;
   color: #003366;
@@ -87,11 +87,19 @@
   display: flex;
   gap: 40px;
   margin-top: 50px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.grid4 {
+  flex: 0 0 420px;
+}
+
+.status-wrapper {
+  flex: 1;
 }
 
 .circle-section {
-  flex: 1;
+  flex: 0 0 350px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -352,63 +360,96 @@
 .bold { font-weight: bold; }
 .small { font-size: 14px; }
 
-/* 響應式設計 */
-@media (max-width: 1200px) {
-  .kpi-title { font-size: 18px; }
-  .kpi-value { font-size: 24px; }
-  .circle-text { font-size: 28px; }
-  .status-card > * { font-size: 18px; }
-  .energy-title { font-size: 16px; }
-  .energy-value { font-size: 20px; }
-  .section-title { font-size: 24px; }
-  .grid4 { grid-template-columns: repeat(3, 1fr); }
-  .grid3 { grid-template-columns: repeat(2, 1fr); }
-  .kpi { padding: 20px 40px; }
-  .top-section { padding: 50px; }
-  .flex-section { gap: 20px; }
-  .circle-outer { width: 350px; height: 350px; }
-  .status-card { max-height: 120px; }
-}
-
-@media (max-width: 992px) {
-  .kpi-title { font-size: 16px; }
-  .kpi-value { font-size: 22px; }
-  .circle-text { font-size: 24px; }
-  .status-card > * { font-size: 16px; }
-  .energy-title { font-size: 14px; }
-  .energy-value { font-size: 18px; }
-  .section-title { font-size: 20px; }
-  .grid4 { grid-template-columns: repeat(2, 1fr); }
-  .grid3 { grid-template-columns: 1fr; }
-  .kpi { padding: 15px 30px; }
-  .top-section { padding: 30px; }
-  .status-wrapper { display: block; }
-  .status-card { max-height: 100px; padding: 15px; }
-}
-
 @media (max-width: 768px) {
-  .kpi-title { font-size: 14px; }
-  .kpi-value { font-size: 18px; }
+  .kpi {
+    padding: 16px 12px;
+    border-radius: 20px;
+  }
+
+  .kpi-title {
+    font-size: 12px;
+  }
+
+  .kpi-value {
+    font-size: 16px;
+  }
   .circle-text { font-size: 20px; }
   .status-card > * { font-size: 14px; }
-  .energy-title { font-size: 12px; }
-  .energy-value { font-size: 16px; }
+  .energy-card {
+      padding: 20px;
+      border-radius: 24px;
+    }
+
+    .energy-title {
+      font-size: 16px;
+    }
+
+    .energy-value {
+      font-size: 20px;
+    }
   .section-title { font-size: 18px; }
-  .grid4 { grid-template-columns: repeat(1, 1fr); }
+  .grid4 { grid-template-columns: repeat(2, 1fr);  /* 🔥 兩個一排 */
+    gap: 16px; }
   .flex-section { flex-direction: column; gap: 20px; }
   .circle-outer { width: 300px; height: 300px; }
   .status-card { max-height: 80px; padding: 10px; }
 }
 
-@media (max-width: 480px) {
-  .kpi-title { font-size: 12px; }
-  .kpi-value { font-size: 16px; }
-  .circle-text { font-size: 18px; }
-  .status-card > * { font-size: 12px; }
-  .energy-title { font-size: 10px; }
-  .energy-value { font-size: 14px; }
-  .section-title { font-size: 14px; }
-  .grid4 { grid-template-columns: 1fr; }
-  .top-section { padding: 20px; }
-  .status-card { max-height: 70px; padding: 8px; }
+/* 🔥 手機版 Dashboard 重排（核心） */
+@media (max-width: 768px) {
+  
+  /* 整個 dashboard 改為垂直 */
+  .flex-section {
+    flex-direction: column;
+  }
+
+  /* 🔥 圓圈強制第一個 */
+  .circle-section {
+    order: -1;
+    margin-bottom: 20px;
+  }
+
+  /* KPI 也往下排 */
+  .grid4 {
+    order: 2;
+  }
+
+  /* 能源卡片 */
+  .energy-section {
+    order: 3;
+  }
+
+  /* 圖表 */
+  .chart-card {
+    order: 4;
+  }
 }
+@media (max-width: 768px) {
+  .circle-outer {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;   /* 🔥 保持正圓 */
+  margin: 0 auto;
+  }
+  .status-wrapper {
+    grid-template-columns: 1fr;   /* 🔥 一欄 */
+    gap: 12px;
+  }
+  .grid3 {
+    grid-template-columns: 1fr;   /* 🔥 一欄 */
+    gap: 16px;
+  }
+  .top-section {
+    padding: 30px;
+  }
+  .flex-section {
+    display: flex;
+    gap: 40px;
+    margin-top: 50px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+}
+
