@@ -154,8 +154,8 @@ export default function Dashboard() {
                     dataKey="value"
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={90}
+                    outerRadius={150}
                     cornerRadius={18}
                     paddingAngle={4}
                     stroke="none"

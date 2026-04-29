@@ -108,7 +108,7 @@
 .circle-outer {
   position: relative;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   height: auto;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -428,7 +428,7 @@
   .circle-outer {
   position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 500px;
   aspect-ratio: 1;   /* 🔥 保持正圓 */
   margin: 0 auto;
   }

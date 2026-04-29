@@ -11,6 +11,7 @@ export default function Contact() {
     feeling: "",
     message: "",
   });
+  const [showInfo, setShowInfo] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -180,6 +181,9 @@ export default function Contact() {
                 {loading ? "寄送中" : "送出 Send"}
               </button>
             </form>
+
+
+            
           </div>
         </div>
       </div>
@@ -457,7 +461,42 @@ export default function Contact() {
 .error-card h3 {
   color: #ef4444;
 }
+/* 🔥 手機/電腦顯示控制 */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* 🔥 手機版 */
+@media (max-width: 768px) {
+  .contact-grid {
+    grid-template-columns: 1fr; /* 變單欄 */
+  }
+
+  .desktop-only {
+    display: none; /* 隱藏左欄 */
+  }
+
+  .mobile-only {
+    display: block; /* 顯示手機版 */
+  }
+
+  .toggle-info-btn {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #2563eb);
+    color: white;
+    font-weight: 600;
+  }
+}
       `}</style>
     </section>
   );
+
 }
+
