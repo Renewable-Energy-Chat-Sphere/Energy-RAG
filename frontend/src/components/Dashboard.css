@@ -18,7 +18,7 @@
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 30px;
 }
 
 .grid3 {
@@ -28,10 +28,9 @@
 }
 
 .kpi {
-  border-radius: 28px;
-  padding: 20px 24px;
+  border-radius: 40px;
+  padding: 30px 50px;
   background: #ffffff;
-  border: 2px solid #b0bec5;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transition: all 0.25s ease;
 }
@@ -46,7 +45,6 @@
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: 28px;
 }
 
 .kpi-header i {
@@ -59,13 +57,13 @@
 .kpi-title {
   display: flex;
   align-items: center;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #64748b;
 }
 
 .kpi-value {
-  font-size: 22px;
+  font-size: 30px;
   font-weight: bold;
   margin-top: 10px;
   color: #003366;
@@ -86,21 +84,11 @@
 .flex-section {
   display: flex;
   gap: 40px;
-  margin-top: 50px;
-  flex-wrap: nowrap;
-}
-
-.grid4 {
-  flex: 0 0 420px;
-}
-
-.status-wrapper {
-  flex: 1;
 }
 
 .circle-section {
-  flex: 0 0 350px;
   display: flex;
+  flex: 1;
   justify-content: center;
   align-items: center;
 }
@@ -109,7 +97,6 @@
   position: relative;
   width: 100%;
   max-width: 500px;
-  height: auto;
   aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(circle at center, rgba(59, 130, 246, 0.08), transparent 70%);
@@ -138,17 +125,17 @@
 }
 
 .status-wrapper {
-  flex: 1.5;
+  flex: 2;
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin-top: 30px;
-  gap: 2px 30px;
+  gap: 40px;
 }
 
 .status-card {
   display: flex;
-  max-height: 150px;
-  padding: 20px;
+  max-height: 100%;
+  padding: 30px;
   border-radius: 40px;
   align-items: center;
   backdrop-filter: blur(10px);
@@ -193,14 +180,6 @@
 .section-title {
   font-size: 28px;
   font-weight: bold;
-}
-
-.energy-section {
-  margin-top: 60px;
-}
-
-.energy-section .title-row {
-  margin-bottom: 30px;
 }
 
 .energy-card {
@@ -307,7 +286,6 @@
 .recharts-default-tooltip {
   border-radius: 16px !important;
   background: rgba(255, 255, 255, 0.9) !important;
-  border: none !important;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
   backdrop-filter: blur(12px);
   padding: 10px 14px !important;
@@ -347,109 +325,85 @@
   border: none !important;
 }
 
-.recharts-wrapper,
-.recharts-cartesian-grid line,
-.recharts-line path,
-.recharts-tooltip-cursor {
-  outline: none !important;
-}
-
 .blue { color: #3b82f6; }
 .green { color: #22c55e; }
-
 .bold { font-weight: bold; }
 .small { font-size: 14px; }
 
-@media (max-width: 768px) {
-  .kpi {
-    padding: 16px 12px;
-    border-radius: 20px;
+@media (min-width: 769px) {
+  .flex-section {
+    height: 420px;
+    align-items: center;
   }
 
-  .kpi-title {
-    font-size: 12px;
+  .circle-section {
+    height: 100%;
   }
 
-  .kpi-value {
-    font-size: 16px;
+  .circle-outer {
+    height: 100%;
+    width: auto;
   }
-  .circle-text { font-size: 20px; }
-  .status-card > * { font-size: 14px; }
-  .energy-card {
-      padding: 20px;
-      border-radius: 24px;
-    }
-
-    .energy-title {
-      font-size: 16px;
-    }
-
-    .energy-value {
-      font-size: 20px;
-    }
-  .section-title { font-size: 18px; }
-  .grid4 { grid-template-columns: repeat(2, 1fr);  /* 🔥 兩個一排 */
-    gap: 16px; }
-  .flex-section { flex-direction: column; gap: 20px; }
-  .circle-outer { width: 300px; height: 300px; }
-  .status-card { max-height: 80px; padding: 10px; }
 }
 
-/* 🔥 手機版 Dashboard 重排（核心） */
 @media (max-width: 768px) {
-  
-  /* 整個 dashboard 改為垂直 */
+  .top-section { padding: 30px; }
+
   .flex-section {
     flex-direction: column;
+    gap: 20px;
   }
 
-  /* 🔥 圓圈強制第一個 */
   .circle-section {
     order: -1;
     margin-bottom: 20px;
   }
 
-  /* KPI 也往下排 */
+  .circle-outer {
+    margin: 0 auto;
+  }
+
   .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
     order: 2;
   }
 
-  /* 能源卡片 */
-  .energy-section {
-    order: 3;
-  }
-
-  /* 圖表 */
-  .chart-card {
-    order: 4;
-  }
-}
-@media (max-width: 768px) {
-  .circle-outer {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  aspect-ratio: 1;   /* 🔥 保持正圓 */
-  margin: 0 auto;
-  }
-  .status-wrapper {
-    grid-template-columns: 1fr;   /* 🔥 一欄 */
-    gap: 12px;
-  }
   .grid3 {
-    grid-template-columns: 1fr;   /* 🔥 一欄 */
-    gap: 16px;
-  }
-  .top-section {
-    padding: 30px;
-  }
-  .flex-section {
-    display: flex;
-    gap: 40px;
-    margin-top: 50px;
-    flex-wrap: nowrap;
-    align-items: center;
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
+  .status-wrapper {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+
+  .energy-section { order: 3; }
+  .chart-card { order: 4; }
+
+  .kpi {
+    padding: 30px 50px;
+    border-radius: 30px;
+  }
+
+  .kpi-title { font-size: 14px; }
+  .kpi-value { font-size: 18px; }
+  .circle-text { font-size: 28px; }
+
+  .status-card {
+    max-height: 100%;
+    padding: 30px 4px;
+  }
+
+  .status-card > * { font-size: 14px; }
+
+  .energy-card {
+    padding: 30px 40px;
+    border-radius: 40px;
+  }
+
+  .energy-title { font-size: 16px; }
+  .energy-value { font-size: 20px; }
+  .section-title { font-size: 18px; }
 }
-

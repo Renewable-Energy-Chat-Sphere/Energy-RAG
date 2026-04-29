@@ -1,35 +1,34 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import "./EnergyNews.css";
 
 export default function EnergyNews() {
   const API = "http://127.0.0.1:8000";
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
-    fetch(`${API}/energy-news`)
+    const controller = new AbortController();
+
+    fetch(`${API}/energy-news`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
   }, []);
 
   return (
-    <section
-      className="energy-news"
-      style={{
-        maxWidth: "1200px",
-        margin: "48px 20px auto",
-        position: "relative",
-        paddingBottom: "90px",
-      }}
-    >
-      {/* 標題 */}
+    <section className="energy-news">
       <div>
         <h2 className="energy-news-title">
-          <i class="fi fi-br-megaphone"></i>
+          <i className="fi fi-br-megaphone"></i>
           <span>能源署最新公告新聞</span>
         </h2>
 
@@ -42,11 +41,10 @@ export default function EnergyNews() {
         <p className="energy-news-subtitle">目前沒有公告的新聞</p>
       )}
 
-      {/* 公告新聞清單 */}
       <div className="energy-news-list">
-        {news.map((n, i) => (
+        {news.map((n) => (
           <a
-            key={i}
+            key={n.link}
             href={n.link}
             target="_blank"
             rel="noreferrer"
@@ -57,43 +55,18 @@ export default function EnergyNews() {
         ))}
       </div>
 
-      {/* 資料來源 */}
-      <small
-        className="energy-news-subtitle"
-        style={{ marginTop: "16px", display: "block" }}
-      >
+      <small className="energy-news-subtitle energy-news-source">
         新聞資料來源：經濟部能源署
       </small>
 
-      {/* 右下角浮動按鈕 */}
       <button
+        className="energy-news-btn"
         onClick={() =>
           window.open(
             "https://www.moeaea.gov.tw/ECW/populace/news/News.aspx?kind=1&menu_id=41",
-            "_blank",
+            "_blank"
           )
         }
-        style={{
-          position: "absolute",
-          right: "24px",
-          bottom: "24px",
-          padding: "10px 20px",
-          backgroundColor: "#0d2c6e",
-          color: "white",
-          border: "none",
-          borderRadius: "999px",
-          cursor: "pointer",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
-          transition: "all 0.25s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-4px)";
-          e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.25)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.15)";
-        }}
       >
         查看全部新聞 →
       </button>

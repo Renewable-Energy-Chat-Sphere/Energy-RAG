@@ -7,10 +7,9 @@ body {
 }
 
 .page-container {
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
-  padding: 40px 20px;
-  background: transparent;
+  padding: 40px;
 }
 
 /* hero */
@@ -65,25 +64,26 @@ body {
   background: #16a34a;
 }
 
-/* card */
+/* cards */
 .cards {
+  margin-top: 40px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 50px;
 }
 
 .card {
-  background: #ffffff;
-  border-radius: 30px;
+  background: #f5f7fa;
+  border-radius: 40px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   will-change: transform;
 }
 
 .card:hover {
-  transform: translate3d(0, -18px, 0) scale(1.2);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
   z-index: 20;
 }
 
@@ -131,13 +131,11 @@ body {
 /* reveal animation */
 .reveal {
   opacity: 0;
-  transform: none;
   transition: all 0.6s ease;
 }
 
 .reveal.active {
   opacity: 1;
-  transform: none;
 }
 
 /* big-number */
@@ -147,24 +145,31 @@ body {
   color: #0f172a;
 }
 
-/* 外部區塊間距 */
+/* 外部區塊 */
 .section {
   padding: 40px 0;
   background: transparent;
 }
 
-/* RWD（手機）*/
 @media (max-width: 768px) {
-  .cards {
-    grid-template-columns: 1fr;
-    margin: 0px 20px;
+  .page-container {
+    padding: 20px 16px;
   }
 
-  .hero-banner h1 {
-    font-size: 28px;
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .card:hover {
+    transform: none;
   }
 
   .hero-banner {
     height: 320px;
+  }
+
+  .hero-banner h1 {
+    font-size: 28px;
   }
 }

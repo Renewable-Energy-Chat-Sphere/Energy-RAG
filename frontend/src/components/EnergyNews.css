@@ -1,0 +1,63 @@
+.energy-news {
+  max-width: 1200px;
+  border-radius: 30px;
+  position: relative;
+  padding: 40px;
+  border-left: 8px solid #1e3a8a !important;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.energy-news-title {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: #0d2c6e !important;
+}
+
+.energy-news-subtitle {
+  color: #808080;
+}
+
+.energy-news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 30px 0;
+}
+
+.energy-news-item {
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: 0.2s;
+}
+
+.energy-news-item:hover {
+  background: #f3f6ff;
+  transform: translateX(4px);
+}
+
+.energy-news-source {
+  margin-top: 16px;
+  display: block;
+}
+
+.energy-news-btn {
+  position: absolute;
+  right: 40px;
+  bottom: 40px;
+  padding: 10px 20px;
+  background-color: #0d2c6e;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s ease;
+}
+
+.energy-news-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
