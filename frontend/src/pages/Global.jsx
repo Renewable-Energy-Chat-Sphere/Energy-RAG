@@ -39,6 +39,7 @@ export default function Global({ isMobile }) {
   }
   const [hovered, setHovered] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [lodLevel, setLodLevel] = useState(0);
   const [showFlow, setShowFlow] = useState(true);
 
   const [year, setYear] = useState("113");
@@ -76,15 +77,44 @@ export default function Global({ isMobile }) {
   const handleMouseUp = () => setDragging(false);
 
   const CATEGORY_COLOR = {
-    Renewable: "#F4511E",
+    Renewable: "#f41e1e",
     Waste: "#43A047",
-    Coal: "#1E88E5",
-    Oil: "#D81B60",
-    Gas: "#FDD835",
-    Electricity: "#00E5FF",
-    Other: "#3949AB",
+    Coal: "#ff891b",
+    Oil: "#782db9",
+    Gas: "#0bced5",
+    Electricity: "#ffcc00",
+    Other: "#808080",
   };
+  const DEPT_COLOR = {
+    D2: "#3b82f6",
+    D40: "#22c55e",
+    D47: "#eab308",
+    D50: "#f97316",
+    D68: "#ef4444",
+  };
+  function getRootDept(code) {
+    function findParent(target, tree, parentKey = null) {
+      for (const key in tree) {
+        if (key === target) return parentKey;
 
+        if (tree[key].children) {
+          const found = findParent(target, tree[key].children, key);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    let current = code;
+
+    while (current) {
+      if (DEPT_COLOR[current]) return current;
+
+      current = findParent(current, hierarchy);
+    }
+
+    return null;
+  }
   function getEnergyData(year) {
     return energyMap[year] || {};
   }
@@ -152,41 +182,82 @@ export default function Global({ isMobile }) {
 
     return result.sort((a, b) => b.value - a.value);
   }
+  function getDepth(code, tree, depth = 0) {
+    for (const key in tree) {
+      if (key === code) return depth;
 
+      if (tree[key].children) {
+        const d = getDepth(code, tree[key].children, depth + 1);
+        if (d !== null) return d;
+      }
+    }
+    return null;
+  }
   function getPieData() {
+    const level = lodLevel;
     const list = getEnergyList();
 
     if (list.length === 0) return [];
 
-    const total = list.reduce((a, b) => a + b.value, 0);
-    const sorted = [...list].sort((a, b) => b.value - a.value);
-    const top = sorted.slice(0, 6);
-    const topWithPercent = top.map((d) => ({
-      ...d,
-      value: d.value / total,
-    }));
+    const isSupply = selected?.code?.startsWith("S");
 
-    const topTotal = top.reduce((a, b) => a + b.value, 0);
-    const others = total - topTotal;
-    const result = [...topWithPercent].sort((a, b) => b.value - a.value);
+    let filtered = [];
 
-    if (others > 0.0001) {
-      result.push({
-        name: "其他",
-        fullName: "其他",
-        value: others / total,
-        category: "Other",
-      });
+    // ✅ 需求 → 不分層（維持正常）
+    if (!isSupply) {
+      filtered = list;
     }
 
-    return result.sort((a, b) => {
-      if (a.name === "其他") return 1;
-      if (b.name === "其他") return -1;
+    // ✅ 供給 → 才分層
+    else {
+      // 🔵 LOD0 → 第一層（五大部門）
+      if (level === 0) {
+        const deptMap = {};
 
-      return b.value - a.value;
-    });
+        list.forEach((item) => {
+          const root = getRootDept(item.id);
+          if (!root) return;
+
+          if (!deptMap[root]) {
+            deptMap[root] = {
+              name: getDemandName(root),
+              value: 0,
+              id: root,
+            };
+          }
+
+          deptMap[root].value += item.value;
+        });
+
+        filtered = Object.values(deptMap);
+      }
+
+      // 🟢 LOD1 → 第二層（用 depth）
+      else if (level === 1) {
+        filtered = list.filter((item) => {
+          const depth = getDepth(item.id, hierarchy);
+          return depth === 1;
+        });
+      }
+
+      // 🔴 LOD2 → 第三層（用 depth）
+      else {
+        filtered = list.filter((item) => {
+          const depth = getDepth(item.id, hierarchy);
+          return depth === 2;
+        });
+      }
+    }
+
+    const total = filtered.reduce((a, b) => a + b.value, 0);
+
+    return filtered
+      .map((d) => ({
+        ...d,
+        value: d.value / total,
+      }))
+      .sort((a, b) => b.value - a.value);
   }
-
   /* ===================== */
   async function handleAsk() {
     if (!question.trim()) return;
@@ -259,7 +330,9 @@ export default function Global({ isMobile }) {
             <label>年份</label>
             <select value={year} onChange={(e) => setYear(e.target.value)}>
               {years.map((y) => (
-                <option key={y} value={y}>{y}</option>
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
             </select>
           </div>
@@ -284,7 +357,11 @@ export default function Global({ isMobile }) {
           </div>
 
           <div className="ai-box" onClick={() => setShowAI(true)}>
-            <i className="fi fi-br-comments" style={{ marginRight: "10px" }}></i>點我詢問能源
+            <i
+              className="fi fi-br-comments"
+              style={{ marginRight: "10px" }}
+            ></i>
+            點我詢問能源
           </div>
         </div>
       </div>
@@ -292,7 +369,6 @@ export default function Global({ isMobile }) {
       <div className={isMobile ? "mobile-layout" : "global-layout"}>
         <div
           className="globe-area"
-
           onMouseMove={(e) => {
             setMousePos({
               x: e.clientX,
@@ -300,7 +376,6 @@ export default function Global({ isMobile }) {
             });
           }}
         >
-        
           <GlobeVisualizer
             year={year}
             onHover={onHover}
@@ -308,6 +383,7 @@ export default function Global({ isMobile }) {
             selected={selected}
             showFlow={showFlow}
             hovered={hovered}
+            onLODChange={(level) => setLodLevel(level)}
           />
         </div>
 
@@ -337,7 +413,7 @@ export default function Global({ isMobile }) {
             )}
           </div>
         )}
-        
+
         {!isMobile && (
           <div className="info-panel">
             {!selected && (
@@ -378,9 +454,13 @@ export default function Global({ isMobile }) {
                 })()}
 
                 <div className="info-content">
-                  <h3>常用能源</h3>
+                  <h3>
+                    {selected?.code?.startsWith("S")
+                      ? "主要使用部門"
+                      : "常用能源"}
+                  </h3>
                   <p>
-                    {(selected?.code?.startsWith("S") ? [] : getEnergyList())
+                    {getEnergyList()
                       .slice(0, 3)
                       .map((e, i) => (
                         <span key={i}>
@@ -392,13 +472,16 @@ export default function Global({ isMobile }) {
 
                   <h3>年度分析</h3>
                   <p className="chart-note">
-                    本圖為該部門內能源使用比例（以部門總能源為基準）
+                    {selected?.code?.startsWith("S")
+                      ? "本圖為該能源被各部門使用比例（以此能源總使用量為基準）"
+                      : "本圖為該部門內能源使用比例（以部門總能源為基準）"}
                     <br />
                     <span className="sub-note">
-                      *總和 = 100%，與智慧查詢之全國占比不同
+                      {selected?.code?.startsWith("S")
+                        ? "*總和 = 100%，表示此能源在各部門的分配比例"
+                        : "*總和 = 100%，與智慧查詢之全國占比不同"}
                     </span>
                   </p>
-                  
 
                   <div className="pie-container">
                     <PieChart width={300} height={300}>
@@ -418,7 +501,14 @@ export default function Global({ isMobile }) {
                         {getPieData().map((entry, index) => (
                           <Cell
                             key={index}
-                            fill={CATEGORY_COLOR[entry.category] || "#ccc"}
+                            fill={
+                              entry.name === "其他"
+                                ? "#808080" // ✅ 只有其他灰色
+                                : selected?.code?.startsWith("S")
+                                  ? DEPT_COLOR[getRootDept(entry.id)] ||
+                                    "#7b614b"
+                                  : CATEGORY_COLOR[entry.category] || "#3b82f6"
+                            }
                           />
                         ))}
                       </Pie>
@@ -427,20 +517,44 @@ export default function Global({ isMobile }) {
 
                       <Legend
                         content={() => (
-                          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px", fontSize: 12 }}>
-                            {getPieData().slice(0, 6).map((item, i) => (
-                              <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                                <span
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              justifyContent: "center",
+                              gap: "6px",
+                              fontSize: 12,
+                            }}
+                          >
+                            {getPieData()
+                              .slice(0, 6)
+                              .map((item, i) => (
+                                <div
+                                  key={i}
                                   style={{
-                                    width: 8,
-                                    height: 8,
-                                    background: CATEGORY_COLOR[item.category] || "#ccc",
-                                    marginRight: 4,
+                                    display: "flex",
+                                    alignItems: "center",
                                   }}
-                                />
-                                {item.name}
-                              </div>
-                            ))}
+                                >
+                                  <span
+                                    style={{
+                                      width: 8,
+                                      height: 8,
+                                      background:
+                                        item.name === "其他"
+                                          ? "#808080"
+                                          : selected?.code?.startsWith("S")
+                                            ? DEPT_COLOR[
+                                                getRootDept(item.id)
+                                              ] || "#3b82f6"
+                                            : CATEGORY_COLOR[item.category] ||
+                                              "#3b82f6",
+                                      marginRight: 4,
+                                    }}
+                                  />
+                                  {item.name}
+                                </div>
+                              ))}
                           </div>
                         )}
                       />
@@ -452,53 +566,53 @@ export default function Global({ isMobile }) {
           </div>
         )}
 
-          {hovered && (
-            <div
-              className="hover-overlay"
-              style={{
-                left: mousePos.x + 15,
-                top: mousePos.y + 15,
-              }}
-            >
-              <div className="hover-card">
-                <div className="hover-header">{hovered.name}</div>
+        {hovered && (
+          <div
+            className="hover-overlay"
+            style={{
+              left: mousePos.x + 15,
+              top: mousePos.y + 15,
+            }}
+          >
+            <div className="hover-card">
+              <div className="hover-header">{hovered.name}</div>
 
-                {hovered?.code?.startsWith("S") ? (
-                  <div className="hover-content">
-                    相關需求項目：
-                    <br />
-                    {(() => {
-                      const list = getEnergyList(hovered).slice(0, 3);
+              {hovered?.code?.startsWith("S") ? (
+                <div className="hover-content">
+                  相關需求項目：
+                  <br />
+                  {(() => {
+                    const list = getEnergyList(hovered).slice(0, 3);
 
-                      return list.map((d, i) => (
-                        <span key={i}>
-                          {d.name}
-                          {i !== list.length - 1 ? "、" : ""}
-                        </span>
-                      ));
-                    })()}
-                  </div>
-                ) : (
-                  <div className="hover-content">
-                    相關能源供給：
-                    <br />
-                    {(() => {
-                      const list = getEnergyList(hovered).slice(0, 3);
+                    return list.map((d, i) => (
+                      <span key={i}>
+                        {d.name}
+                        {i !== list.length - 1 ? "、" : ""}
+                      </span>
+                    ));
+                  })()}
+                </div>
+              ) : (
+                <div className="hover-content">
+                  相關能源供給：
+                  <br />
+                  {(() => {
+                    const list = getEnergyList(hovered).slice(0, 3);
 
-                      return list.map((d, i) => (
-                        <span key={i}>
-                          {d.name}
-                          {i !== list.length - 1 ? "、" : ""}
-                        </span>
-                      ));
-                    })()}
-                  </div>
-                )}
-              </div>
+                    return list.map((d, i) => (
+                      <span key={i}>
+                        {d.name}
+                        {i !== list.length - 1 ? "、" : ""}
+                      </span>
+                    ));
+                  })()}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      
+          </div>
+        )}
+      </div>
+
       {showAI && (
         <div className="ai-overlay">
           <div

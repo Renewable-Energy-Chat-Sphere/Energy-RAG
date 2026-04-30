@@ -644,18 +644,32 @@ function SupplyFlowLines({ year, selected, lod }) {
 
 /* Scene */
 
-function Scene({ year, onHover, onSelect, selected, showFlow, hovered }) {
+function Scene({
+  year,
+  onHover,
+  onSelect,
+  selected,
+  showFlow,
+  hovered,
+  onLODChange,
+}) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
 
   useFrame(() => {
     const d = camera.position.length();
 
-    if (d > 7) setLOD(0);
-    else if (d > 5) setLOD(1);
-    else setLOD(2);
-  });
+    let newLevel = 0;
 
+    if (d > 7) newLevel = 0;
+    else if (d > 5) newLevel = 1;
+    else newLevel = 2;
+
+    setLOD(newLevel);
+
+    // 🔥 加這行（把LOD傳出去）
+    onLODChange?.(newLevel);
+  });
   return (
     <>
       <ambientLight intensity={0.6} />
@@ -710,6 +724,7 @@ export default function GlobeVisualizer({
   selected,
   showFlow,
   hovered,
+  onLODChange, // 🔥 加這個
 }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -721,7 +736,7 @@ export default function GlobeVisualizer({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  
+
   const [showLegendDetail, setShowLegendDetail] = useState(false);
   if (!supplyLayouts[year] || !demandLayouts[year]) {
     return null;
@@ -744,6 +759,7 @@ export default function GlobeVisualizer({
           selected={selected}
           showFlow={showFlow}
           hovered={hovered}
+          onLODChange={onLODChange} // 🔥 傳下去
         />
       </Canvas>
 
