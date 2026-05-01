@@ -97,7 +97,14 @@ export default function PowerPlant() {
           發電量： {data[selected].total.value} / {data[selected].total.max} MW
         </p>
       </div>
-
+      {/* 🔧 維修統計 */}
+      <p style={{ color: "#ef4444", fontWeight: 600 }}>
+        維修中機組：
+        {
+          data[selected].units.filter((u) => u.value === 0 && u.max > 0).length
+        }{" "}
+        台
+      </p>
       {/* 🔥 機組 */}
       <div className="card-grid">
         {data[selected].units.map((u, i) => (
