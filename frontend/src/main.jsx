@@ -6,11 +6,11 @@ import "./index.css";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Global from "./pages/Global";
+import PowerPlant from "./pages/PowerPlant";
 import Rag from "./pages/Rag";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 import Prediction from "./pages/Prediction";
-
 
 const router = createBrowserRouter(
   [
@@ -18,18 +18,19 @@ const router = createBrowserRouter(
       path: "/",
       element: <Layout />,
       children: [
-        { path: "/", element: <Home /> },
+        { index: true, element: <Home /> },
         { path: "/global", element: <Global /> },
+        { path: "/powerplant", element: <PowerPlant /> },
         { path: "/rag", element: <Rag /> },
         { path: "/contact", element: <Contact /> },
         { path: "/Feedback", element: <Feedback /> },
-        { path: "/prediction", element: <Prediction /> }
+        { path: "/prediction", element: <Prediction /> },
       ],
     },
   ],
   {
     basename: "/Ener-Sphere", // ⭐⭐⭐ 加這一行（關鍵）
-  }
+  },
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { HashRouter as Router } from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -8,11 +8,14 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Global from "./pages/Global";
 import Rag from "./pages/Rag";
+import PowerPlant from "./pages/PowerPlant";
+import Contact from "./pages/Contact";
+import Feedback from "./pages/Feedback";
 
 /* 🔥 自動判斷裝置 */
 function AutoGlobal() {
   const [isMobile, setIsMobile] = useState(
-    window.matchMedia("(max-width: 768px)").matches
+    window.matchMedia("(max-width: 768px)").matches,
   );
 
   useEffect(() => {
@@ -44,7 +47,9 @@ export default function App() {
           <Route path="/global" element={<AutoGlobal />} />
 
           <Route path="/rag" element={<Rag />} />
-
+         <Route path="/powerplant" element={<div>TEST OK</div>} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/Feedback" element={<Feedback />} />
           <Route
             path="*"
             element={<div style={{ padding: 40 }}>404 Not Found</div>}

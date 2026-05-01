@@ -275,12 +275,27 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
   }
 
   if (!supplyLayout) return null;
+  // 🔥 新增這個（放在 iconMap 上面）
+  function getCustomIcon(info) {
+    const name = info?.name_zh || "";
 
+    if (name.includes("液化石油氣")) return "lpg.png";
+    if (name.includes("天然氣")) return "gas.png";
+    if (name.includes("核能")) return "nuclear.png";
+    if (name.includes("太陽")) return "solar.png";
+    if (name.includes("風")) return "wind.png";
+    if (name.includes("水")) return "hydro.png";
+    if (name.includes("生質")) return "biomass.png";
+    if (name.includes("廢棄")) return "trash.png";
+    if (name.includes("熱能")) return "heat.png";
+
+    return null;
+  }
   const iconMap = {
     Coal: "coal.png",
     Oil: "oil.png",
     Gas: "gas.png",
-    Renewable: "solar.png",
+    Renewable: "renewable.png", // 或先用 default
     Electricity: "electricity.png",
     Waste: "biomass.png",
     Other: "default.png",
@@ -308,7 +323,8 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
       Waste: "#a78bfa",
       Other: "#94a3b8",
     };
-    const iconFile = iconMap[category] || "default.png";
+    const customIcon = getCustomIcon(info);
+    const iconFile = customIcon || iconMap[category] || "default.png";
 
     const distance = camera.position.length();
     const scale = THREE.MathUtils.clamp(10 / distance, 0.4, 1.8);

@@ -136,6 +136,7 @@ export default function Header() {
           <nav>
             <Link to="/">首頁</Link>
             <Link to="/global">視覺化總覽</Link>
+            <Link to="/powerplant">機組資訊</Link>
             <Link to="/rag">智慧查詢</Link>
             <Link to="/contact">聯絡我們</Link>
             <Link to="/Feedback">回饋分析</Link>

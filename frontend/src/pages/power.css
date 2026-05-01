@@ -1,0 +1,72 @@
+.power-container {
+  padding: 40px;
+  color: var(--text-color);
+}
+
+/* 區塊 */
+.region-block {
+  margin-bottom: 40px;
+}
+
+.region-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: var(--blue);
+}
+
+/* 卡片排列 */
+.card-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* 卡片 */
+.plant-card {
+  width: 180px;
+  padding: 15px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.plant-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* ⭐ 圓形大小控制（關鍵） */
+.gauge {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+/* 文字 */
+.plant-name {
+  margin-top: 10px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.plant-sub {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.plant-power {
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* Dark mode */
+.dark .plant-card {
+  background: #1e293b;
+}
+
+.dark .region-title {
+  color: #60a5fa;
+}
