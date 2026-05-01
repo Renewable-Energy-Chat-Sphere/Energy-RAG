@@ -24,7 +24,7 @@ export default function BackToTopButton() {
 
   return (
     <button className="back-to-top" onClick={scrollToTop}>
-      ⟲
+      ⬆︎
     </button>
   );
 }
