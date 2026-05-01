@@ -19,9 +19,12 @@ const REGION_MAP = {
 };
 
 function getColor(percent) {
-  if (percent >= 100) return "#ef4444";
-  if (percent >= 60) return "#22c55e";
-  return "#99c2ff";
+  if (percent >= 100) return "#ef4444"; //  超載
+  if (percent >= 80) return "#ff7b00";  //  高
+  if (percent >= 60) return "#f3df00";  //  淺綠
+  if (percent >= 40) return "#33c004";  //  中
+  if (percent >= 20) return "#31ccd4";  //  低
+  return "#939393";                     //  很低
 }
 
 /* 🔥 卡片 */
