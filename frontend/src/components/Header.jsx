@@ -135,7 +135,7 @@ export default function Header() {
         <div className="nav-right">
           <nav>
             <Link to="/">首頁</Link>
-            <Link to="/global">視覺化總覽</Link>
+            <Link to="/global">能源視覺化</Link>
             <Link to="/powerplant">機組資訊</Link>
             <Link to="/rag">智慧查詢</Link>
             <Link to="/contact">聯絡我們</Link>
