@@ -120,7 +120,7 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
   .global-layout {
     display: block;
-    background: transparent; 
+    background: transparent;
   }
 }
 
@@ -136,7 +136,7 @@ input[type="checkbox"] {
   box-shadow:
     0 0 40px rgba(90, 168, 255, 0.25),
     inset 0 0 30px rgba(120, 180, 255, 0.1);
-    pointer-events: auto;
+  pointer-events: auto;
 }
 
 .globe-area canvas {
@@ -497,7 +497,7 @@ input[type="checkbox"] {
   background: #1e293b;
   color: #e2e8f0;
   border: 1px solid #334155;
-  border-radius:20px;
+  border-radius: 20px;
 }
 
 #main-content.dark .ai-panel button:hover {
@@ -553,7 +553,7 @@ input[type="checkbox"] {
 .recharts-default-tooltip {
   border-radius: 12px !important;
   border: none !important;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(8px);
   color: #fff !important;
   font-size: 14px;
@@ -573,17 +573,17 @@ input[type="checkbox"] {
   left: 0;
   right: 0;
   height: 50%;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   z-index: 10;
   padding: 16px;
   overflow-y: auto;
   height: 100%;
-  max-height: 100dvh;     
-  background: rgba(255,255,255,0.95);
+  max-height: 100dvh;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 20px 20px 0 0;
   padding: 16px;
   overflow-y: auto;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
 }
 
@@ -592,7 +592,6 @@ input[type="checkbox"] {
     background: #1f2937;
     color: #e2e8f0;
   }
-
 }
 
 .mobile-bottom-panel .info-card {
@@ -604,14 +603,13 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 768px) {
-
   .control-panel {
     padding: 16px;
   }
 
   .panel-row {
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     align-items: stretch;
     gap: 14px;
   }
@@ -670,9 +668,9 @@ input[type="checkbox"] {
   }
 
   .hamburger i {
-  font-size: 24px;
-  color: #f97316;
-  }   
+    font-size: 24px;
+    color: #f97316;
+  }
 }
 
 @media (max-width: 768px) {
@@ -690,7 +688,7 @@ input[type="checkbox"] {
     left: 0;
     width: 70%;
     height: 100vh;
-    background: rgba(13,44,110,0.95);
+    background: rgba(13, 44, 110, 0.95);
     backdrop-filter: blur(12px);
     display: flex;
     flex-direction: column;
@@ -706,7 +704,6 @@ input[type="checkbox"] {
   nav.open {
     transform: translateX(0);
   }
-  
 }
 
 @media (max-width: 768px) {
@@ -727,7 +724,7 @@ input[type="checkbox"] {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   opacity: 0;
   pointer-events: none;
   transition: 0.3s;
@@ -750,7 +747,7 @@ input[type="checkbox"] {
 
 @media (max-width: 768px) {
   .global-page {
-    background: transparent !important; 
+    background: transparent !important;
   }
 }
 
@@ -769,12 +766,12 @@ input[type="checkbox"] {
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid rgba(71, 85, 105, 0.6);
     box-shadow:
-      0 0 30px rgba(0,0,0,0.5),
-      inset 0 0 20px rgba(0,0,0,0.3);
+      0 0 30px rgba(0, 0, 0, 0.5),
+      inset 0 0 20px rgba(0, 0, 0, 0.3);
   }
 
   #main-content.dark .mobile-bottom-panel {
-    background: rgba(15, 23, 42, 0.6); 
+    background: rgba(15, 23, 42, 0.6);
     color: #e2e8f0;
     border: 1px solid rgba(71, 85, 105, 0.5);
     backdrop-filter: blur(12px);
@@ -786,16 +783,15 @@ input[type="checkbox"] {
   }
 
   #main-content.dark .control-panel {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(71, 85, 105, 0.5);
-  box-shadow:
-    inset 0 0 15px rgba(0,0,0,0.4);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
   }
 }
 
 @media (max-width: 768px) {
   body {
-    background: transparent; 
+    background: transparent;
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
@@ -819,6 +815,10 @@ input[type="checkbox"] {
 
 @media (max-width: 768px) {
   .global-page {
-    padding: 0;  
+    padding: 0;
   }
+} /* 🌙 黑夜模式 → 全部文字變白 */
+.dark .global-page,
+.dark .global-page * {
+  color: #e2e8f0 !important;
 }

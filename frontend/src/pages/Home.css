@@ -73,7 +73,7 @@ body {
 }
 
 .card {
-  background: #f5f7fa;
+  background: #fff4eb;
   border-radius: 40px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -111,7 +111,7 @@ body {
   margin-top: 12px;
   cursor: pointer;
   font-weight: 600;
-  color: #22c55e;
+  color: #3b82f6;
   user-select: none;
 }
 
