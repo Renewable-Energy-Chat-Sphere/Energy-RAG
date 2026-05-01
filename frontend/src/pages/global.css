@@ -817,8 +817,15 @@ input[type="checkbox"] {
   .global-page {
     padding: 0;
   }
-} /* 🌙 黑夜模式 → 全部文字變白 */
-.dark .global-page,
-.dark .global-page * {
-  color: #e2e8f0 !important;
+}
+:root {
+  --text-color: #111;
+}
+
+.dark {
+  --text-color: #e2e8f0;
+}
+
+.global-page {
+  color: var(--text-color);
 }
