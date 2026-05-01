@@ -202,3 +202,13 @@
 .CircularProgressbar-text {
   fill: #111;
 }
+.plant-card.offline {
+  opacity: 0.6;
+  border: 2px dashed #ef4444;
+}
+.offline-tag {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #ef4444;
+}

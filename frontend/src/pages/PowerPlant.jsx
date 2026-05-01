@@ -20,35 +20,44 @@ const REGION_MAP = {
 
 function getColor(percent) {
   if (percent >= 100) return "#ef4444"; //  超載
-  if (percent >= 80) return "#ff7b00";  //  高
-  if (percent >= 60) return "#f3df00";  //  淺綠
-  if (percent >= 40) return "#33c004";  //  中
-  if (percent >= 20) return "#31ccd4";  //  低
-  return "#939393";                     //  很低
+  if (percent >= 80) return "#ff7b00"; //  高
+  if (percent >= 60) return "#f3df00"; //  淺綠
+  if (percent >= 40) return "#33c004"; //  中
+  if (percent >= 20) return "#31ccd4"; //  低
+  return "#939393"; //  很低
 }
-
 /* 🔥 卡片 */
 function PlantCard({ unit }) {
   const percent =
     unit.max === 0 ? 0 : ((unit.value / unit.max) * 100).toFixed(1);
 
-  const color = getColor(percent);
+  const isOffline = unit.value === 0 && unit.max > 0;
+  const color = isOffline ? "#ef4444" : getColor(percent);
 
-  // ⭐ 改這裡（關鍵）
   const isDark = document.body.classList.contains("dark");
 
   return (
-    <div className="plant-card">
-      <CircularProgressbar
-        value={percent}
-        text={`${percent}%`}
-        styles={buildStyles({
-          pathColor: color,
-          textColor: isDark ? "#e2e8f0" : "#111",
-          trailColor: isDark ? "#334155" : "#e5e7eb",
-        })}
-      />
-      <h4>{unit.name}</h4>
+    <div className={`plant-card ${isOffline ? "offline" : ""}`}>
+      {/* ⭐ 圓形圖（你剛剛少了這個） */}
+      <div className="gauge">
+        <CircularProgressbar
+          value={percent}
+          text={`${percent}%`}
+          styles={buildStyles({
+            pathColor: color,
+            textColor: isDark ? "#e2e8f0" : "#111",
+            trailColor: isDark ? "#334155" : "#e5e7eb",
+          })}
+        />
+      </div>
+
+      {/* ⭐ 名稱 */}
+      <h4>
+        {unit.name}
+        {isOffline}
+      </h4>
+      {isOffline && <span className="offline-tag">維修中🔧</span>}
+      {/* ⭐ 數值 */}
       <p>
         {unit.value} / {unit.max} MW
       </p>
