@@ -1,72 +1,204 @@
+/* 🔥 整體 */
 .power-container {
-  padding: 40px;
+  padding: 30px;
+  background: var(--bg, #f8fafc);
   color: var(--text-color);
 }
 
-/* 區塊 */
+/* ===================== */
+/* 🔥 區域 */
+/* ===================== */
 .region-block {
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+  padding: 16px;
+
+  background: white; /* ⭐ 加底色 */
+  border-radius: 16px; /* ⭐ 圓角 */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06); /* ⭐ 陰影 */
 }
 
 .region-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  color: var(--blue);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #334155;
 }
 
-/* 卡片排列 */
-.card-row {
+/* ===================== */
+/* 🔥 電廠按鈕（重點🔥） */
+/* ===================== */
+.plant-tabs {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap; /* ⭐ 多排 */
+  gap: 8px;
+
+  max-height: 90px; /* ⭐ 固定高度（關鍵） */
+  overflow-y: auto; /* ⭐ 超過就往下滑 */
+
+  padding-right: 5px;
+}
+
+/* 滾動條 */
+.plant-tabs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.plant-tabs::-webkit-scrollbar-thumb {
+  background: #cbd5f5;
+  border-radius: 10px;
+}
+
+/* 按鈕 */
+.plant-tabs button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  background: #e2e8f0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap; /* ⭐ 不換字 */
+}
+
+.plant-tabs button:hover {
+  background: #cbd5f5;
+}
+
+.plant-tabs .active {
+  background: rgb(249, 115, 22);
+  color: white;
+  font-weight: 500;
+}
+
+.summary-card h2 {
+  margin-bottom: 5px;
+}
+
+.summary-card p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* ===================== */
+/* 🔥 機組排列 */
+/* ===================== */
+.card-grid {
+  display: flex;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-/* 卡片 */
+/* ===================== */
+/* 🔥 機組卡片 */
+/* ===================== */
 .plant-card {
-  width: 180px;
+  width: 160px;
   padding: 15px;
   border-radius: 16px;
-  background: var(--card-bg);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  background: var(--card-bg, #ffffff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   text-align: center;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .plant-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* ⭐ 圓形大小控制（關鍵） */
+/* ===================== */
+/* 🔥 圓形圖 */
+/* ===================== */
 .gauge {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 10px;
 }
 
-/* 文字 */
-.plant-name {
-  margin-top: 10px;
-  font-weight: 600;
+/* ===================== */
+/* 🔥 文字 */
+/* ===================== */
+.plant-card h4 {
   font-size: 14px;
+  margin-bottom: 4px;
 }
 
-.plant-sub {
+.plant-card p {
   font-size: 12px;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
-.plant-power {
-  font-size: 12px;
-  margin-top: 5px;
+/* ===================== */
+/* 🌙 Dark Mode */
+/* ===================== */
+.dark .power-container {
+  background: #0f172a;
 }
 
-/* Dark mode */
-.dark .plant-card {
+.dark .plant-card,
+.dark .summary-card {
   background: #1e293b;
+  color: #e2e8f0;
+}
+
+.dark .plant-tabs button {
+  background: #334155;
+  color: #cbd5f5;
+}
+
+.dark .plant-tabs .active {
+  background: #3b82f6;
+  color: white;
 }
 
 .dark .region-title {
-  color: #60a5fa;
+  color: #94a3b8;
+}
+/* ===================== */
+/* 🌙 Dark Mode（區域卡片） */
+/* ===================== */
+
+.dark .region-block {
+  background: #1e293b; /* ⭐ 深藍灰 */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  border-left: 4px solid #3b82f6; /* 可留 */
+}
+
+.dark .region-block:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* 標題 */
+.dark .region-title {
+  color: #e2e8f0;
+}
+
+/* 按鈕 */
+.dark .plant-tabs button {
+  background: #334155;
+  color: #cbd5f5;
+}
+
+.dark .plant-tabs button:hover {
+  background: #475569;
+}
+
+/* active */
+.dark .plant-tabs .active {
+  background: #3b82f6;
+  color: white;
+}
+
+/* 滾動條 */
+.dark .plant-tabs::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+/* 🌙 Dark mode 修正圓圈文字 */
+.dark .CircularProgressbar-text {
+  fill: #e2e8f0 !important;
+}
+
+/* ☀️ Light mode */
+.CircularProgressbar-text {
+  fill: #111;
 }

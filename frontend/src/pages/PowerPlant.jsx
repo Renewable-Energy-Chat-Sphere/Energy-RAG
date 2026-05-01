@@ -1,69 +1,97 @@
-import React from "react";
+import React, { useState } from "react";
+import data from "../data/power_full.json";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
-
-const plants = {
-  林口: [
-    { name: "林口#1", value: 752.4, max: 800 },
-    { name: "林口#2", value: 766.2, max: 800 },
-    { name: "林口#3", value: 759.2, max: 800 },
-  ],
-  台中: [
-    { name: "台中#1", value: 1800, max: 2000 },
-    { name: "台中#2", value: 1700, max: 2000 },
-    { name: "台中#3", value: 1750, max: 2000 },
-    { name: "台中#4", value: 1680, max: 2000 },
-  ],
+/* 🔥 區域分類 */
+const REGION_MAP = {
+  北部: ["林口", "大潭", "石門", "海湖"],
+  中部: ["台中", "麥寮", "大甲溪"],
+  南部: ["興達", "大林", "南部"],
+  東部: ["和平", "東部"],
+  再生能源: Object.keys(data).filter(
+    (p) =>
+      p.includes("風") ||
+      p.includes("光") ||
+      p.includes("水") ||
+      p.includes("電"),
+  ),
 };
 
 function getColor(percent) {
-  if (percent >= 90) return "#ef4444"; // 紅
-  if (percent >= 60) return "#22c55e"; // 綠
-  return "#94a3b8"; // 灰
+  if (percent >= 100) return "#ef4444";
+  if (percent >= 60) return "#22c55e";
+  return "#99c2ff";
 }
 
-function PlantCard({ plant }) {
-  const percent = ((plant.value / plant.max) * 100).toFixed(1);
+/* 🔥 卡片 */
+function PlantCard({ unit }) {
+  const percent =
+    unit.max === 0 ? 0 : ((unit.value / unit.max) * 100).toFixed(1);
+
   const color = getColor(percent);
+
+  // ⭐ 改這裡（關鍵）
+  const isDark = document.body.classList.contains("dark");
 
   return (
     <div className="plant-card">
-      <div className="gauge">
-        <CircularProgressbar
-          value={percent}
-          text={`${percent}%`}
-          styles={buildStyles({
-            textColor: color,
-            pathColor: color,
-            trailColor: "#e5e7eb",
-          })}
-        />
-      </div>
-
-      <div className="plant-name">{plant.name}</div>
-      <div className="plant-sub">發電機組</div>
-      <div className="plant-power">
-        {plant.value} MW / {plant.max} MW
-      </div>
+      <CircularProgressbar
+        value={percent}
+        text={`${percent}%`}
+        styles={buildStyles({
+          pathColor: color,
+          textColor: isDark ? "#e2e8f0" : "#111",
+          trailColor: isDark ? "#334155" : "#e5e7eb",
+        })}
+      />
+      <h4>{unit.name}</h4>
+      <p>
+        {unit.value} / {unit.max} MW
+      </p>
     </div>
   );
 }
-
 export default function PowerPlant() {
+  const [selected, setSelected] = useState("林口");
+
   return (
     <div className="power-container">
-      {Object.entries(plants).map(([region, list]) => (
+      {/* 🔥 區域分類 */}
+      {Object.entries(REGION_MAP).map(([region, plants]) => (
         <div key={region} className="region-block">
-          <h2 className="region-title">{region}</h2>
+          <div className="region-title">{region}</div>
 
-          <div className="card-row">
-            {list.map((p, i) => (
-              <PlantCard key={i} plant={p} />
-            ))}
+          <div className="plant-tabs">
+            {plants
+              .filter((p) => data[p]) // 有資料才顯示
+              .map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setSelected(p)}
+                  className={selected === p ? "active" : ""}
+                >
+                  {p}
+                </button>
+              ))}
           </div>
         </div>
       ))}
+
+      {/* 🔥 總量卡 */}
+      <div>
+        <h2>{selected}</h2>
+        <p>
+          發電量： {data[selected].total.value} / {data[selected].total.max} MW
+        </p>
+      </div>
+
+      {/* 🔥 機組 */}
+      <div className="card-grid">
+        {data[selected].units.map((u, i) => (
+          <PlantCard key={i} unit={u} />
+        ))}
+      </div>
     </div>
   );
 }
