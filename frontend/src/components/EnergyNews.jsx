@@ -68,7 +68,7 @@ export default function EnergyNews() {
           )
         }
       >
-        查看全部新聞 →
+        查看全部新聞 ➡
       </button>
     </section>
   );
