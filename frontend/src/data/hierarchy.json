@@ -18,6 +18,8 @@
         "img": "/images/D10.png",
         "children": {
           "D11": { "name": "化學原材料製造業", "level": 3, "img": "/images/D11.png" },
+          "D12": { "name": "化學製程相關產業", "level": 3, "img": "/images/D12.png" },
+          "D13": { "name": "其他化學材料製造業", "level": 3, "img": "/images/D13.png"},
           "D14": { "name": "肥料及氮化合物製造業", "level": 3, "img": "/images/D14.png" },
           "D15": { "name": "人造纖維製造業", "level": 3, "img": "/images/D15.png" },
           "D16": { "name": "塑膠及合成橡膠原料製造業", "level": 3, "img": "/images/D16.png" },

@@ -55,8 +55,8 @@ Object.keys(demandSupplyRaw).forEach((path) => {
 
 /* Supply Map */
 
-const supplyMap = {};
-supplyCatalog.forEach((s) => {
+const supplyMap = supplyCatalog;
+Object.values(supplyCatalog).forEach((s) => {
   supplyMap[s.source_id] = s;
 });
 
@@ -155,8 +155,8 @@ function Label({ position, worldPosition, text, baseSize = 14 }) {
           transition: "font-size 0.2s ease",
 
           textShadow: isDark
-            ? "0 0 6px rgba(255,255,255,0.5)"
-            : "0 0 4px rgba(0,0,0,0.4)",
+            ? "0 0 6px rgba(255, 255, 255, 0.5)"
+            : "0 0 4px rgba(0, 0, 0, 0.4)",
 
           background: "transparent",
           padding: "0px",
@@ -275,7 +275,6 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
   }
 
   if (!supplyLayout) return null;
-  // 🔥 新增這個（放在 iconMap 上面）
   function getCustomIcon(info) {
     const name = info?.name_zh || "";
 
@@ -295,18 +294,14 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
     Coal: "coal.png",
     Oil: "oil.png",
     Gas: "gas.png",
-    Renewable: "renewable.png", // 或先用 default
+    Renewable: "renewable.png",
     Electricity: "electricity.png",
     Waste: "biomass.png",
     Other: "default.png",
   };
 
   return Object.entries(supplyLayout).map(([id, pos]) => {
-    const position = [
-      pos.x * (SUPPLY_RADIUS * 1.05),
-      pos.y * (SUPPLY_RADIUS * 1.05),
-      pos.z * (SUPPLY_RADIUS * 1.05),
-    ];
+    const position = getSupplyOffset(pos);
     const camDir = camera.position.clone().normalize();
     const nodeDir = new THREE.Vector3(...position).normalize();
     const dot = camDir.dot(nodeDir);
@@ -350,10 +345,10 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
               /* 光暈 */
               filter:
                 category === "Renewable"
-                  ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
+                  ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))"
                   : category === "Coal"
-                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))",
+                    ? "drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))"
+                    : "drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))",
 
               /* 未被選中時隱藏 */
               opacity:
@@ -384,7 +379,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
               e.currentTarget.style.transform = "translateY(-2px) scale(1.1)";
 
               e.currentTarget.style.filter =
-                "drop-shadow(0 0 14px rgba(255,255,255,0.25))";
+                "drop-shadow(0 0 14px rgba(255, 255, 255, 0.25))";
 
               onHover({
                 code: id,
@@ -396,10 +391,10 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
               e.currentTarget.style.transform = "translateY(0px) scale(1)";
               e.currentTarget.style.filter =
                 category === "Renewable"
-                  ? "drop-shadow(0 0 10px rgba(34,197,94,0.9))"
+                  ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))"
                   : category === "Coal"
-                    ? "drop-shadow(0 0 8px rgba(245,158,11,0.6))"
-                    : "drop-shadow(0 0 6px rgba(59,130,246,0.4))";
+                    ? "drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))"
+                    : "drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))";
 
               onHover(null);
             }}
@@ -524,6 +519,22 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
 
 /* Supply Flow Lines*/
 
+function getSupplyOffset(pos) {
+  const OFFSET_ANGLE = 0.08;
+  const dir = new THREE.Vector3(pos.x, pos.y, pos.z).normalize();
+  const offsetAxis = new THREE.Vector3()
+    .crossVectors(dir, new THREE.Vector3(0, 1, 0))
+    .normalize();
+
+  if (offsetAxis.length() < 0.001) {
+    offsetAxis.set(1, 0, 0);
+  }
+
+  dir.applyAxisAngle(offsetAxis, OFFSET_ANGLE);
+
+  return dir.multiplyScalar(SUPPLY_RADIUS);
+}
+
 function getColor(value) {
   const colors = [
     new THREE.Color("#06b6d4"),
@@ -607,7 +618,7 @@ function SupplyFlowLines({ year, selected, lod }) {
       const adjusted = Math.pow(normalized, 1.5);
       const color = getColor(adjusted);
 
-      const start = toSphere(supplyPos, SUPPLY_RADIUS * 1.05);
+      const start = getSupplyOffset(supplyPos);
 
       const demandCode =
         selected.type === "supply" ? targetCode : selected.code;
@@ -635,7 +646,16 @@ function SupplyFlowLines({ year, selected, lod }) {
       for (let i = 0; i <= segments; i++) {
         const t = i / segments;
         const p = start.clone().applyAxisAngle(axis, angle * t);
-        const lift = Math.sin(Math.PI * t) * heightFactor;
+        const baseLift = Math.sin(Math.PI * t) * heightFactor;
+
+        const levelOffset =
+          level === 2 ? 0.02 :
+          level === 3 ? 0.05 :
+          0;
+
+        const endBoost = levelOffset * Math.pow(t, 2);
+        const lift = baseLift + endBoost;
+
         p.normalize().multiplyScalar(SUPPLY_RADIUS * (1 + lift));
         points.push(p);
       }
@@ -676,14 +696,11 @@ function Scene({
     const d = camera.position.length();
 
     let newLevel = 0;
-
-    if (d > 7) newLevel = 0;
-    else if (d > 5) newLevel = 1;
+    if (d > 8) newLevel = 0;
+    else if (d > 6) newLevel = 1;
     else newLevel = 2;
 
     setLOD(newLevel);
-
-    // 🔥 加這行（把LOD傳出去）
     onLODChange?.(newLevel);
   });
   return (
@@ -740,7 +757,7 @@ export default function GlobeVisualizer({
   selected,
   showFlow,
   hovered,
-  onLODChange, // 🔥 加這個
+  onLODChange,
 }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -761,10 +778,9 @@ export default function GlobeVisualizer({
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       {/* 3D 球 */}
-
       <Canvas
         camera={{
-          position: [0, isMobile ? -0.8 : 0, isMobile ? 11 : 8],
+          position: [0, isMobile ? -0.8 : 0, isMobile ? 11 : 9],
           fov: isMobile ? 65 : 50,
         }}
       >
@@ -775,7 +791,7 @@ export default function GlobeVisualizer({
           selected={selected}
           showFlow={showFlow}
           hovered={hovered}
-          onLODChange={onLODChange} // 🔥 傳下去
+          onLODChange={onLODChange}
         />
       </Canvas>
 
@@ -792,7 +808,7 @@ export default function GlobeVisualizer({
             width: "200px",
             padding: "15px",
             borderRadius: "20px",
-            background: "rgba(0,0,0,0.6)",
+            background: "rgba(0, 0, 0, 0.6)",
             color: "#fff",
             fontSize: "12px",
             backdropFilter: "blur(8px)",

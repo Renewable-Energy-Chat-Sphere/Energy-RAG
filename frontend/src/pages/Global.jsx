@@ -1,13 +1,12 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
 import hierarchy from "../data/hierarchy.json";
-
 import supplyCatalog from "../data/supply_catalog.json";
-
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
 const energyFiles = import.meta.glob("../data/*_energy_demand_supply.json", {
   eager: true,
@@ -25,7 +24,6 @@ Object.entries(energyFiles).forEach(([path, module]) => {
 const years = Object.keys(energyMap).sort((a, b) => b - a);
 
 export default function Global({ isMobile }) {
-  /* ===================== */
   function findNodeByCode(code, tree) {
     for (const key in tree) {
       if (key === code) return tree[key];
@@ -37,6 +35,7 @@ export default function Global({ isMobile }) {
     }
     return null;
   }
+
   const [hovered, setHovered] = useState(null);
   const [selected, setSelected] = useState(null);
   const [lodLevel, setLodLevel] = useState(0);
@@ -49,9 +48,11 @@ export default function Global({ isMobile }) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  
   const onHover = (data) => {
     setHovered(data);
   };
@@ -85,6 +86,7 @@ export default function Global({ isMobile }) {
     Electricity: "#ffcc00",
     Other: "#808080",
   };
+  
   const DEPT_COLOR = {
     D2: "#3b82f6",
     D40: "#22c55e",
@@ -92,6 +94,7 @@ export default function Global({ isMobile }) {
     D50: "#f97316",
     D68: "#ef4444",
   };
+
   function getRootDept(code) {
     function findParent(target, tree, parentKey = null) {
       for (const key in tree) {
@@ -115,12 +118,22 @@ export default function Global({ isMobile }) {
 
     return null;
   }
+
   function getEnergyData(year) {
     return energyMap[year] || {};
   }
+
   const energyData = getEnergyData(year);
 
-  function getDemandName(code) {
+  function getName(code) {
+    if (!code) return "";
+
+    // 取得供給資料
+    if (code.startsWith("S")) {
+      return supplyCatalog?.[code]?.name_zh || code;
+    }
+
+    // 取得需求資料
     function search(nodeMap) {
       for (const key in nodeMap) {
         const node = nodeMap[key];
@@ -148,7 +161,7 @@ export default function Global({ isMobile }) {
 
       return Object.entries(demandData)
         .map(([supplyId, value]) => {
-          const supply = supplyCatalog.find((s) => s.source_id === supplyId);
+          const supply = supplyCatalog[supplyId];
 
           const name = supply?.name_zh || supplyId;
 
@@ -168,7 +181,7 @@ export default function Global({ isMobile }) {
 
     Object.entries(energyData).forEach(([dCode, supplies]) => {
       if (supplies[node.code]) {
-        const name = getDemandName(dCode);
+        const name = getName(dCode);
 
         result.push({
           id: dCode,
@@ -182,6 +195,7 @@ export default function Global({ isMobile }) {
 
     return result.sort((a, b) => b.value - a.value);
   }
+
   function getDepth(code, tree, depth = 0) {
     for (const key in tree) {
       if (key === code) return depth;
@@ -193,6 +207,7 @@ export default function Global({ isMobile }) {
     }
     return null;
   }
+
   function getPieData() {
     const level = lodLevel;
     const list = getEnergyList();
@@ -200,17 +215,13 @@ export default function Global({ isMobile }) {
     if (list.length === 0) return [];
 
     const isSupply = selected?.code?.startsWith("S");
-
     let filtered = [];
 
-    // ✅ 需求 → 不分層（維持正常）
     if (!isSupply) {
       filtered = list;
     }
 
-    // ✅ 供給 → 才分層
     else {
-      // 🔵 LOD0 → 第一層（五大部門）
       if (level === 0) {
         const deptMap = {};
 
@@ -220,7 +231,7 @@ export default function Global({ isMobile }) {
 
           if (!deptMap[root]) {
             deptMap[root] = {
-              name: getDemandName(root),
+              name: getName(root),
               value: 0,
               id: root,
             };
@@ -232,7 +243,6 @@ export default function Global({ isMobile }) {
         filtered = Object.values(deptMap);
       }
 
-      // 🟢 LOD1 → 第二層（用 depth）
       else if (level === 1) {
         filtered = list.filter((item) => {
           const depth = getDepth(item.id, hierarchy);
@@ -240,7 +250,6 @@ export default function Global({ isMobile }) {
         });
       }
 
-      // 🔴 LOD2 → 第三層（用 depth）
       else {
         filtered = list.filter((item) => {
           const depth = getDepth(item.id, hierarchy);
@@ -258,7 +267,7 @@ export default function Global({ isMobile }) {
       }))
       .sort((a, b) => b.value - a.value);
   }
-  /* ===================== */
+
   async function handleAsk() {
     if (!question.trim()) return;
 
@@ -342,8 +351,7 @@ export default function Global({ isMobile }) {
               type="checkbox"
               checked={showFlow}
               onChange={(e) => setShowFlow(e.target.checked)}
-            />
-            顯示連線
+            />顯示連線
           </label>
 
           <div className="search-box">
@@ -360,8 +368,7 @@ export default function Global({ isMobile }) {
             <i
               className="fi fi-br-comments"
               style={{ marginRight: "10px" }}
-            ></i>
-            點我詢問能源
+            ></i>點我詢問能源
           </div>
         </div>
       </div>
@@ -428,8 +435,8 @@ export default function Global({ isMobile }) {
                 <div
                   style={{
                     position: "absolute",
-                    top: "20px",
-                    right: "15px",
+                    top: "30px",
+                    right: "30px",
                     cursor: "pointer",
                     fontSize: "18px",
                     fontWeight: "bold",
@@ -442,15 +449,21 @@ export default function Global({ isMobile }) {
 
                 {(() => {
                   const node = findNodeByCode(selected.code, hierarchy);
-                  return node?.img ? (
+                  const supply = supplyCatalog?.[selected.code];
+
+                  const data = node || supply;
+
+                  if (!data?.img) return null;
+
+                  return (
                     <div className="img-box">
                       <img
-                        src={`${import.meta.env.BASE_URL}${node.img.replace("/", "")}`}
+                        src={`${import.meta.env.BASE_URL}${data.img.replace(/^\/+/, "")}`}
                         alt=""
                         className="info-img"
                       />
                     </div>
-                  ) : null;
+                  );
                 })()}
 
                 <div className="info-content">
@@ -503,7 +516,7 @@ export default function Global({ isMobile }) {
                             key={index}
                             fill={
                               entry.name === "其他"
-                                ? "#808080" // ✅ 只有其他灰色
+                                ? "#808080"
                                 : selected?.code?.startsWith("S")
                                   ? DEPT_COLOR[getRootDept(entry.id)] ||
                                     "#7b614b"
@@ -578,9 +591,7 @@ export default function Global({ isMobile }) {
               <div className="hover-header">{hovered.name}</div>
 
               {hovered?.code?.startsWith("S") ? (
-                <div className="hover-content">
-                  相關需求項目：
-                  <br />
+                <div className="hover-content">相關需求項目：<br/>
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
 
@@ -593,9 +604,7 @@ export default function Global({ isMobile }) {
                   })()}
                 </div>
               ) : (
-                <div className="hover-content">
-                  相關能源供給：
-                  <br />
+                <div className="hover-content">相關能源供給：<br/>
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
 
