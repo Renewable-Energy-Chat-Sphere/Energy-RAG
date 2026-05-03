@@ -18,7 +18,8 @@ export default function Dashboard() {
   const [isDark, setIsDark] = useState(false);
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
-
+  const [isLive, setIsLive] = useState(false);
+  const [errorType, setErrorType] = useState(null);
   useEffect(() => {
     const checkDark = () => {
       const dark = document
@@ -49,10 +50,13 @@ export default function Dashboard() {
         .then((d) => {
           setData(d);
 
+          // 🔥 判斷是不是 fallback
+          setIsLive(d.isLive);
+          setErrorType(d.errorType);
           const time = new Date(d.timestamp).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
             hour12: false,
           });
 
@@ -61,7 +65,7 @@ export default function Dashboard() {
             {
               time,
               load: d.power,
-              capacity: d.peak,
+              capacity: d.capacity || d.peak,
             },
           ]);
         })
@@ -83,9 +87,9 @@ export default function Dashboard() {
           });
 
           const currentTime = new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
             hour12: false,
           });
 
@@ -101,18 +105,21 @@ export default function Dashboard() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 
   if (!data) return null;
 
-  const energySource = data.energy || {};
-
-  const reserve =
-    data.peak && data.power
-      ? ((data.peak - data.power) / data.peak) * 100
-      : 0;
+  const energySource = data.energy || {
+    nuclear: 7.5,
+    coal: 28.0,
+    gas: 42.0,
+    renewable: 10.0,
+    hydro: 9.0,
+    oil: 4.5,
+  };
+  const reserve = data.reserve || 0;
 
   const getColor = (r) => {
     if (r >= 10) return "#22c55e";
@@ -122,7 +129,11 @@ export default function Dashboard() {
   };
 
   const energyMap = {
-    nuclear: { label: "核能發電", color: "#8b5cf6", icon: "fi fi-br-radiation" },
+    nuclear: {
+      label: "核能發電",
+      color: "#8b5cf6",
+      icon: "fi fi-br-radiation",
+    },
     coal: { label: "燃煤發電", color: "#ef4444", icon: "fi fi-br-fireplace" },
     gas: { label: "燃氣發電", color: "#f59e0b", icon: "fi fi-br-flame" },
     renewable: { label: "再生能源", color: "#22c55e", icon: "fi fi-br-leaf" },
@@ -140,11 +151,49 @@ export default function Dashboard() {
   return (
     <div className={`dashboard-page ${isDark ? "dark" : ""}`}>
       <div className="top-section">
+        <div
+          style={{
+            marginBottom: "10px",
+            fontWeight: "600",
+            fontSize: "14px",
+          }}
+        >
+          {isLive
+            ? "🟢 即時資料"
+            : errorType === "empty"
+              ? "🟡 台電資料為空（使用備援）"
+              : errorType === "timeout"
+                ? "🔴 無法連線台電（使用備援）"
+                : "🟡 備援資料"}
+        </div>
         <div className="grid4">
-            <KPI title="尖峰負載" value={data.peak} unit="萬瓩" icon="fi fi-br-bolt" color="#f97316" />
-            <KPI title="備轉容量率" value={reserve.toFixed(1)} unit="%" icon="fi fi-br-battery-half" color="#22c55e" />
-            <KPI title="目前用電量" value={data.power} unit="萬瓩" icon="fi fi-br-plug" color="#3b82f6" />
-            <KPI title="更新時間" value={data.timestamp?.split(" ")[1]} icon="fi fi-br-time-fast" color="#ec4899" />
+          <KPI
+            title="尖峰負載"
+            value={data.peak}
+            unit="萬瓩"
+            icon="fi fi-br-bolt"
+            color="#f97316"
+          />
+          <KPI
+            title="備轉容量率"
+            value={reserve.toFixed(1)}
+            unit="%"
+            icon="fi fi-br-battery-half"
+            color="#22c55e"
+          />
+          <KPI
+            title="目前用電量"
+            value={data.power}
+            unit="萬瓩"
+            icon="fi fi-br-plug"
+            color="#3b82f6"
+          />
+          <KPI
+            title="更新時間"
+            value={data.timestamp?.split(" ")[1]}
+            icon="fi fi-br-time-fast"
+            color="#ec4899"
+          />
         </div>
 
         <div className="flex-section">
@@ -153,10 +202,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { value: reserve },
-                      { value: 100 - reserve },
-                    ]}
+                    data={[{ value: reserve }, { value: 100 - reserve }]}
                     dataKey="value"
                     cx="50%"
                     cy="50%"
@@ -178,10 +224,14 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        
+
           <div className="status-wrapper">
             <StatusCard color="#22c55e" title="綠燈" desc="備轉容量率 ≥ 10%" />
-            <StatusCard color="#facc15" title="黃燈" desc="6% ≤ 備轉容量率 < 10%" />
+            <StatusCard
+              color="#facc15"
+              title="黃燈"
+              desc="6% ≤ 備轉容量率 < 10%"
+            />
             <StatusCard color="#f97316" title="橘燈" desc="備轉容量率 < 6%" />
             <StatusCard color="#ef4444" title="紅燈" desc="限電警戒" />
           </div>
@@ -195,7 +245,7 @@ export default function Dashboard() {
 
           <div className="grid3">
             {energyData.map((e) => (
-              <EnergyCard key={e.title}  {...e} />
+              <EnergyCard key={e.title} {...e} />
             ))}
           </div>
         </div>
@@ -217,8 +267,23 @@ export default function Dashboard() {
               <Tooltip />
               <Legend />
 
-              <Line type="monotone" dataKey="load" name="用電量" stroke="#3b82f6" strokeWidth={3} dot={false} />
-              <Line type="monotone" dataKey="capacity" name="供電能力" stroke="#22c55e" strokeDasharray="5 5" strokeWidth={2} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="load"
+                name="用電量"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="capacity"
+                name="供電能力"
+                stroke="#22c55e"
+                strokeDasharray="5 5"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -258,7 +323,9 @@ function EnergyCard({ title, value, color, icon }) {
     <div className="energy-card">
       <div className="energy-top">
         <i className={icon} style={{ color }}></i>
-        <div className="energy-title" style={{ color }}>{title}</div>
+        <div className="energy-title" style={{ color }}>
+          {title}
+        </div>
       </div>
 
       <div className="energy-value" style={{ color }}>
@@ -266,7 +333,10 @@ function EnergyCard({ title, value, color, icon }) {
       </div>
 
       <div className="bar">
-        <div className="bar-inner" style={{ width: value + "%", background: color }} />
+        <div
+          className="bar-inner"
+          style={{ width: value + "%", background: color }}
+        />
       </div>
     </div>
   );
