@@ -401,11 +401,11 @@
     text-align: center;
   }
   .status-card > * {
-    margin-left: 0;          /* 🔥 取消右推 */
+    margin-left: 0;       
   }
 
   .dot {
-    margin-bottom: 12px;     /* 🔥 點跟文字間距 */
+    margin-bottom: 12px;     
   }
 
   .status-card > * { font-size: 14px; }
