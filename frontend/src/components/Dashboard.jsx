@@ -50,7 +50,6 @@ export default function Dashboard() {
         .then((d) => {
           setData(d);
 
-          // 🔥 判斷是不是 fallback
           setIsLive(d.isLive);
           setErrorType(d.errorType);
           const time = new Date(d.timestamp).toLocaleTimeString([], {
@@ -119,8 +118,12 @@ export default function Dashboard() {
     hydro: 9.0,
     oil: 4.5,
   };
-  const reserve = data.reserve || 0;
 
+  const reserve =
+    data.peak && data.power
+      ? ((data.peak - data.power) / data.peak) * 100
+      : 0;
+      
   const getColor = (r) => {
     if (r >= 10) return "#22c55e";
     if (r >= 6) return "#facc15";
@@ -150,22 +153,23 @@ export default function Dashboard() {
 
   return (
     <div className={`dashboard-page ${isDark ? "dark" : ""}`}>
-      <div className="top-section">
-        <div
-          style={{
-            marginBottom: "10px",
-            fontWeight: "600",
-            fontSize: "14px",
-          }}
-        >
-          {isLive
-            ? "🟢 即時資料"
-            : errorType === "empty"
-              ? "🟡 台電資料為空（使用備援）"
-              : errorType === "timeout"
-                ? "🔴 無法連線台電（使用備援）"
-                : "🟡 備援資料"}
+      <div className="top-section">        
+        <div className="data-status">
+            <span className="status-dot">
+              {isLive ? "🟢" : "🟡"}
+            </span>
+
+            <span className="data-status-text">
+              {isLive
+                ? "目前使用即時資料"
+                : errorType === "empty"
+                  ? "目前台電資料為空（使用備援）"
+                  : errorType === "timeout"
+                    ? "無法連線台電（使用備援）"
+                    : "目前使用備援資料"}
+            </span>
         </div>
+
         <div className="grid4">
           <KPI
             title="尖峰負載"
@@ -206,8 +210,8 @@ export default function Dashboard() {
                     dataKey="value"
                     cx="50%"
                     cy="50%"
-                    innerRadius={90}
-                    outerRadius={150}
+                    innerRadius={100}
+                    outerRadius={180}
                     cornerRadius={18}
                     paddingAngle={4}
                     stroke="none"
