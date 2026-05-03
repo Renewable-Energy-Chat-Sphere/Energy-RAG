@@ -140,6 +140,7 @@ export default function Header() {
             <Link to="/rag">智慧查詢</Link>
             <Link to="/contact">聯絡我們</Link>
             <Link to="/Feedback">回饋分析</Link>
+            <Link to="/Prediction">能源預測</Link>
           </nav>
 
           <div id="themeToggle">🌙</div>

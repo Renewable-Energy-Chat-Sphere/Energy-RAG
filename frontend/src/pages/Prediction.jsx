@@ -254,48 +254,69 @@ function getAnalysis(top, energyMap) {
 }
 
 // =========================
-// UI（完全保留）
+// UI（美化版 🔥）
 // =========================
 const container = {
-  padding: "100px 20px",
+  padding: "80px 20px",
   color: "var(--text-color)",
   maxWidth: "900px",
   margin: "auto",
+  fontFamily: "system-ui, sans-serif",
 };
 
 const headerRow = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
+  marginBottom: "20px",
 };
 
 const circleIcon = {
-  width: "28px",
-  height: "28px",
+  width: "32px",
+  height: "32px",
   borderRadius: "50%",
   border: "1px solid var(--text-secondary)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+  transition: "0.2s",
+  fontWeight: "bold",
 };
 
 const inputStyle = {
   width: "100%",
-  padding: "12px",
+  padding: "14px",
   marginTop: "10px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.05)",
+  color: "var(--text-color)",
+  outline: "none",
+  fontSize: "14px",
 };
 
 const btnStyle = {
-  marginTop: "10px",
-  padding: "12px",
+  marginTop: "12px",
+  padding: "14px",
   width: "100%",
+  borderRadius: "10px",
+  border: "none",
+  background: "linear-gradient(135deg,#22c55e,#16a34a)",
+  color: "white",
+  fontWeight: "bold",
+  cursor: "pointer",
+  transition: "0.2s",
 };
 
 const card = {
   background: "var(--card-bg)",
   padding: "20px",
   marginBottom: "15px",
+  borderRadius: "14px",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+  border: "1px solid rgba(255,255,255,0.05)",
+  transition: "0.2s",
 };
 
 const overlayStyle = {
@@ -304,24 +325,38 @@ const overlayStyle = {
   left: 0,
   width: "100%",
   height: "100%",
-  background: "rgba(0,0,0,0.6)",
+  background: "rgba(0,0,0,0.7)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
+  backdropFilter: "blur(4px)",
 };
 
 const modalStyle = {
-  width: "500px",
+  width: "520px",
   background: "var(--card-bg)",
-  padding: "20px",
+  padding: "24px",
+  borderRadius: "16px",
+  boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+  position: "relative",
+  border: "1px solid rgba(255,255,255,0.08)",
 };
 
 const closeBtn = {
   position: "absolute",
-  right: "10px",
-  top: "10px",
+  right: "12px",
+  top: "12px",
+  border: "none",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  fontSize: "16px",
+  cursor: "pointer",
 };
 
 const chartBox = {
-  height: "200px",
+  height: "220px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--text-secondary)",
 };
