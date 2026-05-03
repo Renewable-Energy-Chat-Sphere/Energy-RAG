@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
   const [isLive, setIsLive] = useState(false);
+  const [errorType, setErrorType] = useState(null);
   useEffect(() => {
     const checkDark = () => {
       const dark = document
@@ -51,6 +52,7 @@ export default function Dashboard() {
 
           // 🔥 判斷是不是 fallback
           setIsLive(d.isLive);
+          setErrorType(d.errorType);
           const time = new Date(d.timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -156,7 +158,13 @@ export default function Dashboard() {
             fontSize: "14px",
           }}
         >
-          {isLive ? "🟢 即時資料" : "🟡 備援資料"}
+          {isLive
+            ? "🟢 即時資料"
+            : errorType === "empty"
+              ? "🟡 台電資料為空（使用備援）"
+              : errorType === "timeout"
+                ? "🔴 無法連線台電（使用備援）"
+                : "🟡 備援資料"}
         </div>
         <div className="grid4">
           <KPI

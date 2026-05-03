@@ -59,7 +59,7 @@ def update_dashboard_cache():
             "renewable": 0,
             "carbon": round(current_load * 0.45, 2),
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "isLive": True,  # ⭐關鍵
+            "errorType": "ok",  
         }
 
         with open("energy_cache.json", "w", encoding="utf-8") as f:
@@ -68,8 +68,49 @@ def update_dashboard_cache():
         print("⚡ 台電即時資料更新成功")
 
     except Exception as e:
-        print("⚠️ 台電API失敗 → 使用舊資料", e)
+        error_msg = str(e)
 
+        # 🔴 抓不到 API（timeout / 連線問題）
+        if "HTTPSConnectionPool" in error_msg or "timeout" in error_msg:
+            error_type = "timeout"
+
+        # 🟡 抓到但空資料
+        elif "台電回傳空資料" in error_msg:
+            error_type = "empty"
+
+        # ❓ 其他
+        else:
+            error_type = "unknown"
+
+        print(f"⚠️ 台電API失敗 → {error_type}", e)
+
+        try:
+            with open("energy_cache.json", "r", encoding="utf-8") as f:
+                cache = json.load(f)
+
+            cache["isLive"] = False
+            cache["errorType"] = error_type  # ⭐加這行
+
+            with open("energy_cache.json", "w", encoding="utf-8") as f:
+                json.dump(cache, f)
+
+            print("✅ 使用舊快取資料")
+
+        except:
+            cache = {
+                "power": 30000,
+                "peak": 32000,
+                "capacity": 35000,
+                "reserve": 10,
+                "renewable": 20,
+                "carbon": 12000,
+                "timestamp": "fallback",
+                "isLive": False,
+                "errorType": error_type,  # ⭐這裡也要加
+            }
+
+        with open("energy_cache.json", "w", encoding="utf-8") as f:
+            json.dump(cache, f)
         try:
             with open("energy_cache.json", "r", encoding="utf-8") as f:
                 cache = json.load(f)
