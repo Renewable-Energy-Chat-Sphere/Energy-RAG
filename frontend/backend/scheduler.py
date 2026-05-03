@@ -23,43 +23,78 @@ def update_energy_news():
 # =========================
 def update_dashboard_cache():
     try:
-        import requests
-        from datetime import datetime
+        url = "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/loadpara.json"
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://www.taipower.com.tw/",
+        }
 
-        url = "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genloadareaperc.json"
-        headers = {"User-Agent": "Mozilla/5.0"}
-
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
 
         if response.status_code != 200:
             raise Exception(f"HTTP {response.status_code}")
 
         data = response.json()
 
-        # 抓目前負載
-        current_load = float(data["load"])
+        current_load = float(data.get("load") or 0)
+        peak_load = float(data.get("peakload") or 0)
+        capacity = float(data.get("capacity") or 0)
 
-        # 抓備轉容量率
-        reserve = float(data.get("reservePercent", 0))
+        reserve = float(
+            data.get("reserve")
+            or data.get("reserveMargin")
+            or data.get("reservecapacity")
+            or 0
+        )
 
-        # 再生能源比例（有些欄位叫 renewable）
-        renewable = float(data.get("renewable", 0))
+        # 🔥 防呆
+        if current_load == 0 or peak_load == 0:
+            raise Exception("台電回傳空資料")
 
         cache = {
-            "power": round(current_load, 0),
-            "renewable": round(renewable, 2),
-            "peak": round(current_load + reserve * 100, 0),
+            "power": round(current_load, 1),
+            "peak": round(peak_load, 1),
+            "capacity": round(capacity, 1),
+            "reserve": round(reserve, 2),
+            "renewable": 0,
             "carbon": round(current_load * 0.45, 2),
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "isLive": True,  # ⭐關鍵
         }
 
         with open("energy_cache.json", "w", encoding="utf-8") as f:
             json.dump(cache, f)
 
-        print("⚡ 真台電即時資料同步成功")
+        print("⚡ 台電即時資料更新成功")
 
     except Exception as e:
-        print("❌ 電力資料抓取失敗:", e)
+        print("⚠️ 台電API失敗 → 使用舊資料", e)
+
+        try:
+            with open("energy_cache.json", "r", encoding="utf-8") as f:
+                cache = json.load(f)
+
+            cache["isLive"] = False  # ⭐這行最重要
+
+            with open("energy_cache.json", "w", encoding="utf-8") as f:
+                json.dump(cache, f)
+
+            print("✅ 使用舊快取資料")
+
+        except:
+            cache = {
+                "power": 30000,
+                "peak": 32000,
+                "capacity": 35000,
+                "reserve": 10,
+                "renewable": 20,
+                "carbon": 12000,
+                "timestamp": "fallback",
+                "isLive": False,  # ⭐這行
+            }
+
+            with open("energy_cache.json", "w", encoding="utf-8") as f:
+                json.dump(cache, f)
 
 
 # =========================

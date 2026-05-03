@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import data from "../data/power_full.json";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -40,13 +40,10 @@ function getCategoryMap(data) {
   return { solar, wind, hydro, bio, geo };
 }
 
-/* ========================
-   🔥 分類結果
-======================== */
 const { solar, wind, hydro, bio, geo } = getCategoryMap(data);
 
 /* ========================
-   🔥 區域分類（乾淨版）
+   🔥 區域分類
 ======================== */
 const REGION_MAP = {
   北部: ["林口", "大潭", "石門", "海湖"],
@@ -60,7 +57,6 @@ const REGION_MAP = {
   生質能: bio,
   地熱: geo,
 
-  // ⚡ 其他（完全自動）
   其他: Object.keys(data).filter(
     (p) =>
       ![
@@ -140,8 +136,32 @@ function PlantCard({ unit }) {
 export default function PowerPlant() {
   const [selected, setSelected] = useState("林口");
 
+  // 🔥 即時資料
+  const [liveData, setLiveData] = useState(null);
+  const [useLive, setUseLive] = useState(true);
+
+  useEffect(() => {
+    fetch(
+      "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genloadareaperc.json",
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        setLiveData(res);
+        setUseLive(true);
+      })
+      .catch(() => {
+        console.log("⚠️ API抓不到 → 使用本地資料");
+        setUseLive(false);
+      });
+  }, []);
+
   return (
     <div className="power-container">
+      {/* 🔥 模式顯示 */}
+      <p style={{ fontSize: "14px", opacity: 0.7 }}>
+        {useLive ? "🟢 即時模式（台電API）" : "🟡 離線模式（本地資料）"}
+      </p>
+
       {/* 🔥 分類 */}
       {Object.entries(REGION_MAP).map(([region, plants]) => (
         <div key={region} className="region-block">
@@ -166,10 +186,23 @@ export default function PowerPlant() {
       {/* 🔥 總量 */}
       <div>
         <h2>{selected}</h2>
-        <p>
-          發電量(已/可)： {data[selected].total.value} /{" "}
-          {data[selected].total.max} MW
-        </p>
+
+        {useLive && liveData ? (
+          <div>
+            <p>⚡ 即時發電量：{liveData.gen} 萬瓩</p>
+            <p>📊 用電負載：{liveData.load} 萬瓩</p>
+            <p>🟢 備轉容量：{liveData.reserve}%</p>
+            <p>🕒 更新時間：{liveData.time}</p>
+          </div>
+        ) : (
+          <div>
+            <p>
+              ⚡ 發電量(已/可)： {data[selected].total.value} /{" "}
+              {data[selected].total.max} MW
+            </p>
+            <p style={{ color: "#f59e0b" }}>（使用本地資料）</p>
+          </div>
+        )}
       </div>
 
       {/* 🔧 維修 */}
