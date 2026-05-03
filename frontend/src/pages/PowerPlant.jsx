@@ -3,21 +3,101 @@ import data from "../data/power_full.json";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
-/* 🔥 區域分類 */
+/* 區域分類 */
 const REGION_MAP = {
   北部: ["林口", "大潭", "石門", "海湖"],
   中部: ["台中", "麥寮", "大甲溪"],
   南部: ["興達", "大林", "南部"],
   東部: ["和平", "東部"],
-  再生能源: Object.keys(data).filter(
-    (p) =>
-      p.includes("風") ||
-      p.includes("光") ||
-      p.includes("水") ||
-      p.includes("電"),
-  ),
-};
 
+  // 🌱 太陽能
+  太陽能: Object.keys(data).filter(
+    (p) => p.includes("光") || p.includes("太陽") || p === "其它購電太陽能",
+  ),
+
+  // 🌬️ 風力
+  風力: Object.keys(data).filter(
+    (p) => p.includes("風") || p.includes("離岸") || ["鹿威彰濱"].includes(p),
+  ),
+
+  // 💧 水力（明確列）
+  水力: [
+    "大觀",
+    "明潭",
+    "曾文",
+    "桂山",
+    "石門",
+    "萬大",
+    "蘭陽",
+    "東部",
+    "大甲溪",
+    "高屏",
+    "卑南上圳小型",
+    "烏來&桂山&粗坑",
+    "觀威觀音&桃威新屋",
+    "嘉南西口、烏山頭和八田",
+    "其它購電小水力",
+  ],
+
+  // 🌱 生質能
+  生質能: ["生質能"],
+
+  // 🌋 地熱
+  地熱: ["購電地熱", "台電自有地熱"],
+
+  // ⚡ 其他（
+  其他: Object.keys(data).filter((p) => {
+    const base = [
+      "林口",
+      "大潭",
+      "石門",
+      "海湖",
+      "台中",
+      "麥寮",
+      "大甲溪",
+      "興達",
+      "大林",
+      "南部",
+      "和平",
+      "東部",
+    ];
+
+    const solar = Object.keys(data).filter(
+      (p) => p.includes("光") || p.includes("太陽"),
+    );
+    const wind = Object.keys(data).filter(
+      (p) => p.includes("風") || p.includes("離岸"),
+    );
+
+    const hydro = [
+      "大觀",
+      "明潭",
+      "曾文",
+      "桂山",
+      "石門",
+      "萬大",
+      "蘭陽",
+      "東部",
+      "大甲溪",
+      "高屏",
+      "卑南上圳小型",
+      "烏來&桂山&粗坑",
+      "觀威觀音&桃威新屋",
+      "嘉南西口、烏山頭和八田",
+      "其它購電小水力",
+    ];
+
+    const otherTypes = ["生質能", "購電地熱", "台電自有地熱"];
+
+    return !(
+      base.includes(p) ||
+      solar.includes(p) ||
+      wind.includes(p) ||
+      hydro.includes(p) ||
+      otherTypes.includes(p)
+    );
+  }),
+};
 function getColor(percent) {
   if (percent >= 100) return "#ef4444"; //  超載
   if (percent >= 80) return "#ff7b00"; //  高
