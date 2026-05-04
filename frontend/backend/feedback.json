@@ -1,6 +1,6 @@
 [
   {
-    "name": "歐斯鼎",
+    "name": "歐先生",
     "email": "ethan930919@gmail.com",
     "phone": "0900000000",
     "feeling": "非常滿意",
@@ -24,7 +24,7 @@
     "status": "open"
   },
   {
-    "name": "王冠云",
+    "name": "王小姐",
     "email": "ethan930919@gmail.com",
     "phone": "0900000000",
     "feeling": "滿意",
@@ -34,17 +34,5 @@
     "priority": "高",
     "reply": "了解你的困擾，我們會盡快檢查並改善這個問題",
     "status": "open"
-  },
-  {
-    "name": "呂1x",
-    "email": "ethan930919@gmail.com",
-    "phone": "0900000000",
-    "feeling": "不滿意",
-    "message": "球體的問答，希望可以顯示完整能源，我才能知道用量",
-    "sentiment": "負面",
-    "category": "問題",
-    "priority": "中",
-    "reply": "了解你的困擾，我們會盡快檢查並改善這個問題",
-    "status": "closed"
   }
 ]

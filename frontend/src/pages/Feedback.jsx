@@ -4,7 +4,7 @@ export default function Feedback() {
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState("全部");
   const [selected, setSelected] = useState(null);
-  const API = "/api";
+  const API = "http://127.0.0.1:8000";
 
   useEffect(() => {
     fetch(`${API}/get_feedback`)
