@@ -405,16 +405,18 @@
   .chart-card { order: 4; }
 
   .kpi {
-    padding: 30px 50px;
+    padding: 16px 12px;
     border-radius: 30px;
   }
 
   .kpi-title {
     font-size: 14px;
+    text-align: center;
   }
 
   .kpi-value {
     font-size: 18px;
+    text-align: center;
   }
 
   .circle-text {
