@@ -138,9 +138,12 @@ export default function Header() {
             <Link to="/global">能源視覺化</Link>
             <Link to="/powerplant">機組資訊</Link>
             <Link to="/rag">智慧查詢</Link>
-            <Link to="/contact">聯絡我們</Link>
-            <Link to="/Feedback">回饋分析</Link>
             <Link to="/Prediction">能源預測</Link>
+            <Link to="/contact">聯絡我們</Link>
+            <Link to="/Feedback" className="nav-link">
+              <span>回饋分析</span>
+              <i className="fi fi-br-lock"></i>
+            </Link>
           </nav>
 
           <div id="themeToggle">🌙</div>

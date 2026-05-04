@@ -27,14 +27,15 @@ export default function Feedback() {
   const filteredList =
     filter === "全部"
       ? sortedList
-      : sortedList.filter(
-          (item) => item.sentiment?.trim() === filter.trim()
-        );
+      : sortedList.filter((item) => item.sentiment?.trim() === filter.trim());
 
   return (
     <div className="feedback-page">
       <div className="feedback-container">
-        <h2>📊 回饋分析 Dashboard</h2>
+        <h2 className="feedback-title">
+          <i className="fi fi-br-chart-histogram"></i>
+          <span>回饋分析</span>
+        </h2>
 
         {/* 篩選 */}
         <div className="filter-bar">
@@ -51,9 +52,7 @@ export default function Feedback() {
 
         {/* 列表 */}
         {filteredList.length === 0 ? (
-          <div className="empty-box">
-            📭 目前沒有任何回饋資料
-          </div>
+          <div className="empty-box">📭 目前沒有任何回饋資料</div>
         ) : (
           <div className="list-container">
             {filteredList.map((item, i) => (
@@ -62,13 +61,9 @@ export default function Feedback() {
                 className="row-card"
                 onClick={() => setSelected(item)}
               >
-                <div className="col name">
-                  {item.name}
-                </div>
+                <div className="col name">{item.name}</div>
 
-                <div className="col feeling">
-                  {item.feeling}
-                </div>
+                <div className="col feeling">{item.feeling}</div>
 
                 <div className="col message">
                   {item.message?.slice(0, 40)}...
@@ -100,23 +95,31 @@ export default function Feedback() {
           <div className="modal-card">
             <h3>📩 意見回饋</h3>
 
-            <p><strong>姓名：</strong>{selected.name}</p>
-            <p><strong>Email：</strong>{selected.email}</p>
-            <p><strong>電話：</strong>{selected.phone}</p>
-            <p><strong>滿意度：</strong>{selected.feeling}</p>
+            <p>
+              <strong>姓名：</strong>
+              {selected.name}
+            </p>
+            <p>
+              <strong>Email：</strong>
+              {selected.email}
+            </p>
+            <p>
+              <strong>電話：</strong>
+              {selected.phone}
+            </p>
+            <p>
+              <strong>滿意度：</strong>
+              {selected.feeling}
+            </p>
 
-            <div className="message-box">
-              {selected.message}
-            </div>
+            <div className="message-box">{selected.message}</div>
 
             <div className="tags">
               <span className={`tag ${selected.sentiment}`}>
                 {selected.sentiment}
               </span>
 
-              <span className="tag category">
-                {selected.category}
-              </span>
+              <span className="tag category">{selected.category}</span>
 
               {selected.priority === "高" && (
                 <span className="tag high">🔥 高優先</span>
@@ -134,21 +137,39 @@ export default function Feedback() {
                 <p style={{ marginTop: "10px" }}>
                   <strong>🤖 系統回覆：</strong>
                 </p>
-                <div className="reply-box">
-                  {selected.reply}
-                </div>
+                <div className="reply-box">{selected.reply}</div>
               </>
             )}
 
-            <button onClick={() => setSelected(null)}>
-              關閉
-            </button>
+            <button onClick={() => setSelected(null)}>關閉</button>
           </div>
         </div>
       )}
 
       {/* CSS */}
-      <style>{`
+      <style>{`.feedback-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  font-size: 34px;   /* 🔥 文字變大 */
+  font-weight: 700;
+}
+
+/* icon */
+.feedback-title i {
+  font-size: 30px;   /* 比文字小一點才好看 */
+  color: #60a5fa;
+
+  /* 微發光（科技感） */
+  text-shadow: 0 0 6px rgba(96,165,250,0.6);
+}
+
+/* 文字 */
+.feedback-title span {
+  letter-spacing: 2px;
+}
         .feedback-page {
           display: flex;
           justify-content: center;
