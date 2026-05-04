@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
@@ -469,8 +469,8 @@ export default function Global({ isMobile }) {
                 <div className="info-content">
                   <h3>
                     {selected?.code?.startsWith("S")
-                      ? "主要使用部門"
-                      : "常用能源"}
+                      ? "主要使用項目"
+                      : "常用供給能源"}
                   </h3>
                   <p>
                     {getEnergyList()
@@ -486,92 +486,95 @@ export default function Global({ isMobile }) {
                   <h3>年度分析</h3>
                   <p className="chart-note">
                     {selected?.code?.startsWith("S")
-                      ? "本圖為該能源被各部門使用比例（以此能源總使用量為基準）"
-                      : "本圖為該部門內能源使用比例（以部門總能源為基準）"}
+                      ? "本圖呈現所有需求項目在此能源中的使用比例（以此能源總消耗量為基準）"
+                      : "本圖呈現所有供給能源在此項目中的使用比例（以此項目總消耗量為基準）"}
                     <br />
                     <span className="sub-note">
                       {selected?.code?.startsWith("S")
-                        ? "*總和 = 100%，表示此能源在各部門的分配比例"
-                        : "*總和 = 100%，與智慧查詢之全國占比不同"}
+                        ? "※ 總和 = 100%，表示此能源在各部門的分配比例"
+                        : "※ 總和 = 100%，與智慧查詢之全國佔比不同"}
                     </span>
                   </p>
 
                   <div className="pie-container">
-                    <PieChart width={300} height={300}>
-                      <Pie
-                        data={getPieData()}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={100}
-                        paddingAngle={4}
-                        cornerRadius={6}
-                        stroke="none"
-                        labelLine={false}
-                      >
-                        {getPieData().map((entry, index) => (
-                          <Cell
-                            key={index}
-                            fill={
-                              entry.name === "其他"
-                                ? "#808080"
-                                : selected?.code?.startsWith("S")
-                                  ? DEPT_COLOR[getRootDept(entry.id)] ||
-                                    "#7b614b"
-                                  : CATEGORY_COLOR[entry.category] || "#3b82f6"
-                            }
-                          />
-                        ))}
-                      </Pie>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart width={300} height={300}>
+                        <Pie
+                          data={getPieData()}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={130}
+                          paddingAngle={4}
+                          cornerRadius={8}
+                          stroke="none"
+                          labelLine={false}
+                        >
+                          {getPieData().map((entry, index) => (
+                            <Cell
+                              key={index}
+                              fill={
+                                entry.name === "其他"
+                                  ? "#808080"
+                                  : selected?.code?.startsWith("S")
+                                    ? DEPT_COLOR[getRootDept(entry.id)] ||
+                                      "#7b614b"
+                                    : CATEGORY_COLOR[entry.category] || "#3b82f6"
+                              }
+                            />
+                          ))}
+                        </Pie>
 
-                      <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
+                        <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
 
-                      <Legend
-                        content={() => (
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              justifyContent: "center",
-                              gap: "6px",
-                              fontSize: 12,
-                            }}
-                          >
-                            {getPieData()
-                              .slice(0, 6)
-                              .map((item, i) => (
-                                <div
-                                  key={i}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <span
+                        <Legend
+                          content={() => (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                justifyContent: "center",
+                                gap: "6px",
+                                fontSize: 12,
+                                marginTop: 20,
+                              }}
+                            >
+                              {getPieData()
+                                .slice(0, 6)
+                                .map((item, i) => (
+                                  <div
+                                    key={i}
                                     style={{
-                                      width: 8,
-                                      height: 8,
-                                      background:
-                                        item.name === "其他"
-                                          ? "#808080"
-                                          : selected?.code?.startsWith("S")
-                                            ? DEPT_COLOR[
-                                                getRootDept(item.id)
-                                              ] || "#3b82f6"
-                                            : CATEGORY_COLOR[item.category] ||
-                                              "#3b82f6",
-                                      marginRight: 4,
+                                      display: "flex",
+                                      alignItems: "center",
                                     }}
-                                  />
-                                  {item.name}
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      />
-                    </PieChart>
+                                  >
+                                    <span
+                                      style={{
+                                        width: 8,
+                                        height: 8,
+                                        background:
+                                          item.name === "其他"
+                                            ? "#808080"
+                                            : selected?.code?.startsWith("S")
+                                              ? DEPT_COLOR[
+                                                  getRootDept(item.id)
+                                                ] || "#3b82f6"
+                                              : CATEGORY_COLOR[item.category] ||
+                                                "#3b82f6",
+                                        marginRight: 4,
+                                      }}
+                                    />
+                                    {item.name}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        />
+                      </PieChart>
+                      </ResponsiveContainer>
                   </div>
                 </div>
               </div>
