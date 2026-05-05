@@ -327,7 +327,7 @@ export default function Global({ isMobile }) {
 
   useEffect(() => {
     if (!selected) return;
-
+    if (selected.code.startsWith("S")) return;
     setQuestion(`${year} ${selected.name} 能源比例`);
 
     setLoading(true); // ⭐ 開始動畫
@@ -697,93 +697,91 @@ export default function Global({ isMobile }) {
                       />
                     </PieChart>
                   </div>
-                  <h2>預測分析</h2>
-
-                  {loading && (
-                    <div className="prediction-loading">
-                      <div className="loading-bar"></div>
-                      <p>AI 正在預測中...</p>
-                    </div>
-                  )}
-                  {getCompareChartData() && (
+                  {!selected?.code?.startsWith("S") && (
                     <>
-                      <h3 style={{ marginTop: "12px" }}> 本年 vs 隔年</h3>
-                      <Bar data={getCompareChartData()} />
-                    </>
-                  )}
-                  {predictionData && (
-                    <>
-                      <div className="prediction-box">
-                        <h4 style={{ marginTop: "10px" }}>變化分析</h4>
-                        {getPredictionDiff()
-                          .filter((item) => Math.abs(item.diff) > 1) // ⭐ 過濾小變化
-                          .map((item) => (
-                            <div key={item.code} className="prediction-item">
-                              <span>{item.name}</span>
-                              <span
-                                style={{
-                                  color: item.diff > 0 ? "#22c55e" : "#ef4444",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {item.diff > 0 ? "↑" : "↓"}{" "}
-                                {Math.abs(item.diff).toFixed(1)}%
-                              </span>
-                            </div>
-                          ))}
-                        {predictionData?.prediction &&
-                        typeof predictionData.prediction === "object" ? (
-                          <div>
-                            {(() => {
-                              const deptPred =
-                                predictionData.prediction?.[selected.code];
+                      <h2>預測分析</h2>
 
-                              if (!deptPred) {
-                                return (
-                                  <p style={{ opacity: 0.6 }}>
-                                    此部門暫無預測資料
-                                  </p>
-                                );
-                              }
+                      {loading && (
+                        <div className="prediction-loading">
+                          <div className="loading-bar"></div>
+                          <p>AI 正在預測中...</p>
+                        </div>
+                      )}
 
+                      {getCompareChartData() && (
+                        <>
+                          <h3 style={{ marginTop: "12px" }}> 本年 vs 隔年</h3>
+                          <Bar data={getCompareChartData()} />
+                        </>
+                      )}
+
+                      {predictionData && (
+                        <div className="prediction-box">
+                          <h4 style={{ marginTop: "10px" }}>變化分析</h4>
+
+                          {getPredictionDiff()
+                            .filter((item) => Math.abs(item.diff) > 1)
+                            .map((item) => (
+                              <div key={item.code} className="prediction-item">
+                                <span>{item.name}</span>
+                                <span
+                                  style={{
+                                    color:
+                                      item.diff > 0 ? "#22c55e" : "#ef4444",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {item.diff > 0 ? "↑" : "↓"}{" "}
+                                  {Math.abs(item.diff).toFixed(1)}%
+                                </span>
+                              </div>
+                            ))}
+
+                          {/* 原本 prediction-card 保持不動 */}
+                          {(() => {
+                            const deptPred =
+                              predictionData.prediction?.[selected.code];
+
+                            if (!deptPred) {
                               return (
-                                <div className="prediction-card">
-                                  <div
-                                    className="accuracy-badge"
-                                    title="MAPE：平均絕對百分比誤差，數值越低代表預測越準"
-                                  >
-                                    {getPredictionAccuracy() !== null
-                                      ? `${getPredictionAccuracy().toFixed(1)}%`
-                                      : "?"}
-                                  </div>
-                                  {/* ⭐ 只顯示你點的那個 */}
-                                  <div className="prediction-title">
-                                    {getName(selected.code)}
-                                  </div>
-
-                                  <div className="prediction-list">
-                                    {Object.entries(deptPred).map(
-                                      ([sCode, value]) => (
-                                        <div
-                                          className="prediction-item"
-                                          key={sCode}
-                                        >
-                                          <span>{getName(sCode)}</span>
-                                          <span className="value">
-                                            {Number(value).toFixed(1)}%
-                                          </span>
-                                        </div>
-                                      ),
-                                    )}
-                                  </div>
-                                </div>
+                                <p style={{ opacity: 0.6 }}>
+                                  此部門暫無預測資料
+                                </p>
                               );
-                            })()}
-                          </div>
-                        ) : (
-                          <p>{predictionData?.prediction || "暫無預測資料"}</p>
-                        )}{" "}
-                      </div>
+                            }
+
+                            return (
+                              <div className="prediction-card">
+                                <div className="accuracy-badge">
+                                  {getPredictionAccuracy() !== null
+                                    ? `${getPredictionAccuracy().toFixed(1)}%`
+                                    : "?"}
+                                </div>
+
+                                <div className="prediction-title">
+                                  {getName(selected.code)}
+                                </div>
+
+                                <div className="prediction-list">
+                                  {Object.entries(deptPred).map(
+                                    ([sCode, value]) => (
+                                      <div
+                                        key={sCode}
+                                        className="prediction-item"
+                                      >
+                                        <span>{getName(sCode)}</span>
+                                        <span className="value">
+                                          {Number(value).toFixed(1)}%
+                                        </span>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
