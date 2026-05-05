@@ -176,18 +176,19 @@ input[type="checkbox"] {
 }
 
 .img-box {
-  width: 90%;
-  height: 180px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
   margin: 0 auto;
-  border: 1px solid rgba(120, 180, 255, 0.4) !important;
-  border-radius: 30px;
 }
 
 .info-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 30px;
 }
 
 .info-content h3 {
@@ -509,7 +510,6 @@ input[type="checkbox"] {
 
 .pie-container {
   width: 100%;
-  height: 400px;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -827,4 +827,182 @@ input[type="checkbox"] {
 
 .global-page {
   color: var(--text-color);
+}
+.prediction-card {
+  background: var(--card-bg);
+  border-radius: 16px; /* ⭐ 更圓 */
+  padding: 14px 16px;
+  margin-bottom: 14px;
+
+  /* ⭐ 柔和陰影 */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* ⭐ 動畫 */
+  transition: all 0.25s ease;
+}
+
+/* 🔥 Hover效果 */
+.prediction-card:hover {
+  transform: translateY(-4px) scale(1.01); /* ⭐ 浮起來 */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); /* ⭐ 更深陰影 */
+}
+
+/* ⭐ 標題 */
+.prediction-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #0073ff;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+/* ⭐ Hover時標題變亮 */
+.prediction-card:hover .prediction-title {
+  color: #6baeff; /* 淡藍 */
+}
+
+/* ⭐ 列表 */
+.prediction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ⭐ 每一行 */
+.prediction-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-color);
+  transition: 0.2s;
+}
+
+/* ⭐ Hover時微亮 */
+.prediction-card:hover .prediction-item {
+  opacity: 0.95;
+}
+
+/* ⭐ 數值 */
+.prediction-item .value {
+  font-weight: 600;
+  color: var(--orange);
+  transition: 0.2s;
+}
+
+/* ⭐ Hover數值更亮 */
+.prediction-card:hover .value {
+  color: #fb923c;
+}
+.accuracy-badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 10;
+  background: #1e3a8a;
+  color: white;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.prediction-card {
+  position: relative; /* ⭐ 必加 */
+}
+.accuracy-badge .tooltip {
+  position: absolute;
+  bottom: 140%; /* ⭐ 改這裡（往上） */
+  right: 50%;
+  transform: translateX(50%) translateY(6px);
+
+  background: rgba(15, 23, 42, 0.95);
+  color: #e2e8f0;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+
+  font-size: 11px;
+  white-space: nowrap;
+
+  opacity: 0;
+  transition: all 0.2s ease;
+
+  pointer-events: none;
+}
+.accuracy-badge:hover .tooltip {
+  opacity: 1;
+  transform: translateX(50%) translateY(0);
+}
+.trend-modal {
+  position: fixed; /* ⭐ 一定要 fixed */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+
+  background: rgba(0, 0, 0, 0.6);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 99999; /* ⭐ 直接壓最上層 */
+}
+.prediction-loading {
+  margin: 20px 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+}
+
+/* 上面那條 */
+.loading-bar {
+  width: 100%;
+  height: 8px; /* ⭐ 加粗 */
+  border-radius: 999px;
+  margin-bottom: 10px;
+
+  background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+  background-size: 200% 100%;
+
+  animation: loadingMove 1.2s infinite;
+}
+
+/* 文字 */
+.prediction-loading p {
+  font-size: 14px;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+
+/* 動畫 */
+@keyframes loadingMove {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.prediction-loading p::after {
+  content: "...";
+  animation: dots 1.2s infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: ".";
+  }
+  33% {
+    content: "..";
+  }
+  66% {
+    content: "...";
+  }
 }

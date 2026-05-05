@@ -1,4 +1,3 @@
-# app.py
 import os
 import json
 from dotenv import load_dotenv
@@ -12,9 +11,6 @@ from flask import request, jsonify
 # 🔮 Predict 專用（新增）
 from prophet import Prophet
 import pandas as pd
-
-
-
 
 load_dotenv()
 
@@ -71,18 +67,21 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 SERIES_CACHE = {}
 MODEL_CACHE = {}
-ACCURACY_CACHE = {}   # 🔥 新增（完全不影響原本）
+ACCURACY_CACHE = {}  # 🔥 新增（完全不影響原本）
 
 # =========================
 # 🧠 hierarchy
 # =========================
 HIERARCHY_PATH = os.path.join(DATA_DIR, "hierarchy.json")
 
+
 def load_hierarchy():
     with open(HIERARCHY_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
+
 HIERARCHY = load_hierarchy()
+
 
 # =========================
 # 🧠 建 mapping
@@ -104,7 +103,9 @@ def build_dept_map(hierarchy):
     traverse(hierarchy)
     return mapping
 
+
 DEPT_NAME_MAP = build_dept_map(HIERARCHY)
+
 
 # =========================
 # 🔥 子節點
@@ -127,10 +128,12 @@ def get_descendants(target_code, hierarchy):
     traverse(hierarchy)
     return result
 
+
 def expand_depts(dept_code):
     expanded = set([dept_code])
     expanded.update(get_descendants(dept_code, HIERARCHY))
     return expanded
+
 
 # =========================
 # 🧠 判斷部門
@@ -149,6 +152,7 @@ def detect_depts(question):
 
     return None
 
+
 # =========================
 # 📥 讀資料
 # =========================
@@ -166,12 +170,14 @@ def load_all_years():
 
     return dict(sorted(data.items()))
 
+
 def normalize(data):
     result = {}
     for dept, energies in data.items():
         total = sum(energies.values())
         result[dept] = {e: v / total if total else 0 for e, v in energies.items()}
     return result
+
 
 # =========================
 # 🔥 初始化（只加準確度）
@@ -220,10 +226,9 @@ def init_data(force_retrain=False):
         try:
             years_ad = [y + 1911 for y in s["years"]]
 
-            df = pd.DataFrame({
-                "ds": pd.to_datetime([str(y) for y in years_ad]),
-                "y": s["values"]
-            })
+            df = pd.DataFrame(
+                {"ds": pd.to_datetime([str(y) for y in years_ad]), "y": s["values"]}
+            )
 
             model = Prophet()
             model.fit(df)
@@ -256,38 +261,81 @@ def init_data(force_retrain=False):
 
     print("✅ 訓練完成 + 準確度完成")
 
+
 # =========================
 # 📈 預測
 # =========================
-def run_prediction(target_year, dept_filters=None):
+def run_prediction(target_year, dept_filters=None, mode="full"):
     result = {}
 
-    for key, model in MODEL_CACHE.items():
+    for key in SERIES_CACHE:
         dept, energy = key.split("_")
 
+        # 🔹 部門篩選
         if dept_filters and dept not in dept_filters:
             continue
 
         years = SERIES_CACHE[key]["years"]
-        years_ad = [y + 1911 for y in years]
+        values = SERIES_CACHE[key]["values"]
 
-        periods = max(1, target_year - max(years_ad))
+        # 🔵 模式 A：Prediction 頁（固定模型）
+        if mode == "full":
+            model = MODEL_CACHE.get(key)
+            if model is None:
+                continue
 
-        future = model.make_future_dataframe(periods=periods, freq='Y')
-        forecast = model.predict(future)
+            years_ad = [y + 1911 for y in years]
+            last_year = max(years_ad)
 
-        pred = float(forecast.iloc[-1]["yhat"])
+            periods = max(1, target_year - last_year)
+
+            future = model.make_future_dataframe(periods=periods, freq="Y")
+            forecast = model.predict(future)
+
+            pred = float(forecast.iloc[-1]["yhat"])
+
+        # 🔴 模式 B：Global 頁（動態訓練）
+        else:
+            # ⭐ 只用 target_year 之前的資料
+            filtered = [
+                (y, v) for y, v in zip(years, values) if y + 1911 <= target_year
+            ]
+
+            # ⭐ 避免資料太少
+            if len(filtered) < 3:
+                continue
+
+            years_f, values_f = zip(*filtered)
+
+            df = pd.DataFrame(
+                {"ds": pd.to_datetime([str(y + 1911) for y in years_f]), "y": values_f}
+            )
+
+            # ⭐ 每次重新訓練
+            model = Prophet()
+            model.fit(df)
+
+            # ⭐ 預測下一年
+            future = model.make_future_dataframe(periods=1, freq="Y")
+            forecast = model.predict(future)
+
+            pred = float(forecast.iloc[-1]["yhat"])
+
+        # 🔹 避免負值
+        pred = max(pred, 0)
 
         result.setdefault(dept, {})
-        result[dept][energy] = max(pred, 0)
+        result[dept][energy] = pred
 
+    # 🔹 正規化成 %
     for dept in result:
         total = sum(result[dept].values())
-        if total:
-            for e in result[dept]:
-                result[dept][e] = result[dept][e] / total * 100
+        if total > 0:
+            for energy in result[dept]:
+                result[dept][energy] = result[dept][energy] / total * 100
 
     return result
+
 
 # =========================
 # 📊 evaluation
@@ -309,10 +357,9 @@ def get_evaluation_data(dept_filters=None):
 
         years_ad = [y + 1911 for y in years]
 
-        df = pd.DataFrame({
-            "ds": pd.to_datetime([str(y) for y in years_ad]),
-            "y": values
-        })
+        df = pd.DataFrame(
+            {"ds": pd.to_datetime([str(y) for y in years_ad]), "y": values}
+        )
 
         forecast = model.predict(df)
 
@@ -320,10 +367,11 @@ def get_evaluation_data(dept_filters=None):
         result[dept][energy] = {
             "years": years_ad,
             "actual": list(df["y"]),
-            "predicted": list(forecast["yhat"])
+            "predicted": list(forecast["yhat"]),
         }
 
     return result
+
 
 # =========================
 # 🧠 年份解析
@@ -343,6 +391,7 @@ def parse_year(text):
 
     return None
 
+
 # =========================
 # 🌐 API
 # =========================
@@ -351,32 +400,34 @@ def predict_department_energy():
 
     data = request.json or {}
     question = data.get("question", "")
-
+    question = data.get("question", "")
     target_year = parse_year(question)
     dept_filters = detect_depts(question)
+    mode = data.get("mode", "full")
 
     if not target_year:
         return jsonify({"error": "請輸入年份，例如 2025 或 明年"})
 
-    prediction = run_prediction(target_year, dept_filters)
+    prediction = run_prediction(target_year, dept_filters, mode)
     evaluation = get_evaluation_data(dept_filters)
 
     summary = []
     for dept, energies in prediction.items():
         top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-        summary.append({
-            "dept": dept,
-            "top": top
-        })
+        summary.append({"dept": dept, "top": top})
 
-    return jsonify({
-        "year": target_year,
-        "prediction": prediction,
-        "summary": summary,
-        "evaluation": evaluation,
-        "accuracy": ACCURACY_CACHE   # 🔥 新增
-    })
+    return jsonify(
+        {
+            "year": target_year,
+            "prediction": prediction,
+            "summary": summary,
+            "evaluation": evaluation,
+            "accuracy": ACCURACY_CACHE,  # 🔥 新增
+        }
+    )
+
+
 # =========================
 # 📩 Contact
 # =========================
@@ -445,6 +496,7 @@ def contact():
     def generate_reply():
         try:
             from openai import OpenAI
+
             client = OpenAI()
 
             res = client.chat.completions.create(
@@ -487,17 +539,17 @@ def contact():
 - 每次一樣開頭
 
 👉 直接回覆，不要解釋
-"""
+""",
                     },
                     {
                         "role": "user",
                         "content": f"""
 使用者說：
 {message}
-"""
-                    }
+""",
+                    },
                 ],
-                temperature=1.1
+                temperature=1.1,
             )
 
             reply = res.choices[0].message.content.strip()
@@ -525,7 +577,7 @@ def contact():
         "category": category,
         "priority": priority,
         "reply": reply_text,
-        "status": "open"
+        "status": "open",
     }
 
     data_list.append(new_record)
@@ -545,7 +597,8 @@ def contact():
         server.login("rag412402@gmail.com", "hezo wjxc lpdj ultq")
 
         # 管理員通知
-        admin_msg = MIMEText(f"""
+        admin_msg = MIMEText(
+            f"""
 📩 EnerSphere 新回饋
 
 姓名: {name}
@@ -557,7 +610,10 @@ Email: {email}
 
 分析:
 {sentiment} / {category} / {priority}
-""", "plain", "utf-8")
+""",
+            "plain",
+            "utf-8",
+        )
 
         admin_msg["Subject"] = "EnerSphere 新回饋通知"
         admin_msg["From"] = "rag412402@gmail.com"
@@ -652,7 +708,6 @@ def delete_feedback():
     return jsonify({"status": "ok"})
 
 
-
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     try:
@@ -741,8 +796,8 @@ def ask_pdf():
 # ====================================
 # 3. AV 問答
 # ====================================
-#@app.route("/ask_av", methods=["POST"])
-#def ask_av():
+# @app.route("/ask_av", methods=["POST"])
+# def ask_av():
 #    question = (request.form.get("question") or "").strip()
 #    file = request.files.get("file")
 #
@@ -1002,11 +1057,9 @@ def get_energy_news():
 if __name__ == "__main__":
 
     print("🔥 初始化預測資料...")
-    init_data()   # 🔥 加這行（關鍵）
+    init_data()  # 🔥 加這行（關鍵）
 
     print("🔥 Scheduler starting...")
     start_scheduler()
 
     app.run(host="0.0.0.0", port=8000)
-
-

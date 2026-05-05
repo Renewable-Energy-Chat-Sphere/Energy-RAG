@@ -217,9 +217,8 @@ export default function Home() {
       <div className="reveal">
         <Dashboard />
       </div>
-      
-      <div className="page-container">
 
+      <div className="page-container">
         {/* Energy News */}
         <div className="reveal">
           <EnergyNews />
@@ -245,9 +244,9 @@ export default function Home() {
               },
               {
                 title: "主動式能源智慧代理",
-                desc: "自動化分析與視覺控制",
+                desc: "內含能源預測分析",
                 detail:
-                  "建構具自主決策能力的 AI Agent，能依據使用者查詢自動啟動分析流程，並同步控制三維能源球進行年度切換、產業聚焦與差異比較，實現理解、推理與視覺操作整合的智慧決策支援。",
+                  "結合能源預測模型與智慧分析能力，依據歷史資料與使用者查詢，自動生成未來能源趨勢，並提供視覺化決策支援。",
                 img: import.meta.env.BASE_URL + "images/ai.jpg",
               },
             ].map((item, i) => (

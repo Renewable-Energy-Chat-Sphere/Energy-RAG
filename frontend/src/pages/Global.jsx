@@ -1,7 +1,26 @@
 import React from "react";
+import { Bar } from "react-chartjs-2";
+import { BarElement } from "chart.js";
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Legend as ChartLegend,
+} from "chart.js";
 
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  ChartLegend,
+  BarElement,
+);
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
@@ -48,11 +67,12 @@ export default function Global({ isMobile }) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [predictionData, setPredictionData] = useState(null);
+  const [currentData, setCurrentData] = useState(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
-  
+
   const onHover = (data) => {
     setHovered(data);
   };
@@ -86,7 +106,7 @@ export default function Global({ isMobile }) {
     Electricity: "#ffcc00",
     Other: "#808080",
   };
-  
+
   const DEPT_COLOR = {
     D2: "#3b82f6",
     D40: "#22c55e",
@@ -219,9 +239,7 @@ export default function Global({ isMobile }) {
 
     if (!isSupply) {
       filtered = list;
-    }
-
-    else {
+    } else {
       if (level === 0) {
         const deptMap = {};
 
@@ -241,16 +259,12 @@ export default function Global({ isMobile }) {
         });
 
         filtered = Object.values(deptMap);
-      }
-
-      else if (level === 1) {
+      } else if (level === 1) {
         filtered = list.filter((item) => {
           const depth = getDepth(item.id, hierarchy);
           return depth === 1;
         });
-      }
-
-      else {
+      } else {
         filtered = list.filter((item) => {
           const depth = getDepth(item.id, hierarchy);
           return depth === 2;
@@ -312,10 +326,118 @@ export default function Global({ isMobile }) {
   }
 
   useEffect(() => {
-    if (selected) {
-      setQuestion(`${year} ${selected.name} 能源比例`);
+    if (!selected) return;
+
+    setQuestion(`${year} ${selected.name} 能源比例`);
+
+    setLoading(true); // ⭐ 開始動畫
+    setPredictionData(null); // ⭐ 清空舊資料
+
+    fetch("http://127.0.0.1:8000/predict_department_energy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question: `${year}年 ${selected.name} 下一年能源用量`,
+        year: year,
+        mode: "dynamic",
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setTimeout(() => {
+          // ⭐ 模擬動畫延遲（很重要）
+          setPredictionData(data);
+          setLoading(false);
+        }, 500); // 0.5秒動畫感
+      })
+      .catch(() => {
+        setPredictionData(null);
+        setLoading(false);
+      });
+
+    const currentDept = energyData[selected.code];
+
+    if (currentDept) {
+      setCurrentData(currentDept);
     }
-  }, [selected]);
+  }, [selected, year]);
+  function getCompareChartData() {
+    if (!predictionData || !currentData) return null;
+
+    const deptPred = predictionData.prediction?.[selected.code];
+
+    if (!deptPred) return null; // ⭐ 沒有就不要畫
+    const allKeys = Array.from(
+      new Set([...Object.keys(currentData), ...Object.keys(deptPred)]),
+    );
+    // ⭐ 加這段（今年轉 %）
+    const total = Object.values(currentData).reduce((a, b) => a + b, 0);
+
+    return {
+      labels: allKeys.map((code) => getName(code)),
+      datasets: [
+        {
+          label: "本年 (所選年度)",
+          data: allKeys.map((code) =>
+            total ? ((currentData[code] || 0) / total) * 100 : 0,
+          ),
+          backgroundColor: "#3b82f6",
+        },
+        {
+          label: "隔年（預測）",
+          data: allKeys.map((code) => deptPred[code] || 0),
+          backgroundColor: "#ef4444",
+        },
+      ],
+    };
+  }
+  function getPredictionAccuracy() {
+    if (!predictionData || !selected) return null;
+
+    // ⭐ 找該部門預測
+    const deptPred = predictionData.prediction?.[selected.code];
+    if (!deptPred) return null;
+
+    // ⭐ 找該部門「第一個能源」
+    const firstEnergy = Object.keys(deptPred)[0];
+    if (!firstEnergy) return null;
+
+    // ⭐ 組 key（跟 Prediction.jsx 一樣）
+    const fullKey = `${selected.code}_${firstEnergy}`;
+
+    return predictionData.accuracy?.[fullKey] ?? null;
+  }
+  function getPredictionDiff() {
+    if (!predictionData || !currentData || !selected) return [];
+
+    const deptPred = predictionData.prediction?.[selected.code];
+    if (!deptPred) return [];
+
+    // ⭐ 今年轉 %
+    const total = Object.values(currentData).reduce((a, b) => a + b, 0);
+
+    const currentPercent = {};
+    Object.entries(currentData).forEach(([k, v]) => {
+      currentPercent[k] = total ? (v / total) * 100 : 0;
+    });
+
+    const allKeys = Array.from(
+      new Set([...Object.keys(currentPercent), ...Object.keys(deptPred)]),
+    );
+
+    return allKeys.map((code) => {
+      const now = currentPercent[code] || 0;
+      const future = deptPred[code] || 0;
+
+      return {
+        code,
+        name: getName(code),
+        diff: future - now,
+      };
+    });
+  }
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
@@ -351,7 +473,8 @@ export default function Global({ isMobile }) {
               type="checkbox"
               checked={showFlow}
               onChange={(e) => setShowFlow(e.target.checked)}
-            />顯示連線
+            />
+            顯示連線
           </label>
 
           <div className="search-box">
@@ -368,7 +491,8 @@ export default function Global({ isMobile }) {
             <i
               className="fi fi-br-comments"
               style={{ marginRight: "10px" }}
-            ></i>點我詢問能源
+            ></i>
+            點我詢問能源
           </div>
         </div>
       </div>
@@ -469,8 +593,8 @@ export default function Global({ isMobile }) {
                 <div className="info-content">
                   <h3>
                     {selected?.code?.startsWith("S")
-                      ? "主要使用項目"
-                      : "常用供給能源"}
+                      ? "主要使用部門"
+                      : "常用能源"}
                   </h3>
                   <p>
                     {getEnergyList()
@@ -483,99 +607,185 @@ export default function Global({ isMobile }) {
                       ))}
                   </p>
 
-                  <h3>年度分析</h3>
+                  <h3>本年度分析</h3>
                   <p className="chart-note">
                     {selected?.code?.startsWith("S")
-                      ? "本圖呈現所有需求項目在此能源中的使用比例（以此能源總消耗量為基準）"
-                      : "本圖呈現所有供給能源在此項目中的使用比例（以此項目總消耗量為基準）"}
+                      ? "本圖為該能源被各部門使用比例（以此能源總使用量為基準）"
+                      : "本圖為該部門內能源使用比例（以部門總能源為基準）"}
                     <br />
                     <span className="sub-note">
                       {selected?.code?.startsWith("S")
-                        ? "※ 總和 = 100%，表示此能源在各部門的分配比例"
-                        : "※ 總和 = 100%，與智慧查詢之全國佔比不同"}
+                        ? "*總和 = 100%，表示此能源在各部門的分配比例"
+                        : "*總和 = 100%，與智慧查詢之全國占比不同"}
                     </span>
                   </p>
 
                   <div className="pie-container">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart width={300} height={300}>
-                        <Pie
-                          data={getPieData()}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={130}
-                          paddingAngle={4}
-                          cornerRadius={8}
-                          stroke="none"
-                          labelLine={false}
-                        >
-                          {getPieData().map((entry, index) => (
-                            <Cell
-                              key={index}
-                              fill={
-                                entry.name === "其他"
-                                  ? "#808080"
-                                  : selected?.code?.startsWith("S")
-                                    ? DEPT_COLOR[getRootDept(entry.id)] ||
-                                      "#7b614b"
-                                    : CATEGORY_COLOR[entry.category] || "#3b82f6"
-                              }
-                            />
-                          ))}
-                        </Pie>
+                    <PieChart width={300} height={300}>
+                      <Pie
+                        data={getPieData()}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={100}
+                        paddingAngle={4}
+                        cornerRadius={6}
+                        stroke="none"
+                        labelLine={false}
+                      >
+                        {getPieData().map((entry, index) => (
+                          <Cell
+                            key={index}
+                            fill={
+                              entry.name === "其他"
+                                ? "#808080"
+                                : selected?.code?.startsWith("S")
+                                  ? DEPT_COLOR[getRootDept(entry.id)] ||
+                                    "#7b614b"
+                                  : CATEGORY_COLOR[entry.category] || "#3b82f6"
+                            }
+                          />
+                        ))}
+                      </Pie>
 
-                        <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
+                      <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
 
-                        <Legend
-                          content={() => (
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                justifyContent: "center",
-                                gap: "6px",
-                                fontSize: 12,
-                                marginTop: 20,
-                              }}
-                            >
-                              {getPieData()
-                                .slice(0, 6)
-                                .map((item, i) => (
-                                  <div
-                                    key={i}
+                      <Legend
+                        content={() => (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              justifyContent: "center",
+                              gap: "6px",
+                              fontSize: 12,
+                            }}
+                          >
+                            {getPieData()
+                              .slice(0, 6)
+                              .map((item, i) => (
+                                <div
+                                  key={i}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <span
                                     style={{
-                                      display: "flex",
-                                      alignItems: "center",
+                                      width: 8,
+                                      height: 8,
+                                      background:
+                                        item.name === "其他"
+                                          ? "#808080"
+                                          : selected?.code?.startsWith("S")
+                                            ? DEPT_COLOR[
+                                                getRootDept(item.id)
+                                              ] || "#3b82f6"
+                                            : CATEGORY_COLOR[item.category] ||
+                                              "#3b82f6",
+                                      marginRight: 4,
                                     }}
-                                  >
-                                    <span
-                                      style={{
-                                        width: 8,
-                                        height: 8,
-                                        background:
-                                          item.name === "其他"
-                                            ? "#808080"
-                                            : selected?.code?.startsWith("S")
-                                              ? DEPT_COLOR[
-                                                  getRootDept(item.id)
-                                                ] || "#3b82f6"
-                                              : CATEGORY_COLOR[item.category] ||
-                                                "#3b82f6",
-                                        marginRight: 4,
-                                      }}
-                                    />
-                                    {item.name}
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        />
-                      </PieChart>
-                      </ResponsiveContainer>
+                                  />
+                                  {item.name}
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      />
+                    </PieChart>
                   </div>
+                  <h2>預測分析</h2>
+
+                  {loading && (
+                    <div className="prediction-loading">
+                      <div className="loading-bar"></div>
+                      <p>AI 正在預測中...</p>
+                    </div>
+                  )}
+                  {getCompareChartData() && (
+                    <>
+                      <h3 style={{ marginTop: "12px" }}> 本年 vs 隔年</h3>
+                      <Bar data={getCompareChartData()} />
+                    </>
+                  )}
+                  {predictionData && (
+                    <>
+                      <div className="prediction-box">
+                        <h4 style={{ marginTop: "10px" }}>變化分析</h4>
+                        {getPredictionDiff()
+                          .filter((item) => Math.abs(item.diff) > 1) // ⭐ 過濾小變化
+                          .map((item) => (
+                            <div key={item.code} className="prediction-item">
+                              <span>{item.name}</span>
+                              <span
+                                style={{
+                                  color: item.diff > 0 ? "#22c55e" : "#ef4444",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {item.diff > 0 ? "↑" : "↓"}{" "}
+                                {Math.abs(item.diff).toFixed(1)}%
+                              </span>
+                            </div>
+                          ))}
+                        {predictionData?.prediction &&
+                        typeof predictionData.prediction === "object" ? (
+                          <div>
+                            {(() => {
+                              const deptPred =
+                                predictionData.prediction?.[selected.code];
+
+                              if (!deptPred) {
+                                return (
+                                  <p style={{ opacity: 0.6 }}>
+                                    此部門暫無預測資料
+                                  </p>
+                                );
+                              }
+
+                              return (
+                                <div className="prediction-card">
+                                  <div
+                                    className="accuracy-badge"
+                                    title="MAPE：平均絕對百分比誤差，數值越低代表預測越準"
+                                  >
+                                    {getPredictionAccuracy() !== null
+                                      ? `${getPredictionAccuracy().toFixed(1)}%`
+                                      : "?"}
+                                  </div>
+                                  {/* ⭐ 只顯示你點的那個 */}
+                                  <div className="prediction-title">
+                                    {getName(selected.code)}
+                                  </div>
+
+                                  <div className="prediction-list">
+                                    {Object.entries(deptPred).map(
+                                      ([sCode, value]) => (
+                                        <div
+                                          className="prediction-item"
+                                          key={sCode}
+                                        >
+                                          <span>{getName(sCode)}</span>
+                                          <span className="value">
+                                            {Number(value).toFixed(1)}%
+                                          </span>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          <p>{predictionData?.prediction || "暫無預測資料"}</p>
+                        )}{" "}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -594,7 +804,9 @@ export default function Global({ isMobile }) {
               <div className="hover-header">{hovered.name}</div>
 
               {hovered?.code?.startsWith("S") ? (
-                <div className="hover-content">相關需求項目：<br/>
+                <div className="hover-content">
+                  相關需求項目：
+                  <br />
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
 
@@ -607,7 +819,9 @@ export default function Global({ isMobile }) {
                   })()}
                 </div>
               ) : (
-                <div className="hover-content">相關能源供給：<br/>
+                <div className="hover-content">
+                  相關能源供給：
+                  <br />
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
 
