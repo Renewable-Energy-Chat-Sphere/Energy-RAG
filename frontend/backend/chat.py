@@ -33,9 +33,8 @@ def inject_markdown_links(text: str, user_text: str):
         "風力", "發電", "用電", "能源", "電力", "electricity", "power"
     ]
 
-    is_taiwan_energy = (
-        any(k.lower() in user_text.lower() for k in taiwan_keywords)
-    )
+    full_text = (user_text + text).lower()
+    is_taiwan_energy = any(k.lower() in full_text for k in taiwan_keywords)
 
     has_link = "ea01.moeaea.gov.tw" in text
 
@@ -239,6 +238,7 @@ def chat():
 
             try:
                 answer, sources = qa_over_web(question_only, url=url)
+                answer = inject_markdown_links(answer, user_text)
                 _store_turn(session_id, user_text, answer)
 
                 return jsonify(
@@ -310,7 +310,7 @@ def chat():
             # 🔵 精準模式（保留你原本）
             else:
                 assistant_text = enhance_answer_by_mode(assistant_text, mode)
-                assistant_text = inject_markdown_links(assistant_text, user_text)
+            assistant_text = inject_markdown_links(assistant_text, user_text)
                 # =====================================
             # 📎 自動加資料來源（完整版🔥）
             # =====================================
@@ -394,6 +394,7 @@ def chat():
                 if hasattr(resp, "output_text") and resp.output_text
                 else "（模型沒有回傳內容）"
             )
+            assistant_text = inject_markdown_links(assistant_text, user_text)
 
         except Exception as e:
             assistant_text = f"⚠️ 模型錯誤：{e}"
