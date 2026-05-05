@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
+import "./i18n/i18n";
 
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
@@ -11,6 +12,7 @@ import Rag from "./pages/Rag";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 import Prediction from "./pages/Prediction";
+
 
 const router = createBrowserRouter(
   [

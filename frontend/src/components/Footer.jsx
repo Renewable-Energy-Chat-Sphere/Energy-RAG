@@ -1,32 +1,31 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitch from "./LanguageSwitch";
+
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer>
       <div className="footer-grid">
 
         <div className="footer-col">
           <h3>EnerSphere TW</h3>
-          <p>多模態視覺能源球系統，提供能源資料查詢、
-            三維視覺化與智慧代理決策輔助。</p>
+          <p>{t("footer.desc")}</p>
         </div>
 
-        <div className="footer-col">
-          <h4>快速連結</h4>
-          <p><a href="/#features">系統特色</a></p>
-          <p><a href="/global">能源視覺化</a></p>
-          <p><a href="/rag">智慧查詢</a></p>
-        </div>
 
         <div className="footer-col">
-          <h4>聯絡資訊</h4>
+          <h4>{t("footer.contact")}</h4>
           <p>E-mail：rag412402@gmail.com</p>
-          <p>地址：新北市新莊區中正路 510 號 天主教輔仁大學</p>
+          <p>{t("footer.address")}</p>
         </div>
 
       </div>
 
       <div className="footer-copy">
-        © 2025 EnerSphere TW. All rights reserved.
+        <span>© 2026 EnerSphere TW</span>
+        <LanguageSwitch />
       </div>
     </footer>
   );
