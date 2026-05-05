@@ -7,8 +7,12 @@ import Dashboard from "../components/Dashboard";
 import ExternalLinks from "../components/ExternalLinks";
 import LinkCarousel from "../components/LinkCarousel";
 import "../pages/home.css";
+import { useTranslation } from "react-i18next";
+
 
 export default function Home() {
+  const { t } = useTranslation();
+  const features = t("features", { returnObjects: true });
   useEffect(() => {
     /* Reveal Observer */
     const observer = new IntersectionObserver(
@@ -207,9 +211,9 @@ export default function Home() {
           }}
         >
           <h1 style={{ fontSize: "40px", fontWeight: 700 }}>
-            讓能源資料真正「看得見、問得到、用得上」
+            {t("hero.title")}
           </h1>
-          <p>結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台</p>
+          <p>{t("hero.subtitle")}</p>
         </div>
       </section>
 
@@ -225,41 +229,32 @@ export default function Home() {
         </div>
 
         {/* FEATURES */}
+
         <section id="features" className="section reveal">
           <div className="cards">
-            {[
-              {
-                title: "3D 能源視覺球",
-                desc: "三維旋轉視覺化能源結構模型",
-                detail:
-                  "整合近 30 年能源平衡資料，建構三維互動式能源球模型。支援跨年度比較、產業分層結構分析與能源結構相似度研究，讓能源變化趨勢與結構差異一目了然。",
-                img: import.meta.env.BASE_URL + "images/sphere.png",
-              },
-              {
-                title: "智慧 RAG 查詢",
-                desc: "自然語言驅動的能源資料探索",
-                detail:
-                  "支援文字、網址、文件、影音與表格等多模態資料輸入。透過語意向量化與相似度檢索機制，結合大型語言模型生成具依據且可追溯來源的分析結果，實現精準且可解釋的能源查詢體驗。",
-                img: import.meta.env.BASE_URL + "images/analysis.png",
-              },
-              {
-                title: "主動式能源智慧代理",
-                desc: "內含能源預測分析",
-                detail:
-                  "結合能源預測模型與智慧分析能力，依據歷史資料與使用者查詢，自動生成未來能源趨勢，並提供視覺化決策支援。",
-                img: import.meta.env.BASE_URL + "images/ai.jpg",
-              },
-            ].map((item, i) => (
+            {features.map((item, i) => (
               <div className="card reveal" key={i}>
                 <div className="card-image">
-                  <img src={item.img} alt={item.title} />
+                  <img
+                    src={
+                      [
+                        "images/sphere.png",
+                        "images/analysis.png",
+                        "images/ai.jpg",
+                      ][i]
+                    }
+                    alt={item.title}
+                  />
                 </div>
 
                 <div className="card-body">
                   <h3>{item.title}</h3>
                   <p>{item.desc}</p>
 
-                  <div className="accordion">更多細節說明</div>
+                  <div className="accordion">
+                    {t("features_more")}
+                  </div>
+
                   <div className="accordion-content">
                     <p>{item.detail}</p>
                   </div>
@@ -271,7 +266,7 @@ export default function Home() {
 
         {/* 活動專區 */}
         <div className="reveal">
-          <LinkCarousel title="活動專區" items={activityData} />
+          <LinkCarousel title={t("section.activity")} items={activityData} />
         </div>
 
         <div className="reveal">

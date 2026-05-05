@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "./EnergyNews.css";
+import { useTranslation } from "react-i18next";
 
 export default function EnergyNews() {
+  const { t } = useTranslation();
   const API = "http://127.0.0.1:8000";
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,16 +31,16 @@ export default function EnergyNews() {
       <div>
         <h2 className="energy-news-title">
           <i className="fi fi-br-megaphone"></i>
-          <span>能源署最新公告新聞</span>
+          <span>{t("energyNews.title")}</span>
         </h2>
 
-        <p className="energy-news-subtitle">同步能源署官方網站新聞資訊</p>
+        <p className="energy-news-subtitle">{t("energyNews.subtitle")}</p>
       </div>
 
-      {loading && <p className="energy-news-subtitle">讀取中…</p>}
+      {loading && <p className="energy-news-subtitle">{t("energyNews.loading")}</p>}
 
       {!loading && news.length === 0 && (
-        <p className="energy-news-subtitle">目前沒有公告的新聞</p>
+        <p className="energy-news-subtitle">{t("energyNews.empty")}</p>
       )}
 
       <div className="energy-news-list">
@@ -56,7 +58,7 @@ export default function EnergyNews() {
       </div>
 
       <small className="energy-news-subtitle energy-news-source">
-        新聞資料來源：經濟部能源署
+        {t("energyNews.source")}
       </small>
 
       <button
@@ -68,7 +70,7 @@ export default function EnergyNews() {
           )
         }
       >
-        查看全部新聞 ➡
+        {t("energyNews.more")}
       </button>
     </section>
   );

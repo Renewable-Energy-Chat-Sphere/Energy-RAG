@@ -4,6 +4,77 @@ import { initReactI18next } from "react-i18next";
 const resources = {
   zh: {
     translation: {
+        hero: {
+        title: "讓能源資料真正「看得見、問得到、用得上」",
+        subtitle: "結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台"
+        },
+        energyNews: {
+        title: "能源署最新公告新聞",
+        subtitle: "同步能源署官方網站新聞資訊",
+        loading: "讀取中…",
+        empty: "目前沒有公告的新聞",
+        source: "新聞資料來源：經濟部能源署",
+        more: "查看全部新聞 ➡"
+        },
+        energy: {
+            nuclear: "核能發電",
+            coal: "燃煤發電",
+            gas: "燃氣發電",
+            renewable: "再生能源",
+            hydro: "水力發電",
+            oil: "燃油發電"
+            },
+        dashboard: {
+            status_live: "目前使用即時資料",
+            status_empty: "目前台電資料為空（使用備援）",
+            status_timeout: "無法連線台電（使用備援）",
+            status_backup: "目前使用備援資料",
+
+            peak: "尖峰負載",
+            reserve: "備轉容量率",
+            power: "目前用電量",
+            update: "更新時間",
+
+            energy_title: "發電來源分布",
+            trend_title: "即時用電趨勢圖",
+
+            reserve_label: "備轉容量率",
+
+            green: "綠燈",
+            yellow: "黃燈",
+            orange: "橘燈",
+            red: "紅燈",
+
+            green_desc: "備轉容量率 ≥ 10%",
+            yellow_desc: "6% ≤ 備轉容量率 < 10%",
+            orange_desc: "備轉容量率 < 6%",
+            red_desc: "限電警戒"
+            },
+            unit: {
+            power: "萬瓩"
+            },
+        features: [
+        {
+            title: "3D 能源視覺球",
+            desc: "三維旋轉視覺化能源結構模型",
+            detail: "整合近 30 年能源平衡資料，建構三維互動式能源球模型。支援跨年度比較、產業分層結構分析與能源結構相似度研究，讓能源變化趨勢與結構差異一目了然。"
+        },
+        {
+            title: "智慧 RAG 查詢",
+            desc: "自然語言驅動的能源資料探索",
+            detail: "支援文字、網址、文件、影音與表格等多模態資料輸入。透過語意向量化與相似度檢索機制，結合大型語言模型生成具依據且可追溯來源的分析結果，實現精準且可解釋的能源查詢體驗。"
+        },
+        {
+            title: "主動式能源智慧代理",
+            desc: "內含能源預測分析",
+            detail: "結合能源預測模型與智慧分析能力，依據歷史資料與使用者查詢，自動生成未來能源趨勢，並提供視覺化決策支援。"
+        }
+        ],
+        features_more: "更多細節說明",
+        section: {
+            activity: "活動專區",
+            external: "外網連結"
+            },
       nav: {
         home: "首頁",
         global: "能源視覺化",
@@ -23,6 +94,77 @@ const resources = {
   },
   en: {
     translation: {
+        hero: {
+            title: "Make energy data visible, queryable, and actionable",
+            subtitle: "A next-generation energy decision platform combining 3D energy globe and AI agents"
+            },
+        energyNews: {
+            title: "Latest News from Energy Administration",
+            subtitle: "Synchronized with official Energy Administration website",
+            loading: "Loading...",
+            empty: "No news available at the moment",
+            source: "Source: Bureau of Energy, MOEA",
+            more: "View All News ➡"
+            },
+        energy: {
+        nuclear: "Nuclear",
+        coal: "Coal",
+        gas: "Natural Gas",
+        renewable: "Renewables",
+        hydro: "Hydropower",
+        oil: "Oil"
+        },
+        dashboard: {
+            status_live: "Using real-time data",
+            status_empty: "No data from Taipower (fallback used)",
+            status_timeout: "Connection failed (fallback used)",
+            status_backup: "Using fallback data",
+
+            peak: "Peak Load",
+            reserve: "Reserve Margin",
+            power: "Current Load",
+            update: "Last Update",
+
+            energy_title: "Energy Source Distribution",
+            trend_title: "Real-time Load Trend",
+
+            reserve_label: "Reserve Margin",
+
+            green: "Green",
+            yellow: "Yellow",
+            orange: "Orange",
+            red: "Red",
+
+            green_desc: "Reserve ≥ 10%",
+            yellow_desc: "6% ≤ Reserve < 10%",
+            orange_desc: "Reserve < 6%",
+            red_desc: "Power Alert"
+            },
+            unit: {
+            power: "MW"
+            },
+        features: [
+        {
+            title: "3D Energy Globe",
+            desc: "3D visualization of energy structure",
+            detail: "Integrating nearly 30 years of energy balance data, a three-dimensional interactive energy sphere model is constructed. It supports cross-year comparisons, industry stratification analysis, and energy structure similarity studies, making energy change trends and structural differences readily apparent."
+        },
+        {
+            title: "Smart RAG Query",
+            desc: "Natural language energy exploration",
+            detail: "It supports multimodal data input, including text, URLs, documents, videos, and forms. Through semantic vectorization and similarity retrieval mechanisms, combined with a large language model, it generates evidence-based and traceable analysis results, achieving an accurate and interpretable energy query experience."
+        },
+        {
+            title: "AI Energy Agent",
+            desc: "Built-in energy prediction",
+            detail: "By combining energy forecasting models with intelligent analytics capabilities, and based on historical data and user queries, it automatically generates future energy trends and provides visual decision support."
+        }
+        ],
+        features_more: "More Details",
+        section: {
+            activity: "Activities",
+            external: "External Links",
+        },
       nav: {
         home: "Home",
         global: "Energy Globe",

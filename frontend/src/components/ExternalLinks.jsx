@@ -1,7 +1,9 @@
 import { useRef } from "react";
 import "./LinkCarousel.css";
+import { useTranslation } from "react-i18next";
 
 export default function ExternalLinks({ items }) {
+  const { t } = useTranslation();
   const scrollRef = useRef();
 
   const scroll = (dir) => {
@@ -14,7 +16,7 @@ export default function ExternalLinks({ items }) {
 
   return (
     <div className="carousel-section">
-      <h2 className="carousel-title">外網連結</h2>
+      <h2 className="carousel-title">{t("section.external")}</h2>
 
       <div className="carousel-wrapper">
         <button className="arrow left" onClick={() => scroll("left")}>

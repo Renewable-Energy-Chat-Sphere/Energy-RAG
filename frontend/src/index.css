@@ -435,6 +435,22 @@ footer {
   color: white; 
 }
 
+/* 預設隱藏 */
+.mobile-lang {
+  display: none;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+/* 📱 手機才顯示 */
+@media (max-width: 768px) {
+  .mobile-lang {
+    display: flex;
+    justify-content: center;
+  }
+}
+
 /* -----------------------------
    Hamburger menu
 ------------------------------*/

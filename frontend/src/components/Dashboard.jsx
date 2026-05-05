@@ -13,8 +13,10 @@ import {
   Cell,
 } from "recharts";
 import "./Dashboard.css";
+import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [isDark, setIsDark] = useState(false);
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
@@ -133,15 +135,15 @@ export default function Dashboard() {
 
   const energyMap = {
     nuclear: {
-      label: "核能發電",
+      label: t("energy.nuclear"),
       color: "#8b5cf6",
       icon: "fi fi-br-radiation",
     },
-    coal: { label: "燃煤發電", color: "#ef4444", icon: "fi fi-br-fireplace" },
-    gas: { label: "燃氣發電", color: "#f59e0b", icon: "fi fi-br-flame" },
-    renewable: { label: "再生能源", color: "#22c55e", icon: "fi fi-br-leaf" },
-    hydro: { label: "水力發電", color: "#06b6d4", icon: "fi fi-br-water" },
-    oil: { label: "燃油發電", color: "#f97316", icon: "fi fi-br-oil-can" },
+    coal: { label: t("energy.coal"), color: "#ef4444", icon: "fi fi-br-fireplace" },
+    gas: { label: t("energy.gas"), color: "#f59e0b", icon: "fi fi-br-flame" },
+    renewable: { label: t("energy.renewable"), color: "#22c55e", icon: "fi fi-br-leaf" },
+    hydro: { label: t("energy.hydro"), color: "#06b6d4", icon: "fi fi-br-water" },
+    oil: { label: t("energy.oil"), color: "#f97316", icon: "fi fi-br-oil-can" },
   };
 
   const energyData = Object.entries(energySource).map(([key, value]) => ({
@@ -161,39 +163,39 @@ export default function Dashboard() {
 
             <span className="data-status-text">
               {isLive
-                ? "目前使用即時資料"
+                ? t("dashboard.status_live")
                 : errorType === "empty"
-                  ? "目前台電資料為空（使用備援）"
+                  ? t("dashboard.status_empty")
                   : errorType === "timeout"
-                    ? "無法連線台電（使用備援）"
-                    : "目前使用備援資料"}
+                    ? t("dashboard.status_timeout")
+                    : t("dashboard.status_backup")}
             </span>
         </div>
 
         <div className="grid4">
           <KPI
-            title="尖峰負載"
+            title={t("dashboard.peak")}
             value={data.peak}
-            unit="萬瓩"
+            unit={t("unit.power")}
             icon="fi fi-br-bolt"
             color="#f97316"
           />
           <KPI
-            title="備轉容量率"
+            title={t("dashboard.reserve")}
             value={reserve.toFixed(1)}
             unit="%"
             icon="fi fi-br-battery-half"
             color="#22c55e"
           />
           <KPI
-            title="目前用電量"
+            title={t("dashboard.power")}
             value={data.power}
-            unit="萬瓩"
+            unit={t("unit.power")}
             icon="fi fi-br-plug"
             color="#3b82f6"
           />
           <KPI
-            title="更新時間"
+            title={t("dashboard.update")}
             value={data.timestamp?.split(" ")[1]}
             icon="fi fi-br-time-fast"
             color="#ec4899"
@@ -224,27 +226,27 @@ export default function Dashboard() {
 
               <div className="circle-center">
                 <div className="circle-text">{reserve.toFixed(1)}%</div>
-                <div className="circle-sub">備轉容量率</div>
+                <div className="circle-sub">{t("dashboard.reserve_label")}</div>
               </div>
             </div>
           </div>
 
           <div className="status-wrapper">
-            <StatusCard color="#22c55e" title="綠燈" desc="備轉容量率 ≥ 10%" />
+            <StatusCard color="#22c55e" title={t("dashboard.green")} desc={t("dashboard.green_desc")} />
             <StatusCard
               color="#facc15"
-              title="黃燈"
-              desc="6% ≤ 備轉容量率 < 10%"
+              title={t("dashboard.yellow")}
+              desc={t("dashboard.yellow_desc")}
             />
-            <StatusCard color="#f97316" title="橘燈" desc="備轉容量率 < 6%" />
-            <StatusCard color="#ef4444" title="紅燈" desc="限電警戒" />
+            <StatusCard color="#f97316" title={t("dashboard.orange")} desc={t("dashboard.orange_desc")} />
+            <StatusCard color="#ef4444" title={t("dashboard.red")} desc={t("dashboard.red_desc")} />
           </div>
         </div>
 
         <div className="energy-section">
           <div className="title-row">
             <i className="fi fi-br-chart-simple title-icon blue"></i>
-            <div className="section-title">發電來源分布</div>
+            <div className="section-title">{t("dashboard.energy_title")}</div>
           </div>
 
           <div className="grid3">
@@ -257,7 +259,7 @@ export default function Dashboard() {
         <div className="chart-card">
           <div className="title-row">
             <i className="fi fi-br-tachometer-fast title-icon green"></i>
-            <div className="section-title">即時用電趨勢圖</div>
+            <div className="section-title">{t("dashboard.trend_title")}</div>
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
@@ -274,7 +276,7 @@ export default function Dashboard() {
               <Line
                 type="monotone"
                 dataKey="load"
-                name="用電量"
+                name={t("dashboard.power")}
                 stroke="#3b82f6"
                 strokeWidth={3}
                 dot={false}
@@ -282,7 +284,7 @@ export default function Dashboard() {
               <Line
                 type="monotone"
                 dataKey="capacity"
-                name="供電能力"
+                name={t("dashboard.reserve")}
                 stroke="#22c55e"
                 strokeDasharray="5 5"
                 strokeWidth={2}
