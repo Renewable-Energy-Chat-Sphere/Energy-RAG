@@ -2,7 +2,14 @@ import React from "react";
 import { Bar } from "react-chartjs-2";
 import { BarElement } from "chart.js";
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -11,6 +18,7 @@ import {
   LinearScale,
   PointElement,
   Legend as ChartLegend,
+  Tooltip as ChartTooltip, // ⭐ 改名字！
 } from "chart.js";
 
 ChartJS.register(
@@ -20,6 +28,7 @@ ChartJS.register(
   PointElement,
   ChartLegend,
   BarElement,
+  ChartTooltip, // ⭐ 用新名字
 );
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
@@ -69,6 +78,7 @@ export default function Global({ isMobile }) {
   const [loading, setLoading] = useState(false);
   const [predictionData, setPredictionData] = useState(null);
   const [currentData, setCurrentData] = useState(null);
+  const [showAccuracyChart, setShowAccuracyChart] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -364,50 +374,178 @@ export default function Global({ isMobile }) {
     }
   }, [selected, year]);
   function getCompareChartData() {
-    if (!predictionData || !currentData) return null;
+    if (!predictionData || !currentData || !selected) return null;
 
-    const deptPred = predictionData.prediction?.[selected.code];
+    const deptCode = selected.code;
+    const deptPred = predictionData.prediction?.[deptCode];
 
-    if (!deptPred) return null; // ⭐ 沒有就不要畫
-    const allKeys = Array.from(
-      new Set([...Object.keys(currentData), ...Object.keys(deptPred)]),
-    );
-    // ⭐ 加這段（今年轉 %）
+    if (!deptPred) return null;
+
+    // ⭐ 找下一年
+    const sortedYears = Object.keys(energyMap).sort((a, b) => a - b);
+    const currentIndex = sortedYears.indexOf(year);
+    const nextYear = sortedYears[currentIndex + 1];
+
+    const nextYearData = energyMap[nextYear]?.[deptCode];
+
+    // ⭐ 本年 %
     const total = Object.values(currentData).reduce((a, b) => a + b, 0);
+
+    const currentPercent = {};
+    Object.entries(currentData).forEach(([k, v]) => {
+      currentPercent[k] = total ? (v / total) * 100 : 0;
+    });
+
+    // ⭐ 下一年實際 %
+    let nextPercent = null;
+
+    if (nextYearData) {
+      const totalNext = Object.values(nextYearData).reduce((a, b) => a + b, 0);
+
+      nextPercent = {};
+      Object.entries(nextYearData).forEach(([k, v]) => {
+        nextPercent[k] = totalNext ? (v / totalNext) * 100 : 0;
+      });
+    }
+
+    // ⭐ 合併 key
+    const allKeys = Array.from(
+      new Set([
+        ...Object.keys(currentPercent),
+        ...Object.keys(deptPred),
+        ...(nextPercent ? Object.keys(nextPercent) : []),
+      ]),
+    );
+
+    const datasets = [
+      {
+        label: `${year}年（實際）`,
+        data: allKeys.map((k) => currentPercent[k] || 0),
+        backgroundColor: "#3b82f6",
+      },
+      {
+        label: `${Number(year) + 1}年（預測）`,
+        data: allKeys.map((k) => deptPred[k] || 0),
+        backgroundColor: "#ef4444",
+      },
+    ];
+
+    // ⭐ 👉 關鍵：綠色
+    if (nextPercent) {
+      datasets.push({
+        label: `${Number(year) + 1}年（實際）`,
+        data: allKeys.map((k) => nextPercent[k] || 0),
+        backgroundColor: "#22c55e",
+      });
+    }
 
     return {
       labels: allKeys.map((code) => getName(code)),
+      datasets,
+    };
+  }
+  function getPredictionLineData() {
+    if (!selected) return null;
+
+    const yearList = Object.keys(energyMap).sort();
+
+    const datasets = [];
+
+    // ⭐ 抓前 3 個主要能源（避免線太多）
+    const topEnergies = getEnergyList()
+      .slice(0, 3)
+      .map((e) => e.id);
+
+    topEnergies.forEach((energyCode, index) => {
+      const data = yearList.map((y) => {
+        const dept = energyMap[y]?.[selected.code];
+        if (!dept) return 0;
+
+        const total = Object.values(dept).reduce((a, b) => a + b, 0);
+        return total ? ((dept[energyCode] || 0) / total) * 100 : 0;
+      });
+
+      datasets.push({
+        label: getName(energyCode),
+        data,
+        borderColor: ["#3b82f6", "#ef4444", "#22c55e"][index],
+        fill: false,
+      });
+    });
+
+    return {
+      labels: yearList, // ⭐ X軸變年份
+      datasets,
+    };
+  }
+  function getAIPredictionLineData() {
+    if (!predictionData || !selected) return null;
+
+    const dept = selected.code;
+
+    const deptPred = predictionData.prediction?.[dept];
+    if (!deptPred) return null;
+
+    // ⭐ 抓第一個能源（跟另一頁一樣）
+    const firstEnergy = Object.keys(deptPred)[0];
+    if (!firstEnergy) return null;
+
+    const e = predictionData.evaluation?.[dept]?.[firstEnergy];
+    if (!e) return null;
+
+    return {
+      labels: e.years,
       datasets: [
         {
-          label: "本年 (所選年度)",
-          data: allKeys.map((code) =>
-            total ? ((currentData[code] || 0) / total) * 100 : 0,
-          ),
-          backgroundColor: "#3b82f6",
+          label: "實際值",
+          pointRadius: 4, // ⭐ 讓點變大
+          pointHoverRadius: 6, // ⭐ hover更好抓
+          data: e.actual,
+          borderColor: "#3b82f6",
+          tension: 0.3,
         },
         {
-          label: "隔年（預測）",
-          data: allKeys.map((code) => deptPred[code] || 0),
-          backgroundColor: "#ef4444",
+          label: "預測值",
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          data: e.predicted,
+          borderColor: "#ef4444",
+          tension: 0.3,
         },
       ],
     };
   }
   function getPredictionAccuracy() {
-    if (!predictionData || !selected) return null;
+    if (!predictionData || !currentData || !selected) return null;
 
-    // ⭐ 找該部門預測
     const deptPred = predictionData.prediction?.[selected.code];
     if (!deptPred) return null;
 
-    // ⭐ 找該部門「第一個能源」
-    const firstEnergy = Object.keys(deptPred)[0];
-    if (!firstEnergy) return null;
+    // ⭐ 把今年轉成 %
+    const total = Object.values(currentData).reduce((a, b) => a + b, 0);
 
-    // ⭐ 組 key（跟 Prediction.jsx 一樣）
-    const fullKey = `${selected.code}_${firstEnergy}`;
+    const currentPercent = {};
+    Object.entries(currentData).forEach(([k, v]) => {
+      currentPercent[k] = total ? (v / total) * 100 : 0;
+    });
 
-    return predictionData.accuracy?.[fullKey] ?? null;
+    const allKeys = Array.from(
+      new Set([...Object.keys(currentPercent), ...Object.keys(deptPred)]),
+    );
+
+    let error = 0;
+
+    allKeys.forEach((k) => {
+      const now = currentPercent[k] || 0;
+      const pred = deptPred[k] || 0;
+
+      error += Math.abs(now - pred);
+    });
+
+    // ⭐ 轉成準確度
+    const accuracy = 100 - error / 2;
+
+    return Math.max(0, accuracy);
   }
   function getPredictionDiff() {
     if (!predictionData || !currentData || !selected) return [];
@@ -645,13 +783,17 @@ export default function Global({ isMobile }) {
                                   : selected?.code?.startsWith("S")
                                     ? DEPT_COLOR[getRootDept(entry.id)] ||
                                       "#7b614b"
-                                    : CATEGORY_COLOR[entry.category] || "#3b82f6"
+                                    : CATEGORY_COLOR[entry.category] ||
+                                      "#3b82f6"
                               }
                             />
                           ))}
                         </Pie>
 
-                        <Tooltip formatter={(v) => `${(v * 100).toFixed(1)}%`} />
+                        <Tooltip
+                          formatter={(v) => `${(v * 100).toFixed(1)}%`}
+                        />
+
                         <Legend
                           content={() => (
                             <div
@@ -701,7 +843,7 @@ export default function Global({ isMobile }) {
                   </div>
                   {!selected?.code?.startsWith("S") && (
                     <>
-                      <h2>預測分析</h2>
+                      <h2>能源結構預測（AI模型）</h2>
 
                       {loading && (
                         <div className="prediction-loading">
@@ -712,8 +854,57 @@ export default function Global({ isMobile }) {
 
                       {getCompareChartData() && (
                         <>
-                          <h3 style={{ marginTop: "12px" }}> 本年 vs 隔年</h3>
-                          <Bar data={getCompareChartData()} />
+                          <h3 style={{ marginTop: "12px" }}>
+                            {year}年 vs {Number(year) + 1}年
+                          </h3>{" "}
+                          <Bar
+                            data={getCompareChartData()}
+                            options={{
+                              responsive: true,
+
+                              interaction: {
+                                mode: "index", // ⭐ 很重要！
+                                intersect: false, // ⭐ 很重要！
+                              },
+                              hover: {
+                                mode: "index",
+                                intersect: false,
+                              },
+                              plugins: {
+                                tooltip: {
+                                  enabled: true,
+                                  mode: "index", // ⭐ 加這行（關鍵）
+                                  intersect: false, // ⭐ 建議一起加
+                                  callbacks: {
+                                    label: function (context) {
+                                      const yearNow = year;
+                                      const yearNext = Number(year) + 1;
+
+                                      let label = "";
+
+                                      if (context.datasetIndex === 0) {
+                                        label = `${yearNow}年（實際）`;
+                                      } else if (context.datasetIndex === 1) {
+                                        label = `${yearNext}年（預測）`;
+                                      } else if (context.datasetIndex === 2) {
+                                        label = `${yearNext}年（實際）`; // ⭐ 綠色補上
+                                      }
+
+                                      return `${label}: ${context.raw.toFixed(1)}%`;
+                                    },
+                                  },
+                                },
+                              },
+
+                              scales: {
+                                y: {
+                                  ticks: {
+                                    callback: (v) => v + "%",
+                                  },
+                                },
+                              },
+                            }}
+                          />
                         </>
                       )}
 
@@ -754,10 +945,16 @@ export default function Global({ isMobile }) {
 
                             return (
                               <div className="prediction-card">
-                                <div className="accuracy-badge">
+                                <div
+                                  className="accuracy-badge"
+                                  onClick={() => setShowAccuracyChart(true)}
+                                >
                                   {getPredictionAccuracy() !== null
                                     ? `${getPredictionAccuracy().toFixed(1)}%`
                                     : "?"}
+
+                                  {/* ⭐ 這個才是你要的 tooltip */}
+                                  <div className="tooltip">預測準確度</div>
                                 </div>
 
                                 <div className="prediction-title">
@@ -867,7 +1064,47 @@ export default function Global({ isMobile }) {
           </div>
         </div>
       )}
+      {showAccuracyChart && (
+        <div className="accuracy-overlay">
+          <div className="accuracy-modal">
+            <div className="accuracy-header">
+              <span>AI預測趨勢分析（歷年實際值 vs 預測值）</span>
+              <span
+                className="close-btn"
+                onClick={() => setShowAccuracyChart(false)}
+              >
+                ✕
+              </span>
+            </div>
 
+            {getPredictionLineData() && (
+              <Line
+                data={getAIPredictionLineData()}
+                options={{
+                  responsive: true,
+
+                  interaction: {
+                    mode: "index", // ⭐ 加這個
+                    intersect: false, // ⭐ 加這個
+                  },
+
+                  plugins: {
+                    tooltip: {
+                      enabled: true,
+                      mode: "index", // ⭐ 一樣加
+                      intersect: false,
+                      callbacks: {
+                        label: (ctx) =>
+                          ctx.dataset.label + ": " + ctx.raw.toFixed(2),
+                      },
+                    },
+                  },
+                }}
+              />
+            )}
+          </div>
+        </div>
+      )}
       <BackToTopButton />
     </div>
   );
