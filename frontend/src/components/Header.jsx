@@ -129,6 +129,10 @@ export default function Header() {
 
         <div className="nav-right">
           <nav>
+            {/* 🔥 手機版語言切換 */}
+            <div className="mobile-lang">
+              <LanguageSwitch />
+            </div>
             <Link to="/">{t("nav.home")}</Link>
             <Link to="/global">{t("nav.global")}</Link>
             <Link to="/powerplant">{t("nav.powerplant")}</Link>
@@ -137,11 +141,6 @@ export default function Header() {
             <Link to="/contact">{t("nav.contact")}</Link>
             <Link to="/Feedback">{t("nav.feedback")}</Link>
           </nav>
-
-          {/* 🔥 手機版語言切換 */}
-          <div className="mobile-lang">
-            <LanguageSwitch />
-          </div>
 
           <div id="themeToggle">🌙</div>
         </div>

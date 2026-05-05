@@ -238,9 +238,9 @@ export default function Home() {
                   <img
                     src={
                       [
-                        "images/sphere.png",
-                        "images/analysis.png",
-                        "images/ai.jpg",
+                        import.meta.env.BASE_URL + "images/sphere.png",
+                        import.meta.env.BASE_URL + "images/analysis.png",
+                        import.meta.env.BASE_URL + "images/ai.jpg",
                       ][i]
                     }
                     alt={item.title}

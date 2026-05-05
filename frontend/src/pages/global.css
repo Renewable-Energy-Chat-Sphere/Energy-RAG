@@ -685,7 +685,7 @@ input[type="checkbox"] {
     position: fixed;
     top: 0;
     left: 0;
-    width: 70%;
+    width: 50%;
     height: 100vh;
     background: rgba(13, 44, 110, 0.95);
     backdrop-filter: blur(12px);
@@ -693,7 +693,7 @@ input[type="checkbox"] {
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 80px 20px;
+    padding: 20px 20px;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     overflow-y: auto;
@@ -733,6 +733,63 @@ input[type="checkbox"] {
 #overlay.active {
   opacity: 1;
   pointer-events: auto;
+}
+
+.lang-switch { 
+  display: flex; gap: 8px; 
+} 
+.lang-switch button { 
+  background: transparent; 
+  border: 1px solid #3b82f6; 
+  color: #3b82f6; 
+  padding: 4px 10px; 
+  border-radius: 6px; 
+  cursor: pointer;
+  font-size: 13px; 
+} 
+.lang-switch button:hover { 
+  background: #3b82f6; 
+  color: white; 
+}
+
+.mobile-lang button {
+  background: transparent;
+  border: 1px solid #60a5fa;
+  color: #60a5fa;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.mobile-lang button:hover {
+  background: #60a5fa;
+  color: white;
+}
+
+#overlay {
+  z-index: 900;
+}
+
+/* 預設隱藏 */
+.mobile-lang {
+  display: none;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+@media (max-width: 768px) {
+  .mobile-lang {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+    z-index: 1001;
+    transform: translateY(-20px);
+  }
 }
 
 @media (max-width: 768px) {
