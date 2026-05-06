@@ -1,134 +1,460 @@
 {
   "D2": {
-    "name": "工業部門",
+    "name_zh": "工業部門",
+    "name_en": "Industrial Sector",
     "level": 1,
-    "img": "/images/D2.png",
+    "img": "/images/demand/D02.png",
+
     "children": {
-      "D3": { "name": "砂、石採取及其他礦業", "level": 2, "img": "/images/D3.png" },
-      "D4": { "name": "食品飲料及菸草製造業", "level": 2, "img": "/images/D4.png" },
-      "D5": { "name": "紡織成衣及服飾品製造業", "level": 2, "img": "/images/D5.png" },
-      "D6": { "name": "皮革、毛皮及其製品製造業", "level": 2, "img": "/images/D6.png" },
-      "D7": { "name": "木竹製品及家具製造業", "level": 2, "img": "/images/D7.png" },
-      "D8": { "name": "紙漿、紙及紙製品製造業", "level": 2, "img": "/images/D8.png" },
-      "D9": { "name": "印刷及資料儲存媒體複製業", "level": 2, "img": "/images/D9.png" },
+      "D3": {
+        "name_zh": "砂、石採取及其他礦業",
+        "name_en": "Mining and Quarrying",
+        "level": 2,
+        "img": "/images/demand/D03.png"
+      },
+
+      "D4": {
+        "name_zh": "食品飲料及菸草製造業",
+        "name_en": "Food, Beverage and Tobacco Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D04.png"
+      },
+
+      "D5": {
+        "name_zh": "紡織成衣及服飾品製造業",
+        "name_en": "Textiles, Apparel and Accessories Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D05.png"
+      },
+
+      "D6": {
+        "name_zh": "皮革、毛皮及其製品製造業",
+        "name_en": "Leather, Fur and Related Products Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D06.png"
+      },
+
+      "D7": {
+        "name_zh": "木竹製品及家具製造業",
+        "name_en": "Wood, Bamboo Products and Furniture Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D07.png"
+      },
+
+      "D8": {
+        "name_zh": "紙漿、紙及紙製品製造業",
+        "name_en": "Pulp, Paper and Paper Products Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D08.png"
+      },
+
+      "D9": {
+        "name_zh": "印刷及資料儲存媒體複製業",
+        "name_en": "Printing and Reproduction of Recorded Media",
+        "level": 2,
+        "img": "/images/demand/D09.png"
+      },
 
       "D10": {
-        "name": "化學材料及肥料製造業",
+        "name_zh": "化學材料及肥料製造業",
+        "name_en": "Chemical Materials and Fertilizer Manufacturing",
         "level": 2,
-        "img": "/images/D10.png",
+        "img": "/images/demand/D10.png",
+
         "children": {
-          "D11": { "name": "化學原材料製造業", "level": 3, "img": "/images/D11.png" },
-          "D12": { "name": "化學製程相關產業", "level": 3, "img": "/images/D12.png" },
-          "D13": { "name": "其他化學材料製造業", "level": 3, "img": "/images/D13.png"},
-          "D14": { "name": "肥料及氮化合物製造業", "level": 3, "img": "/images/D14.png" },
-          "D15": { "name": "人造纖維製造業", "level": 3, "img": "/images/D15.png" },
-          "D16": { "name": "塑膠及合成橡膠原料製造業", "level": 3, "img": "/images/D16.png" },
-          "D17": { "name": "其他化學材料及肥料製造業", "level": 3, "img": "/images/D17.png" }
+          "D11": {
+            "name_zh": "化學原材料製造業",
+            "name_en": "Basic Chemical Materials Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D11.png"
+          },
+
+          "D12": {
+            "name_zh": "化學製程相關產業",
+            "name_en": "Chemical Process Industries",
+            "level": 3,
+            "img": "/images/demand/D12.png"
+          },
+
+          "D13": {
+            "name_zh": "其他化學材料製造業",
+            "name_en": "Other Chemical Materials Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D13.png"
+          },
+
+          "D14": {
+            "name_zh": "肥料及氮化合物製造業",
+            "name_en": "Fertilizer and Nitrogen Compound Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D14.png"
+          },
+
+          "D15": {
+            "name_zh": "人造纖維製造業",
+            "name_en": "Man-made Fiber Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D15.png"
+          },
+
+          "D16": {
+            "name_zh": "塑膠及合成橡膠原料製造業",
+            "name_en": "Plastic and Synthetic Rubber Materials Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D16.png"
+          },
+
+          "D17": {
+            "name_zh": "其他化學材料及肥料製造業",
+            "name_en": "Other Chemical Materials and Fertilizer Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D17.png"
+          }
         }
       },
 
-      "D18": { "name": "化學製品及醫藥用品製造業", "level": 2, "img": "/images/D18.png" },
-      "D19": { "name": "橡膠製品製造業", "level": 2, "img": "/images/D19.png" },
-      "D20": { "name": "塑膠製品製造業", "level": 2, "img": "/images/D20.png" },
+      "D18": {
+        "name_zh": "化學製品及醫藥用品製造業",
+        "name_en": "Chemical and Pharmaceutical Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D18.png"
+      },
+
+      "D19": {
+        "name_zh": "橡膠製品製造業",
+        "name_en": "Rubber Products Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D19.png"
+      },
+
+      "D20": {
+        "name_zh": "塑膠製品製造業",
+        "name_en": "Plastic Products Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D20.png"
+      },
 
       "D21": {
-        "name": "非金屬礦物製品製造業",
+        "name_zh": "非金屬礦物製品製造業",
+        "name_en": "Non-metallic Mineral Products Manufacturing",
         "level": 2,
-        "img": "/images/D21.png",
+        "img": "/images/demand/D21.png",
+
         "children": {
-          "D22": { "name": "水泥及其製品製造業", "level": 3, "img": "/images/D22.png" },
-          "D23": { "name": "其他非金屬礦物製品製造業", "level": 3, "img": "/images/D23.png" }
+          "D22": {
+            "name_zh": "水泥及其製品製造業",
+            "name_en": "Cement and Cement Products Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D22.png"
+          },
+
+          "D23": {
+            "name_zh": "其他非金屬礦物製品製造業",
+            "name_en": "Other Non-metallic Mineral Products Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D23.png"
+          }
         }
       },
 
       "D26": {
-        "name": "基本金屬製造業",
+        "name_zh": "基本金屬製造業",
+        "name_en": "Basic Metal Manufacturing",
         "level": 2,
-        "img": "/images/D26.png",
+        "img": "/images/demand/D26.png",
+
         "children": {
-          "D27": { "name": "鋼鐵製造業", "level": 3, "img": "/images/D27.png" },
-          "D28": { "name": "非鐵金屬製造業", "level": 3, "img": "/images/D28.png" }
+          "D27": {
+            "name_zh": "鋼鐵製造業",
+            "name_en": "Iron and Steel Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D27.png"
+          },
+
+          "D28": {
+            "name_zh": "非鐵金屬製造業",
+            "name_en": "Non-ferrous Metal Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D28.png"
+          }
         }
       },
 
-      "D30": { "name": "金屬製品製造業", "level": 2, "img": "/images/D30.png" },
-      "D31": { "name": "機械設備製造及維修業", "level": 2, "img": "/images/D31.png" },
-      
+      "D30": {
+        "name_zh": "金屬製品製造業",
+        "name_en": "Fabricated Metal Products Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D30.png"
+      },
+
+      "D31": {
+        "name_zh": "機械設備製造及維修業",
+        "name_en": "Machinery and Equipment Manufacturing and Repair",
+        "level": 2,
+        "img": "/images/demand/D31.png"
+      },
+
       "D32": {
-        "name": "電子產品及電力設備製造業",
+        "name_zh": "電子產品及電力設備製造業",
+        "name_en": "Electronics and Electrical Equipment Manufacturing",
         "level": 2,
-        "img": "/images/D32.png",
+        "img": "/images/demand/D32.png",
+
         "children": {
-          "D33": { "name": "電子零組件製造業", "level": 3, "img": "/images/D33.png" }
+          "D33": {
+            "name_zh": "電子零組件製造業",
+            "name_en": "Electronic Components Manufacturing",
+            "level": 3,
+            "img": "/images/demand/D33.png"
+          }
         }
       },
 
-      "D34": { "name": "運輸工具及其零件製造業", "level": 2, "img": "/images/D34.png" },
-      "D35": { "name": "精密光學醫學設備及鐘錶製造業", "level": 2, "img": "/images/D35.png" },
-      "D36": { "name": "其他製造業", "level": 2, "img": "/images/D36.png" },
-      "D37": { "name": "用水供應及污染整治業", "level": 2, "img": "/images/D37.png" },
-      "D38": { "name": "營建工程業", "level": 2, "img": "/images/D38.png" },
-      "D39": { "name": "其他工業", "level": 2, "img": "/images/D39.png" }
+      "D34": {
+        "name_zh": "運輸工具及其零件製造業",
+        "name_en": "Transport Equipment and Parts Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D34.png"
+      },
+
+      "D35": {
+        "name_zh": "精密光學醫學設備及鐘錶製造業",
+        "name_en": "Precision Optical, Medical Equipment and Watch Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D35.png"
+      },
+
+      "D36": {
+        "name_zh": "其他製造業",
+        "name_en": "Other Manufacturing",
+        "level": 2,
+        "img": "/images/demand/D36.png"
+      },
+
+      "D37": {
+        "name_zh": "用水供應及污染整治業",
+        "name_en": "Water Supply and Pollution Remediation",
+        "level": 2,
+        "img": "/images/demand/D37.png"
+      },
+
+      "D38": {
+        "name_zh": "營建工程業",
+        "name_en": "Construction Industry",
+        "level": 2,
+        "img": "/images/demand/D38.png"
+      },
+
+      "D39": {
+        "name_zh": "其他工業",
+        "name_en": "Other Industries",
+        "level": 2,
+        "img": "/images/demand/D39.png"
+      }
     }
   },
 
   "D40": {
-    "name": "運輸部門",
+    "name_zh": "運輸部門",
+    "name_en": "Transportation Sector",
     "level": 1,
-    "img": "/images/D40.png",
+    "img": "/images/demand/D40.png",
+
     "children": {
-      "D41": { "name": "國內航空", "level": 2, "img": "/images/D41.png" },
-      "D42": { "name": "公路", "level": 2, "img": "/images/D42.png" },
-      "D43": { "name": "鐵路", "level": 2, "img": "/images/D43.png" },
-      "D44": { "name": "管線運輸", "level": 2, "img": "/images/D44.png" },
-      "D45": { "name": "國內水運", "level": 2, "img": "/images/D45.png" },
-      "D46": { "name": "其他運輸業", "level": 2, "img": "/images/D46.png" }
+      "D41": {
+        "name_zh": "國內航空",
+        "name_en": "Domestic Aviation",
+        "level": 2,
+        "img": "/images/demand/D41.png"
+      },
+
+      "D42": {
+        "name_zh": "公路",
+        "name_en": "Road Transportation",
+        "level": 2,
+        "img": "/images/demand/D42.png"
+      },
+
+      "D43": {
+        "name_zh": "鐵路",
+        "name_en": "Railway Transportation",
+        "level": 2,
+        "img": "/images/demand/D43.png"
+      },
+
+      "D44": {
+        "name_zh": "管線運輸",
+        "name_en": "Pipeline Transportation",
+        "level": 2,
+        "img": "/images/demand/D44.png"
+      },
+
+      "D45": {
+        "name_zh": "國內水運",
+        "name_en": "Domestic Water Transport",
+        "level": 2,
+        "img": "/images/demand/D45.png"
+      },
+
+      "D46": {
+        "name_zh": "其他運輸業",
+        "name_en": "Other Transportation Services",
+        "level": 2,
+        "img": "/images/demand/D46.png"
+      }
     }
   },
 
   "D47": {
-    "name": "農業部門",
+    "name_zh": "農業部門",
+    "name_en": "Agricultural Sector",
     "level": 1,
-    "img": "/images/D47.png",
+    "img": "/images/demand/D47.png",
+
     "children": {
-      "D48": { "name": "農牧及林業", "level": 2, "img": "/images/D48.png" },
-      "D49": { "name": "漁業", "level": 2, "img": "/images/D49.png" }
+      "D48": {
+        "name_zh": "農牧及林業",
+        "name_en": "Agriculture, Animal Husbandry and Forestry",
+        "level": 2,
+        "img": "/images/demand/D48.png"
+      },
+
+      "D49": {
+        "name_zh": "漁業",
+        "name_en": "Fishery",
+        "level": 2,
+        "img": "/images/demand/D49.png"
+      }
     }
   },
 
   "D50": {
-    "name": "服務業部門",
+    "name_zh": "服務業部門",
+    "name_en": "Service Sector",
     "level": 1,
-    "img": "/images/D50.png",
+    "img": "/images/demand/D50.png",
+
     "children": {
-      "D51": { "name": "批發及零售業", "level": 2, "img": "/images/D51.png" },
-      "D52": {
-        "name": "運輸及倉儲業",
+      "D51": {
+        "name_zh": "批發及零售業",
+        "name_en": "Wholesale and Retail Trade",
         "level": 2,
-        "img": "/images/D52.png",
+        "img": "/images/demand/D51.png"
+      },
+
+      "D52": {
+        "name_zh": "運輸及倉儲業",
+        "name_en": "Transportation and Warehousing",
+        "level": 2,
+        "img": "/images/demand/D52.png",
+
         "children": {
-          "D53": { "name": "運輸服務業", "level": 3, "img": "/images/D53.png" },
-          "D54": { "name": "倉儲業", "level": 3, "img": "/images/D54.png" },
-          "D55": { "name": "郵政及遞送服務業", "level": 3, "img": "/images/D55.png" }
+          "D53": {
+            "name_zh": "運輸服務業",
+            "name_en": "Transportation Services",
+            "level": 3,
+            "img": "/images/demand/D53.png"
+          },
+
+          "D54": {
+            "name_zh": "倉儲業",
+            "name_en": "Warehousing",
+            "level": 3,
+            "img": "/images/demand/D54.png"
+          },
+
+          "D55": {
+            "name_zh": "郵政及遞送服務業",
+            "name_en": "Postal and Courier Services",
+            "level": 3,
+            "img": "/images/demand/D55.png"
+          }
         }
       },
-      "D56": { "name": "住宿及餐飲業", "level": 2, "img": "/images/D56.png" },
-      "D57": { "name": "出版影音及資通訊業", "level": 2, "img": "/images/D57.png" },
-      "D59": { "name": "金融及保險業", "level": 2, "img": "/images/D59.png" },
-      "D60": { "name": "不動產業", "level": 2, "img": "/images/D60.png" },
-      "D61": { "name": "專業、科學及技術服務業", "level": 2, "img": "/images/D61.png" },
-      "D62": { "name": "支援服務業", "level": 2, "img": "/images/D62.png" },
-      "D63": { "name": "公共行政及國防", "level": 2, "img": "/images/D63.png" },
-      "D64": { "name": "教育業", "level": 2, "img": "/images/D64.png" },
-      "D65": { "name": "醫療保健及社會工作服務業", "level": 2, "img": "/images/D65.png" },
-      "D66": { "name": "藝術、娛樂及休閒服務業", "level": 2, "img": "/images/D66.png" },
-      "D67": { "name": "其他服務業", "level": 2, "img": "/images/D67.png" }
+
+      "D56": {
+        "name_zh": "住宿及餐飲業",
+        "name_en": "Accommodation and Food Services",
+        "level": 2,
+        "img": "/images/demand/D56.png"
+      },
+
+      "D57": {
+        "name_zh": "出版影音及資通訊業",
+        "name_en": "Publishing, Media and Information Services",
+        "level": 2,
+        "img": "/images/demand/D57.png"
+      },
+
+      "D59": {
+        "name_zh": "金融及保險業",
+        "name_en": "Finance and Insurance",
+        "level": 2,
+        "img": "/images/demand/D59.png"
+      },
+
+      "D60": {
+        "name_zh": "不動產業",
+        "name_en": "Real Estate",
+        "level": 2,
+        "img": "/images/demand/D60.png"
+      },
+
+      "D61": {
+        "name_zh": "專業、科學及技術服務業",
+        "name_en": "Professional, Scientific and Technical Services",
+        "level": 2,
+        "img": "/images/demand/D61.png"
+      },
+
+      "D62": {
+        "name_zh": "支援服務業",
+        "name_en": "Support Services",
+        "level": 2,
+        "img": "/images/demand/D62.png"
+      },
+
+      "D63": {
+        "name_zh": "公共行政及國防",
+        "name_en": "Public Administration and Defense",
+        "level": 2,
+        "img": "/images/demand/D63.png"
+      },
+
+      "D64": {
+        "name_zh": "教育業",
+        "name_en": "Education",
+        "level": 2,
+        "img": "/images/demand/D64.png"
+      },
+
+      "D65": {
+        "name_zh": "醫療保健及社會工作服務業",
+        "name_en": "Healthcare and Social Work Services",
+        "level": 2,
+        "img": "/images/demand/D65.png"
+      },
+
+      "D66": {
+        "name_zh": "藝術、娛樂及休閒服務業",
+        "name_en": "Arts, Entertainment and Recreation",
+        "level": 2,
+        "img": "/images/demand/D66.png"
+      },
+
+      "D67": {
+        "name_zh": "其他服務業",
+        "name_en": "Other Services",
+        "level": 2,
+        "img": "/images/demand/D67.png"
+      }
     }
   },
 
   "D68": {
-    "name": "住宅部門",
+    "name_zh": "住宅部門",
+    "name_en": "Residential Sector",
     "level": 1,
-    "img": "/images/D68.png"
+    "img": "/images/demand/D68.png"
   }
 }
