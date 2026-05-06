@@ -61,7 +61,7 @@ Object.values(supplyCatalog).forEach((s) => {
   supplyMap[s.source_id] = s;
 });
 
-function getSupplyName(info) {
+function getSupplyName(info, language) {
   if (!info) return "";
 
   return language === "en"
@@ -73,9 +73,8 @@ function getSupplyName(info) {
 
 const demandLevel = {};
 const demandName = {};
-const language = "zh";
 
-function getDemandName(code) {
+function getDemandName(code, language) {
   return demandName[code]?.[language] || code;
 }
 
@@ -262,7 +261,7 @@ function GridSphere() {
 
 /* Supply Nodes */
 
-function SupplyNodes({ year, onHover, onSelect, selected }) {
+function SupplyNodes({ year, language, onHover, onSelect, selected }) {
   const { camera } = useThree();
   const BASE = import.meta.env.BASE_URL;
   const supplyLayout = supplyLayouts[year];
@@ -387,7 +386,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
               e.stopPropagation();
               onSelect({
                 code: id,
-                name: getSupplyName(info) || id,
+                name: getSupplyName(info, language) || id,
                 type: "supply",
               });
             }}
@@ -401,7 +400,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
 
               onHover({
                 code: id,
-                name: getSupplyName(info) || id,
+                name: getSupplyName(info, language) || id,
                 type: "supply",
               });
             }}
@@ -425,7 +424,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
 
 /* Demand Nodes */
 
-function DemandNodes({ year, lod, onHover, onSelect, selected }) {
+function DemandNodes({ year, language, lod, onHover, onSelect, selected }) {
   const { camera } = useThree();
   const demandLayout = demandLayouts[year];
 
@@ -471,7 +470,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
             e.stopPropagation();
             onHover({
               code: id,
-              name: getDemandName(id) || id,
+              name: getDemandName(id, language) || id,
               type: "demand",
             });
           }}
@@ -481,7 +480,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
             e.stopPropagation();
             onSelect({
               code: id,
-              name: getDemandName(id) || id,
+              name: getDemandName(id, language) || id,
               type: "demand",
             });
           }}
@@ -510,7 +509,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           <Label
             position={[0, size + 0.18, 0]}
             worldPosition={position}
-            text={getDemandName(id)}
+            text={getDemandName(id, language)}
             baseSize={18}
           />
         )}
@@ -518,7 +517,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           <Label
             position={[0, size + 0.14, 0]}
             worldPosition={position}
-            text={getDemandName(id)}
+            text={getDemandName(id, language)}
             baseSize={12}
           />
         )}
@@ -526,7 +525,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           <Label
             position={[0, size + 0.1, 0]}
             worldPosition={position}
-            text={getDemandName(id)}
+            text={getDemandName(id, language)}
             baseSize={10}
           />
         )}
@@ -700,6 +699,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 
 function Scene({
   year,
+  language,
   onHover,
   onSelect,
   selected,
@@ -743,6 +743,7 @@ function Scene({
 
       <SupplyNodes
         year={year}
+        language={language}
         onHover={onHover}
         hovered={hovered}
         selected={selected}
@@ -751,6 +752,7 @@ function Scene({
 
       <DemandNodes
         year={year}
+        language={language}
         lod={lod}
         onHover={onHover}
         onSelect={onSelect}
@@ -770,6 +772,7 @@ function Scene({
 
 export default function GlobeVisualizer({
   year,
+  language,
   onHover,
   onSelect,
   selected,
@@ -804,6 +807,7 @@ export default function GlobeVisualizer({
       >
         <Scene
           year={year}
+          language={language}
           onHover={onHover}
           onSelect={onSelect}
           selected={selected}

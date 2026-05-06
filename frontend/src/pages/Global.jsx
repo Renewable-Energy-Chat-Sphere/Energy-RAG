@@ -154,27 +154,81 @@ export default function Global({ isMobile }) {
   }
 
   const energyData = getEnergyData(year);
+  const [language, setLanguage] = useState("zh");
+
+  const TEXT = {
+    zh: {
+      panel: "能源控制面板",
+      year: "年份",
+      flow: "顯示連線",
+      search: "搜尋部門...",
+      ai: "點我詢問能源",
+
+      mainDemand: "主要需求項目",
+      mainSupply: "主要供給能源",
+
+      analysis: "本年度分析",
+
+      hoverDemand: "相關需求項目",
+      hoverSupply: "相關能源供給",
+
+      empty: "點擊模型節點查看資訊",
+
+      askPlaceholder: `例如：${year}年 ${getName(selected?.code) || ""} 的能源佔比`,
+    },
+
+    en: {
+      panel: "Energy Control Panel",
+      year: "Year",
+      flow: "Show Flow",
+      search: "Search...",
+      ai: "Ask Energy AI",
+
+      mainDemand: "Main Demand Sectors",
+      mainSupply: "Main Energy Sources",
+
+      analysis: "Annual Analysis",
+
+      hoverDemand: "Related Demand Sectors",
+      hoverSupply: "Related Energy Sources",
+
+      empty: "Click nodes to view information",
+
+      askPlaceholder: `Example: ${year} energy ratio of ${getName(selected?.code) || ""}`,
+    },
+  };
+
+  const t = TEXT[language];
 
   function getName(code) {
     if (!code) return "";
 
-    // 取得供給資料
+    // 供給資料
     if (code.startsWith("S")) {
-      return supplyCatalog?.[code]?.name_zh || code;
+      const supply = supplyCatalog?.[code];
+
+      return language === "en"
+        ? supply?.name_en || supply?.name_zh || code
+        : supply?.name_zh || supply?.name_en || code;
     }
 
-    // 取得需求資料
+    // 需求資料
     function search(nodeMap) {
       for (const key in nodeMap) {
         const node = nodeMap[key];
 
-        if (key === code) return node.name;
+        if (key === code) {
+          return language === "en"
+            ? node.name_en || node.name_zh || code
+            : node.name_zh || node.name_en || code;
+        }
 
         if (node.children) {
           const found = search(node.children);
           if (found) return found;
         }
       }
+
       return null;
     }
 
@@ -193,7 +247,7 @@ export default function Global({ isMobile }) {
         .map(([supplyId, value]) => {
           const supply = supplyCatalog[supplyId];
 
-          const name = supply?.name_zh || supplyId;
+          const name = getName(supplyId);
 
           return {
             id: supplyId,
@@ -338,7 +392,7 @@ export default function Global({ isMobile }) {
   useEffect(() => {
     if (!selected) return;
     if (selected.code.startsWith("S")) return;
-    setQuestion(`${year} ${selected.name} 能源比例`);
+    setQuestion(`${year} ${getName(selected.code)} 能源比例`);
 
     setLoading(true); // ⭐ 開始動畫
     setPredictionData(null); // ⭐ 清空舊資料
@@ -349,7 +403,7 @@ export default function Global({ isMobile }) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        question: `${year}年 ${selected.name} 下一年能源用量`,
+        question: `${year}年 ${getName(selected.code)} 下一年能源用量`,
         year: year,
         mode: "dynamic",
       }),
@@ -592,11 +646,11 @@ export default function Global({ isMobile }) {
       <div className="control-panel">
         <div className="panel-row">
           <span className="title-content">
-            <i className="fi fi-br-settings"></i>能源控制面板
+            <i className="fi fi-br-settings"></i>{t.panel}
           </span>
 
           <div className="label-group">
-            <label>年份</label>
+            <label>{t.year}</label>
             <select value={year} onChange={(e) => setYear(e.target.value)}>
               {years.map((y) => (
                 <option key={y} value={y}>
@@ -612,14 +666,14 @@ export default function Global({ isMobile }) {
               checked={showFlow}
               onChange={(e) => setShowFlow(e.target.checked)}
             />
-            顯示連線
+            {t.flow}
           </label>
 
           <div className="search-box">
             <i className="fi fi-br-search search-icon"></i>
             <input
               type="text"
-              placeholder="搜尋部門..."
+              placeholder={t.search}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -630,7 +684,7 @@ export default function Global({ isMobile }) {
               className="fi fi-br-comments"
               style={{ marginRight: "10px" }}
             ></i>
-            點我詢問能源
+            {t.ai}
           </div>
         </div>
       </div>
@@ -647,6 +701,7 @@ export default function Global({ isMobile }) {
         >
           <GlobeVisualizer
             year={year}
+            language={language}
             onHover={onHover}
             onSelect={onSelect}
             selected={selected}
@@ -660,13 +715,13 @@ export default function Global({ isMobile }) {
           <div className="mobile-bottom-panel">
             {!selected && (
               <div className="info-empty">
-                <h3>點擊球體查看資訊</h3>
+                <h3>{t.empty}</h3>
               </div>
             )}
 
             {selected && (
               <div className="info-card">
-                <h2>{selected.name}</h2>
+                <h2>{getName(selected.code)}</h2>
 
                 <p>
                   {(selected?.code?.startsWith("S") ? [] : getEnergyList())
@@ -687,7 +742,7 @@ export default function Global({ isMobile }) {
           <div className="info-panel">
             {!selected && (
               <div className="info-empty">
-                <h3>點擊模型節點查看資訊</h3>
+                <h3>{t.empty}</h3>
               </div>
             )}
 
@@ -707,7 +762,7 @@ export default function Global({ isMobile }) {
                 >
                   ✕
                 </div>
-                <h2>{selected.name}</h2>
+                <h2>{getName(selected.code)}</h2>
 
                 {(() => {
                   const node = findNodeByCode(selected.code, hierarchy);
@@ -731,8 +786,9 @@ export default function Global({ isMobile }) {
                 <div className="info-content">
                   <h3>
                     {selected?.code?.startsWith("S")
-                      ? "主要需求項目"
-                      : "主要供給能源"}
+                      ? t.mainDemand
+                      : t.mainSupply
+                    }
                   </h3>
                   <p>
                     {getEnergyList()
@@ -745,7 +801,7 @@ export default function Global({ isMobile }) {
                       ))}
                   </p>
 
-                  <h3>本年度分析</h3>
+                  <h3>{t.analysis}</h3>
                   <p className="chart-note">
                     {selected?.code?.startsWith("S")
                       ? "本圖呈現所有需求項目在此能源中的使用比例（以此能源總消耗量為基準）"
@@ -778,7 +834,7 @@ export default function Global({ isMobile }) {
                             <Cell
                               key={index}
                               fill={
-                                entry.name === "其他"
+                                entry.category === "Other"
                                   ? "#808080"
                                   : selected?.code?.startsWith("S")
                                     ? DEPT_COLOR[getRootDept(entry.id)] ||
@@ -821,7 +877,7 @@ export default function Global({ isMobile }) {
                                         width: 8,
                                         height: 8,
                                         background:
-                                          item.name === "其他"
+                                          item.category === "Other"
                                             ? "#808080"
                                             : selected?.code?.startsWith("S")
                                               ? DEPT_COLOR[
@@ -998,11 +1054,11 @@ export default function Global({ isMobile }) {
             }}
           >
             <div className="hover-card">
-              <div className="hover-header">{hovered.name}</div>
+              <div className="hover-header">{getName(hovered.code)}</div>
 
               {hovered?.code?.startsWith("S") ? (
                 <div className="hover-content">
-                  相關需求項目：
+                  {t.hoverDemand}：
                   <br />
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
@@ -1017,7 +1073,7 @@ export default function Global({ isMobile }) {
                 </div>
               ) : (
                 <div className="hover-content">
-                  相關能源供給：
+                  {t.hoverSupply}：
                   <br />
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
@@ -1052,7 +1108,7 @@ export default function Global({ isMobile }) {
             </div>
 
             <textarea
-              placeholder={`例如：${year}年 ${selected?.name || ""} 的能源占比`}
+              placeholder={t.askPlaceholder}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={handleKeyDown}
