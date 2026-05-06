@@ -1,4 +1,3 @@
-
 import json
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -150,7 +149,7 @@ def parse_ratio_like_sheet(file_path: Path, sheet_name: str, year: int) -> List[
 # }
 # =========================
 def walk_hierarchy(node_code: str, node_data: Dict[str, Any], parent_code: str = "", parent_name: str = "") -> Iterable[Dict[str, Any]]:
-    node_name = normalize_text(node_data.get("name", ""))
+    node_name = normalize_text(node_data.get("name_zh", ""))
     level = node_data.get("level", None)
     children = node_data.get("children", {}) or {}
 
@@ -175,7 +174,7 @@ def walk_hierarchy(node_code: str, node_data: Dict[str, Any], parent_code: str =
     if children:
         child_pairs = []
         for child_code, child_data in children.items():
-            child_pairs.append(f"{normalize_text(child_data.get('name', ''))}（代碼 {child_code}）")
+            child_pairs.append(f"{normalize_text(child_data.get('name_zh', ''))}（代碼 {child_code}）")
 
         children_text = (
             f"{node_name}（代碼 {node_code}）的下層節點包含："
@@ -191,7 +190,7 @@ def walk_hierarchy(node_code: str, node_data: Dict[str, Any], parent_code: str =
             "node_name": node_name,
             "level": level,
             "children_codes": list(children.keys()),
-            "children_names": [normalize_text(c.get("name", "")) for c in children.values()],
+            "children_names": [normalize_text(c.get("name_zh", "")) for c in children.values()],
         }
 
         for child_code, child_data in children.items():

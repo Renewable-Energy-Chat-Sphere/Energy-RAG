@@ -172,7 +172,7 @@ export default function Global({ isMobile }) {
       hoverSupply: "相關能源供給",
       empty: "點擊模型節點查看資訊",
       askPlaceholder: `例如：${year}年 ${getName(selected?.code) || ""} 的能源佔比`,
-      aiPrediction: "能源結構預測（AI模型）",
+      aiPrediction: "能源結構預測（AI 模型）",
       aiLoading: "AI 正在預測中...",
       changeAnalysis: "變化分析",
       noPrediction: "此部門暫無預測資料",
@@ -846,8 +846,8 @@ export default function Global({ isMobile }) {
                           nameKey="name"
                           cx="50%"
                           cy="50%"
-                          innerRadius={50}
-                          outerRadius={130}
+                          innerRadius={60}
+                          outerRadius={140}
                           paddingAngle={4}
                           cornerRadius={8}
                           stroke="none"
@@ -876,13 +876,13 @@ export default function Global({ isMobile }) {
                                 display: "flex",
                                 flexWrap: "wrap",
                                 justifyContent: "center",
-                                gap: "6px",
+                                gap: "5px",
                                 fontSize: 12,
-                                marginTop: 20,
+                                margin: "20px 0",
                               }}
                             >
                               {getPieData()
-                                .slice(0, 6)
+                                .slice(0, 5)
                                 .map((item, i) => (
                                   <div
                                     key={i}

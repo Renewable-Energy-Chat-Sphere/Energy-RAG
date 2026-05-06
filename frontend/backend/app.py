@@ -91,18 +91,29 @@ def build_dept_map(hierarchy):
 
     def traverse(obj):
         for code, val in obj.items():
-            name = val["name"]
+
+            if not isinstance(val, dict):
+                continue
+
+            name = (
+                val.get("name_zh")
+                or val.get("name_en")
+            )
+
+            if not name:
+                continue
 
             mapping[name] = code
             mapping[name.replace("部門", "")] = code
             mapping[name.replace("業", "")] = code
 
-            if "children" in val:
-                traverse(val["children"])
+            children = val.get("children")
+
+            if isinstance(children, dict):
+                traverse(children)
 
     traverse(hierarchy)
     return mapping
-
 
 DEPT_NAME_MAP = build_dept_map(HIERARCHY)
 
@@ -316,7 +327,7 @@ def run_prediction(target_year, dept_filters=None, mode="full"):
             model.fit(df)
 
             # ⭐ 預測下一年
-            future = model.make_future_dataframe(periods=1, freq="Y")
+            future = model.make_future_dataframe(periods=1, freq="YE")
             forecast = model.predict(future)
 
             pred = float(forecast.iloc[-1]["yhat"])
