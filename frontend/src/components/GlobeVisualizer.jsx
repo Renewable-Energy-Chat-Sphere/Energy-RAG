@@ -56,18 +56,36 @@ Object.keys(demandSupplyRaw).forEach((path) => {
 /* Supply Map */
 
 const supplyMap = supplyCatalog;
+
 Object.values(supplyCatalog).forEach((s) => {
   supplyMap[s.source_id] = s;
 });
+
+function getSupplyName(info) {
+  if (!info) return "";
+
+  return language === "en"
+    ? info.name_en || info.name_zh
+    : info.name_zh || info.name_en;
+}
 
 /* Build hierarchy */
 
 const demandLevel = {};
 const demandName = {};
+const language = "zh";
+
+function getDemandName(code) {
+  return demandName[code]?.[language] || code;
+}
 
 function buildLevel(node, code) {
   demandLevel[code] = node.level;
-  demandName[code] = node.name;
+
+  demandName[code] = {
+    zh: node.name_zh || code,
+    en: node.name_en || code,
+  };
 
   if (node.children) {
     Object.entries(node.children).forEach(([childCode, child]) => {
@@ -369,7 +387,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
               e.stopPropagation();
               onSelect({
                 code: id,
-                name: info?.name_zh || id,
+                name: getSupplyName(info) || id,
                 type: "supply",
               });
             }}
@@ -383,7 +401,7 @@ function SupplyNodes({ year, onHover, onSelect, selected }) {
 
               onHover({
                 code: id,
-                name: info?.name_zh || id,
+                name: getSupplyName(info) || id,
                 type: "supply",
               });
             }}
@@ -453,7 +471,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
             e.stopPropagation();
             onHover({
               code: id,
-              name: demandName[id] || id,
+              name: getDemandName(id) || id,
               type: "demand",
             });
           }}
@@ -463,7 +481,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
             e.stopPropagation();
             onSelect({
               code: id,
-              name: demandName[id] || id,
+              name: getDemandName(id) || id,
               type: "demand",
             });
           }}
@@ -492,7 +510,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           <Label
             position={[0, size + 0.18, 0]}
             worldPosition={position}
-            text={demandName[id]}
+            text={getDemandName(id)}
             baseSize={18}
           />
         )}
@@ -500,7 +518,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           <Label
             position={[0, size + 0.14, 0]}
             worldPosition={position}
-            text={demandName[id]}
+            text={getDemandName(id)}
             baseSize={12}
           />
         )}
@@ -508,7 +526,7 @@ function DemandNodes({ year, lod, onHover, onSelect, selected }) {
           <Label
             position={[0, size + 0.1, 0]}
             worldPosition={position}
-            text={demandName[id]}
+            text={getDemandName(id)}
             baseSize={10}
           />
         )}
