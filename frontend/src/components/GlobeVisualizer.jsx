@@ -830,13 +830,17 @@ export default function GlobeVisualizer({
             width: "200px",
             padding: "15px",
             borderRadius: "20px",
-            background: "rgba(0, 0, 0, 0.6)",
+            background: "rgba(0, 0, 0, 0.7)",
             color: "#fff",
             fontSize: "12px",
             backdropFilter: "blur(8px)",
           }}
         >
-          <div style={{ marginBottom: "10px" }}>供需連線強度</div>
+          <div style={{ marginBottom: "10px" }}>
+            {language === "en"
+              ? "Supply-Demand Flow Strength"
+              : "供需連線強度"}
+          </div>
 
           <div
             style={{
@@ -855,8 +859,8 @@ export default function GlobeVisualizer({
               marginBottom: "5px",
             }}
           >
-            <span>低</span>
-            <span>高</span>
+            <span>{language === "en" ? "Low" : "低"}</span>
+            <span>{language === "en" ? "High" : "高"}</span>
           </div>
 
           <div
@@ -867,12 +871,18 @@ export default function GlobeVisualizer({
             }}
             onClick={() => setShowLegendDetail(!showLegendDetail)}
           >
-            {showLegendDetail ? "▲ 收起說明" : "▼ 查看說明"}
+            {showLegendDetail
+              ? language === "en"
+                ? "▲ Hide Details"
+                : "▲ 收起說明"
+              : language === "en"
+                ? "▼ View Details"
+                : "▼ 查看說明"}
           </div>
 
           <div
             style={{
-              maxHeight: showLegendDetail ? "200px" : "0px",
+              maxHeight: showLegendDetail ? "300px" : "0px",
               opacity: showLegendDetail ? 1 : 0,
               overflow: "hidden",
               transition: "all 0.35s ease",
@@ -887,17 +897,44 @@ export default function GlobeVisualizer({
               }}
             >
               <div style={{ marginBottom: "5px" }}>
-                顏色以連續漸層呈現依同一項目中所有單位比例正規化 (0-1)
-                後之結果：
+                {language === "en"
+                  ? "Colors represent normalized relative flow intensity (0–1) within the same item using a continuous gradient:"
+                  : "顏色以連續漸層呈現依同一項目中所有單位比例正規化 (0-1) 後之結果："}
               </div>
-              <div>青色（{"< 0.25"}）- 低</div>
-              <div>綠色（{"< 0.5"}）- 偏低</div>
-              <div>黃色（{"< 0.75"}）- 中等</div>
-              <div>橘色（{"< 1"}）- 高</div>
-              <div>紅色（{"= 1"}）- 最高</div>
+              <div>
+                {language === "en"
+                  ? "Cyan (< 0.25) - Low"
+                  : "青色（< 0.25）- 低"}
+              </div>
+
+              <div>
+                {language === "en"
+                  ? "Green (< 0.5) - Moderately Low"
+                  : "綠色（< 0.5）- 偏低"}
+              </div>
+
+              <div>
+                {language === "en"
+                  ? "Yellow (< 0.75) - Medium"
+                  : "黃色（< 0.75）- 中等"}
+              </div>
+
+              <div>
+                {language === "en"
+                  ? "Orange (< 1) - High"
+                  : "橘色（< 1）- 高"}
+              </div>
+
+              <div>
+                {language === "en"
+                  ? "Red (= 1) - Highest"
+                  : "紅色（= 1）- 最高"}
+              </div>
 
               <div style={{ marginTop: "10px" }}>
-                ※ 顏色代表相對強度，與節點位置分布（相似度）不同
+                {language === "en"
+                  ? "※ Colors indicate relative flow intensity, which differs from node position distribution (similarity)."
+                  : "※ 顏色代表相對強度，與節點位置分布（相似度）不同"}
               </div>
             </div>
           </div>

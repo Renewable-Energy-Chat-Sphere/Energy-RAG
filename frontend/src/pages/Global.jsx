@@ -1,5 +1,6 @@
 import React from "react";
 import { Bar } from "react-chartjs-2";
+import { useTranslation } from "react-i18next";
 import { BarElement } from "chart.js";
 import { useState, useEffect } from "react";
 import {
@@ -18,7 +19,7 @@ import {
   LinearScale,
   PointElement,
   Legend as ChartLegend,
-  Tooltip as ChartTooltip, // ⭐ 改名字！
+  Tooltip as ChartTooltip,
 } from "chart.js";
 
 ChartJS.register(
@@ -28,7 +29,7 @@ ChartJS.register(
   PointElement,
   ChartLegend,
   BarElement,
-  ChartTooltip, // ⭐ 用新名字
+  ChartTooltip,
 );
 import GlobeVisualizer from "../components/GlobeVisualizer.jsx";
 import "./global.css";
@@ -126,27 +127,26 @@ export default function Global({ isMobile }) {
   };
 
   function getRootDept(code) {
-    function findParent(target, tree, parentKey = null) {
+    function search(tree, root = null) {
       for (const key in tree) {
-        if (key === target) return parentKey;
+        const node = tree[key];
 
-        if (tree[key].children) {
-          const found = findParent(target, tree[key].children, key);
+        const currentRoot = root || key;
+
+        if (key === code) {
+          return currentRoot;
+        }
+
+        if (node.children) {
+          const found = search(node.children, currentRoot);
           if (found) return found;
         }
       }
+
       return null;
     }
 
-    let current = code;
-
-    while (current) {
-      if (DEPT_COLOR[current]) return current;
-
-      current = findParent(current, hierarchy);
-    }
-
-    return null;
+    return search(hierarchy);
   }
 
   function getEnergyData(year) {
@@ -154,7 +154,8 @@ export default function Global({ isMobile }) {
   }
 
   const energyData = getEnergyData(year);
-  const [language, setLanguage] = useState("zh");
+  const { i18n } = useTranslation();
+  const language = i18n.language;
 
   const TEXT = {
     zh: {
@@ -163,18 +164,20 @@ export default function Global({ isMobile }) {
       flow: "顯示連線",
       search: "搜尋部門...",
       ai: "點我詢問能源",
-
+      send: "送出",
       mainDemand: "主要需求項目",
       mainSupply: "主要供給能源",
-
       analysis: "本年度分析",
-
       hoverDemand: "相關需求項目",
       hoverSupply: "相關能源供給",
-
       empty: "點擊模型節點查看資訊",
-
       askPlaceholder: `例如：${year}年 ${getName(selected?.code) || ""} 的能源佔比`,
+      aiPrediction: "能源結構預測（AI模型）",
+      aiLoading: "AI 正在預測中...",
+      changeAnalysis: "變化分析",
+      noPrediction: "此部門暫無預測資料",
+      accuracy: "預測準確度",
+      trendAnalysis: "AI 預測趨勢分析（歷年實際值 vs 預測值）",
     },
 
     en: {
@@ -183,18 +186,20 @@ export default function Global({ isMobile }) {
       flow: "Show Flow",
       search: "Search...",
       ai: "Ask Energy AI",
-
       mainDemand: "Main Demand Sectors",
       mainSupply: "Main Energy Sources",
-
       analysis: "Annual Analysis",
-
+      send: "Send",
       hoverDemand: "Related Demand Sectors",
       hoverSupply: "Related Energy Sources",
-
       empty: "Click nodes to view information",
-
       askPlaceholder: `Example: ${year} energy ratio of ${getName(selected?.code) || ""}`,
+      aiPrediction: "AI Energy Structure Prediction",
+      aiLoading: "AI is predicting...",
+      changeAnalysis: "Change Analysis",
+      noPrediction: "No prediction data available for this sector.",
+      accuracy: "Prediction Accuracy",
+      trendAnalysis: "AI Prediction Trend Analysis (Historical Actual vs Predicted)",
     },
   };
 
@@ -394,8 +399,8 @@ export default function Global({ isMobile }) {
     if (selected.code.startsWith("S")) return;
     setQuestion(`${year} ${getName(selected.code)} 能源比例`);
 
-    setLoading(true); // ⭐ 開始動畫
-    setPredictionData(null); // ⭐ 清空舊資料
+    setLoading(true); // 開始動畫
+    setPredictionData(null); // 清空舊資料
 
     fetch("http://127.0.0.1:8000/predict_department_energy", {
       method: "POST",
@@ -411,7 +416,7 @@ export default function Global({ isMobile }) {
       .then((res) => res.json())
       .then((data) => {
         setTimeout(() => {
-          // ⭐ 模擬動畫延遲（很重要）
+          // 模擬動畫延遲
           setPredictionData(data);
           setLoading(false);
         }, 500); // 0.5秒動畫感
@@ -435,14 +440,14 @@ export default function Global({ isMobile }) {
 
     if (!deptPred) return null;
 
-    // ⭐ 找下一年
+    // 找下一年
     const sortedYears = Object.keys(energyMap).sort((a, b) => a - b);
     const currentIndex = sortedYears.indexOf(year);
     const nextYear = sortedYears[currentIndex + 1];
 
     const nextYearData = energyMap[nextYear]?.[deptCode];
 
-    // ⭐ 本年 %
+    // 本年 %
     const total = Object.values(currentData).reduce((a, b) => a + b, 0);
 
     const currentPercent = {};
@@ -450,7 +455,7 @@ export default function Global({ isMobile }) {
       currentPercent[k] = total ? (v / total) * 100 : 0;
     });
 
-    // ⭐ 下一年實際 %
+    // 下一年實際 %
     let nextPercent = null;
 
     if (nextYearData) {
@@ -462,7 +467,7 @@ export default function Global({ isMobile }) {
       });
     }
 
-    // ⭐ 合併 key
+    // 合併 key
     const allKeys = Array.from(
       new Set([
         ...Object.keys(currentPercent),
@@ -484,7 +489,7 @@ export default function Global({ isMobile }) {
       },
     ];
 
-    // ⭐ 👉 關鍵：綠色
+    // 關鍵：綠色
     if (nextPercent) {
       datasets.push({
         label: `${Number(year) + 1}年（實際）`,
@@ -505,7 +510,7 @@ export default function Global({ isMobile }) {
 
     const datasets = [];
 
-    // ⭐ 抓前 3 個主要能源（避免線太多）
+    // 抓前 3 個主要能源
     const topEnergies = getEnergyList()
       .slice(0, 3)
       .map((e) => e.id);
@@ -528,7 +533,7 @@ export default function Global({ isMobile }) {
     });
 
     return {
-      labels: yearList, // ⭐ X軸變年份
+      labels: yearList, // X軸年份
       datasets,
     };
   }
@@ -540,7 +545,7 @@ export default function Global({ isMobile }) {
     const deptPred = predictionData.prediction?.[dept];
     if (!deptPred) return null;
 
-    // ⭐ 抓第一個能源（跟另一頁一樣）
+    // 抓第一個能源（跟另一頁一樣）
     const firstEnergy = Object.keys(deptPred)[0];
     if (!firstEnergy) return null;
 
@@ -552,8 +557,8 @@ export default function Global({ isMobile }) {
       datasets: [
         {
           label: "實際值",
-          pointRadius: 4, // ⭐ 讓點變大
-          pointHoverRadius: 6, // ⭐ hover更好抓
+          pointRadius: 4,
+          pointHoverRadius: 6,
           data: e.actual,
           borderColor: "#3b82f6",
           tension: 0.3,
@@ -575,7 +580,6 @@ export default function Global({ isMobile }) {
     const deptPred = predictionData.prediction?.[selected.code];
     if (!deptPred) return null;
 
-    // ⭐ 把今年轉成 %
     const total = Object.values(currentData).reduce((a, b) => a + b, 0);
 
     const currentPercent = {};
@@ -596,7 +600,7 @@ export default function Global({ isMobile }) {
       error += Math.abs(now - pred);
     });
 
-    // ⭐ 轉成準確度
+    // 轉成準確度
     const accuracy = 100 - error / 2;
 
     return Math.max(0, accuracy);
@@ -607,7 +611,7 @@ export default function Global({ isMobile }) {
     const deptPred = predictionData.prediction?.[selected.code];
     if (!deptPred) return [];
 
-    // ⭐ 今年轉 %
+    // 今年轉 %
     const total = Object.values(currentData).reduce((a, b) => a + b, 0);
 
     const currentPercent = {};
@@ -726,10 +730,15 @@ export default function Global({ isMobile }) {
                 <p>
                   {(selected?.code?.startsWith("S") ? [] : getEnergyList())
                     .slice(0, 3)
-                    .map((e, i) => (
+                    .filter((e) => e.fullName)
+                    .map((e, i, arr) => (
                       <span key={i}>
                         {e.fullName}
-                        {i < 2 ? "、" : ""}
+                        {i !== arr.length - 1
+                          ? language === "en"
+                            ? ", "
+                            : "、"
+                          : ""}
                       </span>
                     ))}
                 </p>
@@ -793,10 +802,15 @@ export default function Global({ isMobile }) {
                   <p>
                     {getEnergyList()
                       .slice(0, 3)
-                      .map((e, i) => (
+                      .filter((e) => e.fullName)
+                      .map((e, i, arr) => (
                         <span key={i}>
                           {e.fullName}
-                          {i < 2 ? "、" : ""}
+                          {i !== arr.length - 1
+                            ? language === "en"
+                              ? ", "
+                              : "、"
+                            : ""}
                         </span>
                       ))}
                   </p>
@@ -804,13 +818,22 @@ export default function Global({ isMobile }) {
                   <h3>{t.analysis}</h3>
                   <p className="chart-note">
                     {selected?.code?.startsWith("S")
-                      ? "本圖呈現所有需求項目在此能源中的使用比例（以此能源總消耗量為基準）"
-                      : "本圖呈現所有供給能源在此項目中的使用比例（以此項目總消耗量為基準）"}
+                      ? language === "en"
+                        ? "This chart shows the proportion of demand sectors using this energy source (based on total consumption of this energy)."
+                        : "本圖呈現所有需求項目在此能源中的使用比例（以此能源總消耗量為基準）"
+                      : language === "en"
+                        ? "This chart shows the proportion of energy sources used in this sector (based on total consumption of this sector)."
+                        : "本圖呈現所有供給能源在此項目中的使用比例（以此項目總消耗量為基準）"}
+
                     <br />
                     <span className="sub-note">
                       {selected?.code?.startsWith("S")
-                        ? "※ 總和 = 100%，表示此能源在各部門的分配比例"
-                        : "※ 總和 = 100%，與智慧查詢之全國佔比不同"}
+                        ? language === "en"
+                          ? "※ Total is 100%, representing how this energy is distributed across sectors."
+                          : "※ 總和 = 100%，表示此能源在各部門的分配比例"
+                        : language === "en"
+                          ? "※ Total is 100%, different from nationwide proportions in AI search."
+                          : "※ 總和 = 100%，與智慧查詢之全國佔比不同"}
                     </span>
                   </p>
 
@@ -834,13 +857,9 @@ export default function Global({ isMobile }) {
                             <Cell
                               key={index}
                               fill={
-                                entry.category === "Other"
-                                  ? "#808080"
-                                  : selected?.code?.startsWith("S")
-                                    ? DEPT_COLOR[getRootDept(entry.id)] ||
-                                      "#7b614b"
-                                    : CATEGORY_COLOR[entry.category] ||
-                                      "#3b82f6"
+                                selected?.code?.startsWith("S")
+                                  ? DEPT_COLOR[getRootDept(entry.id)] || "#808080"
+                                  : CATEGORY_COLOR[entry.category] || "#808080"
                               }
                             />
                           ))}
@@ -877,14 +896,9 @@ export default function Global({ isMobile }) {
                                         width: 8,
                                         height: 8,
                                         background:
-                                          item.category === "Other"
-                                            ? "#808080"
-                                            : selected?.code?.startsWith("S")
-                                              ? DEPT_COLOR[
-                                                  getRootDept(item.id)
-                                                ] || "#3b82f6"
-                                              : CATEGORY_COLOR[item.category] ||
-                                                "#3b82f6",
+                                          selected?.code?.startsWith("S")
+                                            ? DEPT_COLOR[getRootDept(item.id)] || "#808080"
+                                            : CATEGORY_COLOR[item.category] || "#808080",
                                         marginRight: 4,
                                       }}
                                     />
@@ -899,12 +913,12 @@ export default function Global({ isMobile }) {
                   </div>
                   {!selected?.code?.startsWith("S") && (
                     <>
-                      <h2>能源結構預測（AI模型）</h2>
+                      <h2>{t.aiPrediction}</h2>
 
                       {loading && (
                         <div className="prediction-loading">
                           <div className="loading-bar"></div>
-                          <p>AI 正在預測中...</p>
+                          <p>{t.aiLoading}</p>
                         </div>
                       )}
 
@@ -919,8 +933,8 @@ export default function Global({ isMobile }) {
                               responsive: true,
 
                               interaction: {
-                                mode: "index", // ⭐ 很重要！
-                                intersect: false, // ⭐ 很重要！
+                                mode: "index",
+                                intersect: false,
                               },
                               hover: {
                                 mode: "index",
@@ -929,8 +943,8 @@ export default function Global({ isMobile }) {
                               plugins: {
                                 tooltip: {
                                   enabled: true,
-                                  mode: "index", // ⭐ 加這行（關鍵）
-                                  intersect: false, // ⭐ 建議一起加
+                                  mode: "index",
+                                  intersect: false,
                                   callbacks: {
                                     label: function (context) {
                                       const yearNow = year;
@@ -943,7 +957,7 @@ export default function Global({ isMobile }) {
                                       } else if (context.datasetIndex === 1) {
                                         label = `${yearNext}年（預測）`;
                                       } else if (context.datasetIndex === 2) {
-                                        label = `${yearNext}年（實際）`; // ⭐ 綠色補上
+                                        label = `${yearNext}年（實際）`;
                                       }
 
                                       return `${label}: ${context.raw.toFixed(1)}%`;
@@ -966,7 +980,7 @@ export default function Global({ isMobile }) {
 
                       {predictionData && (
                         <div className="prediction-box">
-                          <h4 style={{ marginTop: "10px" }}>變化分析</h4>
+                          <h4 style={{ marginTop: "10px" }}>{t.changeAnalysis}</h4>
 
                           {getPredictionDiff()
                             .filter((item) => Math.abs(item.diff) > 1)
@@ -994,7 +1008,7 @@ export default function Global({ isMobile }) {
                             if (!deptPred) {
                               return (
                                 <p style={{ opacity: 0.6 }}>
-                                  此部門暫無預測資料
+                                  {t.noPrediction}
                                 </p>
                               );
                             }
@@ -1010,7 +1024,7 @@ export default function Global({ isMobile }) {
                                     : "?"}
 
                                   {/* ⭐ 這個才是你要的 tooltip */}
-                                  <div className="tooltip">預測準確度</div>
+                                  <div className="tooltip">{t.accuracy}</div>
                                 </div>
 
                                 <div className="prediction-title">
@@ -1063,10 +1077,14 @@ export default function Global({ isMobile }) {
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
 
-                    return list.map((d, i) => (
+                    return list.map((d, i, arr) => (
                       <span key={i}>
                         {d.name}
-                        {i !== list.length - 1 ? "、" : ""}
+                        {i !== arr.length - 1
+                            ? language === "en"
+                              ? ", "
+                              : "、"
+                            : ""}
                       </span>
                     ));
                   })()}
@@ -1078,10 +1096,14 @@ export default function Global({ isMobile }) {
                   {(() => {
                     const list = getEnergyList(hovered).slice(0, 3);
 
-                    return list.map((d, i) => (
+                    return list.map((d, i, arr) => (
                       <span key={i}>
                         {d.name}
-                        {i !== list.length - 1 ? "、" : ""}
+                        {i !== arr.length - 1
+                            ? language === "en"
+                              ? ", "
+                              : "、"
+                            : ""}
                       </span>
                     ));
                   })()}
@@ -1114,7 +1136,7 @@ export default function Global({ isMobile }) {
               onKeyDown={handleKeyDown}
             />
 
-            <button onClick={handleAsk}>送出</button>
+            <button onClick={handleAsk}>{t.send}</button>
 
             {answer && <div className="ai-answer">{answer}</div>}
           </div>
@@ -1124,7 +1146,7 @@ export default function Global({ isMobile }) {
         <div className="accuracy-overlay">
           <div className="accuracy-modal">
             <div className="accuracy-header">
-              <span>AI預測趨勢分析（歷年實際值 vs 預測值）</span>
+              <span>{t.trendAnalysis}</span>
               <span
                 className="close-btn"
                 onClick={() => setShowAccuracyChart(false)}
@@ -1140,14 +1162,14 @@ export default function Global({ isMobile }) {
                   responsive: true,
 
                   interaction: {
-                    mode: "index", // ⭐ 加這個
-                    intersect: false, // ⭐ 加這個
+                    mode: "index",
+                    intersect: false,
                   },
 
                   plugins: {
                     tooltip: {
                       enabled: true,
-                      mode: "index", // ⭐ 一樣加
+                      mode: "index",
                       intersect: false,
                       callbacks: {
                         label: (ctx) =>
