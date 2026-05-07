@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 // 🔥 Chart.js
 import { Line } from "react-chartjs-2";
@@ -26,7 +27,7 @@ export default function Prediction() {
   const [energyMap, setEnergyMap] = useState({});
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
-
+  const { t } = useTranslation();
   // =========================
   // 📥 JSON mapping
   // =========================
@@ -107,13 +108,13 @@ export default function Prediction() {
       labels: e.years,
       datasets: [
         {
-          label: "實際值",
+          label: t("prediction.actual"),
           data: e.actual,
           borderColor: "#3b82f6",
           tension: 0.3,
         },
         {
-          label: "預測值",
+          label: t("prediction.predicted"),
           data: e.predicted,
           borderColor: "#22c55e",
           tension: 0.3,
@@ -135,7 +136,7 @@ export default function Prediction() {
     <div style={container}>
       {/* 🔹 Header */}
       <div style={headerRow}>
-        <h2 style={title}>🔮 能源預測</h2>
+        <h2 style={title}>🔮 {t("prediction.title")}</h2>
 
         <div style={analysisBtn} onClick={() => setShowAnalysis(true)}>
           📊
@@ -146,7 +147,7 @@ export default function Prediction() {
       <input
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
-        placeholder="輸入：預測2025工業能源 或 明年工業用電"
+        placeholder={t("prediction.inputPlaceholder")}
         style={inputStyle}
       />
 
@@ -156,17 +157,17 @@ export default function Prediction() {
         onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
         onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
       >
-        開始預測
+        {t("prediction.start")}
       </button>
 
-      {loading && <p style={{ marginTop: 20 }}>⏳ 預測中...</p>}
-      {data?.error && <p style={{ marginTop: 20, color: "red" }}>❌ {data.error}</p>}
+      {loading && <p style={{ marginTop: 20 }}>⏳ {t("prediction.loading")}</p>}
+      {data?.error && <p style={{ marginTop: 20, color: "red" }}>❌ {t("prediction.error")}</p>}
 
       {/* 🔹 卡片 */}
       {data && !data.error && (
         <div style={{ marginTop: 40 }}>
           <div style={{ marginBottom: 20 }}>
-            您的問題：{question}
+            {t("prediction.yourQuestion")}：{question}
           </div>
 
           {data.summary?.map((item, i) => {
@@ -213,16 +214,16 @@ export default function Prediction() {
 
                 {selectedCard === i && (
                   <div style={detailBox}>
-                    <h4>📌 全部能源</h4>
+                    <h4>📌 {t("prediction.allEnergy")}</h4>
 
-                    {fullData.length === 0 && <p>資料不詳</p>}
+                    {fullData.length === 0 && <p>{t("prediction.noData")}</p>}
 
                     {fullData.map((e, idx) => (
                       <div key={idx} style={detailRow}>
                         <span>{energyMap[e.name] || e.name}</span>
-                        <span>{e.value?.toFixed(1) ?? "不詳"}%</span>
+                        <span>{e.value?.toFixed(1) ?? t("prediction.unknown")}%</span>
                         <span>
-                          {e.toe ? `${e.toe} 噸油當量` : "不詳"}
+                          {e.toe ? `${e.toe} ${t("prediction.toe")}` : t("prediction.unknown")}
                         </span>
                       </div>
                     ))}
@@ -242,17 +243,17 @@ export default function Prediction() {
               ✖
             </button>
 
-            <h3>📊 預測分析</h3>
+            <h3>📊 {t("prediction.analysis")}</h3>
 
             <p style={{ color: "#22c55e" }}>
-              準確度（MAPE）：{getAccuracy() ?? "--"}%
+              {t("prediction.accuracy")}：{getAccuracy() ?? "--"}%
             </p>
 
             <div style={{ marginTop: 20 }}>
               {getChartData() ? (
                 <Line data={getChartData()} />
               ) : (
-                <div style={chartBox}>沒有圖表資料</div>
+                <div style={chartBox}>{t("prediction.noData")}</div>
               )}
             </div>
           </div>

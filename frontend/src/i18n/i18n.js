@@ -89,7 +89,78 @@ const resources = {
         links: "快速連結",
         contact: "聯絡資訊",
         address: "地址：新北市新莊區中正路 510 號 天主教輔仁大學",
-      }
+      },
+      contact: {
+        title: "聯絡我們",
+        subtitle:
+            "如您對 EnerSphere TW（能源球 3D 視覺化與智慧能源代理系統）有任何建議、合作意願或技術問題，歡迎與我們聯繫。",
+        team: "專案團隊",
+        professor: "指導教授",
+        members: "專案成員",
+        org: "所屬單位",
+        school:"天主教輔仁大學",
+        department:"資訊管理系｜多模態視覺能源研究團隊",
+        form: "意見表",
+
+        name: "姓名",
+        email: "電子郵件",
+        phone: "電話號碼",
+        feeling: "使用感受",
+        message: "待改進之處",
+
+        submit: "送出",
+        sending: "寄送中",
+
+        success: "已成功送出！",
+        successInfo: "以下是您填寫的資訊：",
+
+        close: "關閉",
+        error: "發生錯誤",
+
+        feelings: ["非常滿意", "滿意", "一般", "不滿意", "非常不滿意"]
+        },
+    feedback: {
+        title: "回饋分析",
+        empty: "目前沒有任何回饋資料",
+
+        filter: ["全部", "正面", "中立", "負面"],
+
+        name: "姓名",
+        email: "Email",
+        phone: "電話",
+        feeling: "滿意度",
+        message: "內容",
+
+        modalTitle: "意見回饋",
+        reply: "系統回覆",
+
+        close: "關閉",
+
+        statusOpen: "處理中",
+        statusClosed: "已完成",
+
+        priorityHigh: "高優先"
+        },
+    prediction: {
+        title: "能源預測",
+        inputPlaceholder: "輸入：預測2025工業能源 或 明年工業用電",
+        start: "開始預測",
+        loading: "預測中...",
+        error: "API 連線失敗",
+
+        yourQuestion: "您的問題",
+        noData: "沒有圖表資料",
+        unknown: "資料不詳",
+
+        actual: "實際值",
+        predicted: "預測值",
+
+        analysis: "預測分析",
+        accuracy: "準確度",
+
+        allEnergy: "全部能源",
+        toe: "噸油當量"
+        },
     }
   },
   en: {
@@ -179,7 +250,78 @@ const resources = {
         links: "Quick Links",
         contact: "Contact Info",
         address: "Address: No. 510, Zhongzheng Rd., Xinzhuang Dist., New Taipei City, Taiwan (R.O.C.)"
-      }
+      },
+      contact: {
+        title: "Contact Us",
+        subtitle:
+            "If you have any suggestions, collaboration ideas, or technical issues regarding EnerSphere TW, feel free to contact us.",
+        team: "Project Team",
+        professor: "Supervisor",
+        members: "Members",
+        org: "Organization",
+        school:"Fu Jen Catholic University",
+        department:"Department of Information Management | Multimodal Visual Energy Research Team",
+        form: "Feedback Form",
+
+        name: "Name",
+        email: "Email",
+        phone: "Phone",
+        feeling: "Experience",
+        message: "Suggestions",
+
+        submit: "Submit",
+        sending: "Sending",
+
+        success: "Submitted Successfully!",
+        successInfo: "Here is your submitted information:",
+
+        close: "Close",
+        error: "Error",
+
+        feelings: ["Very Satisfied", "Satisfied", "Neutral", "Unsatisfied", "Very Unsatisfied"]
+        },
+    feedback: {
+        title: "Feedback Analysis",
+        empty: "No feedback available",
+
+        filter: ["All", "Positive", "Neutral", "Negative"],
+
+        name: "Name",
+        email: "Email",
+        phone: "Phone",
+        feeling: "Satisfaction",
+        message: "Message",
+
+        modalTitle: "Feedback Detail",
+        reply: "AI Response",
+
+        close: "Close",
+
+        statusOpen: "Processing",
+        statusClosed: "Completed",
+
+        priorityHigh: "High Priority"
+        },
+    prediction: {
+        title: "Energy Prediction",
+        inputPlaceholder: "Enter: predict 2025 industry energy or next year electricity",
+        start: "Start Prediction",
+        loading: "Predicting...",
+        error: "API connection failed",
+
+        yourQuestion: "Your Question",
+        noData: "No chart data",
+        unknown: "Unknown",
+
+        actual: "Actual",
+        predicted: "Predicted",
+
+        analysis: "Prediction Analysis",
+        accuracy: "Accuracy",
+
+        allEnergy: "All Energy",
+        toe: "toe"
+        }
     }
   }
 };

@@ -3,7 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSchool, faPeopleGroup } from "@fortawesome/free-solid-svg-icons";
 import BackToTopButton from "../components/BackToTopButton";
 import { faClipboardList } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from "react-i18next";
+
 export default function Contact() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -61,11 +64,10 @@ export default function Contact() {
   return (
     <section id="contact" className="contact-section">
       <div className="contact-container">
-        <h2 className="contact-title">聯絡我們</h2>
+        <h2 className="contact-title">{t("contact.title")}</h2>
 
         <p className="contact-subtitle">
-          如您對 EnerSphere TW（能源球 3D 視覺化與智慧能源代理系統）
-          有任何建議、合作意願或技術問題，歡迎與我們聯繫。
+          {t("contact.subtitle")}
         </p>
 
         <div className="contact-grid">
@@ -73,16 +75,16 @@ export default function Contact() {
           <div className="contact-info-card">
             <h3 className="section-title">
               <FontAwesomeIcon icon={faPeopleGroup} />
-              專案團隊
+              {t("contact.team")}
             </h3>
 
             <div className="info-block">
-              <strong>指導教授</strong>
+              <strong>{t("contact.professor")}</strong>
               <p>石佳惠｜159931@mail.fju.edu.tw</p>
             </div>
 
             <div className="info-block">
-              <strong>專案成員</strong>
+              <strong>{t("contact.members")}</strong>
               <p>陳相叡｜412402165@cloud.fju.edu.tw</p>
               <p>周子芹｜412402036@cloud.fju.edu.tw</p>
               <p>呂羿辰｜412402244@cloud.fju.edu.tw</p>
@@ -91,13 +93,13 @@ export default function Contact() {
 
             <h3 className="section-title">
               <FontAwesomeIcon icon={faSchool} />
-              所屬單位
+              {t("contact.org")}
             </h3>
 
             <p>
-              天主教輔仁大學
+              {t("contact.school")}
               <br />
-              資訊管理系｜多模態視覺能源研究團隊
+              {t("contact.department")}
             </p>
           </div>
 
@@ -106,13 +108,13 @@ export default function Contact() {
             <div className="form-header">
               <h3 className="section-title">
                 <FontAwesomeIcon icon={faClipboardList} className="form-icon" />
-                意見表
+                {t("contact.form")}
               </h3>
             </div>
 
             <form onSubmit={handleSubmit}>
               <label>
-                姓名
+                {t("contact.name")}
                 <input
                   type="text"
                   name="name"
@@ -123,7 +125,7 @@ export default function Contact() {
               </label>
 
               <label>
-                電子郵件
+                {t("contact.email")}
                 <input
                   type="email"
                   name="email"
@@ -134,7 +136,7 @@ export default function Contact() {
               </label>
 
               <label>
-                電話號碼
+                {t("contact.phone")}
                 <input
                   type="tel"
                   name="phone"
@@ -145,10 +147,9 @@ export default function Contact() {
               </label>
 
               <label>
-                使用感受
+                {t("contact.feeling")}
                 <div className="radio-group">
-                  {["非常滿意", "滿意", "一般", "不滿意", "非常不滿意"].map(
-                    (item) => (
+                  {t("contact.feelings", { returnObjects: true }).map((item) => (
                       <label key={item}>
                         <input
                           type="radio"
@@ -165,7 +166,7 @@ export default function Contact() {
               </label>
 
               <label>
-                待改進之處
+                {t("contact.message")}
                 <textarea
                   name="message"
                   value={form.message}
@@ -178,7 +179,7 @@ export default function Contact() {
                 className={`contact-btn ${loading ? "loading" : ""}`}
                 disabled={loading}
               >
-                {loading ? "寄送中" : "送出 Send"}
+                 {loading ? t("contact.sending") : t("contact.submit")}
               </button>
             </form>
 
@@ -192,29 +193,29 @@ export default function Contact() {
       {showSuccess && (
         <div className="success-modal">
           <div className="success-card">
-            <h3>✅ 已成功送出！</h3>
+            <h3>✅ {t("contact.success")}</h3>
 
-            <p className="success-text">以下是您填寫的資訊：</p>
+            <p className="success-text">{t("contact.successInfo")}</p>
 
             <div className="success-info">
               <p>
-                <strong>姓名：</strong>
+                <strong>{t("contact.name")}：</strong>
                 {submittedData?.name}
               </p>
               <p>
-                <strong>Email：</strong>
+                <strong>{t("contact.email")}：</strong>
                 {submittedData?.email}
               </p>
               <p>
-                <strong>電話：</strong>
+                <strong>{t("contact.phone")}：</strong>
                 {submittedData?.phone}
               </p>
               <p>
-                <strong>滿意度：</strong>
+                <strong>{t("contact.feeling")}：</strong>
                 {submittedData?.feeling}
               </p>
               <p>
-                <strong>內容：</strong>
+                <strong>{t("contact.message")}：</strong>
                 {submittedData?.message}
               </p>
             </div>
@@ -230,7 +231,7 @@ export default function Contact() {
                 }, 300); // 等動畫跑完
               }}
             >
-              關閉
+              {t("contact.close")}
             </button>
           </div>
         </div>
@@ -238,7 +239,7 @@ export default function Contact() {
       {errorMsg && (
         <div className="error-modal">
           <div className="error-card">
-            <h3>❌ 發生錯誤</h3>
+            <h3>❌ {t("contact.error")}</h3>
             <p>{errorMsg}</p>
 
             <button
@@ -252,7 +253,7 @@ export default function Contact() {
                 }, 300);
               }}
             >
-              關閉
+              {t("contact.close")}
             </button>
           </div>
         </div>

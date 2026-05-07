@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Feedback() {
+  const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState("全部");
   const [selected, setSelected] = useState(null);
@@ -34,12 +36,12 @@ export default function Feedback() {
       <div className="feedback-container">
         <h2 className="feedback-title">
           <i className="fi fi-br-chart-histogram"></i>
-          <span>回饋分析</span>
+          <span>{t("feedback.title")}</span>
         </h2>
 
         {/* 篩選 */}
         <div className="filter-bar">
-          {["全部", "正面", "中立", "負面"].map((f) => (
+          {t("feedback.filter", { returnObjects: true }).map((f) => (
             <button
               key={f}
               className={filter === f ? "active" : ""}
@@ -52,7 +54,7 @@ export default function Feedback() {
 
         {/* 列表 */}
         {filteredList.length === 0 ? (
-          <div className="empty-box">📭 目前沒有任何回饋資料</div>
+          <div className="empty-box">📭 {t("feedback.empty")}</div>
         ) : (
           <div className="list-container">
             {filteredList.map((item, i) => (
@@ -80,7 +82,9 @@ export default function Feedback() {
 
                   {/* ⭐ 新增 status */}
                   <span className={`status ${item.status}`}>
-                    {item.status === "closed" ? "已完成" : "處理中"}
+                    {item.status === "closed"
+                      ? t("feedback.statusClosed")
+                      : t("feedback.statusOpen")}
                   </span>
                 </div>
               </div>
@@ -93,26 +97,26 @@ export default function Feedback() {
       {selected && (
         <div className="modal">
           <div className="modal-card">
-            <h3>📩 意見回饋</h3>
+            <h3>📩 {t("feedback.modalTitle")}</h3>
 
             <p>
-              <strong>姓名：</strong>
+              <strong>{t("feedback.name")}：</strong>
               {selected.name}
             </p>
             <p>
-              <strong>Email：</strong>
+              <strong>{t("feedback.email")}：</strong>
               {selected.email}
             </p>
             <p>
-              <strong>電話：</strong>
+              <strong>{t("feedback.phone")}：</strong>
               {selected.phone}
             </p>
             <p>
-              <strong>滿意度：</strong>
+              <strong>{t("feedback.feeling")}：</strong>
               {selected.feeling}
             </p>
 
-            <div className="message-box">{selected.message}</div>
+            <div className="message-box">{t("feedback.message")}：</div>
 
             <div className="tags">
               <span className={`tag ${selected.sentiment}`}>
@@ -122,12 +126,12 @@ export default function Feedback() {
               <span className="tag category">{selected.category}</span>
 
               {selected.priority === "高" && (
-                <span className="tag high">🔥 高優先</span>
+                <span className="tag high">🔥 {t("feedback.priorityHigh")}</span>
               )}
 
               {/* ⭐ status */}
               <span className={`status ${selected.status}`}>
-                {selected.status === "closed" ? "已完成" : "處理中"}
+                {selected.status === "closed" ? t("feedback.statusClosed") : t("feedback.statusOpen")}
               </span>
             </div>
 
@@ -135,13 +139,13 @@ export default function Feedback() {
             {selected.reply && (
               <>
                 <p style={{ marginTop: "10px" }}>
-                  <strong>🤖 系統回覆：</strong>
+                  <strong>🤖 {t("feedback.reply")}：</strong>
                 </p>
                 <div className="reply-box">{selected.reply}</div>
               </>
             )}
 
-            <button onClick={() => setSelected(null)}>關閉</button>
+            <button onClick={() => setSelected(null)}>{t("feedback.close")}</button>
           </div>
         </div>
       )}
