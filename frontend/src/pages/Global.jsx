@@ -673,16 +673,7 @@ export default function Global({ isMobile }) {
             {t.flow}
           </label>
 
-          <div className="search-box">
-            <i className="fi fi-br-search search-icon"></i>
-            <input
-              type="text"
-              placeholder={t.search}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
+          
           <div className="ai-box" onClick={() => setShowAI(true)}>
             <i
               className="fi fi-br-comments"
