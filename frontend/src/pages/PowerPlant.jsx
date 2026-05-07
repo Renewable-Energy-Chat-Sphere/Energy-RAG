@@ -3,7 +3,8 @@ import data from "../data/power_full.json";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
-
+import BackToTopButton from "../components/BackToTopButton";
+import { useTranslation } from "react-i18next";
 /* ========================
    🔥 分類函數（只算一次）
 ======================== */
@@ -45,19 +46,19 @@ const { solar, wind, hydro, bio, geo } = getCategoryMap(data);
 /* ========================
    🔥 區域分類
 ======================== */
-const REGION_MAP = {
-  北部: ["林口", "大潭", "石門", "海湖"],
-  中部: ["台中", "麥寮", "大甲溪"],
-  南部: ["興達", "大林", "南部"],
-  東部: ["和平", "東部"],
+const getRegionMap = (t) => ({
+  [t("power.region_north")]: ["林口", "大潭", "石門", "海湖"],
+  [t("power.region_central")]: ["台中", "麥寮", "大甲溪"],
+  [t("power.region_south")]: ["興達", "大林", "南部"],
+  [t("power.region_east")]: ["和平", "東部"],
 
-  太陽能: solar,
-  風力: wind,
-  水力: hydro,
-  生質能: bio,
-  地熱: geo,
+  [t("power.solar")]: solar,
+  [t("power.wind")]: wind,
+  [t("power.hydro")]: hydro,
+  [t("power.bio")]: bio,
+  [t("power.geo")]: geo,
 
-  其他: Object.keys(data).filter(
+  [t("power.other")]: Object.keys(data).filter(
     (p) =>
       ![
         ...solar,
@@ -79,7 +80,7 @@ const REGION_MAP = {
         "東部",
       ].includes(p),
   ),
-};
+});
 
 /* ========================
    🔥 顏色
@@ -96,7 +97,7 @@ function getColor(percent) {
 /* ========================
    🔥 卡片
 ======================== */
-function PlantCard({ unit }) {
+function PlantCard({ unit, t }) {
   const percent =
     unit.max === 0 ? 0 : ((unit.value / unit.max) * 100).toFixed(1);
 
@@ -121,7 +122,7 @@ function PlantCard({ unit }) {
 
       <h4>{unit.name}</h4>
 
-      {isOffline && <span className="offline-tag">維修中🔧</span>}
+      {isOffline && <span className="offline-tag">{t("power.repair")} 🔧</span>}
 
       <p>
         {unit.value} / {unit.max} MW
@@ -134,6 +135,8 @@ function PlantCard({ unit }) {
    🔥 主元件
 ======================== */
 export default function PowerPlant() {
+  const { t, i18n } = useTranslation();
+  const REGION_MAP = getRegionMap(t);
   const [selected, setSelected] = useState("林口");
 
   // 🔥 即時資料
@@ -159,7 +162,7 @@ export default function PowerPlant() {
     <div className="power-container">
       {/* 🔥 模式顯示 */}
       <p style={{ fontSize: "14px", opacity: 0.7 }}>
-        {useLive ? "🟢 即時模式（台電API）" : "🟡 離線模式（本地資料）"}
+        {useLive ? t("power.live") : t("power.offline")}
       </p>
 
       {/* 🔥 分類 */}
@@ -189,37 +192,45 @@ export default function PowerPlant() {
 
         {useLive && liveData ? (
           <div>
-            <p>⚡ 即時發電量：{liveData.gen} 萬瓩</p>
-            <p>📊 用電負載：{liveData.load} 萬瓩</p>
-            <p>🟢 備轉容量：{liveData.reserve}%</p>
-            <p>🕒 更新時間：{liveData.time}</p>
+            <p>
+              ⚡ {t("power.generation")}：{liveData.gen} {t("unit.power")}
+            </p>
+            <p>
+              📊 {t("power.load")}：{liveData.load}
+              {t("unit.power")}
+            </p>
+            <p>
+              🟢 {t("power.reserve")}：{liveData.reserve}%
+            </p>
+            <p>
+              🕒 {t("power.update")}：{liveData.time}
+            </p>
           </div>
         ) : (
           <div>
             <p>
-              ⚡ 發電量(已/可)： {data[selected].total.value} /{" "}
+              ⚡ {t("power.output")}： {data[selected].total.value} /{" "}
               {data[selected].total.max} MW
             </p>
-            <p style={{ color: "#f59e0b" }}>（使用本地資料）</p>
+            <p style={{ color: "#f59e0b" }}>{t("power.local")}</p>
           </div>
         )}
       </div>
 
       {/* 🔧 維修 */}
       <p style={{ color: "#ef4444", fontWeight: 600 }}>
-        維修中機組：
-        {
-          data[selected].units.filter((u) => u.value === 0 && u.max > 0).length
-        }{" "}
-        台
+        {t("power.maintenance")}：
+        {data[selected].units.filter((u) => u.value === 0 && u.max > 0).length}{" "}
+        {t("power.unit")}
       </p>
 
       {/* 🔥 機組 */}
       <div className="card-grid">
         {data[selected].units.map((u, i) => (
-          <PlantCard key={i} unit={u} />
+          <PlantCard key={i} unit={u} t={t} />
         ))}
       </div>
+      <BackToTopButton />
     </div>
   );
 }

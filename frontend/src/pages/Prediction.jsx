@@ -17,7 +17,7 @@ ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Legend);
 // JSON
 import hierarchy from "../data/hierarchy.json";
 import supplyCatalog from "../data/supply_catalog.json";
-
+import BackToTopButton from "../components/BackToTopButton";
 export default function Prediction() {
   const [question, setQuestion] = useState("");
   const [data, setData] = useState(null);
@@ -60,13 +60,16 @@ export default function Prediction() {
     setSelectedCard(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/predict_department_energy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await fetch(
+        "http://127.0.0.1:8000/predict_department_energy",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ question }),
         },
-        body: JSON.stringify({ question }),
-      });
+      );
 
       const result = await res.json();
 
@@ -161,7 +164,11 @@ export default function Prediction() {
       </button>
 
       {loading && <p style={{ marginTop: 20 }}>⏳ {t("prediction.loading")}</p>}
-      {data?.error && <p style={{ marginTop: 20, color: "red" }}>❌ {t("prediction.error")}</p>}
+      {data?.error && (
+        <p style={{ marginTop: 20, color: "red" }}>
+          ❌ {t("prediction.error")}
+        </p>
+      )}
 
       {/* 🔹 卡片 */}
       {data && !data.error && (
@@ -189,9 +196,7 @@ export default function Prediction() {
                   e.currentTarget.style.transform = "translateY(0)";
                   e.currentTarget.style.boxShadow = "none";
                 }}
-                onClick={() =>
-                  setSelectedCard(selectedCard === i ? null : i)
-                }
+                onClick={() => setSelectedCard(selectedCard === i ? null : i)}
               >
                 <h3 style={cardTitle}>🏭 {deptMap[item.dept]}</h3>
 
@@ -221,9 +226,13 @@ export default function Prediction() {
                     {fullData.map((e, idx) => (
                       <div key={idx} style={detailRow}>
                         <span>{energyMap[e.name] || e.name}</span>
-                        <span>{e.value?.toFixed(1) ?? t("prediction.unknown")}%</span>
                         <span>
-                          {e.toe ? `${e.toe} ${t("prediction.toe")}` : t("prediction.unknown")}
+                          {e.value?.toFixed(1) ?? t("prediction.unknown")}%
+                        </span>
+                        <span>
+                          {e.toe
+                            ? `${e.toe} ${t("prediction.toe")}`
+                            : t("prediction.unknown")}
                         </span>
                       </div>
                     ))}
@@ -259,6 +268,8 @@ export default function Prediction() {
           </div>
         </div>
       )}
+
+      <BackToTopButton />
     </div>
   );
 }
@@ -266,6 +277,7 @@ export default function Prediction() {
 // ================= UI =================
 
 const container = {
+  minHeight: "calc(100vh - 220px)",
   padding: "80px 20px",
   maxWidth: "900px",
   margin: "auto",
