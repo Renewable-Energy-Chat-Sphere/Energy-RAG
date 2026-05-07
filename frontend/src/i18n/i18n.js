@@ -189,6 +189,82 @@ const resources = {
         other: "其他",
 
         unit: "台"
+      }, rag: {
+        subtitle: "Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索",
+
+        badge1: "多模態分析支援",
+        badge2: "能源決策助理",
+        badge3: "相關問題解答",
+
+        chatMessage: "訊息",
+        chat: "對話",
+
+        submit: "送出",
+        answer: "回答",
+
+        chatTab: "Chat",
+        webTab: "Web",
+        pdfTab: "PDF",
+        avTab: "影音",
+        tableTab: "表格",
+
+        webTitle: "網站分析",
+        pdfTitle: "PDF 分析",
+        avTitle: "影音分析",
+        tableTitle: "表格分析",
+
+        url: "網址",
+
+        chatPlaceholder: "請輸入您的問題。",
+        webPlaceholder: "想問什麼？例如：這個網站的功能是甚麼？",
+        pdfPlaceholder: "想問任何PDF文件中的什麼內容？",
+        avPlaceholder: "想從影片/音訊找什麼？",
+        tablePlaceholder: "想分析表格或是問問題嗎？例如：2024 總發電量是多少？",
+
+        uploadPdf: "上傳 PDF",
+        uploadAv: "上傳影音",
+        uploadTable: "上傳表格",
+
+        thinking: "思考中...",
+
+        loadingWeb: "解析網站中...",
+        loadingPdf: "解析 PDF 中...",
+        loadingAv: "處理影音中...",
+        loadingTable: "解析表格中...",
+
+        noResponse: "(無回應)",
+
+        generated: "已生成完整報告",
+        download: "下載檔案 / 報告",
+
+        noExport: "沒有可匯出的結構化資料",
+
+        pdfError: "PDF 生成失敗",
+        excelError: "Excel 生成失敗",
+
+        downloadError: "下載失敗",
+        excelDownloadError: "Excel 下載失敗",
+
+        formula: "計算公式如下：",
+
+        formulaDesc:
+          "將「{{year}}」年度能源平衡表的各能源使用量(x)除以該年度的總使用量(M)，得到各能源的使用比例。",
+
+        commonEnergy: "共同能源",
+
+        yearHighlight: "{{year}}年較突出",
+
+        departmentHighlight: "{{department}}較突出",
+
+        yearLabel: "{{year}}年",
+
+        separator: "、",
+
+        avSource: "影音來源",
+        tableSource: "表格來源",
+
+        rows: "列",
+        cols: "欄"
       },
     }
   },
@@ -380,7 +456,83 @@ const resources = {
 
         unit: "Units"
       },
+      rag: {
+        subtitle: "Chat / Web / PDF / Audio,Video / Table — Multimodal Energy Retrieval",
 
+        badge1: "Multimodal Analysis",
+        badge2: "Energy Decision Assistant",
+        badge3: "Question Answering",
+
+        chatMessage: "Message",
+        chat: "Conversation",
+
+        submit: "Submit",
+        answer: "Answer",
+
+        chatTab: "Chat",
+        webTab: "Web",
+        pdfTab: "PDF",
+        avTab: "Audio / Video",
+        tableTab: "Table",
+
+        webTitle: "Website Analysis",
+        pdfTitle: "PDF Analysis",
+        avTitle: "Audio / Video Analysis",
+        tableTitle: "Table Analysis",
+
+        url: "URL",
+
+        chatPlaceholder: "Enter your question.",
+        webPlaceholder: "What do you want to ask? Example: What is this website about?",
+        pdfPlaceholder: "Ask anything about the PDF document.",
+        avPlaceholder: "What do you want to find from the audio/video?",
+        tablePlaceholder: "Ask about the table. Example: What was the total power generation in 2024?",
+
+        uploadPdf: "Upload PDF",
+        uploadAv: "Upload Audio / Video",
+        uploadTable: "Upload Table",
+
+        thinking: "Thinking...",
+
+        loadingWeb: "Analyzing Website...",
+        loadingPdf: "Analyzing PDF...",
+        loadingAv: "Processing Audio / Video...",
+        loadingTable: "Analyzing Table...",
+
+        noResponse: "(No Response)",
+
+        generated: "Full Report Generated",
+        download: "Download File / Report",
+
+        noExport: "No exportable structured data.",
+
+        pdfError: "PDF generation failed",
+        excelError: "Excel generation failed",
+
+        downloadError: "Download failed",
+        excelDownloadError: "Excel download failed",
+
+        formula: "Calculation Formula:",
+
+        formulaDesc:
+          'The energy usage value (x) from the "{{year}}" Energy Balance Table is divided by the total energy consumption (M) of that year to calculate the proportional share of each energy source.',
+
+        commonEnergy: "Common Energy Sources",
+
+        yearHighlight: "More Prominent in {{year}}",
+
+        departmentHighlight: "More Prominent in {{department}}",
+
+        yearLabel: "Year {{year}}",
+
+        separator: ", ",
+
+        avSource: "Audio / Video Source",
+        tableSource: "Table Source",
+
+        rows: "rows",
+        cols: "cols"
+      },
     }
   }
 };

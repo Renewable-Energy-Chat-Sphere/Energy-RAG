@@ -14,7 +14,7 @@ function sentenceWriter(element, html, speed = 20) {
 
   typing();
 }
-function renderMultiYearCards(results) {
+function renderMultiYearCards(results, t) {
   if (!Array.isArray(results) || !results.length) return "";
 
   return `
@@ -23,7 +23,7 @@ function renderMultiYearCards(results) {
         .map(
           (item) => `
             <div class="energy-compare-panel">
-              <h4>${item.year}年</h4>
+<h4>${t("rag.yearLabel", { year: item.year })}</h4>
               ${(item.top || [])
                 .map(
                   (r, i) => `
@@ -68,18 +68,20 @@ function renderEnergyTopCards(results) {
   `;
 }
 
-function renderComparisonCards(results) {
+function renderComparisonCards(results, t) {
   if (!results || typeof results !== "object") return "";
 
   if (results.comparison_type === "years_overall") {
-  const top1 = results.top_year1 || [];
-  const top2 = results.top_year2 || [];
+    const top1 = results.top_year1 || [];
+    const top2 = results.top_year2 || [];
 
-  return `
+    return `
     <div class="energy-compare-grid">
       <div class="energy-compare-panel">
-        <h4>${results.year1}年</h4>
-        ${top1.map((r, i) => `
+       <h4>${t("rag.yearLabel", { year: results.year1 })}</h4>
+        ${top1
+          .map(
+            (r, i) => `
           <div class="energy-card-item">
             <div class="energy-rank">#${i + 1}</div>
             <div class="energy-main">
@@ -88,11 +90,15 @@ function renderComparisonCards(results) {
             </div>
             <div class="energy-value">${r.value}</div>
           </div>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
       <div class="energy-compare-panel">
-        <h4>${results.year2}年</h4>
-        ${top2.map((r, i) => `
+        <h4>${t("rag.yearLabel", { year: results.year2 })}</h4>
+        ${top2
+          .map(
+            (r, i) => `
           <div class="energy-card-item">
             <div class="energy-rank">#${i + 1}</div>
             <div class="energy-main">
@@ -101,16 +107,37 @@ function renderComparisonCards(results) {
             </div>
             <div class="energy-value">${r.value}</div>
           </div>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
     </div>
     <div class="energy-tags-wrap">
-      ${results.common?.length ? `<div class="energy-tag-block"><strong>共同能源：</strong> ${results.common.join("、")}</div>` : ""}
-      ${results.only_year1?.length ? `<div class="energy-tag-block"><strong>${results.year1}年較突出：</strong> ${results.only_year1.join("、")}</div>` : ""}
-      ${results.only_year2?.length ? `<div class="energy-tag-block"><strong>${results.year2}年較突出：</strong> ${results.only_year2.join("、")}</div>` : ""}
+      ${results.common?.length ? `<div class="energy-tag-block"><strong>${t("rag.commonEnergy")}：</strong> ${results.common.join(t("rag.separator"))}</div>` : ""}
+     ${
+       results.only_year1?.length
+         ? `<div class="energy-tag-block">
+        <strong>
+          ${t("rag.yearHighlight", { year: results.year1 })}：
+        </strong>
+        ${results.only_year1.join(t("rag.separator"))}
+      </div>`
+         : ""
+     }
+
+${
+  results.only_year2?.length
+    ? `<div class="energy-tag-block">
+        <strong>
+          ${t("rag.yearHighlight", { year: results.year2 })}：
+        </strong>
+        ${results.only_year2.join(t("rag.separator"))}
+      </div>`
+    : ""
+}
     </div>
   `;
-}
+  }
 
   if (results.comparison_type === "department_across_years") {
     const top1 = results.top_year1 || [];
@@ -119,10 +146,12 @@ function renderComparisonCards(results) {
     return `
       <div class="energy-compare-grid">
         <div class="energy-compare-panel">
-          <h4>${results.department}｜${results.year1}年</h4>
-          ${top1
-            .map(
-              (r, i) => `
+<h4>
+  ${results.department}｜
+  ${t("rag.yearLabel", { year: results.year1 })}
+</h4>          ${top1
+      .map(
+        (r, i) => `
                 <div class="energy-card-item">
                   <div class="energy-rank">#${i + 1}</div>
                   <div class="energy-main">
@@ -132,11 +161,14 @@ function renderComparisonCards(results) {
                   <div class="energy-value">${r.value}</div>
                 </div>
               `,
-            )
-            .join("")}
+      )
+      .join("")}
         </div>
         <div class="energy-compare-panel">
-          <h4>${results.department}｜${results.year2}年</h4>
+          <h4>
+  ${results.department}｜
+  ${t("rag.yearLabel", { year: results.year2 })}
+</h4>
           ${top2
             .map(
               (r, i) => `
@@ -154,21 +186,46 @@ function renderComparisonCards(results) {
         </div>
       </div>
       <div class="energy-tags-wrap">
-        ${
-          results.common?.length
-            ? `<div class="energy-tag-block"><strong>共同能源：</strong> ${results.common.join("、")}</div>`
-            : ""
-        }
-        ${
-          results.only_year1?.length
-            ? `<div class="energy-tag-block"><strong>${results.year1}年較突出：</strong> ${results.only_year1.join("、")}</div>`
-            : ""
-        }
-        ${
-          results.only_year2?.length
-            ? `<div class="energy-tag-block"><strong>${results.year2}年較突出：</strong> ${results.only_year2.join("、")}</div>`
-            : ""
-        }
+       ${
+         results.common?.length
+           ? `
+      <div class="energy-tag-block">
+        <strong>${t("rag.commonEnergy")}：</strong>
+        ${results.common.join(t("rag.separator"))}
+      </div>
+    `
+           : ""
+       }
+
+${
+  results.only_year1?.length
+    ? `
+      <div class="energy-tag-block">
+        <strong>
+          ${t("rag.yearHighlight", {
+            year: results.year1,
+          })}：
+        </strong>
+        ${results.only_year1.join(t("rag.separator"))}
+      </div>
+    `
+    : ""
+}
+
+${
+  results.only_year2?.length
+    ? `
+      <div class="energy-tag-block">
+        <strong>
+          ${t("rag.yearHighlight", {
+            year: results.year2,
+          })}：
+        </strong>
+        ${results.only_year2.join(t("rag.separator"))}
+      </div>
+    `
+    : ""
+}
       </div>
     `;
   }
@@ -180,7 +237,7 @@ function renderComparisonCards(results) {
     return `
       <div class="energy-compare-grid">
         <div class="energy-compare-panel">
-          <h4>${results.department1}${results.year ? `｜${results.year}年` : ""}</h4>
+          <h4>${results.department1}${results.year ? `｜${t("rag.yearLabel", { year: results.year })}` : ""}</h4>
           ${top1
             .map(
               (r, i) => `
@@ -197,7 +254,16 @@ function renderComparisonCards(results) {
             .join("")}
         </div>
         <div class="energy-compare-panel">
-          <h4>${results.department2}${results.year ? `｜${results.year}年` : ""}</h4>
+<h4>
+  ${results.department2}
+  ${
+    results.year
+      ? `｜${t("rag.yearLabel", {
+          year: results.year,
+        })}`
+      : ""
+  }
+</h4>
           ${top2
             .map(
               (r, i) => `
@@ -217,26 +283,51 @@ function renderComparisonCards(results) {
       <div class="energy-tags-wrap">
         ${
           results.common?.length
-            ? `<div class="energy-tag-block"><strong>共同能源：</strong> ${results.common.join("、")}</div>`
+            ? `
+      <div class="energy-tag-block">
+        <strong>${t("rag.commonEnergy")}：</strong>
+        ${results.common.join(t("rag.separator"))}
+      </div>
+    `
             : ""
         }
-        ${
-          results.only_department1?.length
-            ? `<div class="energy-tag-block"><strong>${results.department1}較突出：</strong> ${results.only_department1.join("、")}</div>`
-            : ""
-        }
-        ${
-          results.only_department2?.length
-            ? `<div class="energy-tag-block"><strong>${results.department2}較突出：</strong> ${results.only_department2.join("、")}</div>`
-            : ""
-        }
+
+${
+  results.only_department1?.length
+    ? `
+      <div class="energy-tag-block">
+        <strong>
+          ${t("rag.departmentHighlight", {
+            department: results.department1,
+          })}：
+        </strong>
+        ${results.only_department1.join(t("rag.separator"))}
+      </div>
+    `
+    : ""
+}
+
+${
+  results.only_department2?.length
+    ? `
+      <div class="energy-tag-block">
+        <strong>
+          ${t("rag.departmentHighlight", {
+            department: results.department2,
+          })}：
+        </strong>
+        ${results.only_department2.join(t("rag.separator"))}
+      </div>
+    `
+    : ""
+}
       </div>
     `;
   }
 
   return "";
 }
-function showLoading(element, text = "處理中...") {
+function showLoading(element, text = "Loading...") {
   element.innerHTML = `
     <div class="ai-card thinking">
       ${text}
@@ -252,15 +343,16 @@ import { useEffect, useState } from "react";
 import { marked } from "marked"; //新增
 import "./rag.css";
 import BackToTopButton from "../components/BackToTopButton";
-
+import { useTranslation } from "react-i18next";
 export default function Rag() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState("chat");
   const [structuredData, setStructuredData] = useState(null);
   const [loading, setLoading] = useState(false);
   const API = "/api";
   async function generateFile(reportData = structuredData) {
     if (!reportData) {
-      alert("沒有可匯出的結構化資料");
+      alert(t("rag.noExport"));
       return;
     }
 
@@ -276,7 +368,7 @@ export default function Rag() {
       });
 
       if (!res.ok) {
-        throw new Error("PDF 生成失敗");
+        throw new Error(t("rag.pdfError"));
       }
 
       const blob = await res.blob();
@@ -294,12 +386,12 @@ export default function Rag() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert("下載失敗");
+      alert(t("rag.downloadError"));
     }
   }
   async function generateExcel(reportData = structuredData) {
     if (!reportData) {
-      alert("沒有可匯出的結構化資料");
+      alert(t("rag.noExport"));
       return;
     }
 
@@ -315,7 +407,7 @@ export default function Rag() {
       });
 
       if (!res.ok) {
-        throw new Error("Excel 生成失敗");
+        throw new Error(t("rag.excelError"));
       }
 
       const blob = await res.blob();
@@ -335,7 +427,7 @@ export default function Rag() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert("Excel 下載失敗");
+      alert(t("rag.excelDownloadError"));
     }
   }
   /* =========================================================
@@ -388,7 +480,7 @@ export default function Rag() {
         role === "user" ? "rag-bubble user" : "rag-bubble assistant";
 
       if (isLoading) {
-        b.innerHTML = "思考中...";
+        b.innerHTML = t("rag.thinking");
       } else {
         b.innerHTML = marked.parse(html);
       }
@@ -472,9 +564,9 @@ export default function Rag() {
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
-          extraHtml = renderComparisonCards(data.results);
+          extraHtml = renderComparisonCards(data.results, t);
         } else if (data.card_type === "multi_year") {
-          extraHtml = renderMultiYearCards(data.results);
+          extraHtml = renderMultiYearCards(data.results, t);
         } else if (Array.isArray(data.results) && data.results.length) {
           const hasValueCards = data.results.every(
             (r) =>
@@ -495,20 +587,26 @@ export default function Rag() {
         // =====================================
         // 📎 資料來源 icon + tooltip（🔥新增）
         // =====================================
-        const sourceMatch = answerHtml.match(/📎 資料來源：(.+)/);
+        const sourceMatch = answerHtml.match(
+          /📎\s*(資料來源|Source)[:：]\s*(.+)/,
+        );
 
         if (sourceMatch) {
-          const sourceText = sourceMatch[1];
+          const sourceText = sourceMatch[2];
 
-          const years = sourceText.match(/民國\d+年/g) || [];
+          const years = sourceText.match(/民國\d+年|Year\s*\d+/g) || [];
 
           const tooltipItems = years
-            .map((y) => `<div>計算公式如下：<br>
-            將「${y}」年度能源平衡表的各能源使用量(x)除以該年度的總使用量(M)，得到各能源的使用比例。<br>
-            <img 
-                src="/Ener-Sphere/images/formula.png"
-              />
-            </div>`)
+            .map(
+              (y) => `
+      <div>
+        ${t("rag.formula")}<br>
+        ${t("rag.formulaDesc", { year: y })}<br>
+        <img 
+          src="/Ener-Sphere/images/formula.png"
+        />
+      </div>`,
+            )
             .join("");
 
           const sourceHtml = `
@@ -522,7 +620,10 @@ export default function Rag() {
           `;
 
           // ⭐ 替換原本純文字
-          answerHtml = answerHtml.replace(/📎 資料來源：.+/, sourceHtml);
+          answerHtml = answerHtml.replace(
+            /📎\s*(資料來源|Source)[:：].+/,
+            sourceHtml,
+          );
         }
 
         // 🔥 打字動畫（用新的）
@@ -564,7 +665,7 @@ export default function Rag() {
       const out = document.getElementById("out-web");
       const src = document.getElementById("src-web");
 
-      showLoading(out, "解析網站中");
+      showLoading(out, t("rag.loadingWeb"));
       src.textContent = "";
 
       const payload = { question, url };
@@ -579,7 +680,7 @@ export default function Rag() {
       if (data.structured_data) {
         setStructuredData(data.structured_data);
       }
-      const html = marked.parse(data.answer || "(無回應)");
+      const html = marked.parse(data.answer || t("rag.noResponse"));
 
       out.innerHTML = `<div class="ai-card">${html}</div>`;
 
@@ -613,7 +714,7 @@ export default function Rag() {
       const out = document.getElementById("out-pdf");
       const src = document.getElementById("src-pdf");
 
-      showLoading(out, "解析 PDF 中");
+      showLoading(out, t("rag.loadingPdf"));
       src.textContent = "";
 
       const fd = new FormData();
@@ -632,7 +733,7 @@ export default function Rag() {
         setStructuredData(data.structured_data);
         console.log("structuredData:", data.structured_data);
       }
-      let answerText = data.answer || "(無回應)";
+      let answerText = data.answer || t("rag.noResponse");
 
       let buttons = "";
 
@@ -640,8 +741,8 @@ export default function Rag() {
         buttons = `
   <div class="download-section">
     <hr/>
-    <p><strong>📄 已生成完整報告</strong></p>
-    <button id="pdf-btn">下載檔案/報告</button>
+    <p><strong>📄 ${t("rag.generated")}</strong></p>
+    <button id="pdf-btn">${t("rag.download")}</button>
   </div>
 `;
       }
@@ -688,7 +789,7 @@ export default function Rag() {
       const out = document.getElementById("out-av");
       const src = document.getElementById("src-av");
 
-      showLoading(out, "處理影音中");
+      showLoading(out, t("rag.loadingAv"));
       src.textContent = "";
 
       const fd = new FormData();
@@ -707,7 +808,7 @@ export default function Rag() {
         setStructuredData(data.structured_data);
       }
 
-      const html = marked.parse(data.answer || "(無回應)");
+      const html = marked.parse(data.answer || t("rag.noResponse"));
 
       out.innerHTML = `
       <div class="ai-card">
@@ -732,7 +833,7 @@ export default function Rag() {
       if (data.sources?.length) {
         src.innerHTML = `
         <div class="source-card">
-          <strong>🎬 影音來源：</strong>
+          <strong>🎬 ${t("rag.avSource")}：</strong>
           ${data.sources.map((s) => `<div>• ${s}</div>`).join("")}
         </div>
       `;
@@ -756,7 +857,7 @@ export default function Rag() {
       const out = document.getElementById("out-table");
       const src = document.getElementById("src-table");
 
-      showLoading(out, "解析表格中");
+      showLoading(out, t("rag.loadingTable"));
       src.textContent = "";
 
       const fd = new FormData();
@@ -779,7 +880,7 @@ export default function Rag() {
         setStructuredData(data.structured_data);
       }
 
-      const html = marked.parse(data.answer || "(無回應)");
+      const html = marked.parse(data.answer || t("rag.noResponse"));
 
       let buttons = "";
 
@@ -787,8 +888,8 @@ export default function Rag() {
         buttons = `
         <div class="download-section">
           <hr/>
-          <p><strong>📊 已生成完整報告</strong></p>
-          <button id="excel-btn">下載檔案/報告</button>
+          <p><strong>📊 ${t("rag.generated")}</strong></p>
+          <button id="excel-btn">${t("rag.download")}</button>
         </div>
       `;
       }
@@ -813,11 +914,11 @@ export default function Rag() {
       if (data.sources?.length) {
         src.innerHTML = `
         <div class="source-card">
-          <strong>📊 表格來源：</strong>
+          <strong>📊 ${t("rag.tableSource")}：</strong>
           ${data.sources
             .map(
               (s) =>
-                `<div>• ${s.sheet}（${s.rows} rows / ${s.columns_count} cols）</div>`,
+                `<div>• ${s.sheet}（${s.rows} ${t("rag.rows")} / ${s.columns_count} ${t("rag.cols")}</div>`,
             )
             .join("")}
         </div>
@@ -841,12 +942,12 @@ export default function Rag() {
         {/* HERO */}
         <div className="rag-hero">
           <h1>Energy RAG</h1>
-          <p>Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索</p>
+          <p>{t("rag.subtitle")}</p>
 
           <div className="rag-badges">
-            <span className="rag-badge">多模態分析支援</span>
-            <span className="rag-badge alt">能源決策助理</span>
-            <span className="rag-badge">相關問題解答</span>
+            <span className="rag-badge">{t("rag.badge1")}</span>
+            <span className="rag-badge alt">{t("rag.badge2")}</span>
+            <span className="rag-badge">{t("rag.badge3")}</span>
           </div>
         </div>
 
@@ -856,31 +957,31 @@ export default function Rag() {
             className={`rag-tab ${tab === "chat" ? "active" : ""}`}
             onClick={() => setTab("chat")}
           >
-            Chat
+            {t("rag.chatTab")}
           </button>
           <button
             className={`rag-tab ${tab === "web" ? "active" : ""}`}
             onClick={() => setTab("web")}
           >
-            Web
+            {t("rag.webTab")}
           </button>
           <button
             className={`rag-tab ${tab === "pdf" ? "active" : ""}`}
             onClick={() => setTab("pdf")}
           >
-            PDF
+            {t("rag.pdfTab")}
           </button>
           <button
             className={`rag-tab ${tab === "av" ? "active" : ""}`}
             onClick={() => setTab("av")}
           >
-            Audio/Video
+            {t("rag.avTab")}
           </button>
           <button
             className={`rag-tab ${tab === "table" ? "active" : ""}`}
             onClick={() => setTab("table")}
           >
-            Table
+            {t("rag.tableTab")}
           </button>
         </nav>
 
@@ -892,7 +993,7 @@ export default function Rag() {
             className={`rag-panel ${tab === "chat" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>訊息</h3>
+              <h3>{t("rag.chatMessage")}</h3>
 
               <form id="rag-form-chat" className="rag-form">
                 <label>
@@ -900,15 +1001,15 @@ export default function Rag() {
                     name="user"
                     rows="1"
                     required
-                    placeholder="請輸入您的問題。"
+                    placeholder={t("rag.chatPlaceholder")}
                   />
                 </label>
-               
-                <button type="submit">送出</button>
+
+                <button type="submit">{t("rag.submit")}</button>
               </form>
 
               <article>
-                <h3>對話</h3>
+                <h3>{t("rag.chat")}</h3>
                 <div id="rag-chat-log" className="rag-chat-log">
                   {loading && (
                     <div className="rag-message assistant">
@@ -933,24 +1034,24 @@ export default function Rag() {
             className={`rag-panel ${tab === "web" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>網站分析</h3>
+              <h3>{t("rag.webTitle")}</h3>
               <form id="rag-form-web" className="rag-form">
                 <label>
                   <input
                     name="question"
                     required
-                    placeholder="想問什麼？例如：這個網站的功能是甚麼?"
+                    placeholder={t("rag.webPlaceholder")}
                   />
                 </label>
                 <label>
-                  網址
+                  {t("rag.url")}
                   <input name="url" placeholder="https://..." />
                 </label>
-                <button type="submit">送出</button>
+                <button type="submit">{t("rag.submit")}</button>
               </form>
 
               <article>
-                <h3>回答</h3>
+                <h3>{t("rag.answer")}</h3>
                 <div id="out-web" className="answer"></div>
                 <div id="src-web" className="src"></div>
               </article>
@@ -963,7 +1064,7 @@ export default function Rag() {
             className={`rag-panel ${tab === "pdf" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>PDF 分析</h3>
+              <h3>{t("rag.pdfTitle")}</h3>
               <form
                 id="rag-form-pdf"
                 className="rag-form"
@@ -973,11 +1074,11 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="想問任何PDF文件中的什麼內容？"
+                    placeholder={t("rag.pdfPlaceholder")}
                   />
                 </label>
                 <label>
-                  上傳 PDF
+                  {t("rag.uploadPdf")}
                   <input
                     name="file"
                     required
@@ -985,11 +1086,11 @@ export default function Rag() {
                     accept="application/pdf"
                   />
                 </label>
-                <button type="submit">送出</button>
+                <button type="submit">{t("rag.submit")}</button>
               </form>
 
               <article>
-                <h3>回答</h3>
+                <h3>{t("rag.answer")}</h3>
                 <div id="out-pdf" className="answer"></div>
                 <div id="src-pdf" className="src"></div>
               </article>
@@ -1002,7 +1103,7 @@ export default function Rag() {
             className={`rag-panel ${tab === "av" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>影音分析</h3>
+              <h3>{t("rag.avTitle")}</h3>
               <form
                 id="rag-form-av"
                 className="rag-form"
@@ -1012,11 +1113,11 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="想從影片/音訊找什麼？"
+                    placeholder={t("rag.avPlaceholder")}
                   />
                 </label>
                 <label>
-                  上傳影音
+                  {t("rag.uploadAv")}
                   <input
                     name="file"
                     required
@@ -1024,11 +1125,11 @@ export default function Rag() {
                     accept="audio/*,video/*"
                   />
                 </label>
-                <button type="submit">送出</button>
+                <button type="submit">{t("rag.submit")}</button>
               </form>
 
               <article>
-                <h3>回答</h3>
+                <h3>{t("rag.answer")}</h3>
                 <div id="out-av" className="answer"></div>
                 <div id="src-av" className="src"></div>
               </article>
@@ -1041,7 +1142,7 @@ export default function Rag() {
             className={`rag-panel ${tab === "table" ? "active" : ""}`}
           >
             <div className="rag-card">
-              <h3>表格分析</h3>
+              <h3>{t("rag.tableTitle")}</h3>
               <form
                 id="rag-form-table"
                 className="rag-form"
@@ -1051,11 +1152,11 @@ export default function Rag() {
                   <input
                     name="question"
                     required
-                    placeholder="想分析表格或是問問題嗎?例如：2024 總發電量是多少？"
+                    placeholder={t("rag.tablePlaceholder")}
                   />
                 </label>
                 <label>
-                  上傳表格
+                  {t("rag.uploadTable")}
                   <input
                     name="file"
                     required
@@ -1063,11 +1164,11 @@ export default function Rag() {
                     accept=".xlsx,.xls,.csv,.tsv,.txt"
                   />
                 </label>
-                <button type="submit">送出</button>
+                <button type="submit">{t("rag.submit")}</button>
               </form>
 
               <article>
-                <h3>回答</h3>
+                <h3>{t("rag.answer")}</h3>
                 <div id="out-table" className="answer"></div>
                 <div id="src-table" className="src"></div>
               </article>
