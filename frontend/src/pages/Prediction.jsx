@@ -25,46 +25,38 @@ export default function Prediction() {
   const [deptMap, setDeptMap] = useState({});
   const [energyMap, setEnergyMap] = useState({});
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   // =========================
-  // 📥 載入 JSON（完全保留）
+  // 📥 JSON mapping
   // =========================
   useEffect(() => {
     const map = {};
-
     const traverse = (obj) => {
       Object.entries(obj).forEach(([key, val]) => {
         map[key] = val.name;
         if (val.children) traverse(val.children);
       });
     };
-
     traverse(hierarchy);
     setDeptMap(map);
 
     const energy = {};
-
-    if (Array.isArray(supplyCatalog)) {
-      supplyCatalog.forEach((item) => {
-        energy[item.source_id] = item.name_zh || item.name;
-      });
-    } else {
-      Object.entries(supplyCatalog).forEach(([id, item]) => {
-        energy[id] = item.name_zh || item.name || id;
-      });
-    }
-
+    Object.entries(supplyCatalog).forEach(([id, item]) => {
+      energy[id] = item.name_zh || item.name || id;
+    });
     setEnergyMap(energy);
   }, []);
 
   // =========================
-  // 🔮 預測
+  // 🔮 API
   // =========================
   const runPredict = async () => {
     if (!question) return alert("請輸入問題");
 
     setLoading(true);
     setData(null);
+    setSelectedCard(null);
 
     try {
       const res = await fetch("http://127.0.0.1:8000/predict_department_energy", {
@@ -76,16 +68,14 @@ export default function Prediction() {
       });
 
       const result = await res.json();
-      console.log("API RESULT:", result);
 
       if (result.error) {
         setData({ error: result.error });
-        setLoading(false);
         return;
       }
 
       setData(result);
-    } catch (err) {
+    } catch {
       setData({ error: "API 連線失敗" });
     }
 
@@ -93,20 +83,17 @@ export default function Prediction() {
   };
 
   // =========================
-  // 🔥 新增：目前選擇的 dept + energy
+  // 📊 圖表
   // =========================
   const getCurrentKey = () => {
     if (!data?.summary?.length) return null;
 
-    const dept = data.summary[0].dept;
-    const energy = data.summary[0].top[0][0];
-
-    return { dept, energy };
+    return {
+      dept: data.summary[0].dept,
+      energy: data.summary[0].top[0][0],
+    };
   };
 
-  // =========================
-  // 🔥 圖表資料（修正）
-  // =========================
   const getChartData = () => {
     if (!data?.evaluation) return null;
 
@@ -128,41 +115,34 @@ export default function Prediction() {
         {
           label: "預測值",
           data: e.predicted,
-          borderColor: "#ef4444",
+          borderColor: "#22c55e",
           tension: 0.3,
         },
       ],
     };
   };
 
-  // =========================
-  // 🔥 準確度（MAPE）
-  // =========================
   const getAccuracy = () => {
     if (!data?.accuracy) return null;
 
     const key = getCurrentKey();
     if (!key) return null;
 
-    const fullKey = `${key.dept}_${key.energy}`;
-    return data.accuracy[fullKey];
+    return data.accuracy[`${key.dept}_${key.energy}`];
   };
 
   return (
     <div style={container}>
-      
+      {/* 🔹 Header */}
       <div style={headerRow}>
-        <h2>🔮 能源預測</h2>
+        <h2 style={title}>🔮 能源預測</h2>
 
-        <div
-          style={circleIcon}
-          onClick={() => setShowAnalysis(true)}
-          title="模型分析"
-        >
-          ?
+        <div style={analysisBtn} onClick={() => setShowAnalysis(true)}>
+          📊
         </div>
       </div>
 
+      {/* 🔹 Input */}
       <input
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
@@ -170,61 +150,105 @@ export default function Prediction() {
         style={inputStyle}
       />
 
-      <button onClick={runPredict} style={btnStyle}>
+      <button
+        onClick={runPredict}
+        style={btnStyle}
+        onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
+        onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+      >
         開始預測
       </button>
 
-      {loading && <p style={{ marginTop: "20px" }}>⏳ 預測中...</p>}
+      {loading && <p style={{ marginTop: 20 }}>⏳ 預測中...</p>}
+      {data?.error && <p style={{ marginTop: 20, color: "red" }}>❌ {data.error}</p>}
 
-      {data?.error && (
-        <p style={{ marginTop: "20px", color: "var(--danger-color)" }}>
-          ❌ {data.error}
-        </p>
-      )}
-
+      {/* 🔹 卡片 */}
       {data && !data.error && (
-        <div style={{ marginTop: "30px" }}>
-          <div style={{ marginBottom: "20px", color: "var(--text-secondary)" }}>
+        <div style={{ marginTop: 40 }}>
+          <div style={{ marginBottom: 20 }}>
             您的問題：{question}
           </div>
 
-          {data.summary?.map((item, i) => (
-            <div key={i} style={card}>
-              <h3>🏭 {deptMap[item.dept] || item.dept}</h3>
+          {data.summary?.map((item, i) => {
+            const fullData = data?.full?.[item.dept] || [];
 
-              {item.top?.map((t, idx) => (
-                <div key={idx}>
-                  🔹 {energyMap[t[0]] || t[0]}：{t[1].toFixed(1)}%
-                </div>
-              ))}
+            return (
+              <div
+                key={i}
+                style={{
+                  ...card,
+                  transform: selectedCard === i ? "scale(1.03)" : "scale(1)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-6px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 25px rgba(34,197,94,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+                onClick={() =>
+                  setSelectedCard(selectedCard === i ? null : i)
+                }
+              >
+                <h3 style={cardTitle}>🏭 {deptMap[item.dept]}</h3>
 
-              <div style={{ marginTop: "10px", color: "var(--text-secondary)" }}>
-                📊 分析：{getAnalysis(item.top, energyMap)}
+                {item.top?.map((t, idx) => (
+                  <div key={idx} style={row}>
+                    <span style={label}>{energyMap[t[0]]}</span>
+
+                    <div style={barBg}>
+                      <div
+                        style={{
+                          ...barFill,
+                          width: `${t[1]}%`,
+                        }}
+                      />
+                    </div>
+
+                    <span style={percent}>{t[1].toFixed(1)}%</span>
+                  </div>
+                ))}
+
+                {selectedCard === i && (
+                  <div style={detailBox}>
+                    <h4>📌 全部能源</h4>
+
+                    {fullData.length === 0 && <p>資料不詳</p>}
+
+                    {fullData.map((e, idx) => (
+                      <div key={idx} style={detailRow}>
+                        <span>{energyMap[e.name] || e.name}</span>
+                        <span>{e.value?.toFixed(1) ?? "不詳"}%</span>
+                        <span>
+                          {e.toe ? `${e.toe} 噸油當量` : "不詳"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
-
-          <div style={{ marginTop: "10px", color: "var(--text-secondary)" }}>
-            預測年份：{data.year}
-          </div>
+            );
+          })}
         </div>
       )}
 
+      {/* 🔹 趨勢圖 modal */}
       {showAnalysis && (
         <div style={overlayStyle} onClick={() => setShowAnalysis(false)}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            
             <button style={closeBtn} onClick={() => setShowAnalysis(false)}>
               ✖
             </button>
 
-            <h3>📊 模型分析</h3>
+            <h3>📊 預測分析</h3>
 
-            <p style={{ color: "var(--success-color)" }}>
-              預測誤差：{getAccuracy() ?? "--"}%（MAPE）
+            <p style={{ color: "#22c55e" }}>
+              準確度（MAPE）：{getAccuracy() ?? "--"}%
             </p>
 
-            <div style={{ marginTop: "20px" }}>
+            <div style={{ marginTop: 20 }}>
               {getChartData() ? (
                 <Line data={getChartData()} />
               ) : (
@@ -238,62 +262,34 @@ export default function Prediction() {
   );
 }
 
-// =========================
-// 分析（原本保留）
-// =========================
-function getAnalysis(top, energyMap) {
-  if (!top || top.length === 0) return "資料不足";
+// ================= UI =================
 
-  const main = energyMap[top[0][0]];
-
-  if (main?.includes("電")) return "電力需求上升";
-  if (main?.includes("氣")) return "氣體能源增加";
-  if (main?.includes("煤")) return "煤炭仍占重要比例";
-
-  return "能源結構正在變化";
-}
-
-// =========================
-// UI（美化版 🔥）
-// =========================
 const container = {
   padding: "80px 20px",
-  color: "var(--text-color)",
   maxWidth: "900px",
   margin: "auto",
-  fontFamily: "system-ui, sans-serif",
+  color: "var(--text-color)",
 };
 
 const headerRow = {
   display: "flex",
-  alignItems: "center",
   justifyContent: "space-between",
-  marginBottom: "20px",
 };
 
-const circleIcon = {
-  width: "32px",
-  height: "32px",
-  borderRadius: "50%",
-  border: "1px solid var(--text-secondary)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+const title = {
+  fontSize: "22px",
+};
+
+const analysisBtn = {
   cursor: "pointer",
-  transition: "0.2s",
-  fontWeight: "bold",
 };
 
 const inputStyle = {
   width: "100%",
   padding: "14px",
-  marginTop: "10px",
   borderRadius: "10px",
-  border: "1px solid rgba(255,255,255,0.1)",
   background: "rgba(255,255,255,0.05)",
   color: "var(--text-color)",
-  outline: "none",
-  fontSize: "14px",
 };
 
 const btnStyle = {
@@ -301,22 +297,61 @@ const btnStyle = {
   padding: "14px",
   width: "100%",
   borderRadius: "10px",
-  border: "none",
   background: "linear-gradient(135deg,#22c55e,#16a34a)",
   color: "white",
-  fontWeight: "bold",
-  cursor: "pointer",
-  transition: "0.2s",
 };
 
 const card = {
   background: "var(--card-bg)",
   padding: "20px",
-  marginBottom: "15px",
-  borderRadius: "14px",
-  boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-  border: "1px solid rgba(255,255,255,0.05)",
-  transition: "0.2s",
+  borderRadius: "16px",
+  marginBottom: "18px",
+  border: "1px solid rgba(34,197,94,0.3)",
+};
+
+const cardTitle = {
+  marginBottom: "12px",
+};
+
+const row = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+};
+
+const label = {
+  width: "110px",
+};
+
+const percent = {
+  width: "60px",
+  textAlign: "right",
+};
+
+const barBg = {
+  flex: 1,
+  height: "8px",
+  background: "rgba(255,255,255,0.1)",
+  borderRadius: "8px",
+};
+
+const barFill = {
+  height: "100%",
+  background: "#22c55e",
+  borderRadius: "8px",
+  boxShadow: "0 0 10px #22c55e",
+};
+
+const detailBox = {
+  marginTop: "12px",
+  padding: "10px",
+  background: "rgba(255,255,255,0.05)",
+  borderRadius: "10px",
+};
+
+const detailRow = {
+  display: "flex",
+  justifyContent: "space-between",
 };
 
 const overlayStyle = {
@@ -325,11 +360,11 @@ const overlayStyle = {
   left: 0,
   width: "100%",
   height: "100%",
-  background: "rgba(0,0,0,0.7)",
+  background: "rgba(0,0,0,0.75)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  backdropFilter: "blur(4px)",
+  zIndex: 9999,
 };
 
 const modalStyle = {
@@ -337,26 +372,15 @@ const modalStyle = {
   background: "var(--card-bg)",
   padding: "24px",
   borderRadius: "16px",
-  boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
   position: "relative",
-  border: "1px solid rgba(255,255,255,0.08)",
 };
 
 const closeBtn = {
   position: "absolute",
-  right: "12px",
-  top: "12px",
-  border: "none",
-  background: "transparent",
-  color: "var(--text-secondary)",
-  fontSize: "16px",
-  cursor: "pointer",
+  right: "10px",
+  top: "10px",
 };
 
 const chartBox = {
-  height: "220px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--text-secondary)",
+  height: "260px",
 };
