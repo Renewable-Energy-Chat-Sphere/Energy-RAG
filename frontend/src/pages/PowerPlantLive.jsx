@@ -1057,7 +1057,7 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
                 fontWeight: 700,
                 lineHeight: "1.6",
-                color: "#e2e8f0",
+                color: isDark ? "#e2e8f0" : "#0f172a",
               }}
             >
               {updateTime}
@@ -1151,7 +1151,7 @@ export default function PowerPlantLive() {
 
                       borderRadius: "15px",
 
-                      background: "rgba(255,255,255,0.08)",
+                      
 
                       fontWeight: 700,
 
@@ -1221,7 +1221,7 @@ export default function PowerPlantLive() {
           marginTop: "90px",
           padding: "35px",
           borderRadius: "30px",
-          background: isDark ? "rgba(15,23,42,0.82)" : "rgba(218,234,255,0.82)",
+          background: isDark ? "rgba(30,41,59,0.88)" : "rgba(218,234,255,0.82)",
           backdropFilter: "blur(18px)",
           border: "1px solid rgba(255,255,255,0.08)",
           boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
