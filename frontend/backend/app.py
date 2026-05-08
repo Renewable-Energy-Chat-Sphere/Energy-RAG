@@ -7,6 +7,7 @@ import io
 import os, json, re, pickle
 from datetime import datetime
 from flask import request, jsonify
+from power_api import get_power_units
 
 # 🔮 Predict 專用（新增）
 from prophet import Prophet
@@ -95,10 +96,7 @@ def build_dept_map(hierarchy):
             if not isinstance(val, dict):
                 continue
 
-            name = (
-                val.get("name_zh")
-                or val.get("name_en")
-            )
+            name = val.get("name_zh") or val.get("name_en")
 
             if not name:
                 continue
@@ -114,6 +112,7 @@ def build_dept_map(hierarchy):
 
     traverse(hierarchy)
     return mapping
+
 
 DEPT_NAME_MAP = build_dept_map(HIERARCHY)
 
@@ -1060,6 +1059,28 @@ def get_energy_news():
         }
 
         return jsonify(data)
+
+
+@app.route("/power-units")
+def power_units():
+
+    return jsonify(get_power_units())
+
+
+@app.route("/power-live")
+def power_live():
+
+    import requests
+
+    url = (
+        "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genloadareaperc.json"
+    )
+
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    res = requests.get(url, headers=headers)
+
+    return jsonify(res.json())
 
 
 # ====================================

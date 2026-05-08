@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+console.log("🔥 POWER LIVE PAGE");
 import data from "../data/power_full.json";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
-import BackToTopButton from "../components/BackToTopButton";
-import { useTranslation } from "react-i18next";
+
 /* ========================
    🔥 分類函數（只算一次）
 ======================== */
@@ -46,19 +46,19 @@ const { solar, wind, hydro, bio, geo } = getCategoryMap(data);
 /* ========================
    🔥 區域分類
 ======================== */
-const getRegionMap = (t) => ({
-  [t("power.region_north")]: ["林口", "大潭", "石門", "海湖"],
-  [t("power.region_central")]: ["台中", "麥寮", "大甲溪"],
-  [t("power.region_south")]: ["興達", "大林", "南部"],
-  [t("power.region_east")]: ["和平", "東部"],
+const REGION_MAP = {
+  北部: ["林口", "大潭", "石門", "海湖"],
+  中部: ["台中", "麥寮", "大甲溪"],
+  南部: ["興達", "大林", "南部"],
+  東部: ["和平", "東部"],
 
-  [t("power.solar")]: solar,
-  [t("power.wind")]: wind,
-  [t("power.hydro")]: hydro,
-  [t("power.bio")]: bio,
-  [t("power.geo")]: geo,
+  太陽能: solar,
+  風力: wind,
+  水力: hydro,
+  生質能: bio,
+  地熱: geo,
 
-  [t("power.other")]: Object.keys(data).filter(
+  其他: Object.keys(data).filter(
     (p) =>
       ![
         ...solar,
@@ -80,7 +80,7 @@ const getRegionMap = (t) => ({
         "東部",
       ].includes(p),
   ),
-});
+};
 
 /* ========================
    🔥 顏色
@@ -97,11 +97,12 @@ function getColor(percent) {
 /* ========================
    🔥 卡片
 ======================== */
-function PlantCard({ unit, t }) {
+function PlantCard({ unit }) {
   const percent =
     unit.max === 0 ? 0 : ((unit.value / unit.max) * 100).toFixed(1);
 
   const isOffline = unit.value === 0 && unit.max > 0;
+
   const color = isOffline ? "#ef4444" : getColor(percent);
 
   const isDark = document.body.classList.contains("dark");
@@ -122,7 +123,7 @@ function PlantCard({ unit, t }) {
 
       <h4>{unit.name}</h4>
 
-      {isOffline && <span className="offline-tag">{t("power.repair")} 🔧</span>}
+      {isOffline && <span className="offline-tag">維修中 🔧</span>}
 
       <p>
         {unit.value} / {unit.max} MW
@@ -135,34 +136,19 @@ function PlantCard({ unit, t }) {
    🔥 主元件
 ======================== */
 export default function PowerPlant() {
-  const { t, i18n } = useTranslation();
-  const REGION_MAP = getRegionMap(t);
   const [selected, setSelected] = useState("林口");
-
-  // 🔥 即時資料
-  const [liveData, setLiveData] = useState(null);
-  const [useLive, setUseLive] = useState(true);
-
-  useEffect(() => {
-    fetch(
-      "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genloadareaperc.json",
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        setLiveData(res);
-        setUseLive(true);
-      })
-      .catch(() => {
-        console.log("⚠️ API抓不到 → 使用本地資料");
-        setUseLive(false);
-      });
-  }, []);
 
   return (
     <div className="power-container">
       {/* 🔥 模式顯示 */}
-      <p style={{ fontSize: "14px", opacity: 0.7 }}>
-        {useLive ? t("power.live") : t("power.offline")}
+      <p
+        style={{
+          fontSize: "14px",
+          opacity: 0.7,
+          marginBottom: "20px",
+        }}
+      >
+        🟡 本地機組資料模式
       </p>
 
       {/* 🔥 分類 */}
@@ -190,47 +176,37 @@ export default function PowerPlant() {
       <div>
         <h2>{selected}</h2>
 
-        {useLive && liveData ? (
-          <div>
-            <p>
-              ⚡ {t("power.generation")}：{liveData.gen} {t("unit.power")}
-            </p>
-            <p>
-              📊 {t("power.load")}：{liveData.load}
-              {t("unit.power")}
-            </p>
-            <p>
-              🟢 {t("power.reserve")}：{liveData.reserve}%
-            </p>
-            <p>
-              🕒 {t("power.update")}：{liveData.time}
-            </p>
-          </div>
-        ) : (
-          <div>
-            <p>
-              ⚡ {t("power.output")}： {data[selected].total.value} /{" "}
-              {data[selected].total.max} MW
-            </p>
-            <p style={{ color: "#f59e0b" }}>{t("power.local")}</p>
-          </div>
-        )}
+        <div>
+          <p>
+            ⚡ 發電量(已/可)：
+            {data[selected].total.value} /{data[selected].total.max} MW
+          </p>
+
+          <p style={{ color: "#f59e0b" }}>（使用本地資料）</p>
+        </div>
       </div>
 
       {/* 🔧 維修 */}
-      <p style={{ color: "#ef4444", fontWeight: 600 }}>
-        {t("power.maintenance")}：
-        {data[selected].units.filter((u) => u.value === 0 && u.max > 0).length}{" "}
-        {t("power.unit")}
+      <p
+        style={{
+          color: "#ef4444",
+          fontWeight: 600,
+          marginTop: "10px",
+        }}
+      >
+        維修中機組：
+        {
+          data[selected].units.filter((u) => u.value === 0 && u.max > 0).length
+        }{" "}
+        台
       </p>
 
       {/* 🔥 機組 */}
       <div className="card-grid">
         {data[selected].units.map((u, i) => (
-          <PlantCard key={i} unit={u} t={t} />
+          <PlantCard key={i} unit={u} />
         ))}
       </div>
-      <BackToTopButton />
     </div>
   );
 }

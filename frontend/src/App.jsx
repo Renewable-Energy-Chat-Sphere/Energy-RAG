@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router } from "react-router-dom";
+import { HashRouter as Router } from "react-router-dom";
 import { Routes, Route } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -8,7 +8,7 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Global from "./pages/Global";
 import Rag from "./pages/Rag";
-import PowerPlant from "./pages/PowerPlant";
+import PowerPlantController from "./pages/PowerPlantController";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 
@@ -42,12 +42,10 @@ export default function App() {
       <main id="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
-
           {/* 🔥 這行才是關鍵 */}
           <Route path="/global" element={<AutoGlobal />} />
-
           <Route path="/rag" element={<Rag />} />
-         <Route path="/powerplant" element={<div>TEST OK</div>} />
+          <Route path="/powerplant" element={<PowerPlantController />} />{" "}
           <Route path="/contact" element={<Contact />} />
           <Route path="/Feedback" element={<Feedback />} />
           <Route

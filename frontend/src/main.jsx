@@ -12,7 +12,7 @@ import Rag from "./pages/Rag";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 import Prediction from "./pages/Prediction";
-
+import PowerPlantController from "./pages/PowerPlantController";
 
 const router = createBrowserRouter(
   [
@@ -22,7 +22,10 @@ const router = createBrowserRouter(
       children: [
         { index: true, element: <Home /> },
         { path: "/global", element: <Global /> },
-        { path: "/powerplant", element: <PowerPlant /> },
+        {
+          path: "/powerplant",
+          element: <PowerPlantController />,
+        },
         { path: "/rag", element: <Rag /> },
         { path: "/contact", element: <Contact /> },
         { path: "/Feedback", element: <Feedback /> },
