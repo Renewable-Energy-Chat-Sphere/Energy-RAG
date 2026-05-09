@@ -1151,8 +1151,6 @@ export default function PowerPlantLive() {
 
                       borderRadius: "15px",
 
-                      
-
                       fontWeight: 700,
 
                       fontSize: "18px",
@@ -1266,7 +1264,7 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註1：裝置容量
+              註1：淨發電量
             </div>
 
             <div
@@ -1275,8 +1273,8 @@ export default function PowerPlantLive() {
                 color: isDark ? "#cbd5e1" : "#1e293b",
               }}
             >
-              通常以構成該機組之原動機或發電機之設計容量稱之，
-              民營電廠則依購售電合約之簽約容量計算。
+              指發電廠實際輸出至電力系統之電能，
+              等於毛發電量扣除廠內用電後之數值。
             </div>
           </div>
 
@@ -1290,7 +1288,7 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註2：淨發電量
+              註2：裝置容量
             </div>
 
             <div
@@ -1299,8 +1297,8 @@ export default function PowerPlantLive() {
                 color: isDark ? "#cbd5e1" : "#1e293b",
               }}
             >
-              指發電廠實際輸出至電力系統之電能，
-              等於毛發電量扣除廠內用電後之數值。
+              通常以構成該機組之原動機或發電機之設計容量稱之，
+              民營電廠則依購售電合約之簽約容量計算。
             </div>
           </div>
 
