@@ -632,40 +632,49 @@ export default function PowerPlantLive() {
      🔥 真實機組資料
   ======================== */
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/power-units")
-      .then((res) => res.json())
+    const fetchData = () => {
+      fetch("http://127.0.0.1:8000/power-units")
+        .then((res) => res.json())
 
-      .then((res) => {
-        console.log("🔥 API回傳資料:", res);
+        .then((res) => {
+          if (Array.isArray(res)) {
+            setLiveUnits(res);
+          } else if (Array.isArray(res.data)) {
+            setLiveUnits(res.data);
+          } else if (Array.isArray(res.units)) {
+            setLiveUnits(res.units);
+          } else {
+            setLiveUnits([]);
+          }
 
-        if (Array.isArray(res)) {
-          setLiveUnits(res);
-        } else if (Array.isArray(res.data)) {
-          setLiveUnits(res.data);
-        } else if (Array.isArray(res.units)) {
-          setLiveUnits(res.units);
-        } else {
-          console.log("❌ API格式錯誤");
+          const now = new Date();
 
-          setLiveUnits([]);
-        }
-        const now = new Date();
+          setUpdateTime(
+            now.toLocaleString("zh-TW", {
+              hour12: false,
+            }),
+          );
 
-        setUpdateTime(
-          now.toLocaleString("zh-TW", {
-            hour12: false,
-          }),
-        );
-        setLoading(false);
-      })
+          setLoading(false);
+        })
 
-      .catch((err) => {
-        console.log(err);
+        .catch((err) => {
+          console.log(err);
 
-        setError(true);
+          setError(true);
 
-        setLoading(false);
-      });
+          setLoading(false);
+        });
+    };
+
+    // 🔥 進頁面先抓一次
+    fetchData();
+
+    // 🔥 每10分鐘更新一次
+    const interval = setInterval(fetchData, 600000);
+
+    // 🔥 離開頁面時清掉
+    return () => clearInterval(interval);
   }, []);
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -684,10 +693,31 @@ export default function PowerPlantLive() {
   ======================== */
   if (loading) {
     return (
-      <div className="power-container">
-        <h1>⚡ 即時電網監控</h1>
+      <div
+        className="power-container"
+        style={{
+          minHeight: "calc(100vh - 320px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "18px",
+        }}
+      >
+        <div className="loading-text">
+          <i className="fi fi-rr-bolt loading-icon"></i>
+          載入即時機組資料中
+          <span className="dot-animation"></span>
+        </div>
 
-        <p>載入即時機組資料中...</p>
+        <div
+          style={{
+            opacity: 0.65,
+            fontSize: "14px",
+          }}
+        >
+          正在同步台電即時發電資料
+        </div>
       </div>
     );
   }

@@ -6,7 +6,7 @@
 }
 /* 🎨 顏色控制（只改這裡就好） */
 :root {
-  --plant-name-color: #0F172A; /* ☀️ 發電機名稱 */
+  --plant-name-color: #0f172a; /* ☀️ 發電機名稱 */
   --region-title-color: #0d2c6e; /* ☀️ 北部/中部 */
 }
 
@@ -175,8 +175,6 @@
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
 }
 
-
-
 /* 按鈕 */
 .dark .plant-tabs button {
   background: #334155;
@@ -215,4 +213,54 @@
   margin-top: 4px;
   font-size: 11px;
   color: #ef4444;
+}
+.loading-text {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ff7b00;
+  letter-spacing: 1px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🔥 點點動畫 */
+.dot-animation::after {
+  content: "";
+  animation: dots 1.4s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: "";
+  }
+
+  25% {
+    content: ".";
+  }
+
+  50% {
+    content: "..";
+  }
+
+  75% {
+    content: "...";
+  }
+
+  100% {
+    content: "";
+  }
+}
+.loading-icon {
+  display: inline-flex;
+  align-items: center;
+
+  color: #ffce2d;
+
+  font-size: 22px;
+
+  margin-right: 10px;
+
+  filter: drop-shadow(0 0 10px rgba(248, 216, 56, 0.7));
 }

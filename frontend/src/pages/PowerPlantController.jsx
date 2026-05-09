@@ -45,11 +45,27 @@ export default function PowerPlantController() {
     return (
       <div
         style={{
-          padding: "50px",
-          textAlign: "center",
+          minHeight: "calc(100vh - 320px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "18px",
         }}
       >
-        ⚡ 載入電網資料中...
+        <div className="loading-text">
+          <i className="fi fi-rr-bolt loading-icon"></i>
+          載入電網資料中
+          <span className="dot-animation"></span>
+        </div>
+        <div
+          style={{
+            opacity: 0.65,
+            fontSize: "14px",
+          }}
+        >
+          正在連接台電即時機組系統
+        </div>
       </div>
     );
   }
