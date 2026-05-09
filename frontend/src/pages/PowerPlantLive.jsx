@@ -3,7 +3,7 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
 import "@flaticon/flaticon-uicons/css/regular/rounded.css";
-
+import { useTranslation } from "react-i18next";
 /* ========================
    🔥 顏色
 ======================== */
@@ -525,6 +525,7 @@ function getCategory(name, value) {
    🔥 卡片
 ======================== */
 function PlantCard({ unit, isDark }) {
+  const { t } = useTranslation();
   const max = parseFloat(unit.max);
 
   const value = parseFloat(unit.value);
@@ -571,7 +572,7 @@ function PlantCard({ unit, isDark }) {
             justifyContent: "space-between",
           }}
         >
-          <span>裝置容量</span>
+          <span>{t("power.installedCapacity")}</span>
 
           <span>{safeMax || "-"}</span>
         </div>
@@ -582,7 +583,7 @@ function PlantCard({ unit, isDark }) {
             justifyContent: "space-between",
           }}
         >
-          <span>淨發電量</span>
+          <span>{t("power.netGeneration")}</span>
 
           <span>{safeValue}</span>
         </div>
@@ -593,7 +594,7 @@ function PlantCard({ unit, isDark }) {
             justifyContent: "space-between",
           }}
         >
-          <span>利用率(%)</span>
+          <span>{t("power.utilization")}</span>
 
           <span>{percent}%</span>
         </div>
@@ -619,6 +620,9 @@ function PlantCard({ unit, isDark }) {
    🔥 主頁
 ======================== */
 export default function PowerPlantLive() {
+  const { t, i18n } = useTranslation();
+
+  const language = i18n.language;
   const [liveUnits, setLiveUnits] = useState([]);
   const [updateTime, setUpdateTime] = useState("");
   const [loading, setLoading] = useState(true);
@@ -706,7 +710,7 @@ export default function PowerPlantLive() {
       >
         <div className="loading-text">
           <i className="fi fi-rr-bolt loading-icon"></i>
-          載入即時機組資料中
+          {t("power.loading")}
           <span className="dot-animation"></span>
         </div>
 
@@ -716,7 +720,7 @@ export default function PowerPlantLive() {
             fontSize: "14px",
           }}
         >
-          正在同步台電即時發電資料
+          {t("power.syncing")}
         </div>
       </div>
     );
@@ -728,9 +732,9 @@ export default function PowerPlantLive() {
   if (error) {
     return (
       <div className="power-container">
-        <h1>⚠️ 即時資料暫時無法使用</h1>
+        <h1>⚠️ {t("power.unavailable")}</h1>
 
-        <p>台電即時 API 無法連線，請稍後再試。</p>
+        <p>{t("power.apiError")}</p>
       </div>
     );
   }
@@ -757,7 +761,45 @@ export default function PowerPlantLive() {
 
     return !isNaN(max) && max > 0 && (isNaN(value) || value === 0);
   }).length;
+  const categoryMap = {
+    "燃氣(LNG)": t("power.lng"),
+    "燃煤(Coal)": t("power.coal"),
+    "核能(Nuclear)": t("power.nuclear"),
+    "水力(Hydro)": t("power.hydro"),
+    "風力(Wind)": t("power.wind"),
+    "太陽能(Solar)": t("power.solar"),
+    "燃料油(Fuel Oil)": t("power.oil"),
+    "儲能(Energy Storage System)": t("power.storage"),
+    "儲能負載(Energy Storage System Load)": t("power.storageLoad"),
+    "其它再生能源(Other Renewable Energy)": t("power.renewable"),
 
+    "民營電廠-燃氣(IPP-LNG)": t("power.ippLng"),
+    "民營電廠-燃煤(IPP-Coal)": t("power.ippCoal"),
+
+    台電自有: t("power.tpc"),
+    民營購電: t("power.ipp"),
+
+    太陽能購電: t("power.solarIpp"),
+    太陽能台電自有: t("power.solarTpc"),
+
+    離岸風力購電: t("power.offshoreWindIpp"),
+    離岸風力台電自有: t("power.offshoreWindTpc"),
+
+    陸域風力購電: t("power.landWindIpp"),
+    陸域風力台電自有: t("power.landWindTpc"),
+
+    "電池(Battery)": t("power.battery"),
+    "抽蓄水力(Pumped Hydro)": t("power.pumpedHydro"),
+
+    "汽電共生(Co-Gen)": t("power.cogen"),
+    "汽電共生": t("power.cogen"),
+    "輕油(Diesel)": t("power.diesel"),
+    "燃油(Oil)": t("power.oilSub"),
+
+    其它再生能源: t("power.renewable"),
+
+    其他: t("power.other"),
+  };
   /* ========================
      🔥 官方分類
   ======================== */
@@ -768,9 +810,9 @@ export default function PowerPlantLive() {
 
     const category = getCategory(u.name, value);
 
-    const main = category.main;
+    const main = categoryMap[category.main] || category.main;
 
-    const sub = category.sub;
+    const sub = categoryMap[category.sub] || category.sub;
 
     if (!grouped[main]) {
       grouped[main] = {};
@@ -805,7 +847,7 @@ export default function PowerPlantLive() {
             filter: "drop-shadow(0 0 10px rgba(250,204,21,0.7))",
           }}
         />
-        即時電網監控
+        {t("power.title")}
       </h1>
 
       <p
@@ -852,7 +894,7 @@ export default function PowerPlantLive() {
                 letterSpacing: "1px",
               }}
             >
-              即時電網總覽
+              {t("power.gridOverview")}
             </h2>
 
             <p
@@ -862,7 +904,7 @@ export default function PowerPlantLive() {
                 fontSize: "15px",
               }}
             >
-              台電 LIVE 機組資料監控系統
+              {t("power.subtitle")}
             </p>
           </div>
 
@@ -929,7 +971,7 @@ export default function PowerPlantLive() {
                   display: "flex",
                 }}
               />
-              即時發電量
+              {t("power.currentGeneration")}
             </div>
 
             <div
@@ -979,7 +1021,7 @@ export default function PowerPlantLive() {
                   display: "flex",
                 }}
               />
-              裝置容量
+              {t("power.capacity")}
             </div>
 
             <div
@@ -1029,7 +1071,7 @@ export default function PowerPlantLive() {
                   display: "flex",
                 }}
               />
-              維修中機組
+              {t("power.maintenance")}
             </div>
 
             <div
@@ -1048,7 +1090,7 @@ export default function PowerPlantLive() {
                 opacity: 0.7,
               }}
             >
-              台
+              {t("power.unit")}
             </div>
           </div>
 
@@ -1079,7 +1121,7 @@ export default function PowerPlantLive() {
                   display: "flex",
                 }}
               />
-              最後更新時間
+              {t("power.lastUpdate")}
             </div>
 
             <div
@@ -1100,7 +1142,7 @@ export default function PowerPlantLive() {
                 opacity: 0.6,
               }}
             >
-              台電即時機組 API
+              {t("power.apiSource")}
             </div>
           </div>
         </div>
@@ -1195,7 +1237,7 @@ export default function PowerPlantLive() {
                     >
                       {/* 🔥 主數值 */}
                       <div>
-                        小計：
+                        {t("power.subtotal")}
                         <span
                           style={{
                             color: "#38bdf8",
@@ -1230,9 +1272,9 @@ export default function PowerPlantLive() {
                           lineHeight: "1.7",
                         }}
                       >
-                        ※目前淨發電量(註1) / 裝置容量(註2)（利用率）
+                        {t("power.subtotalDesc1")}
                         <br />
-                        ※利用率越高，代表目前機組運轉負載越高。
+                        {t("power.subtotalDesc2")}
                       </div>
                     </div>
                   </div>
@@ -1273,7 +1315,7 @@ export default function PowerPlantLive() {
               display: "flex",
             }}
           />
-          台電官方資料註解
+          {t("power.noteTitle")}
         </h2>
 
         <div
@@ -1294,17 +1336,17 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註1：淨發電量
+              {t("power.note1Title")}
             </div>
 
             <div
               style={{
                 opacity: 0.82,
                 color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
               }}
             >
-              指發電廠實際輸出至電力系統之電能，
-              等於毛發電量扣除廠內用電後之數值。
+              {t("power.note1Desc")}
             </div>
           </div>
 
@@ -1318,17 +1360,17 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註2：裝置容量
+              {t("power.note2Title")}
             </div>
 
             <div
               style={{
                 opacity: 0.82,
                 color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
               }}
             >
-              通常以構成該機組之原動機或發電機之設計容量稱之，
-              民營電廠則依購售電合約之簽約容量計算。
+              {t("power.note2Desc")}
             </div>
           </div>
 
@@ -1342,17 +1384,89 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註3：淨發電量高於裝置容量
+              {t("power.note3Title")}
             </div>
 
             <div
               style={{
                 opacity: 0.82,
                 color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
               }}
             >
-              部分火力機組可能因設備升級、環境溫度較低、 或機組效能測試等因素，
-              導致短時間淨發電量高於裝置容量。
+              {t("power.note3Desc")}
+            </div>
+          </div>
+
+          {/* 註4 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note4Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note4Title")}
+            </div>
+          </div>
+
+          {/* 註5 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note5Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note5Desc")}
+            </div>
+          </div>
+
+          {/* 註6 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note6Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note6Desc")}
             </div>
           </div>
 
@@ -1366,16 +1480,17 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註7：太陽能購電
+              {t("power.note7Title")}
             </div>
 
             <div
               style={{
                 opacity: 0.82,
                 color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
               }}
             >
-              太陽能購電之發電量， 為依購電取樣發電比例推估之即時值。
+              {t("power.note7Desc")}
             </div>
           </div>
 
@@ -1389,16 +1504,17 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註8：N/A
+              {t("power.note8Title")}
             </div>
 
             <div
               style={{
                 opacity: 0.82,
                 color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
               }}
             >
-              表示目前無即時資訊。
+              {t("power.note8Desc")}
             </div>
           </div>
 
@@ -1412,16 +1528,160 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註9：更新頻率
+              {t("power.note9Title")}
             </div>
 
             <div
               style={{
                 opacity: 0.82,
                 color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
               }}
             >
-              本頁資料約每 10 分鐘更新一次。
+              {t("power.note9Desc")}
+            </div>
+          </div>
+          {/* 註10 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note10Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note10Desc")}
+            </div>
+          </div>
+
+          {/* 註11 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note11Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note11Desc")}
+            </div>
+          </div>
+
+          {/* 註12 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note12Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note12Desc")}
+            </div>
+          </div>
+
+          {/* 註13 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note13Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note13Desc")}
+            </div>
+          </div>
+
+          {/* 註14 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note14Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note14Desc")}
+            </div>
+          </div>
+
+          {/* 註15 */}
+          <div>
+            <div
+              style={{
+                color: isDark ? "#38bdf8" : "#081c44",
+                fontWeight: 800,
+                marginBottom: "8px",
+                fontSize: "18px",
+              }}
+            >
+              {t("power.note15Title")}
+            </div>
+
+            <div
+              style={{
+                opacity: 0.82,
+                color: isDark ? "#cbd5e1" : "#1e293b",
+                whiteSpace: "pre-line",
+              }}
+            >
+              {t("power.note15Desc")}
             </div>
           </div>
 
@@ -1435,7 +1695,7 @@ export default function PowerPlantLive() {
                 fontSize: "18px",
               }}
             >
-              註16：電池儲能
+              {t("power.note16Title")}
             </div>
 
             <div
@@ -1444,8 +1704,7 @@ export default function PowerPlantLive() {
                 color: isDark ? "#cbd5e1" : "#1e293b",
               }}
             >
-              電池裝置容量係指電力交易平台 「電能移轉複合動態調節備轉」
-              之得標容量。
+              {t("power.note16Desc")}
             </div>
           </div>
         </div>

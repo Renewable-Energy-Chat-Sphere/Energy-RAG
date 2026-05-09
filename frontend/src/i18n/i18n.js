@@ -188,8 +188,124 @@ const resources = {
         geo: "地熱",
         other: "其他",
 
-        unit: "台"
-      }, rag: {
+        unit: "台",
+        loading: "載入即時機組資料中",
+        syncing: "正在同步台電即時發電資料",
+
+        title: "即時電網監控",
+        subtitle: "台電 LIVE 機組資料監控系統",
+
+        currentGeneration: "即時發電量",
+        capacity: "裝置容量",
+        lastUpdate: "最後更新時間",
+
+        apiSource: "台電即時機組 API",
+
+        unavailable: "即時資料暫時無法使用",
+        apiError: "台電即時 API 無法連線，請稍後再試。",
+        noteTitle: "台電官方資料註解",
+
+        note1Title: "註1：淨發電量",
+        note1Desc:
+          "指發電廠實際輸出至電力系統之電能，等於毛發電量扣除廠內用電後之數值。",
+
+        note2Title: "註2：裝置容量",
+        note2Desc:
+          "通常以構成該機組之原動機或發電機之設計容量稱之，民營電廠則依購售電合約之簽約容量計算。",
+
+        note3Title: "註3：淨發電量高於裝置容量",
+        note3Desc:
+          "部分火力機組可能因設備升級、環境溫度較低或機組效能測試等因素，導致短時間淨發電量高於裝置容量。",
+
+        note4Title: "註4：離島機組說明",
+        note4Desc:
+          "澎湖尖山：僅含澎湖本島尖山電廠。\n金門塔山：含大、小金門所有電廠。\n馬祖珠山：只含南竿、北竿及珠山等電廠。\n離島其他：含蘭嶼、綠島、小琉球、連江縣[馬祖]離島（東引、東莒、西莒）及澎湖縣離島(七美、望安、虎井，但不含吉貝、鳥嶼)等電廠。\n※顯示之發電量為毛發電量。",
+
+        note5Title: "註5：核能黑起動氣渦輪機",
+        note5Desc:
+          "核能電廠全黑起動氣渦輪機，其淨尖峰能力15.5萬瓩，但其裝置容量不計入台電系統裝置容量，發電量計入燃油(輕油)發電。",
+
+        note6Title: "註6：小水力分類",
+        note6Desc:
+          "北部小水力: 圓山、天埤、軟橋、石圳聯通管。\n中部小水力: 后里、社寮、景山、北山、濁水、湖山、集集南岸。\n南部小水力: 六龜、竹門。\n東部小水力: 銅門、龍溪、水簾、清水、清流、初英、榕樹、溪口、東興。",
+        note7Title: "註7：太陽能購電",
+        note7Desc:
+          "所顯示之發電量係參考購電取樣發電量分區比例估算得出。購售電件數請參考本公司首頁：資訊揭露 → 發電資訊 → 購入電力概況 → 購入電力分布情形。",
+
+        note8Title: "註8：N/A",
+        note8Desc:
+          "淨發電量若標示為N/A，表示無即時資訊。",
+
+        note9Title: "註9：更新頻率",
+        note9Desc:
+          "本網頁資料為每10分鐘更新，請重新整理頁面，可顯示最新資訊。",
+        note10Title: "註10：試運轉機組",
+        note10Desc:
+          "電廠(機組)換發/取得電業執照前進行測試(試運轉)等程序時，該電廠(機組)暫不計入裝置容量且不揭露其發電百分比。",
+
+        note11Title: "註11：備註欄補充說明",
+        note11Desc: "點擊見詳細說明",
+
+        note12Title: "註12：興達#4機",
+        note12Desc:
+          "興達#4機自113年起第一、四季不運轉，114年起轉為備用機組，僅於第二、三季當預估供電餘裕(率)低於8%時啟用。",
+
+        note13Title: "註13：機組顯示方式",
+        note13Desc:
+          "裝置容量20MW以上且併接電壓等級69仟伏以上之機組單獨呈現，其餘則整併一筆資料。",
+
+        note14Title: "註14：大林#5機",
+        note14Desc:
+          "大林#5機111年12月31日除役並轉為緊急備用電力設施。",
+
+        note15Title: "註15：興達#1~#3機",
+        note15Desc:
+          "興達#1機112年9月30日除役並轉為緊急備用電力設施;\n\n興達#2機112年12月31日除役並轉為緊急備用電力設施;\n\n興達#3機114年10月1日除役並轉為緊急備用電力設施。",
+
+        note16Title: "註16：電池儲能",
+        note16Desc:
+          "電池裝置容量係指電力交易平台「電能移轉複合動態調節備轉」之得標容量。",
+        subtotalDesc1:
+          "※目前淨發電量(註2) / 裝置容量(註1)（利用率）",
+
+        subtotalDesc2:
+          "※利用率越高，代表目前機組運轉負載越高。",
+        subtotal: "小計：",
+        gridOverview: "即時電網總覽",
+        installedCapacity: "裝置容量",
+        netGeneration: "淨發電量",
+        utilization: "利用率(%)",
+        unit: "台",
+        lng: "燃氣(LNG)",
+        coal: "燃煤(Coal)",
+        nuclear: "核能(Nuclear)",
+        hydro: "水力(Hydro)",
+        wind: "風力(Wind)",
+        solar: "太陽能(Solar)",
+        oil: "燃料油(Fuel Oil)",
+        storage: "儲能(Energy Storage System)",
+        storageLoad: "儲能負載(Energy Storage System Load)",
+        renewable: "其它再生能源(Other Renewable Energy)",
+
+        tpc: "台電自有",
+        ipp: "民營購電",
+        solarIpp: "太陽能購電",
+        solarTpc: "太陽能台電自有",
+        offshoreWindIpp: "離岸風力購電",
+        offshoreWindTpc: "離岸風力台電自有",
+        landWindIpp: "陸域風力購電",
+        landWindTpc: "陸域風力台電自有",
+
+        battery: "電池(Battery)",
+        pumpedHydro: "抽蓄水力(Pumped Hydro)",
+
+        cogen: "汽電共生(Co-Gen)",
+        diesel: "輕油(Diesel)",
+        oilSub: "燃油(Oil)",
+
+        other: "其他",
+      },
+      rag: {
         subtitle: "Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索",
 
         badge1: "多模態分析支援",
@@ -454,7 +570,122 @@ const resources = {
         geo: "Geothermal",
         other: "Other",
 
-        unit: "Units"
+        unit: "Units",
+        loading: "Loading live power unit data",
+        syncing: "Synchronizing Taipower live generation data",
+
+        title: "Live Grid Monitoring",
+        subtitle: "Taipower LIVE Unit Monitoring System",
+
+        currentGeneration: "Current Generation",
+        capacity: "Installed Capacity",
+        lastUpdate: "Last Update",
+
+        apiSource: "Taipower Live API",
+
+        unavailable: "Live data temporarily unavailable",
+        apiError: "Unable to connect to Taipower live API.",
+        noteTitle: "Taipower Official Notes",
+
+        note1Title: "Note 1: Net Generation",
+        note1Desc:
+          "Electricity actually delivered to the power grid after deducting plant self-consumption.",
+
+        note2Title: "Note 2: Installed Capacity",
+        note2Desc:
+          "Usually refers to the designed capacity of the turbine or generator. IPP capacity is based on contracted values.",
+
+        note3Title: "Note 3: Net Generation Exceeding Installed Capacity",
+        note3Desc:
+          "Some thermal units may temporarily exceed installed capacity due to upgrades, lower temperatures, or performance testing.",
+
+        note4Title: "Note 4: Offshore Island Units",
+        note4Desc:
+          "Penghu Jianshan: Includes only the Jianshan Power Plant on the main Penghu Island.\nKinmen Tashan: Includes all power plants in Greater and Lesser Kinmen.\nMatsu Zhushan: Includes only Nangan, Beigan, and Zhushan power plants.\nOther Offshore Islands: Includes Orchid Island, Green Island, Xiaoliuqiu, Matsu outer islands, and Penghu outer islands.\n※Displayed generation values are gross generation.",
+
+        note5Title: "Note 5: Nuclear Black-Start Gas Turbine",
+        note5Desc:
+          "The black-start gas turbine units at nuclear plants have a net peak capability of 155 MW. Their installed capacity is not included in the Taipower system capacity, and generation is classified under fuel oil (diesel) generation.",
+
+        note6Title: "Note 6: Small Hydropower Classification",
+        note6Desc:
+          "Northern Small Hydro: Yuanshan, Tianpi, Ruanqiao, Shizun Connection Pipe.\nCentral Small Hydro: Houli, Sheliao, Jingshan, Beishan, Zhuoshui, Hushan, Jiji South Bank.\nSouthern Small Hydro: Liugui, Zhumen.\nEastern Small Hydro: Tongmen, Longxi, Shuilian, Qingshui, Qingliu, Chuying, Rongshu, Xikou, Dongxing.",
+        note7Title: "Note 7: Solar Power Purchase",
+        note7Desc:
+          "Displayed solar generation values are estimated based on sampled purchased solar generation ratios. For detailed purchased power distribution, please refer to the Taipower official website.",
+
+        note8Title: "Note 8: N/A",
+        note8Desc:
+          "If net generation is marked as N/A, it means no real-time information is currently available.",
+
+        note9Title: "Note 9: Update Frequency",
+        note9Desc:
+          "This page updates approximately every 10 minutes. Please refresh the page to view the latest information.",
+        note10Title: "Note 10: Trial Operation Units",
+        note10Desc:
+          "Before obtaining or renewing an electricity business license, units undergoing testing or trial operation are temporarily excluded from installed capacity calculations and their generation percentages are not disclosed.",
+
+        note11Title: "Note 11: Additional Remarks",
+        note11Desc: "Click to view detailed information.",
+
+        note12Title: "Note 12: Hsinta Unit #4",
+        note12Desc:
+          "Hsinta Unit #4 does not operate during Q1 and Q4 starting from ROC year 113, and becomes a backup unit from ROC year 114 onward.",
+
+        note13Title: "Note 13: Unit Display Rule",
+        note13Desc:
+          "Units with installed capacity above 20MW and connected to voltage levels above 69kV are displayed individually; all others are grouped together.",
+
+        note14Title: "Note 14: Talin Unit #5",
+        note14Desc:
+          "Talin Unit #5 was retired on December 31, ROC year 111 and converted into an emergency backup power facility.",
+
+        note15Title: "Note 15: Hsinta Units #1~#3",
+        note15Desc:
+          "Hsinta Unit #1 retired on Sept. 30, ROC year 112.\n\nHsinta Unit #2 retired on Dec. 31, ROC year 112.\n\nHsinta Unit #3 will retire on Oct. 1, ROC year 114.",
+
+        note16Title: "Note 16: Battery Energy Storage",
+        note16Desc:
+          'Battery capacity refers to the awarded capacity in the power trading platform for "Energy Transfer Combined Dynamic Regulation Reserve".',
+        subtotalDesc1:
+          "※Current Net Generation (Note 2) / Installed Capacity (Note 1) (Utilization Rate)",
+
+        subtotalDesc2:
+          "※Higher utilization indicates a higher operating load of the unit.",
+        subtotal: "Subtotal:",
+        gridOverview: "Live Grid Overview",
+        installedCapacity: "Installed Capacity",
+        netGeneration: "Net Generation",
+        utilization: "Utilization (%)",
+        unit: "Units",
+        lng: "Liquefied Natural Gas (LNG)",
+        coal: "Coal",
+        nuclear: "Nuclear",
+        hydro: "Hydro",
+        wind: "Wind",
+        solar: "Solar",
+        oil: "Fuel Oil",
+        storage: "Energy Storage System",
+        storageLoad: "Energy Storage System Load",
+        renewable: "Other Renewable Energy",
+
+        tpc: "Taipower",
+        ipp: "IPP Purchase",
+        solarIpp: "IPP Solar",
+        solarTpc: "Taipower Solar",
+        offshoreWindIpp: "Offshore Wind IPP",
+        offshoreWindTpc: "Taipower Offshore Wind",
+        landWindIpp: "Onshore Wind IPP",
+        landWindTpc: "Taipower Onshore Wind",
+
+        battery: "Battery",
+        pumpedHydro: "Pumped Hydro",
+
+        cogen: "Co-Generation",
+        diesel: "Diesel",
+        oilSub: "Fuel Oil",
+
+        other: "Other",
       },
       rag: {
         subtitle: "Chat / Web / PDF / Audio,Video / Table — Multimodal Energy Retrieval",

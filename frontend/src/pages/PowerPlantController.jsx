@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import PowerPlant from "./PowerPlant";
 
 import PowerPlantLive from "./PowerPlantLive";
-
+import { useTranslation } from "react-i18next";
 export default function PowerPlantController() {
+  const { t } = useTranslation();
   const [useLive, setUseLive] = useState(null);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function PowerPlantController() {
       >
         <div className="loading-text">
           <i className="fi fi-rr-bolt loading-icon"></i>
-          載入電網資料中
+          {t("power.loading")}
           <span className="dot-animation"></span>
         </div>
         <div
@@ -64,7 +65,7 @@ export default function PowerPlantController() {
             fontSize: "14px",
           }}
         >
-          正在連接台電即時機組系統
+          {t("power.syncing")}
         </div>
       </div>
     );
