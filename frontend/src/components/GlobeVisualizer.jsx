@@ -73,13 +73,16 @@ function getSupplyName(info, language) {
 
 const demandLevel = {};
 const demandName = {};
+const parentMap = {};
 
 function getDemandName(code, language) {
   return demandName[code]?.[language] || code;
 }
 
-function buildLevel(node, code) {
+function buildLevel(node, code, parent = null) {
   demandLevel[code] = node.level;
+
+  parentMap[code] = parent;
 
   demandName[code] = {
     zh: node.name_zh || code,
@@ -88,7 +91,7 @@ function buildLevel(node, code) {
 
   if (node.children) {
     Object.entries(node.children).forEach(([childCode, child]) => {
-      buildLevel(child, childCode);
+      buildLevel(child, childCode, code);
     });
   }
 }
@@ -109,20 +112,15 @@ function getRootDept(code) {
   let current = code;
 
   while (current) {
-    if (DEPT_COLOR[current]) return current;
+    if (DEPT_COLOR[current]) {
+      return current;
+    }
 
-    const parent = Object.entries(hierarchy).find(([pCode, node]) => {
-      if (!node.children) return false;
-      return node.children[current];
-    });
-
-    if (!parent) return null;
-    current = parent[0];
+    current = parentMap[current];
   }
 
   return null;
 }
-
 /* Label */
 
 function Label({ position, worldPosition, text, baseSize = 14 }) {
@@ -665,10 +663,7 @@ function SupplyFlowLines({ year, selected, lod }) {
         const p = start.clone().applyAxisAngle(axis, angle * t);
         const baseLift = Math.sin(Math.PI * t) * heightFactor;
 
-        const levelOffset =
-          level === 2 ? 0.02 :
-          level === 3 ? 0.05 :
-          0;
+        const levelOffset = level === 2 ? 0.02 : level === 3 ? 0.05 : 0;
 
         const endBoost = levelOffset * Math.pow(t, 2);
         const lift = baseLift + endBoost;
@@ -837,9 +832,7 @@ export default function GlobeVisualizer({
           }}
         >
           <div style={{ marginBottom: "10px" }}>
-            {language === "en"
-              ? "Supply-Demand Flow Strength"
-              : "供需連線強度"}
+            {language === "en" ? "Supply-Demand Flow Strength" : "供需連線強度"}
           </div>
 
           <div
@@ -920,9 +913,7 @@ export default function GlobeVisualizer({
               </div>
 
               <div>
-                {language === "en"
-                  ? "Orange (< 1) - High"
-                  : "橘色（< 1）- 高"}
+                {language === "en" ? "Orange (< 1) - High" : "橘色（< 1）- 高"}
               </div>
 
               <div>
