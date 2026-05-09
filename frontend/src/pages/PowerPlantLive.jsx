@@ -1149,7 +1149,134 @@ export default function PowerPlantLive() {
             </div>
           </div>
         </div>
+        {/* 🔥 即時能源比例 */}
+        <div
+          style={{
+            marginBottom: "60px",
+            padding: "30px",
+            borderRadius: "28px",
+            background: isDark
+              ? "rgba(30,41,59,0.88)"
+              : "rgba(255,255,255,0.88)",
+            backdropFilter: "blur(18px)",
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(15,23,42,0.08)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
+          }}
+        >
+          <h2
+            style={{
+              marginBottom: "25px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              fontSize: "30px",
+              fontWeight: 800,
+              color: isDark ? "#f8fafc" : "#081c44",
+            }}
+          >
+            <i
+              className="fi fi-rr-bolt"
+              style={{
+                color: "#facc15",
+                display: "flex",
+                filter: "drop-shadow(0 0 10px rgba(250,204,21,0.7))",
+              }}
+            />
 
+            {t("power.liveGeneration")}
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(420px,1fr))",
+              gap: "20px",
+            }}
+          >
+            {Object.entries(grouped).map(([mainCategory, subGroups]) => {
+              const sum = Object.values(subGroups)
+                .flat()
+                .reduce((acc, u) => {
+                  return acc + (parseFloat(u.value) || 0);
+                }, 0);
+
+              const percent =
+                totalValue <= 0 ? 0 : ((sum / totalValue) * 100).toFixed(2);
+
+              return (
+                <div key={mainCategory}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "8px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span>{mainCategory}</span>
+
+                    <span>{sum.toFixed(1)} MW</span>
+                  </div>
+
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "18px",
+                      borderRadius: "999px",
+                      background: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
+                      overflow: "hidden",
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${percent}%`,
+                        height: "100%",
+                        borderRadius: "999px",
+                        background:
+                          percent >= 30
+                            ? "#16a34a"
+                            : percent >= 15
+                              ? "#f97316"
+                              : percent >= 5
+                                ? "#eab308"
+                                : "#38bdf8",
+                        transition: "0.4s",
+                      }}
+                    />
+
+                    <span
+                      style={{
+                        position: "absolute",
+                        left: "12px",
+                        top: "-1px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#fff",
+                      }}
+                    >
+                      {percent}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div
+            style={{
+              marginTop: "25px",
+              textAlign: "right",
+              fontSize: "32px",
+              fontWeight: 900,
+              color: "#38bdf8",
+            }}
+          >
+            {t("power.totalGeneration")}：{totalValue.toFixed(1)} MW
+          </div>
+        </div>
         {/* 🔥 官方分類 */}
         {Object.entries(grouped).map(([mainCategory, subGroups]) => {
           return (
