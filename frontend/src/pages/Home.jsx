@@ -217,10 +217,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Dashboard */}
-      <div className="reveal">
-        <Dashboard />
-      </div>
+     
 
       <div className="page-container">
         {/* Energy News */}

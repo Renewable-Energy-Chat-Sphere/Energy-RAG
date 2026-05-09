@@ -4,6 +4,7 @@ import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
 import "@flaticon/flaticon-uicons/css/regular/rounded.css";
 import { useTranslation } from "react-i18next";
+import BackToTopButton from "../components/BackToTopButton";
 /* ========================
    🔥 顏色
 ======================== */
@@ -792,7 +793,7 @@ export default function PowerPlantLive() {
     "抽蓄水力(Pumped Hydro)": t("power.pumpedHydro"),
 
     "汽電共生(Co-Gen)": t("power.cogen"),
-    "汽電共生": t("power.cogen"),
+    汽電共生: t("power.cogen"),
     "輕油(Diesel)": t("power.diesel"),
     "燃油(Oil)": t("power.oilSub"),
 
@@ -826,889 +827,897 @@ export default function PowerPlantLive() {
   });
 
   return (
-    <div className="power-container">
-      {/* 🔥 標題 */}
-      <h1
-        style={{
-          marginBottom: "10px",
-          display: "flex",
-          alignItems: "center",
-          gap: "14px",
-          fontSize: "42px",
-          fontWeight: 900,
-        }}
-      >
-        <i
-          className="fi fi-rr-bolt"
+    <>
+      <div className="power-container">
+        {/* 🔥 標題 */}
+        <h1
           style={{
-            color: "#facc15",
-            fontSize: "38px",
-            display: "flex",
-            filter: "drop-shadow(0 0 10px rgba(250,204,21,0.7))",
-          }}
-        />
-        {t("power.title")}
-      </h1>
-
-      <p
-        style={{
-          opacity: 0.7,
-          marginBottom: "30px",
-        }}
-      ></p>
-
-      {/* 🔥 即時資訊 */}
-      <div
-        style={{
-          marginBottom: "40px",
-          padding: "30px",
-          borderRadius: "28px",
-          background: isDark
-            ? "linear-gradient(135deg, rgba(30,41,59,0.88), rgba(30,41,59,0.88))"
-            : "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(219,234,254,0.95))",
-          backdropFilter: "blur(18px)",
-          border: isDark
-            ? "1px solid rgba(255,255,255,0.08)"
-            : "1px solid rgba(15,23,42,0.08)",
-          boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
-          color: isDark ? "#f8fafc" : "#0f172a",
-        }}
-      >
-        {/* 🔥 上方 */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "20px",
-            marginBottom: "25px",
-          }}
-        >
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "32px",
-                fontWeight: 800,
-                letterSpacing: "1px",
-              }}
-            >
-              {t("power.gridOverview")}
-            </h2>
-
-            <p
-              style={{
-                marginTop: "10px",
-                opacity: 0.75,
-                fontSize: "15px",
-              }}
-            >
-              {t("power.subtitle")}
-            </p>
-          </div>
-
-          {/* 🔥 LIVE */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "10px 18px",
-              borderRadius: "999px",
-              background: "rgba(34,197,94,0.15)",
-              border: "1px solid rgba(34,197,94,0.35)",
-              color: "#4ade80",
-              fontWeight: 700,
-              fontSize: "14px",
-            }}
-          >
-            <div
-              style={{
-                width: "10px",
-                height: "10px",
-                borderRadius: "50%",
-                background: "#22c55e",
-                boxShadow: "0 0 12px #22c55e",
-              }}
-            />
-            LIVE DATA
-          </div>
-        </div>
-
-        {/* 🔥 KPI */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-            gap: "20px",
-          }}
-        >
-          {/* 🔥 即時發電量 */}
-          <div
-            style={{
-              padding: "22px",
-              borderRadius: "22px",
-              background: isDark
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(255,255,255,0.72)",
-              border: isDark
-                ? "1px solid rgba(255,255,255,0.06)"
-                : "1px solid rgba(15,23,42,0.08)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <i
-                className="fi fi-rr-bolt"
-                style={{
-                  color: "#38bdf8",
-                  display: "flex",
-                }}
-              />
-              {t("power.currentGeneration")}
-            </div>
-
-            <div
-              style={{
-                fontSize: "34px",
-                fontWeight: 800,
-                color: "#38bdf8",
-              }}
-            >
-              {totalValue.toFixed(1)}
-            </div>
-
-            <div
-              style={{
-                marginTop: "5px",
-                opacity: 0.7,
-              }}
-            >
-              MW
-            </div>
-          </div>
-
-          {/* 🔥 裝置容量 */}
-          <div
-            style={{
-              padding: "22px",
-              borderRadius: "22px",
-              background: isDark
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(255,255,255,0.72)",
-              border: isDark
-                ? "1px solid rgba(255,255,255,0.06)"
-                : "1px solid rgba(15,23,42,0.08)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <i
-                className="i fi-rr-battery-bolt"
-                style={{
-                  color: "#facc15",
-                  display: "flex",
-                }}
-              />
-              {t("power.capacity")}
-            </div>
-
-            <div
-              style={{
-                fontSize: "34px",
-                fontWeight: 800,
-                color: "#facc15",
-              }}
-            >
-              {totalMax.toFixed(1)}
-            </div>
-
-            <div
-              style={{
-                marginTop: "5px",
-                opacity: 0.7,
-              }}
-            >
-              MW
-            </div>
-          </div>
-
-          {/* 🔥 維修 */}
-          <div
-            style={{
-              padding: "22px",
-              borderRadius: "22px",
-              background: isDark
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(255,255,255,0.72)",
-              border: isDark
-                ? "1px solid rgba(255,255,255,0.06)"
-                : "1px solid rgba(15,23,42,0.08)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <i
-                className="fi fi-rr-settings"
-                style={{
-                  color: "#fb7185",
-                  display: "flex",
-                }}
-              />
-              {t("power.maintenance")}
-            </div>
-
-            <div
-              style={{
-                fontSize: "34px",
-                fontWeight: 800,
-                color: "#fb7185",
-              }}
-            >
-              {offlineCount}
-            </div>
-
-            <div
-              style={{
-                marginTop: "5px",
-                opacity: 0.7,
-              }}
-            >
-              {t("power.unit")}
-            </div>
-          </div>
-
-          {/* 🔥 更新時間 */}
-          <div
-            style={{
-              padding: "22px",
-              borderRadius: "22px",
-              background: isDark
-                ? "rgba(255,255,255,0.05)"
-                : "rgba(255,255,255,0.72)",
-              border: isDark
-                ? "1px solid rgba(255,255,255,0.06)"
-                : "1px solid rgba(15,23,42,0.08)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <i
-                className="fi fi-rr-clock-three"
-                style={{
-                  color: "#4ade80",
-                  display: "flex",
-                }}
-              />
-              {t("power.lastUpdate")}
-            </div>
-
-            <div
-              style={{
-                fontSize: "18px",
-                fontWeight: 700,
-                lineHeight: "1.6",
-                color: isDark ? "#e2e8f0" : "#0f172a",
-              }}
-            >
-              {updateTime}
-            </div>
-
-            <div
-              style={{
-                marginTop: "10px",
-                fontSize: "13px",
-                opacity: 0.6,
-              }}
-            >
-              {t("power.apiSource")}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 🔥 官方分類 */}
-      {Object.entries(grouped).map(([mainCategory, subGroups]) => {
-        return (
-          <div
-            key={mainCategory}
-            style={{
-              marginBottom: "70px",
-            }}
-          >
-            {/* 🔥 主分類 */}
-            <h2
-              style={{
-                borderBottom: "3px solid #ef4444",
-
-                paddingBottom: "10px",
-
-                marginBottom: "30px",
-
-                textAlign: "left",
-              }}
-            >
-              {mainCategory}
-            </h2>
-
-            {/* 🔥 子分類 */}
-            {Object.entries(subGroups).map(([subCategory, units]) => {
-              const totalValue = units.reduce(
-                (sum, u) => sum + (parseFloat(u.value) || 0),
-                0,
-              );
-
-              const totalMax = units.reduce(
-                (sum, u) => sum + (parseFloat(u.max) || 0),
-                0,
-              );
-
-              const totalPercent =
-                totalMax <= 0 ? 0 : ((totalValue / totalMax) * 100).toFixed(2);
-
-              return (
-                <div
-                  key={subCategory}
-                  style={{
-                    marginBottom: "40px",
-                  }}
-                >
-                  {/* 🔥 子標題 */}
-                  <h3
-                    style={{
-                      textAlign: "left",
-
-                      marginBottom: "20px",
-
-                      opacity: 0.85,
-                    }}
-                  >
-                    {subCategory}
-                  </h3>
-
-                  {/* 🔥 卡片 */}
-                  <div className="card-grid">
-                    {units.map((u, i) => (
-                      <PlantCard key={i} unit={u} isDark={isDark} />
-                    ))}
-                  </div>
-
-                  {/* 🔥 小計 */}
-                  <div
-                    style={{
-                      marginTop: "20px",
-
-                      padding: "15px 20px",
-
-                      borderRadius: "15px",
-
-                      fontWeight: 700,
-
-                      fontSize: "18px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                      }}
-                    >
-                      {/* 🔥 主數值 */}
-                      <div>
-                        {t("power.subtotal")}
-                        <span
-                          style={{
-                            color: "#38bdf8",
-                            marginLeft: "6px",
-                          }}
-                        >
-                          {totalValue.toFixed(1)} MW
-                        </span>
-                        {" / "}
-                        <span
-                          style={{
-                            color: "#facc15",
-                          }}
-                        >
-                          {totalMax.toFixed(1)} MW
-                        </span>
-                        <span
-                          style={{
-                            marginLeft: "10px",
-                            color: "#4ade80",
-                          }}
-                        >
-                          （{totalPercent}%）
-                        </span>
-                      </div>
-
-                      {/* 🔥 說明 */}
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          opacity: 0.72,
-                          lineHeight: "1.7",
-                        }}
-                      >
-                        {t("power.subtotalDesc1")}
-                        <br />
-                        {t("power.subtotalDesc2")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
-
-      {/* 🔥 台電官方註解 */}
-      <div
-        style={{
-          marginTop: "90px",
-          padding: "35px",
-          borderRadius: "30px",
-          background: isDark ? "rgba(30,41,59,0.88)" : "rgba(218,234,255,0.82)",
-          backdropFilter: "blur(18px)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
-        }}
-      >
-        <h2
-          style={{
-            marginBottom: "30px",
+            marginBottom: "10px",
             display: "flex",
             alignItems: "center",
-            gap: "12px",
-            fontSize: "30px",
-            fontWeight: 800,
-            color: isDark ? "#f8fafc" : "#081c44",
+            gap: "14px",
+            fontSize: "42px",
+            fontWeight: 900,
           }}
         >
           <i
-            className="fi fi-rr-document"
+            className="fi fi-rr-bolt"
             style={{
-              color: isDark ? "#38bdf8" : "#081c44",
+              color: "#facc15",
+              fontSize: "38px",
               display: "flex",
+              filter: "drop-shadow(0 0 10px rgba(250,204,21,0.7))",
             }}
           />
-          {t("power.noteTitle")}
-        </h2>
+          {t("power.title")}
+        </h1>
 
+        <p
+          style={{
+            opacity: 0.7,
+            marginBottom: "30px",
+          }}
+        ></p>
+
+        {/* 🔥 即時資訊 */}
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "28px",
-            lineHeight: "2",
+            marginBottom: "40px",
+            padding: "30px",
+            borderRadius: "28px",
+            background: isDark
+              ? "linear-gradient(135deg, rgba(30,41,59,0.88), rgba(30,41,59,0.88))"
+              : "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(219,234,254,0.95))",
+            backdropFilter: "blur(18px)",
+            border: isDark
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(15,23,42,0.08)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
+            color: isDark ? "#f8fafc" : "#0f172a",
           }}
         >
-          {/* 註1 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note1Title")}
+          {/* 🔥 上方 */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "20px",
+              marginBottom: "25px",
+            }}
+          >
+            <div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "32px",
+                  fontWeight: 800,
+                  letterSpacing: "1px",
+                }}
+              >
+                {t("power.gridOverview")}
+              </h2>
+
+              <p
+                style={{
+                  marginTop: "10px",
+                  opacity: 0.75,
+                  fontSize: "15px",
+                }}
+              >
+                {t("power.subtitle")}
+              </p>
             </div>
 
+            {/* 🔥 LIVE */}
             <div
               style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "10px 18px",
+                borderRadius: "999px",
+                background: "rgba(34,197,94,0.15)",
+                border: "1px solid rgba(34,197,94,0.35)",
+                color: "#4ade80",
+                fontWeight: 700,
+                fontSize: "14px",
               }}
             >
-              {t("power.note1Desc")}
+              <div
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: "#22c55e",
+                  boxShadow: "0 0 12px #22c55e",
+                }}
+              />
+              LIVE DATA
             </div>
           </div>
 
-          {/* 註2 */}
-          <div>
+          {/* 🔥 KPI */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+              gap: "20px",
+            }}
+          >
+            {/* 🔥 即時發電量 */}
             <div
               style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
+                padding: "22px",
+                borderRadius: "22px",
+                background: isDark
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(255,255,255,0.72)",
+                border: isDark
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "1px solid rgba(15,23,42,0.08)",
               }}
             >
-              {t("power.note2Title")}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <i
+                  className="fi fi-rr-bolt"
+                  style={{
+                    color: "#38bdf8",
+                    display: "flex",
+                  }}
+                />
+                {t("power.currentGeneration")}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "34px",
+                  fontWeight: 800,
+                  color: "#38bdf8",
+                }}
+              >
+                {totalValue.toFixed(1)}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "5px",
+                  opacity: 0.7,
+                }}
+              >
+                MW
+              </div>
             </div>
 
+            {/* 🔥 裝置容量 */}
             <div
               style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
+                padding: "22px",
+                borderRadius: "22px",
+                background: isDark
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(255,255,255,0.72)",
+                border: isDark
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "1px solid rgba(15,23,42,0.08)",
               }}
             >
-              {t("power.note2Desc")}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <i
+                  className="i fi-rr-battery-bolt"
+                  style={{
+                    color: "#facc15",
+                    display: "flex",
+                  }}
+                />
+                {t("power.capacity")}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "34px",
+                  fontWeight: 800,
+                  color: "#facc15",
+                }}
+              >
+                {totalMax.toFixed(1)}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "5px",
+                  opacity: 0.7,
+                }}
+              >
+                MW
+              </div>
+            </div>
+
+            {/* 🔥 維修 */}
+            <div
+              style={{
+                padding: "22px",
+                borderRadius: "22px",
+                background: isDark
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(255,255,255,0.72)",
+                border: isDark
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "1px solid rgba(15,23,42,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <i
+                  className="fi fi-rr-settings"
+                  style={{
+                    color: "#fb7185",
+                    display: "flex",
+                  }}
+                />
+                {t("power.maintenance")}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "34px",
+                  fontWeight: 800,
+                  color: "#fb7185",
+                }}
+              >
+                {offlineCount}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "5px",
+                  opacity: 0.7,
+                }}
+              >
+                {t("power.unit")}
+              </div>
+            </div>
+
+            {/* 🔥 更新時間 */}
+            <div
+              style={{
+                padding: "22px",
+                borderRadius: "22px",
+                background: isDark
+                  ? "rgba(255,255,255,0.05)"
+                  : "rgba(255,255,255,0.72)",
+                border: isDark
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "1px solid rgba(15,23,42,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <i
+                  className="fi fi-rr-clock-three"
+                  style={{
+                    color: "#4ade80",
+                    display: "flex",
+                  }}
+                />
+                {t("power.lastUpdate")}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  lineHeight: "1.6",
+                  color: isDark ? "#e2e8f0" : "#0f172a",
+                }}
+              >
+                {updateTime}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "10px",
+                  fontSize: "13px",
+                  opacity: 0.6,
+                }}
+              >
+                {t("power.apiSource")}
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* 註3 */}
-          <div>
+        {/* 🔥 官方分類 */}
+        {Object.entries(grouped).map(([mainCategory, subGroups]) => {
+          return (
             <div
+              key={mainCategory}
+              style={{
+                marginBottom: "70px",
+              }}
+            >
+              {/* 🔥 主分類 */}
+              <h2
+                style={{
+                  borderBottom: "3px solid #ef4444",
+
+                  paddingBottom: "10px",
+
+                  marginBottom: "30px",
+
+                  textAlign: "left",
+                }}
+              >
+                {mainCategory}
+              </h2>
+
+              {/* 🔥 子分類 */}
+              {Object.entries(subGroups).map(([subCategory, units]) => {
+                const totalValue = units.reduce(
+                  (sum, u) => sum + (parseFloat(u.value) || 0),
+                  0,
+                );
+
+                const totalMax = units.reduce(
+                  (sum, u) => sum + (parseFloat(u.max) || 0),
+                  0,
+                );
+
+                const totalPercent =
+                  totalMax <= 0
+                    ? 0
+                    : ((totalValue / totalMax) * 100).toFixed(2);
+
+                return (
+                  <div
+                    key={subCategory}
+                    style={{
+                      marginBottom: "40px",
+                    }}
+                  >
+                    {/* 🔥 子標題 */}
+                    <h3
+                      style={{
+                        textAlign: "left",
+
+                        marginBottom: "20px",
+
+                        opacity: 0.85,
+                      }}
+                    >
+                      {subCategory}
+                    </h3>
+
+                    {/* 🔥 卡片 */}
+                    <div className="card-grid">
+                      {units.map((u, i) => (
+                        <PlantCard key={i} unit={u} isDark={isDark} />
+                      ))}
+                    </div>
+
+                    {/* 🔥 小計 */}
+                    <div
+                      style={{
+                        marginTop: "20px",
+
+                        padding: "15px 20px",
+
+                        borderRadius: "15px",
+
+                        fontWeight: 700,
+
+                        fontSize: "18px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                        }}
+                      >
+                        {/* 🔥 主數值 */}
+                        <div>
+                          {t("power.subtotal")}
+                          <span
+                            style={{
+                              color: "#38bdf8",
+                              marginLeft: "6px",
+                            }}
+                          >
+                            {totalValue.toFixed(1)} MW
+                          </span>
+                          {" / "}
+                          <span
+                            style={{
+                              color: "#facc15",
+                            }}
+                          >
+                            {totalMax.toFixed(1)} MW
+                          </span>
+                          <span
+                            style={{
+                              marginLeft: "10px",
+                              color: "#4ade80",
+                            }}
+                          >
+                            （{totalPercent}%）
+                          </span>
+                        </div>
+
+                        {/* 🔥 說明 */}
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            opacity: 0.72,
+                            lineHeight: "1.7",
+                          }}
+                        >
+                          {t("power.subtotalDesc1")}
+                          <br />
+                          {t("power.subtotalDesc2")}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* 🔥 台電官方註解 */}
+        <div
+          style={{
+            marginTop: "90px",
+            padding: "35px",
+            borderRadius: "30px",
+            background: isDark
+              ? "rgba(30,41,59,0.88)"
+              : "rgba(218,234,255,0.82)",
+            backdropFilter: "blur(18px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+          }}
+        >
+          <h2
+            style={{
+              marginBottom: "30px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              fontSize: "30px",
+              fontWeight: 800,
+              color: isDark ? "#f8fafc" : "#081c44",
+            }}
+          >
+            <i
+              className="fi fi-rr-document"
               style={{
                 color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
+                display: "flex",
               }}
-            >
-              {t("power.note3Title")}
+            />
+            {t("power.noteTitle")}
+          </h2>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "28px",
+              lineHeight: "2",
+            }}
+          >
+            {/* 註1 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note1Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note1Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note3Desc")}
-            </div>
-          </div>
+            {/* 註2 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note2Title")}
+              </div>
 
-          {/* 註4 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note4Title")}
-            </div>
-
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note4Title")}
-            </div>
-          </div>
-
-          {/* 註5 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note5Title")}
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note2Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note5Desc")}
-            </div>
-          </div>
+            {/* 註3 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note3Title")}
+              </div>
 
-          {/* 註6 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note6Title")}
-            </div>
-
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note6Desc")}
-            </div>
-          </div>
-
-          {/* 註7 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note7Title")}
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note3Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note7Desc")}
-            </div>
-          </div>
+            {/* 註4 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note4Title")}
+              </div>
 
-          {/* 註8 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note8Title")}
-            </div>
-
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note8Desc")}
-            </div>
-          </div>
-
-          {/* 註9 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note9Title")}
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note4Title")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note9Desc")}
-            </div>
-          </div>
-          {/* 註10 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note10Title")}
+            {/* 註5 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note5Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note5Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note10Desc")}
-            </div>
-          </div>
+            {/* 註6 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note6Title")}
+              </div>
 
-          {/* 註11 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note11Title")}
-            </div>
-
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note11Desc")}
-            </div>
-          </div>
-
-          {/* 註12 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note12Title")}
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note6Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note12Desc")}
-            </div>
-          </div>
+            {/* 註7 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note7Title")}
+              </div>
 
-          {/* 註13 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note13Title")}
-            </div>
-
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note13Desc")}
-            </div>
-          </div>
-
-          {/* 註14 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note14Title")}
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note7Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note14Desc")}
-            </div>
-          </div>
+            {/* 註8 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note8Title")}
+              </div>
 
-          {/* 註15 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note15Title")}
-            </div>
-
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("power.note15Desc")}
-            </div>
-          </div>
-
-          {/* 註16 */}
-          <div>
-            <div
-              style={{
-                color: isDark ? "#38bdf8" : "#081c44",
-                fontWeight: 800,
-                marginBottom: "8px",
-                fontSize: "18px",
-              }}
-            >
-              {t("power.note16Title")}
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note8Desc")}
+              </div>
             </div>
 
-            <div
-              style={{
-                opacity: 0.82,
-                color: isDark ? "#cbd5e1" : "#1e293b",
-              }}
-            >
-              {t("power.note16Desc")}
+            {/* 註9 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note9Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note9Desc")}
+              </div>
+            </div>
+            {/* 註10 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note10Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note10Desc")}
+              </div>
+            </div>
+
+            {/* 註11 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note11Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note11Desc")}
+              </div>
+            </div>
+
+            {/* 註12 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note12Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note12Desc")}
+              </div>
+            </div>
+
+            {/* 註13 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note13Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note13Desc")}
+              </div>
+            </div>
+
+            {/* 註14 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note14Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note14Desc")}
+              </div>
+            </div>
+
+            {/* 註15 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note15Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {t("power.note15Desc")}
+              </div>
+            </div>
+
+            {/* 註16 */}
+            <div>
+              <div
+                style={{
+                  color: isDark ? "#38bdf8" : "#081c44",
+                  fontWeight: 800,
+                  marginBottom: "8px",
+                  fontSize: "18px",
+                }}
+              >
+                {t("power.note16Title")}
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.82,
+                  color: isDark ? "#cbd5e1" : "#1e293b",
+                }}
+              >
+                {t("power.note16Desc")}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <BackToTopButton />
+    </>
   );
 }
