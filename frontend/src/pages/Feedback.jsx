@@ -145,7 +145,102 @@ export default function Feedback() {
               </>
             )}
 
-            <button onClick={() => setSelected(null)}>{t("feedback.close")}</button>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+
+              {/* ✅ 標記完成 */}
+              {selected.status !== "closed" && (
+                <button
+                  onClick={async () => {
+
+                    try {
+
+                      await fetch(`${API}/resolve_feedback`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          id: selected.id,
+                        }),
+                      });
+
+                      // 更新畫面
+                      setList((prev) =>
+                        prev.map((item) =>
+                          item.id === selected.id
+                            ? { ...item, status: "closed" }
+                            : item
+                        )
+                      );
+
+                      setSelected({
+                        ...selected,
+                        status: "closed",
+                      });
+
+                    } catch (e) {
+                      alert("標記失敗");
+                    }
+
+                  }}
+                >
+                  ✅ {t("feedback.statusClosed")}
+                </button>
+              )}
+
+              {/* ❌ 刪除 */}
+              <button
+                style={{
+                  background: "linear-gradient(135deg, #7f1d1d, #dc2626)",
+                }}
+                onClick={async () => {
+
+                  const ok = window.confirm("確定要刪除嗎？");
+
+                  if (!ok) return;
+
+                  try {
+
+                    await fetch(`${API}/delete_feedback`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        id: selected.id,
+                      }),
+                    });
+
+                    // 🔥 更新列表
+                    setList((prev) =>
+                      prev.filter((item) => item.id !== selected.id)
+                    );
+
+                    // 關閉 modal
+                    setSelected(null);
+
+                  } catch (e) {
+                    alert("刪除失敗");
+                  }
+
+                }}
+              >
+                ❌ 刪除
+              </button>
+
+              {/* 關閉 */}
+              <button onClick={() => setSelected(null)}>
+                {t("feedback.close")}
+              </button>
+
+            </div>
           </div>
         </div>
       )}

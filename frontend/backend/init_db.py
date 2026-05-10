@@ -5,7 +5,9 @@ conn = sqlite3.connect("energy.db")
 
 cursor = conn.cursor()
 
-# 建立 feedback table
+# =========================
+# 📩 feedback table
+# =========================
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS feedback (
 
@@ -22,6 +24,25 @@ CREATE TABLE IF NOT EXISTS feedback (
     category TEXT,
     priority TEXT,
 
+    status TEXT DEFAULT 'open',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+# =========================
+# 👤 users table
+# =========================
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    username TEXT UNIQUE,
+    password TEXT,
+
+    role TEXT DEFAULT 'user',
+
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """)
@@ -30,4 +51,4 @@ conn.commit()
 
 conn.close()
 
-print("✅ SQLite 資料庫建立成功")
+print("✅ SQLite 資料庫初始化完成")
