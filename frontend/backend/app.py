@@ -9,6 +9,9 @@ from datetime import datetime
 from flask import request, jsonify
 from power_api import get_power_units
 
+# 資料庫 專用
+import sqlite3
+
 # 🔮 Predict 專用（新增）
 from prophet import Prophet
 import pandas as pd
@@ -451,20 +454,9 @@ def contact():
     FILE_PATH = os.path.join(BASE_DIR, "feedback.json")
 
     # =========================
-    # 📥 JSON
+    # 🗄 SQLite
     # =========================
-    def load_data():
-        if not os.path.exists(FILE_PATH):
-            return []
-        try:
-            with open(FILE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            return []
-
-    def save_data(data):
-        with open(FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+    DB_PATH = os.path.join(BASE_DIR, "energy.db")
 
     data = request.json or {}
 
@@ -573,25 +565,41 @@ def contact():
     reply_text = generate_reply()
 
     # =========================
-    # 💾 存 JSON
+    # 💾 存 SQLite
     # =========================
-    data_list = load_data()
+    conn = sqlite3.connect(DB_PATH)
 
-    new_record = {
-        "name": name,
-        "email": email,
-        "phone": phone,
-        "feeling": feeling,
-        "message": message,
-        "sentiment": sentiment,
-        "category": category,
-        "priority": priority,
-        "reply": reply_text,
-        "status": "open",
-    }
+    cursor = conn.cursor()
 
-    data_list.append(new_record)
-    save_data(data_list)
+    cursor.execute("""
+    INSERT INTO feedback (
+
+        name,
+        email,
+        phone,
+        feeling,
+        message,
+        sentiment,
+        category,
+        priority
+
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+
+        name,
+        email,
+        phone,
+        feeling,
+        message,
+        sentiment,
+        category,
+        priority
+
+    ))
+
+    conn.commit()
+
+    conn.close()
 
     # =========================
     # 📩 寄信
@@ -653,22 +661,32 @@ Email: {email}
 # =========================
 @app.route("/get_feedback")
 def get_feedback():
-    import json, os
+
     from flask import jsonify
+    import sqlite3
+    import os
 
-    FILE_PATH = os.path.join(os.path.dirname(__file__), "feedback.json")
+    DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    if not os.path.exists(FILE_PATH):
-        return jsonify([])
+    conn = sqlite3.connect(DB_PATH)
 
-    try:
-        with open(FILE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except:
-        data = []
+    # 🔥 row → dict
+    conn.row_factory = sqlite3.Row
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT * FROM feedback
+    ORDER BY id DESC
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    data = [dict(row) for row in rows]
 
     return jsonify(data)
-
 
 # =========================
 # ✅ 標記完成
