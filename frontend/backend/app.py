@@ -693,21 +693,28 @@ def get_feedback():
 # =========================
 @app.route("/resolve_feedback", methods=["POST"])
 def resolve_feedback():
-    import json, os
+
+    import sqlite3
+    import os
     from flask import request, jsonify
 
-    index = request.json.get("index")
+    feedback_id = request.json.get("id")
 
-    FILE_PATH = os.path.join(os.path.dirname(__file__), "feedback.json")
+    DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    with open(FILE_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    conn = sqlite3.connect(DB_PATH)
 
-    if 0 <= index < len(data):
-        data[index]["status"] = "closed"
+    cursor = conn.cursor()
 
-    with open(FILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    cursor.execute("""
+    UPDATE feedback
+    SET status = 'closed'
+    WHERE id = ?
+    """, (feedback_id,))
+
+    conn.commit()
+
+    conn.close()
 
     return jsonify({"status": "ok"})
 
@@ -717,21 +724,27 @@ def resolve_feedback():
 # =========================
 @app.route("/delete_feedback", methods=["POST"])
 def delete_feedback():
-    import json, os
+
+    import sqlite3
+    import os
     from flask import request, jsonify
 
-    index = request.json.get("index")
+    feedback_id = request.json.get("id")
 
-    FILE_PATH = os.path.join(os.path.dirname(__file__), "feedback.json")
+    DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    with open(FILE_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    conn = sqlite3.connect(DB_PATH)
 
-    if 0 <= index < len(data):
-        data.pop(index)
+    cursor = conn.cursor()
 
-    with open(FILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    cursor.execute("""
+    DELETE FROM feedback
+    WHERE id = ?
+    """, (feedback_id,))
+
+    conn.commit()
+
+    conn.close()
 
     return jsonify({"status": "ok"})
 
