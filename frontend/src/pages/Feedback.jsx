@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import BackToTopButton from "../components/BackToTopButton";
 export default function Feedback() {
   const { t } = useTranslation();
   const [list, setList] = useState([]);
@@ -57,9 +57,9 @@ export default function Feedback() {
           <div className="empty-box">📭 {t("feedback.empty")}</div>
         ) : (
           <div className="list-container">
-            {filteredList.map((item, i) => (
+            {filteredList.map((item) => (
               <div
-                key={i}
+                key={item.id}
                 className="row-card"
                 onClick={() => setSelected(item)}
               >
@@ -68,9 +68,10 @@ export default function Feedback() {
                 <div className="col feeling">{item.feeling}</div>
 
                 <div className="col message">
-                  {item.message?.slice(0, 40)}...
+                  {item.message?.length > 20
+                    ? item.message.slice(0, 20) + "..."
+                    : item.message}
                 </div>
-
                 <div className="col tags">
                   <span className={`tag ${item.sentiment}`}>
                     {item.sentiment}
@@ -116,7 +117,11 @@ export default function Feedback() {
               {selected.feeling}
             </p>
 
-            <div className="message-box">{t("feedback.message")}：</div>
+            <div className="message-box">
+              <strong>{t("feedback.message")}：</strong>
+              <br />
+              {selected.message}
+            </div>
 
             <div className="tags">
               <span className={`tag ${selected.sentiment}`}>
@@ -126,12 +131,16 @@ export default function Feedback() {
               <span className="tag category">{selected.category}</span>
 
               {selected.priority === "高" && (
-                <span className="tag high">🔥 {t("feedback.priorityHigh")}</span>
+                <span className="tag high">
+                  🔥 {t("feedback.priorityHigh")}
+                </span>
               )}
 
               {/* ⭐ status */}
               <span className={`status ${selected.status}`}>
-                {selected.status === "closed" ? t("feedback.statusClosed") : t("feedback.statusOpen")}
+                {selected.status === "closed"
+                  ? t("feedback.statusClosed")
+                  : t("feedback.statusOpen")}
               </span>
             </div>
 
@@ -153,14 +162,11 @@ export default function Feedback() {
                 flexWrap: "wrap",
               }}
             >
-
               {/* ✅ 標記完成 */}
               {selected.status !== "closed" && (
                 <button
                   onClick={async () => {
-
                     try {
-
                       await fetch(`${API}/resolve_feedback`, {
                         method: "POST",
                         headers: {
@@ -176,19 +182,17 @@ export default function Feedback() {
                         prev.map((item) =>
                           item.id === selected.id
                             ? { ...item, status: "closed" }
-                            : item
-                        )
+                            : item,
+                        ),
                       );
 
                       setSelected({
                         ...selected,
                         status: "closed",
                       });
-
                     } catch (e) {
                       alert("標記失敗");
                     }
-
                   }}
                 >
                   ✅ {t("feedback.statusClosed")}
@@ -201,13 +205,11 @@ export default function Feedback() {
                   background: "linear-gradient(135deg, #7f1d1d, #dc2626)",
                 }}
                 onClick={async () => {
-
                   const ok = window.confirm("確定要刪除嗎？");
 
                   if (!ok) return;
 
                   try {
-
                     await fetch(`${API}/delete_feedback`, {
                       method: "POST",
                       headers: {
@@ -220,16 +222,14 @@ export default function Feedback() {
 
                     // 🔥 更新列表
                     setList((prev) =>
-                      prev.filter((item) => item.id !== selected.id)
+                      prev.filter((item) => item.id !== selected.id),
                     );
 
                     // 關閉 modal
                     setSelected(null);
-
                   } catch (e) {
                     alert("刪除失敗");
                   }
-
                 }}
               >
                 ❌ 刪除
@@ -239,7 +239,6 @@ export default function Feedback() {
               <button onClick={() => setSelected(null)}>
                 {t("feedback.close")}
               </button>
-
             </div>
           </div>
         </div>
@@ -269,12 +268,15 @@ export default function Feedback() {
 .feedback-title span {
   letter-spacing: 2px;
 }
-        .feedback-page {
-          display: flex;
-          justify-content: center;
-          padding: 40px;
-          color: var(--text);
-        }
+.feedback-page {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text);
+
+  min-height: calc(100vh - 180px);
+  box-sizing: border-box;
+}
 
         .feedback-container {
           width: 100%;
@@ -422,7 +424,7 @@ export default function Feedback() {
           backdrop-filter: var(--glass);
           padding: 24px;
           border-radius: 16px;
-          width: 420px;
+          width: min(420px, 90vw);
           box-shadow: var(--shadow-soft);
         }
 
@@ -464,6 +466,7 @@ export default function Feedback() {
           transform: scale(0.95);
         }
         `}</style>
+      <BackToTopButton />
     </div>
   );
 }
