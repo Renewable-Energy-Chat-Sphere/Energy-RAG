@@ -5,6 +5,7 @@ export default function Feedback() {
   const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState("全部");
+  const [sortMode, setSortMode] = useState("time");
   const [selected, setSelected] = useState(null);
   const API = "http://127.0.0.1:8000";
 
@@ -19,8 +20,18 @@ export default function Feedback() {
   // 🔥 排序（高優先 → 上面）
   // =========================
   const sortedList = [...list].sort((a, b) => {
-    const order = { 高: 3, 中: 2, 低: 1 };
-    return (order[b.priority] || 0) - (order[a.priority] || 0);
+    // 🔥 最新
+    if (sortMode === "time") {
+      return b.id - a.id;
+    }
+
+    // 🔥 重要性
+    if (sortMode === "priority") {
+      const order = { 高: 3, 中: 2, 低: 1 };
+      return (order[b.priority] || 0) - (order[a.priority] || 0);
+    }
+
+    return 0;
   });
 
   // =========================
@@ -39,19 +50,42 @@ export default function Feedback() {
           <span>{t("feedback.title")}</span>
         </h2>
 
-        {/* 篩選 */}
+        {/* 🔥 篩選 + 排序 */}
         <div className="filter-bar">
-          {t("feedback.filter", { returnObjects: true }).map((f) => (
-            <button
-              key={f}
-              className={filter === f ? "active" : ""}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+          {/* 情緒 */}
+          <div className="filter-group">
+            <span className="filter-label">情緒篩選：</span>
 
+            {t("feedback.filter", { returnObjects: true }).map((f) => (
+              <button
+                key={f}
+                className={filter === f ? "active" : ""}
+                onClick={() => setFilter(f)}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* 排序 */}
+          <div className="filter-group">
+            <span className="filter-label">排序方式：</span>
+
+            <button
+              className={sortMode === "time" ? "active" : ""}
+              onClick={() => setSortMode("time")}
+            >
+              最新
+            </button>
+
+            <button
+              className={sortMode === "priority" ? "active" : ""}
+              onClick={() => setSortMode("priority")}
+            >
+              重要性
+            </button>
+          </div>
+        </div>
         {/* 列表 */}
         {filteredList.length === 0 ? (
           <div className="empty-box">📭 {t("feedback.empty")}</div>
@@ -316,7 +350,27 @@ export default function Feedback() {
           color: white;
           border: none;
         }
+       .filter-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
 
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 13px;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
         /* 📦 列表卡片 */
         .row-card {
           display: grid;

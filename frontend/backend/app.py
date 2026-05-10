@@ -470,13 +470,112 @@ def contact():
     # 🤖 分析
     # =========================
     def analyze(feeling, message):
-        if "非常不滿意" in feeling or len(message) > 40:
-            return "負面", "問題", "高"
-        if "不滿意" in feeling:
-            return "負面", "問題", "中"
-        if "希望" in message:
-            return "中立", "建議", "低"
-        return "正面", "其他", "低"
+
+        text = message.lower()
+
+        NEGATIVE_WORDS = [
+            "難用",
+            "爛",
+            "不好",
+            "差",
+            "沒吸引力",
+            "資訊太分散",
+            "看不懂",
+            "複雜",
+            "卡",
+            "錯誤",
+            "bug",
+            "問題",
+            "不方便",
+            "慢",
+            "不好用",
+            "不友善",
+            "不喜歡",
+            "糟",
+            "火大",
+            "氣死",
+            "垃圾",
+            "not food",
+            "shit",
+            "bad",
+            "trash",
+            "angry",
+        ]
+
+        POSITIVE_WORDS = [
+            "好用",
+            "方便",
+            "喜歡",
+            "很棒",
+            "優秀",
+            "清楚",
+            "漂亮",
+            "讚",
+        ]
+
+        SUGGEST_WORDS = [
+            "希望",
+            "建議",
+            "可以",
+            "應該",
+        ]
+
+        negative_score = sum(word in text for word in NEGATIVE_WORDS)
+
+        positive_score = sum(word in text for word in POSITIVE_WORDS)
+
+        suggest_score = sum(word in text for word in SUGGEST_WORDS)
+
+        # 🔥 feeling 加權
+        if "非常不滿意" in feeling:
+            negative_score += 3
+
+        elif "不滿意" in feeling:
+            negative_score += 2
+
+        elif "非常滿意" in feeling:
+            positive_score += 3
+
+        elif "滿意" in feeling:
+            positive_score += 1
+
+        # =====================
+        # 情緒判定
+        # =====================
+        if negative_score > positive_score:
+            sentiment = "負面"
+
+        elif positive_score > negative_score:
+            sentiment = "正面"
+
+        else:
+            sentiment = "中立"
+
+        # =====================
+        # 類型
+        # =====================
+        if suggest_score > 0:
+            category = "建議"
+
+        elif sentiment == "負面":
+            category = "問題"
+
+        else:
+            category = "其他"
+
+        # =====================
+        # 優先級
+        # =====================
+        if sentiment == "負面" and negative_score >= 3:
+            priority = "高"
+
+        elif sentiment == "負面":
+            priority = "中"
+
+        else:
+            priority = "低"
+
+        return sentiment, category, priority
 
     sentiment, category, priority = analyze(feeling, message)
 
@@ -571,7 +670,8 @@ def contact():
 
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
     INSERT INTO feedback (
 
         name,
@@ -584,18 +684,9 @@ def contact():
         priority
 
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-
-        name,
-        email,
-        phone,
-        feeling,
-        message,
-        sentiment,
-        category,
-        priority
-
-    ))
+    """,
+        (name, email, phone, feeling, message, sentiment, category, priority),
+    )
 
     conn.commit()
 
@@ -688,6 +779,7 @@ def get_feedback():
 
     return jsonify(data)
 
+
 # =========================
 # ✅ 標記完成
 # =========================
@@ -706,11 +798,14 @@ def resolve_feedback():
 
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
     UPDATE feedback
     SET status = 'closed'
     WHERE id = ?
-    """, (feedback_id,))
+    """,
+        (feedback_id,),
+    )
 
     conn.commit()
 
@@ -737,10 +832,13 @@ def delete_feedback():
 
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
     DELETE FROM feedback
     WHERE id = ?
-    """, (feedback_id,))
+    """,
+        (feedback_id,),
+    )
 
     conn.commit()
 
