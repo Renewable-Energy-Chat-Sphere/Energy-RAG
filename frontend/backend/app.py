@@ -1196,6 +1196,82 @@ def power_units():
     return jsonify(get_power_units())
 
 
+# ====================================
+# 🤖 AI 即時電價分析
+# ====================================
+@app.route("/electricity-ai-analysis", methods=["POST"])
+def electricity_ai_analysis():
+
+    try:
+
+        data = request.json or {}
+
+        thermal = data.get("thermal", 0)
+
+        renewable = data.get("renewable", 0)
+
+        nuclear = data.get("nuclear", 0)
+
+        cost_pressure = data.get("costPressure", 0)
+
+        prompt = f"""
+你是一位台灣能源分析 AI。
+
+請根據以下即時供電資料，
+分析目前台灣供電成本與能源結構。
+
+資料：
+
+火力發電：
+{thermal} MW
+
+再生能源：
+{renewable} MW
+
+核能：
+{nuclear} MW
+
+供電成本壓力：
+{cost_pressure}
+
+請分析：
+
+1. 目前供電結構
+2. 是否過度依賴火力
+3. 對電價可能影響
+4. 未來風險
+5. 給一般民眾的簡單解讀
+
+限制：
+
+- 200字內
+- 使用繁體中文
+- 像 GPT 專業分析
+- 不要條列
+"""
+
+        resp = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            temperature=0.9,
+        )
+
+        text = resp.choices[0].message.content
+
+        return jsonify({"analysis": text})
+
+    except Exception as e:
+
+        print("🔥 electricity-ai-analysis error:", e)
+
+        return jsonify({"analysis": "AI 分析暫時無法使用"})
+
+
 @app.route("/power-live")
 def power_live():
 

@@ -12,6 +12,7 @@ import Rag from "./pages/Rag";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 import Prediction from "./pages/Prediction";
+import ElectricityAnalysis from "./pages/ElectricityAnalysis";
 import PowerPlantController from "./pages/PowerPlantController";
 
 const router = createBrowserRouter(
@@ -30,6 +31,10 @@ const router = createBrowserRouter(
         { path: "/contact", element: <Contact /> },
         { path: "/Feedback", element: <Feedback /> },
         { path: "/prediction", element: <Prediction /> },
+        {
+          path: "/electricity-analysis",
+          element: <ElectricityAnalysis />,
+        },
       ],
     },
   ],

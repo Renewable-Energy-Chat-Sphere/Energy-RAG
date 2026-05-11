@@ -1,0 +1,178 @@
+:root {
+  --bg-color: #f5f7fb;
+
+  --text-color: #111827;
+
+  --card-bg: #ffffff;
+
+  --secondary-text: #6b7280;
+
+  --placeholder-bg: #edf2f7;
+}
+
+.dark {
+  --bg-color: #071426;
+
+  --text-color: #f3f4f6;
+
+  --card-bg: #102038;
+
+  --secondary-text: #94a3b8;
+
+  --placeholder-bg: #1a2b45;
+}
+
+.electricity-page {
+  padding: 40px;
+
+  min-height: 100vh;
+
+  color: var(--text-color);
+
+  transition: 0.3s;
+
+  max-width: 1400px;
+
+  margin: 0 auto;
+}
+
+.electricity-hero {
+  margin-bottom: 30px;
+}
+
+.electricity-hero h1 {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+
+.electricity-hero p {
+  color: var(--secondary-text);
+
+  font-size: 18px;
+}
+
+.electricity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.electricity-card {
+  background: var(--card-bg);
+
+  border-radius: 25px;
+  padding: 25px;
+  margin-bottom: 20px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+
+  transition: 0.3s;
+}
+
+.big-card {
+  margin-top: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.cost-value {
+  font-size: 70px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+.cost-label {
+  color: var(--secondary-text);
+
+  margin-bottom: 20px;
+}
+
+.analysis-text {
+  line-height: 1.8;
+}
+
+.energy-list {
+  margin-top: 20px;
+}
+
+.energy-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.trend-placeholder {
+  margin-top: 20px;
+
+  height: 250px;
+
+  border-radius: 20px;
+
+  background: var(--placeholder-bg);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  color: var(--secondary-text);
+
+  transition: 0.3s;
+}
+
+.ai-box {
+  line-height: 2;
+  font-size: 16px;
+}
+.chart-wrapper {
+  width: 100%;
+
+  max-width: 700px;
+
+  height: 350px;
+
+  margin: 20px auto 0;
+}
+.impact-list {
+  margin-top: 20px;
+}
+
+.impact-item {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding: 15px 20px;
+
+  border-radius: 16px;
+
+  margin-bottom: 12px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.impact-card {
+  padding: 18px;
+
+  border-radius: 20px;
+
+  margin-bottom: 18px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  transition: 0.3s;
+}
+
+.impact-card:hover {
+  transform: translateY(-3px);
+}

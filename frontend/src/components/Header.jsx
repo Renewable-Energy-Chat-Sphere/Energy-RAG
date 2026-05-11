@@ -137,6 +137,7 @@ export default function Header() {
             <Link to="/global">{t("nav.global")}</Link>
             <Link to="/powerplant">{t("nav.powerplant")}</Link>
             <Link to="/rag">{t("nav.rag")}</Link>
+            <Link to="/electricity-analysis">供電成本分析中心</Link>
             <Link to="/Prediction">{t("nav.prediction")}</Link>
             <Link to="/contact">{t("nav.contact")}</Link>
             <Link to="/Feedback">{t("nav.feedback")}</Link>

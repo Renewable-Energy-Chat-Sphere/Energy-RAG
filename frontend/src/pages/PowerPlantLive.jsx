@@ -21,7 +21,7 @@ function getColor(percent) {
 /* ========================
    🔥 台電官方分類
 ======================== */
-function getCategory(name, value) {
+export function getCategory(name, value) {
   // 🔥 修正 HTML 編碼
   name = name.replace(/&amp;/g, "&");
 

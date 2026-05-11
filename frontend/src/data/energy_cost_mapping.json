@@ -1,0 +1,74 @@
+{
+    "S1": {
+        "type": "Coal",
+        "lcoe": 1.0
+    },
+    "S35": {
+        "type": "Coal",
+        "lcoe": 1.1
+    },
+    "S37": {
+        "type": "Gas",
+        "lcoe": 1.4
+    },
+    "S38": {
+        "type": "Gas",
+        "lcoe": 1.3
+    },
+    "S39": {
+        "type": "Gas",
+        "lcoe": 1.5
+    },
+    "S40": {
+        "type": "Biomass",
+        "lcoe": 1.6
+    },
+    "S41": {
+        "type": "Biomass",
+        "lcoe": 1.6
+    },
+    "S42": {
+        "type": "Biomass",
+        "lcoe": 1.5
+    },
+    "S43": {
+        "type": "Biomass",
+        "lcoe": 1.7
+    },
+    "S44": {
+        "type": "Biomass",
+        "lcoe": 1.6
+    },
+    "S45": {
+        "type": "Waste",
+        "lcoe": 1.4
+    },
+    "S46": {
+        "type": "Nuclear",
+        "lcoe": 0.8
+    },
+    "S47": {
+        "type": "Hydro",
+        "lcoe": 1.1
+    },
+    "S48": {
+        "type": "Geothermal",
+        "lcoe": 1.7
+    },
+    "S49": {
+        "type": "Solar",
+        "lcoe": 1.8
+    },
+    "S50": {
+        "type": "Wind",
+        "lcoe": 2.2
+    },
+    "S52": {
+        "type": "Solar",
+        "lcoe": 1.7
+    },
+    "S53": {
+        "type": "Thermal",
+        "lcoe": 1.3
+    }
+}
