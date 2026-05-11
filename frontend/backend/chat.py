@@ -12,38 +12,6 @@ CHAT_SESSIONS = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
 
 URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
 
-def inject_markdown_links(text: str, user_text: str):
-
-    # ========= 基本連結 =========
-    mapping = {
-        "台灣電力公司": "[台灣電力公司](https://www.taipower.com.tw)",
-        "台電": "[台電](https://www.taipower.com.tw)",
-        "Taipower": "[Taipower](https://www.taipower.com.tw)",
-        "能源署": "[經濟部能源署](https://www.moeaea.gov.tw)",
-    }
-
-    for k, v in mapping.items():
-        if k in text and v not in text:
-            text = text.replace(k, v)
-
-    # ========= 🔥 台灣能源問題判斷 =========
-    taiwan_keywords = [
-        "台灣", "臺灣", "taiwan",
-        "新竹", "台北", "台中", "台南", "高雄",
-        "風力", "發電", "用電", "能源", "電力", "electricity", "power"
-    ]
-
-    full_text = (user_text + text).lower()
-    is_taiwan_energy = any(k.lower() in full_text for k in taiwan_keywords)
-
-    has_link = "ea01.moeaea.gov.tw" in text
-
-    # ========= 🔥 自動補能源統計連結 =========
-    if is_taiwan_energy and not has_link:
-        text += "\n\n📊 詳細統計資料可參考："
-        text += "\n[能源統計資料庫](https://ea01.moeaea.gov.tw/a0303/02/database/search/?tab=%E9%9B%BB%E5%8A%9B%E7%B5%B1%E8%A8%88)"
-
-    return text
 
 # =====================================================
 # 🌍 語言控制（萬用多語🔥）
@@ -148,21 +116,8 @@ BASE_ASSISTANT_PROMPT = """
 
 【禁止】
 - 不要胡亂捏造數據
-
-
-【外部資料連結規則】
-當回答中提到可至外部網站查詢資料時，請直接使用 Markdown 連結，不要只寫網站名稱。
-
-常用連結：
-- 台灣電力公司官方網站：[台灣電力公司](https://www.taipower.com.tw)
-- 台電即時電力資訊：[台電即時電力資訊](https://www.taipower.com.tw/d006/loadGraph/loadGraph/load_reserve_.html)
-- 經濟部能源署：[經濟部能源署](https://www.moeaea.gov.tw)
-- 能源統計資料查詢：[能源統計資料查詢](https://www.moeaea.gov.tw/ECW/populace/home/Home.aspx)
-
-範例：
-不要寫：「可至台灣電力公司官方網站查詢。」
-請寫：「可至 [台灣電力公司](https://www.taipower.com.tw) 查詢。」
 """
+
 
 # =====================================================
 # 📊 分析模式 Prompt
@@ -238,7 +193,6 @@ def chat():
 
             try:
                 answer, sources = qa_over_web(question_only, url=url)
-                answer = inject_markdown_links(answer, user_text)
                 _store_turn(session_id, user_text, answer)
 
                 return jsonify(
@@ -310,7 +264,6 @@ def chat():
             # 🔵 精準模式（保留你原本）
             else:
                 assistant_text = enhance_answer_by_mode(assistant_text, mode)
-            assistant_text = inject_markdown_links(assistant_text, user_text)
                 # =====================================
             # 📎 自動加資料來源（完整版🔥）
             # =====================================
@@ -394,7 +347,6 @@ def chat():
                 if hasattr(resp, "output_text") and resp.output_text
                 else "（模型沒有回傳內容）"
             )
-            assistant_text = inject_markdown_links(assistant_text, user_text)
 
         except Exception as e:
             assistant_text = f"⚠️ 模型錯誤：{e}"
