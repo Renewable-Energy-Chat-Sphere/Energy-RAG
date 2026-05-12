@@ -885,7 +885,7 @@ Email: {email}
 # 📊 讀取
 # =========================
 @app.route("/get_feedback")
-@require_role("admin")
+#@require_role("admin")
 def get_feedback():
 
     from flask import jsonify
@@ -919,7 +919,7 @@ def get_feedback():
 # ✅ 標記完成
 # =========================
 @app.route("/resolve_feedback", methods=["POST"])
-@require_role("admin")
+#@require_role("admin")
 def resolve_feedback():
 
     import sqlite3
@@ -954,7 +954,7 @@ def resolve_feedback():
 # ❌ 刪除
 # =========================
 @app.route("/delete_feedback", methods=["POST"])
-@require_role("admin")
+#@require_role("admin")
 def delete_feedback():
 
     import sqlite3
