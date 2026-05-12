@@ -14,6 +14,7 @@ function sentenceWriter(element, html, speed = 20) {
 
   typing();
 }
+
 function renderMultiYearCards(results, t) {
   if (!Array.isArray(results) || !results.length) return "";
 
@@ -45,6 +46,7 @@ function renderMultiYearCards(results, t) {
     </div>
   `;
 }
+
 function renderEnergyTopCards(results) {
   if (!Array.isArray(results) || !results.length) return "";
 
@@ -327,6 +329,7 @@ ${
 
   return "";
 }
+
 function showLoading(element, text = "Loading...") {
   element.innerHTML = `
     <div class="ai-card thinking">
@@ -339,14 +342,14 @@ function showLoading(element, text = "Loading...") {
     </div>
   `;
 }
+
 import { useEffect, useState } from "react";
-import { marked } from "marked"; //新增
+import { marked } from "marked";
 import "./rag.css";
 import BackToTopButton from "../components/BackToTopButton";
 import { useTranslation } from "react-i18next";
 export default function Rag() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState("chat");
   const [structuredData, setStructuredData] = useState(null);
   const [loading, setLoading] = useState(false);
   const API = "/api";
@@ -430,9 +433,8 @@ export default function Rag() {
       alert(t("rag.excelDownloadError"));
     }
   }
-  /* =========================================================
-     CHAT — 問答 / 泡泡 / 自動撐高
-  ========================================================= */
+
+  /* CHAT */
   useEffect(() => {
     const form = document.getElementById("rag-form-chat");
     if (!form) return;
@@ -446,7 +448,7 @@ export default function Rag() {
 
     const INPUT_MIN_HEIGHT = 44;
 
-    /* ------- 自動撐高 ------- */
+    /* 自動撐高 */
     const resetHeight = () => {
       inputUser.style.height = "auto";
       inputUser.style.height = `${Math.max(
@@ -457,7 +459,7 @@ export default function Rag() {
     inputUser.addEventListener("input", resetHeight);
     requestAnimationFrame(resetHeight);
 
-    /* ------- Shift+Enter 換行 / Enter 送出 ------- */
+    /* Shift+Enter 換行，Enter 送出 */
     inputUser.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -465,17 +467,13 @@ export default function Rag() {
       }
     });
 
-    /* ------- 泡泡 UI ------- */
+    /* 泡泡 UI */
     const bubble = (role, html, isLoading = false) => {
       const wrap = document.createElement("div");
-
-      // ⭐ 這行決定左右
       wrap.className =
         role === "user" ? "rag-bubble-wrap right" : "rag-bubble-wrap left";
 
       const b = document.createElement("div");
-
-      // ⭐ 這行決定樣式
       b.className =
         role === "user" ? "rag-bubble user" : "rag-bubble assistant";
 
@@ -490,17 +488,18 @@ export default function Rag() {
       chatLog.scrollTop = chatLog.scrollHeight;
     };
 
-    /* ------- Chat 提交 ------- */
+    /* Chat 提交 */
     const handleSubmit = async (e) => {
       e.preventDefault();
 
       const userText = inputUser.value.trim();
 
       if (!userText) return;
-      inputUser.value = ""; // ⭐ 清空輸入框
       inputUser.value = "";
-      inputUser.style.height = "44px";
-      // ===== 使用者訊息 =====
+      inputUser.value = "";
+      inputUser.style.height = "48px";
+      
+      // 使用者訊息
       const userWrap = document.createElement("div");
       userWrap.className = "rag-message user";
 
@@ -547,11 +546,11 @@ export default function Rag() {
           body: JSON.stringify(payload),
         });
 
-        const data = await res.json(); // ⭐ 只留這一個
+        const data = await res.json();
 
         thinkingWrap.remove();
 
-        // ===== AI 回答 =====
+        // AI 回答
         const aiWrap = document.createElement("div");
         aiWrap.className = "rag-message assistant";
 
@@ -578,15 +577,12 @@ export default function Rag() {
           }
         }
 
-        // 🔥 先放空
         card.innerHTML = "";
 
-        // ⭐ 先解析 HTML
+        // 解析 HTML
         let answerHtml = marked.parse(data.answer || "");
 
-        // =====================================
-        // 📎 資料來源 icon + tooltip（🔥新增）
-        // =====================================
+        // 資料來源 icon + tooltip
         const sourceMatch = answerHtml.match(
           /📎\s*(資料來源|Source)[:：]\s*(.+)/,
         );
@@ -619,14 +615,14 @@ export default function Rag() {
             </div>
           `;
 
-          // ⭐ 替換原本純文字
+          // 替換原本純文字
           answerHtml = answerHtml.replace(
             /📎\s*(資料來源|Source)[:：].+/,
             sourceHtml,
           );
         }
 
-        // 🔥 打字動畫（用新的）
+        // 打字動畫（用新的）
         sentenceWriter(card, answerHtml, 20);
 
         // 原本卡片（保留）
@@ -641,18 +637,15 @@ export default function Rag() {
         console.error(err);
       }
     };
-    // ⭐ 綁定
+
     form.addEventListener("submit", handleSubmit);
 
-    // ⭐⭐ 這行是重點（防止重複四次）
     return () => {
       form.removeEventListener("submit", handleSubmit);
     };
   }, []);
 
-  /* =========================================================
-     WEB — 問網站內容
-  ========================================================= */
+  /* Web */
   useEffect(() => {
     const form = document.getElementById("rag-form-web");
     if (!form) return;
@@ -699,9 +692,7 @@ export default function Rag() {
     });
   }, []);
 
-  /* =========================================================
-     PDF — 問 PDF
-  ========================================================= */
+  /* PDF */
   useEffect(() => {
     const form = document.getElementById("rag-form-pdf");
     if (!form) return;
@@ -728,13 +719,12 @@ export default function Rag() {
 
       const data = await res.json();
 
-      // ⭐⭐⭐ 加這段
       if (data.structured_data && data.structured_data.data) {
         setStructuredData(data.structured_data);
         console.log("structuredData:", data.structured_data);
       }
+      
       let answerText = data.answer || t("rag.noResponse");
-
       let buttons = "";
 
       if (data.structured_data) {
@@ -770,12 +760,7 @@ export default function Rag() {
     });
   }, []);
 
-  /* =========================================================
-     AV — 問影片/音訊
-  ========================================================= */
-  /* =========================================================
-   AV — 問影片/音訊
-========================================================= */
+  /* AV (問影片/音訊) */
   useEffect(() => {
     const form = document.getElementById("rag-form-av");
     if (!form) return;
@@ -803,7 +788,7 @@ export default function Rag() {
 
       const data = await res.json();
 
-      // ⭐ 如果有 structured_data 存起來
+      // 如果有 structured_data 存起來
       if (data.structured_data) {
         setStructuredData(data.structured_data);
       }
@@ -816,7 +801,7 @@ export default function Rag() {
       </div>
     `;
 
-      // ⭐ 動畫效果（跟 Web 一樣）
+      // 動畫效果（跟 Web 一樣）
       setTimeout(() => {
         out.querySelectorAll("h1, h2, ul, p").forEach((el, i) => {
           el.style.opacity = 0;
@@ -829,7 +814,7 @@ export default function Rag() {
         });
       }, 50);
 
-      // ⭐ 來源顯示
+      // 來源顯示
       if (data.sources?.length) {
         src.innerHTML = `
         <div class="source-card">
@@ -841,9 +826,7 @@ export default function Rag() {
     });
   }, []);
 
-  /* =========================================================
-   TABLE — 問 Excel/CSV + 匯出報告
-========================================================= */
+  /* TABLE (問 Excel/CSV + 匯出報告) */
   useEffect(() => {
     const form = document.getElementById("rag-form-table");
     if (!form) return;
@@ -928,253 +911,95 @@ export default function Rag() {
 
     form.addEventListener("submit", handleSubmit);
 
-    // ⭐⭐⭐ 這裡才會真的生效
     return () => {
       form.removeEventListener("submit", handleSubmit);
     };
   }, []);
-  /* =========================================================
-     整個RAG頁面
-  ========================================================= */
+
   return (
     <div className="rag-page">
       <div className="rag-container">
+
         {/* HERO */}
         <div className="rag-hero">
-          <h1>Energy RAG</h1>
+          <h1>Energy RAG Assistant</h1>
+
           <p>{t("rag.subtitle")}</p>
 
           <div className="rag-badges">
             <span className="rag-badge">{t("rag.badge1")}</span>
-            <span className="rag-badge alt">{t("rag.badge2")}</span>
-            <span className="rag-badge">{t("rag.badge3")}</span>
+            <span className="rag-badge alt">
+              {t("rag.badge2")}
+            </span>
+            <span className="rag-badge">
+              {t("rag.badge3")}
+            </span>
           </div>
         </div>
 
-        {/* TABS */}
-        <nav className="rag-tabs">
-          <button
-            className={`rag-tab ${tab === "chat" ? "active" : ""}`}
-            onClick={() => setTab("chat")}
-          >
-            {t("rag.chatTab")}
-          </button>
-          <button
-            className={`rag-tab ${tab === "web" ? "active" : ""}`}
-            onClick={() => setTab("web")}
-          >
-            {t("rag.webTab")}
-          </button>
-          <button
-            className={`rag-tab ${tab === "pdf" ? "active" : ""}`}
-            onClick={() => setTab("pdf")}
-          >
-            {t("rag.pdfTab")}
-          </button>
-          <button
-            className={`rag-tab ${tab === "av" ? "active" : ""}`}
-            onClick={() => setTab("av")}
-          >
-            {t("rag.avTab")}
-          </button>
-          <button
-            className={`rag-tab ${tab === "table" ? "active" : ""}`}
-            onClick={() => setTab("table")}
-          >
-            {t("rag.tableTab")}
-          </button>
-        </nav>
+        {/* 聊天主區 */}
+        <div className="rag-chat-wrapper">
 
-        {/* PANELS */}
-        <main className="rag-grid">
-          {/* CHAT */}
-          <section
-            id="rag-chat"
-            className={`rag-panel ${tab === "chat" ? "active" : ""}`}
+          {/* 聊天紀錄 */}
+          <div
+            id="rag-chat-log"
+            className="rag-chat-log"
           >
-            <div className="rag-card">
-              <h3>{t("rag.chatMessage")}</h3>
-
-              <form id="rag-form-chat" className="rag-form">
-                <label>
-                  <textarea
-                    name="user"
-                    rows="1"
-                    required
-                    placeholder={t("rag.chatPlaceholder")}
-                  />
-                </label>
-
-                <button type="submit">{t("rag.submit")}</button>
-              </form>
-
-              <article>
-                <h3>{t("rag.chat")}</h3>
-                <div id="rag-chat-log" className="rag-chat-log">
-                  {loading && (
-                    <div className="rag-message assistant">
-                      <div className="rag-message-inner">
-                        <div className="thinking">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+            {loading && (
+              <div className="rag-message assistant">
+                <div className="rag-message-inner">
+                  <div className="thinking">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
                 </div>
-                <div id="rag-src-chat" className="rag-src"></div>
-              </article>
-            </div>
-          </section>
+              </div>
+            )}
+          </div>
 
-          {/* WEB */}
-          <section
-            id="rag-web"
-            className={`rag-panel ${tab === "web" ? "active" : ""}`}
+          {/* 輸入列 */}
+          <form
+            id="rag-form-chat"
+            className="rag-unified-form"
+            encType="multipart/form-data"
           >
-            <div className="rag-card">
-              <h3>{t("rag.webTitle")}</h3>
-              <form id="rag-form-web" className="rag-form">
-                <label>
-                  <input
-                    name="question"
-                    required
-                    placeholder={t("rag.webPlaceholder")}
-                  />
-                </label>
-                <label>
-                  {t("rag.url")}
-                  <input name="url" placeholder="https://..." />
-                </label>
-                <button type="submit">{t("rag.submit")}</button>
-              </form>
 
-              <article>
-                <h3>{t("rag.answer")}</h3>
-                <div id="out-web" className="answer"></div>
-                <div id="src-web" className="src"></div>
-              </article>
-            </div>
-          </section>
+            {/* 上傳按鈕 */}
+            <label className="upload-btn">
 
-          {/* PDF */}
-          <section
-            id="rag-pdf"
-            className={`rag-panel ${tab === "pdf" ? "active" : ""}`}
-          >
-            <div className="rag-card">
-              <h3>{t("rag.pdfTitle")}</h3>
-              <form
-                id="rag-form-pdf"
-                className="rag-form"
-                encType="multipart/form-data"
-              >
-                <label>
-                  <input
-                    name="question"
-                    required
-                    placeholder={t("rag.pdfPlaceholder")}
-                  />
-                </label>
-                <label>
-                  {t("rag.uploadPdf")}
-                  <input
-                    name="file"
-                    required
-                    type="file"
-                    accept="application/pdf"
-                  />
-                </label>
-                <button type="submit">{t("rag.submit")}</button>
-              </form>
+              +
 
-              <article>
-                <h3>{t("rag.answer")}</h3>
-                <div id="out-pdf" className="answer"></div>
-                <div id="src-pdf" className="src"></div>
-              </article>
-            </div>
-          </section>
+              <input
+                type="file"
+                name="file"
+                hidden
+                accept="
+                  .pdf,
+                  .xlsx,
+                  .xls,
+                  .csv,
+                  .txt,
+                  audio/*,
+                  video/*
+                "
+              />
+            </label>
 
-          {/* AV */}
-          <section
-            id="rag-av"
-            className={`rag-panel ${tab === "av" ? "active" : ""}`}
-          >
-            <div className="rag-card">
-              <h3>{t("rag.avTitle")}</h3>
-              <form
-                id="rag-form-av"
-                className="rag-form"
-                encType="multipart/form-data"
-              >
-                <label>
-                  <input
-                    name="question"
-                    required
-                    placeholder={t("rag.avPlaceholder")}
-                  />
-                </label>
-                <label>
-                  {t("rag.uploadAv")}
-                  <input
-                    name="file"
-                    required
-                    type="file"
-                    accept="audio/*,video/*"
-                  />
-                </label>
-                <button type="submit">{t("rag.submit")}</button>
-              </form>
+            {/* 文字輸入 */}
+            <textarea
+              name="user"
+              rows="1"
+              required
+              placeholder={t("rag.chatPlaceholder")}
+            />
 
-              <article>
-                <h3>{t("rag.answer")}</h3>
-                <div id="out-av" className="answer"></div>
-                <div id="src-av" className="src"></div>
-              </article>
-            </div>
-          </section>
-
-          {/* TABLE */}
-          <section
-            id="rag-table"
-            className={`rag-panel ${tab === "table" ? "active" : ""}`}
-          >
-            <div className="rag-card">
-              <h3>{t("rag.tableTitle")}</h3>
-              <form
-                id="rag-form-table"
-                className="rag-form"
-                encType="multipart/form-data"
-              >
-                <label>
-                  <input
-                    name="question"
-                    required
-                    placeholder={t("rag.tablePlaceholder")}
-                  />
-                </label>
-                <label>
-                  {t("rag.uploadTable")}
-                  <input
-                    name="file"
-                    required
-                    type="file"
-                    accept=".xlsx,.xls,.csv,.tsv,.txt"
-                  />
-                </label>
-                <button type="submit">{t("rag.submit")}</button>
-              </form>
-
-              <article>
-                <h3>{t("rag.answer")}</h3>
-                <div id="out-table" className="answer"></div>
-                <div id="src-table" className="src"></div>
-              </article>
-            </div>
-          </section>
-        </main>
+            {/* 送出 */}
+            <button type="submit">
+              ➤
+            </button>
+          </form>
+        </div>
       </div>
 
       <BackToTopButton />
