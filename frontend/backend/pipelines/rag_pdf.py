@@ -43,12 +43,20 @@ def detect_structured_intent(question: str):
 # ===============================
 def extract_json(text):
 
-    match = re.search(r"\{.*\}", text, re.DOTALL)
+    # 1️⃣ 去掉 ```json ``` 包裝
+    text = re.sub(r"```json|```", "", text)
+
+    # 2️⃣ 找第一個 JSON block
+    match = re.search(r"\{[\s\S]*\}", text)
 
     if match:
-        return match.group(0)
+        try:
+            return json.loads(match.group(0))
+        except Exception as e:
+            print("JSON parse error:", e)
+            print("RAW:", text)
 
-    return text
+    return None
 
 
 # ===============================
@@ -168,7 +176,21 @@ def qa_over_pdf(question, file):
 
         try:
 
-            structured_data = json.loads(cleaned_json)
+            structured_data = extract_json(raw)
+
+            if not structured_data:
+                print("❌ fallback triggered")
+
+                structured_data = {
+                    "title": "AI Report",
+                    "sections": [
+                        {
+                            "heading": "Auto Recovery",
+                            "content": raw[:2000]
+                        }
+                    ],
+                    "conclusion": ""
+                }
 
         except Exception as e:
 

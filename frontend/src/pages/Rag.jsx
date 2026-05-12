@@ -355,7 +355,7 @@ export default function Rag() {
   const [selectedFileName, setSelectedFileName] = useState("");
   
   const API = "/api";
-  // const API = "http://127.0.0.1:8000";
+  //const API = "http://127.0.0.1:8000";
   
   async function generateFile(reportData = structuredData) {
     if (!reportData) {
@@ -685,16 +685,38 @@ export default function Rag() {
         }
 
         // Typing Animation
-        card.innerHTML = "";
-        sentenceWriter(card, answerHtml, 20);
+        card.innerHTML = `
+          <div class="answer-box"></div>
+        `;
 
-        card.insertAdjacentHTML(
-          "beforeend",
-          extraHtml,
-        );
+        const answerBox = card.querySelector(".answer-box");
+
+        // 只打字在 answer box
+        sentenceWriter(answerBox, answerHtml, 20);
+
+        // 等動畫完成再加 UI
+        setTimeout(() => {
+
+          const extra = extraHtml;
+
+          if (extra) {
+            answerBox.insertAdjacentHTML("afterend", extra);
+          }
+
+          const btn = card.querySelector(".pdf-btn");
+
+          if (btn) {
+            btn.onclick = () => generateFile(sd);
+          }
+
+        }, 300);
 
         // Download Button
-        if (data.structured_data) {
+        const sd = data.structured_data?.data ?? data.structured_data;
+
+        if (sd) {
+
+          setStructuredData(data.structured_data);
 
           const buttons = `
             <div class="download-section">
@@ -706,36 +728,21 @@ export default function Rag() {
                 </strong>
               </p>
 
-              <button id="pdf-btn">
+              <button class="pdf-btn">
                 ${t("rag.download")}
               </button>
             </div>
           `;
 
-          card.insertAdjacentHTML(
-            "beforeend",
-            buttons,
-          );
+          card.insertAdjacentHTML("beforeend", buttons);
 
-          setStructuredData(
-            data.structured_data,
-          );
+          const btn = card.querySelector(".pdf-btn");
 
-          setTimeout(() => {
-
-            const pdfBtn =
-              document.getElementById("pdf-btn");
-
-            if (pdfBtn) {
-
-              pdfBtn.onclick = () => {
-                generateFile(
-                  data.structured_data,
-                );
-              };
-            }
-
-          }, 0);
+          if (btn) {
+            btn.onclick = () => {
+              generateFile(sd);
+            };
+          }
         }
 
         inner.appendChild(card);

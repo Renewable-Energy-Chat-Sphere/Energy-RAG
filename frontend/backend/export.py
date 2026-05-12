@@ -137,8 +137,8 @@ def export_pdf():
     buffer.seek(0)
 
     return send_file(
-        buffer,
-        as_attachment=True,
-        download_name="AI_Report.pdf",
-        mimetype="application/pdf",
-    )
+    buffer,
+    as_attachment=True,
+    download_name=structured_data.get("file_name", "AI_Report.pdf"),
+    mimetype="application/pdf",
+)
