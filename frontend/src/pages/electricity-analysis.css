@@ -11,7 +11,7 @@
 }
 
 .dark {
-  --bg-color: #071426;
+  --bg-color: #0f172a;
 
   --text-color: #f3f4f6;
 
@@ -26,14 +26,10 @@
   padding: 40px;
 
   min-height: 100vh;
-
+  background: var(--bg-color);
   color: var(--text-color);
 
   transition: 0.3s;
-
-  max-width: 1400px;
-
-  margin: 0 auto;
 }
 
 .electricity-hero {
@@ -175,4 +171,101 @@
 
 .impact-card:hover {
   transform: translateY(-3px);
+}
+.electricity-loading {
+  min-height: calc(100vh - 320px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: var(--bg-color);
+}
+
+/* 🔥 loading文字 */
+.loading-text {
+  font-size: 24px;
+  font-weight: 800;
+
+  color: #ff7b00;
+
+  letter-spacing: 1px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ⚡ icon */
+.loading-icon {
+  display: inline-flex;
+  align-items: center;
+
+  color: #ffce2d;
+
+  font-size: 22px;
+
+  margin-right: 10px;
+
+  filter: drop-shadow(0 0 10px rgba(248, 216, 56, 0.7));
+}
+
+/* 🔥 點點動畫 */
+.dot-animation::after {
+  content: "";
+
+  animation: dots 1.4s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: "";
+  }
+
+  25% {
+    content: ".";
+  }
+
+  50% {
+    content: "..";
+  }
+
+  75% {
+    content: "...";
+  }
+
+  100% {
+    content: "";
+  }
+}
+/* 🌙 Dark Mode Loading */
+.dark .loading-text {
+  color: #f97316;
+}
+
+.dark .loading-icon {
+  color: #facc15;
+
+  filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.75));
+}
+.loading-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  min-height: calc(100vh - 320px);
+
+  background: var(--bg-color);
+}
+.loading-subtext {
+  margin-top: 10px;
+
+  font-size: 13px;
+
+  color: var(--secondary-text);
+
+  opacity: 0.8;
+
+  letter-spacing: 0.5px;
+
+  text-align: center;
 }

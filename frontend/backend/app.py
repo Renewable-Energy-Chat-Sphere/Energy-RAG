@@ -12,6 +12,7 @@ from power_api import get_power_units
 # 資料庫 專用
 import sqlite3
 from db import get_db
+
 # 權限管理 專用
 from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
@@ -53,6 +54,7 @@ app.config.update(
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
 
+
 # =========================
 # 🔐 Register
 # =========================
@@ -68,9 +70,7 @@ def register():
         return jsonify({"error": "請輸入帳號與密碼"}), 400
 
     if role != "manager":
-        return jsonify({
-            "error": "只能註冊 manager"
-        }), 403
+        return jsonify({"error": "只能註冊 manager"}), 403
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
@@ -89,14 +89,11 @@ def register():
         conn.commit()
         conn.close()
 
-        return jsonify({
-            "message": "註冊成功",
-            "username": username,
-            "role": role
-        })
+        return jsonify({"message": "註冊成功", "username": username, "role": role})
 
     except sqlite3.IntegrityError:
         return jsonify({"error": "帳號已存在"}), 409
+
 
 # =========================
 # 🔐 Auth Login
@@ -117,10 +114,7 @@ def login():
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    cursor.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (username,)
-    )
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
 
     user = cursor.fetchone()
     conn.close()
@@ -135,34 +129,32 @@ def login():
     session["username"] = user["username"]
     session["role"] = user["role"]
 
-    return jsonify({
-        "message": "登入成功",
-        "username": user["username"],
-        "role": user["role"]
-    })
+    return jsonify(
+        {"message": "登入成功", "username": user["username"], "role": user["role"]}
+    )
 
 
 @app.route("/me", methods=["GET"])
 def me():
     if "user_id" not in session:
-        return jsonify({
-            "logged_in": False
-        })
+        return jsonify({"logged_in": False})
 
-    return jsonify({
-        "logged_in": True,
-        "username": session.get("username"),
-        "role": session.get("role")
-    })
+    return jsonify(
+        {
+            "logged_in": True,
+            "username": session.get("username"),
+            "role": session.get("role"),
+        }
+    )
 
 
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
 
-    return jsonify({
-        "message": "已登出"
-    })
+    return jsonify({"message": "已登出"})
+
+
 # =========================
 # 🔒 權限檢查工具
 # =========================
@@ -173,15 +165,15 @@ def require_role(*allowed_roles):
             role = session.get("role", "user")
 
             if role not in allowed_roles:
-                return jsonify({
-                    "error": "權限不足"
-                }), 403
+                return jsonify({"error": "權限不足"}), 403
 
             return func(*args, **kwargs)
 
         return wrapper
 
     return decorator
+
+
 import smtplib
 from email.mime.text import MIMEText
 
@@ -886,7 +878,7 @@ Email: {email}
 # 📊 讀取
 # =========================
 @app.route("/get_feedback")
-#@require_role("admin")
+# @require_role("admin")
 def get_feedback():
 
     from flask import jsonify
@@ -920,7 +912,7 @@ def get_feedback():
 # ✅ 標記完成
 # =========================
 @app.route("/resolve_feedback", methods=["POST"])
-#@require_role("admin")
+# @require_role("admin")
 def resolve_feedback():
 
     import sqlite3
@@ -955,7 +947,7 @@ def resolve_feedback():
 # ❌ 刪除
 # =========================
 @app.route("/delete_feedback", methods=["POST"])
-#@require_role("admin")
+# @require_role("admin")
 def delete_feedback():
 
     import sqlite3
@@ -1349,7 +1341,7 @@ def electricity_ai_analysis():
         renewable = data.get("renewable", 0)
 
         nuclear = data.get("nuclear", 0)
-
+        nuclearNote = data.get("nuclearNote", "")
         cost_pressure = data.get("costPressure", 0)
 
         prompt = f"""
@@ -1369,16 +1361,30 @@ def electricity_ai_analysis():
 核能：
 {nuclear} MW
 
+核能狀態（請直接使用此欄位內容，不要自行推論或改寫）：
+{nuclearNote}
+
+請優先根據「核能狀態」欄位，不要重新判斷核能是否發電
+
 供電成本壓力：
 {cost_pressure}
 
-請分析：
+請以「能源分析報告」格式輸出。
 
-1. 目前供電結構
-2. 是否過度依賴火力
-3. 對電價可能影響
-4. 未來風險
-5. 給一般民眾的簡單解讀
+要求：
+
+- 直接根據數據分析
+- 避免過度推測
+- 使用正式能源報告語氣
+- 不要過度延伸未提供資料
+
+重點：
+
+1. 供電結構
+2. 火力依賴程度
+3. 成本壓力
+4. 核能目前狀態
+5. 能源轉型方向
 
 限制：
 

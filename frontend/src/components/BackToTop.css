@@ -2,19 +2,34 @@
   position: fixed;
   bottom: 30px;
   right: 30px;
+
   width: 55px;
   height: 55px;
   border-radius: 50%;
   border: none;
-  background-color: #f97316;
-  color: white;
+
+  background-color: #f97316; /* ☀️ 白天橘 */
+  color: #ffffff; /* ☀️ 箭頭藍 */
+
   font-size: 22px;
   cursor: pointer;
+
   opacity: 0;
   pointer-events: none;
+
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
   z-index: 999;
+}
+.dark .back-to-top {
+  background-color: #3b82f6; /* 🌙 藍色 */
+  color: #ffffff; /* 🌙 橘色箭頭 */
+}
+.back-to-top:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .back-to-top.show {
