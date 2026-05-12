@@ -148,9 +148,7 @@ export default function Header() {
             </div>
 
             {/* 訪客 / admin 才顯示首頁；manager 不顯示首頁 */}
-            {(!isLoggedIn || isAdmin) && (
-              <Link to="/">{t("nav.home")}</Link>
-            )}
+            {(!isLoggedIn || isAdmin) && <Link to="/">{t("nav.home")}</Link>}
 
             <Link to="/global">{t("nav.global")}</Link>
 
@@ -161,7 +159,9 @@ export default function Header() {
             {/* manager / admin 才顯示 */}
             {(isManager || isAdmin) && (
               <>
-                <Link to="/electricity-analysis">供電成本分析中心</Link>
+                <Link to="/electricity-analysis">
+                  {t("nav.electricityAnalysis")}
+                </Link>
 
                 <Link to="/Prediction">{t("nav.prediction")}</Link>
               </>
@@ -175,7 +175,6 @@ export default function Header() {
 
             {/* Login / Logout */}
             {isLoggedIn && user.role !== "user" ? (
-
               <button
                 onClick={handleLogout}
                 style={{
@@ -189,13 +188,8 @@ export default function Header() {
               >
                 登出（{user.role}）
               </button>
-
             ) : (
-
-              <Link to="/Login">
-                Login
-              </Link>
-
+              <Link to="/Login">Login</Link>
             )}
           </nav>
 

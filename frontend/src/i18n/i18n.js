@@ -80,6 +80,7 @@ const resources = {
         global: "能源視覺化",
         powerplant: "機組資訊",
         rag: "智慧查詢",
+        electricityAnalysis: "供電成本分析中心",
         prediction: "能源預測",
         contact: "聯絡我們",
         feedback: "回饋分析"
@@ -310,6 +311,62 @@ const resources = {
         "updatedEvery10Min": "各能源即時發電量小計（每10分鐘更新）",
         "liveGeneration": "各能源即時發電量",
         "totalGeneration": "總計",
+      }, electricity: {
+        title: "AI 供電成本分析",
+        subtitle: "即時供電、能源結構、成本壓力與未來趨勢分析",
+
+        updateTime: "即時資料更新時間：",
+        loading: "載入供電成本分析中心中",
+        loadingSub:
+          "即時抓取台電機組數據 · 計算能源結構 · 建立成本壓力模型",
+
+        realtime: "即時供電資訊",
+
+        thermal: "火力發電",
+        solar: "太陽能",
+        nuclear: "核能",
+        wind: "風力",
+        hydro: "水力",
+
+        costTitle: "供電成本壓力",
+        costIndex: "Energy Cost Pressure Index",
+
+        structure: "能源結構分析",
+        impact: "成本影響分析",
+
+        future: "未來成本趨勢",
+
+        futureDesc:
+          "未來將結合 Prophet 預測能源比例與供電成本壓力變化。",
+
+        ai: "AI 智慧建議",
+
+        aiLoading: "AI 分析生成中...",
+
+        highRisk: "高供電成本風險",
+        mediumRisk: "中度供電成本風險",
+        lowRisk: "低供電成本風險", costDescription:
+          "本指數根據即時發電結構、不同能源平均發電成本、燃料價格敏感度、碳排特性進行估算。",
+
+        highCost:
+          "目前火力發電占比偏高，供電成本壓力較大。",
+
+        mediumCost:
+          "目前供電成本壓力中等，需持續觀察能源結構變化。",
+
+        stableCost:
+          "目前供電結構相對穩定。",
+
+        impactDescription:
+          "本分析根據能源使用比例、平均發電成本（LCOE）、燃料價格敏感度、供電依賴程度進行估算。系統會評估不同能源對整體供電成本與電價風險的影響程度。本系統屬於 AI 能源風險分析模型，並非台電實際電價計算公式。",
+
+        veryHigh: "極高",
+        high: "高",
+        medium: "中",
+        low: "低",
+
+        impactIndex: "成本影響指數：",
+
       },
       rag: {
         subtitle: "Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索",
@@ -412,6 +469,64 @@ const resources = {
         hydro: "Hydropower",
         oil: "Oil"
       },
+      electricity: {
+        title: "AI Electricity Cost Analysis",
+        subtitle:
+          "Real-time power supply, energy structure, cost pressure, and future trend analysis",
+
+        updateTime: "Last Update:",
+        loading: "Loading Electricity Cost Analysis Center",
+        loadingSub:
+          "Fetching Taipower live data · Calculating energy structure · Building cost pressure model",
+
+        realtime: "Real-time Power Information",
+
+        thermal: "Thermal Power",
+        solar: "Solar",
+        nuclear: "Nuclear",
+        wind: "Wind",
+        hydro: "Hydropower",
+
+        costTitle: "Electricity Cost Pressure",
+        costIndex: "Energy Cost Pressure Index",
+
+        structure: "Energy Structure Analysis",
+        impact: "Cost Impact Analysis",
+
+        future: "Future Cost Trend",
+
+        futureDesc:
+          "Future integration with Prophet prediction for energy ratio and cost pressure changes.",
+
+        ai: "AI Smart Suggestions",
+
+        aiLoading: "Generating AI analysis...",
+
+        highRisk: "High Electricity Cost Risk",
+        mediumRisk: "Medium Electricity Cost Risk",
+        lowRisk: "Low Electricity Cost Risk",
+        costDescription:
+          "This index is estimated based on real-time generation structure, average generation cost, fuel sensitivity, and carbon emission characteristics.",
+
+        highCost:
+          "Thermal power generation is currently dominant, leading to higher electricity cost pressure.",
+
+        mediumCost:
+          "Electricity cost pressure is currently moderate, and energy structure changes should continue to be monitored.",
+
+        stableCost:
+          "The current power supply structure is relatively stable.",
+
+        impactDescription:
+          "This analysis is estimated based on energy usage ratio, average generation cost (LCOE), fuel price sensitivity, and power dependency. The system evaluates the impact of different energy sources on overall electricity cost and pricing risks. This system is an AI energy risk analysis model and not Taipower's official pricing formula.",
+
+        veryHigh: "Very High",
+        high: "High",
+        medium: "Medium",
+        low: "Low",
+
+        impactIndex: "Cost Impact Index:",
+      },
       dashboard: {
         status_live: "Using real-time data",
         status_empty: "No data from Taipower (fallback used)",
@@ -468,6 +583,7 @@ const resources = {
         global: "Energy Globe",
         powerplant: "Power Plant",
         rag: "AI Query",
+        electricityAnalysis: "Electricity Cost Analysis Center",
         prediction: "Prediction",
         contact: "Contact",
         feedback: "Feedback"

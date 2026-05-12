@@ -3,13 +3,14 @@ import BackToTopButton from "../components/BackToTopButton";
 import "./electricity-analysis.css";
 import energyData from "../data/113_energy_demand_supply.json";
 import supplyCatalog from "../data/supply_catalog.json";
+import { useTranslation } from "react-i18next";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import costMap from "../data/energy_cost_mapping.json";
 import { getCategory } from "./PowerPlantLive";
 export default function ElectricityAnalysis() {
+  const { t } = useTranslation();
   const [liveUnits, setLiveUnits] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [aiAnalysis, setAiAnalysis] = useState("");
 
   const [updateTime, setUpdateTime] = useState("");
@@ -227,6 +228,14 @@ export default function ElectricityAnalysis() {
         nuclear === 0
           ? "目前無核能發電資料（依台電即時數據）"
           : `核能發電量為 ${nuclear} MW`;
+      const historicalAnalysis = {
+        trend: "近30年台灣供電仍以火力發電為主，但燃氣與再生能源占比持續增加。",
+
+        risk: "目前供電結構仍高度依賴國際燃料價格與火力發電。",
+
+        renewableTrend: "近年太陽能與風力發電量逐年成長，能源轉型持續進行中。",
+      };
+
       const res = await fetch("http://localhost:8000/electricity-ai-analysis", {
         method: "POST",
 
@@ -240,8 +249,12 @@ export default function ElectricityAnalysis() {
           renewable,
 
           nuclear,
+
           nuclearNote,
+
           costPressure: Number(costPressure.toFixed(2)),
+
+          historicalAnalysis,
         }),
       });
 
@@ -326,13 +339,11 @@ ${renewablePercent}% ，
           <div>
             <div className="loading-text">
               <i className="fi fi-rr-bolt loading-icon"></i>
-              載入供電成本分析中心中
+              {t("electricity.loading")}
               <span className="dot-animation"></span>
             </div>
 
-            <p className="loading-subtext">
-              即時抓取台電機組數據 · 計算能源結構 · 建立成本壓力模型
-            </p>
+            <p className="loading-subtext">{t("electricity.loadingSub")}</p>
           </div>
         </div>
       ) : (
@@ -342,9 +353,9 @@ ${renewablePercent}% ，
           {/* ========================= */}
 
           <div className="electricity-hero">
-            <h1>AI 供電成本分析</h1>
+            <h1>{t("electricity.title")}</h1>
 
-            <p>即時供電、能源結構、 成本壓力與未來趨勢分析</p>
+            <p>{t("electricity.subtitle")}</p>
             <p
               style={{
                 opacity: 0.6,
@@ -352,8 +363,8 @@ ${renewablePercent}% ，
                 fontSize: "14px",
               }}
             >
-              即時資料更新時間：
-              {updateTime || "載入中..."}
+              {t("electricity.updateTime")}
+              {updateTime || t("electricity.loading")}
             </p>
           </div>
 
@@ -363,10 +374,10 @@ ${renewablePercent}% ，
 
           <div className="electricity-grid">
             <div className="electricity-card">
-              <h2>🔋 即時供電資訊</h2>
+              <h2>🔋 {t("electricity.realtime")}</h2>
 
               <div className="info-row">
-                <span>🔥 火力發電</span>
+                <span>🔥 {t("electricity.thermal")}</span>
 
                 <strong>
                   {liveEnergy.thermal.toFixed(0)}
@@ -375,7 +386,7 @@ ${renewablePercent}% ，
               </div>
 
               <div className="info-row">
-                <span>☀️ 太陽能</span>
+                <span>☀️ {t("electricity.solar")}</span>
 
                 <strong>
                   {liveEnergy.solar.toFixed(0)}
@@ -383,7 +394,7 @@ ${renewablePercent}% ，
                 </strong>
               </div>
               <div className="info-row">
-                <span>⚛️ 核能</span>
+                <span>⚛️ {t("electricity.nuclear")}</span>
 
                 <strong>
                   {liveEnergy.nuclear.toFixed(0)}
@@ -391,7 +402,7 @@ ${renewablePercent}% ，
                 </strong>
               </div>
               <div className="info-row">
-                <span>🌬️ 風力</span>
+                <span>🌬️ {t("electricity.wind")}</span>
 
                 <strong>
                   {liveEnergy.wind.toFixed(0)}
@@ -400,7 +411,7 @@ ${renewablePercent}% ，
               </div>
 
               <div className="info-row">
-                <span>💧 水力</span>
+                <span>💧 {t("electricity.hydro")}</span>
 
                 <strong>
                   {liveEnergy.hydro.toFixed(0)}
@@ -414,7 +425,7 @@ ${renewablePercent}% ，
             {/* ========================= */}
 
             <div className="electricity-card">
-              <h2>📈 供電成本壓力</h2>
+              <h2>📈 {t("electricity.costTitle")}</h2>
               <p
                 style={{
                   opacity: 0.7,
@@ -493,10 +504,10 @@ ${renewablePercent}% ，
                 />
 
                 {liveCostPressure >= 40
-                  ? "高供電成本風險"
+                  ? t("electricity.highRisk")
                   : liveCostPressure >= 25
-                    ? "中度供電成本風險"
-                    : "低供電成本風險"}
+                    ? t("electricity.mediumRisk")
+                    : t("electricity.lowRisk")}
               </div>
             </div>
           </div>
@@ -506,7 +517,7 @@ ${renewablePercent}% ，
           {/* ========================= */}
 
           <div className="electricity-card big-card">
-            <h2>🌍 能源結構分析</h2>
+            <h2>🌍 {t("electricity.structure")}</h2>
 
             <div className="chart-wrapper">
               <ResponsiveContainer width="100%" height={350}>
@@ -531,7 +542,7 @@ ${renewablePercent}% ，
             </div>
           </div>
           <div className="electricity-card big-card">
-            <h2>💰 成本影響分析</h2>
+            <h2>💰 {t("electricity.impact")}</h2>
             <p
               style={{
                 opacity: 0.75,
@@ -619,7 +630,7 @@ ${renewablePercent}% ，
           {/* ========================= */}
 
           <div className="electricity-card big-card">
-            <h2>📊 未來成本趨勢</h2>
+            <h2>📊 {t("electricity.future")}</h2>
 
             <p>未來將結合 Prophet 預測能源比例與供電成本壓力變化。</p>
 
@@ -631,10 +642,10 @@ ${renewablePercent}% ，
           {/* ========================= */}
 
           <div className="electricity-card big-card">
-            <h2>🤖 AI 智慧建議</h2>
+            <h2>🤖 {t("electricity.ai")}</h2>
 
             <p className="ai-box">
-              {aiAnalysis ? aiAnalysis : " AI 分析生成中..."}
+              {aiAnalysis ? aiAnalysis : t("electricity.aiLoading")}
             </p>
           </div>
         </div>

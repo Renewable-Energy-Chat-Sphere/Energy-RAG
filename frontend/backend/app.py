@@ -1343,6 +1343,7 @@ def electricity_ai_analysis():
         nuclear = data.get("nuclear", 0)
         nuclearNote = data.get("nuclearNote", "")
         cost_pressure = data.get("costPressure", 0)
+        historical = data.get("historicalAnalysis", {})
 
         prompt = f"""
 你是一位台灣能源分析 AI。
@@ -1368,6 +1369,14 @@ def electricity_ai_analysis():
 
 供電成本壓力：
 {cost_pressure}
+歷史能源趨勢：
+{historical.get("trend", "")}
+
+歷史供電風險：
+{historical.get("risk", "")}
+
+再生能源發展：
+{historical.get("renewableTrend", "")}
 
 請以「能源分析報告」格式輸出。
 
@@ -1380,11 +1389,13 @@ def electricity_ai_analysis():
 
 重點：
 
-1. 供電結構
+1. 即時供電結構
 2. 火力依賴程度
-3. 成本壓力
+3. 供電成本壓力
 4. 核能目前狀態
-5. 能源轉型方向
+5. 長期能源轉型趨勢
+6. 再生能源發展方向
+7. 未來供電風險
 
 限制：
 
