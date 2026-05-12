@@ -8,7 +8,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import costMap from "../data/energy_cost_mapping.json";
 import { getCategory } from "./PowerPlantLive";
 export default function ElectricityAnalysis() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [liveUnits, setLiveUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aiAnalysis, setAiAnalysis] = useState("");
@@ -80,8 +80,10 @@ export default function ElectricityAnalysis() {
     .slice(0, 8)
 
     .map(([code, value]) => ({
-      name: supplyCatalog?.[code]?.name_zh || code,
-
+      name:
+        i18n.language === "en"
+          ? supplyCatalog?.[code]?.name_en || code
+          : supplyCatalog?.[code]?.name_zh || code,
       value: Number(value),
     }));
 
@@ -96,7 +98,10 @@ export default function ElectricityAnalysis() {
       return {
         code,
 
-        name: supplyCatalog?.[code]?.name_zh || code,
+        name:
+          i18n.language === "en"
+            ? supplyCatalog?.[code]?.name_en || code
+            : supplyCatalog?.[code]?.name_zh || code,
 
         value,
 
@@ -434,19 +439,18 @@ ${renewablePercent}% ，
                   fontSize: "14px",
                 }}
               >
-                本指數根據即時發電結構、 不同能源平均發電成本、 燃料價格敏感度、
-                碳排特性進行估算。
+                {t("electricity.costDescription")}
               </p>
               <div className="cost-value">{liveCostPressure}</div>
 
-              <div className="cost-label">Energy Cost Pressure Index</div>
+              <div className="cost-label">{t("electricity.costIndex")}</div>
 
               <p className="analysis-text">
                 {liveCostPressure >= 40
-                  ? "目前火力發電占比偏高，供電成本壓力較大。"
+                  ? t("electricity.highCost")
                   : liveCostPressure >= 25
-                    ? "目前供電成本壓力中等，需持續觀察能源結構變化。"
-                    : "目前供電結構相對穩定。"}
+                    ? t("electricity.mediumCost")
+                    : t("electricity.stableCost")}
               </p>
               <div
                 style={{
@@ -552,9 +556,7 @@ ${renewablePercent}% ，
                 fontSize: "15px",
               }}
             >
-              本分析根據能源使用比例、平均發電成本（LCOE）、燃料價格敏感度、供電依賴程度進行估算。
-              系統會評估不同能源對整體供電成本與電價風險的影響程度。 本系統屬於
-              AI 能源風險分析模型，並非台電實際電價計算公式。
+              {t("electricity.impactDescription")}
             </p>
             <div className="impact-list">
               {costImpactData.map((item) => {
@@ -573,12 +575,12 @@ ${renewablePercent}% ，
 
                       <span>
                         {item.impact >= 8
-                          ? "🔴 極高"
+                          ? `🔴 ${t("electricity.impactVeryHigh")}`
                           : item.impact >= 5
-                            ? "🟠 高"
+                            ? `🟠 ${t("electricity.impactHigh")}`
                             : item.impact >= 3
-                              ? "🟡 中"
-                              : "🟢 低"}
+                              ? `🟡 ${t("electricity.impactMedium")}`
+                              : `🟢 ${t("electricity.impactLow")}`}
                       </span>
                     </div>
 
@@ -617,7 +619,7 @@ ${renewablePercent}% ，
                         fontSize: "14px",
                       }}
                     >
-                      成本影響指數：
+                      {t("electricity.impactIndex")}
                       {item.impact}
                     </div>
                   </div>
@@ -632,9 +634,11 @@ ${renewablePercent}% ，
           <div className="electricity-card big-card">
             <h2>📊 {t("electricity.future")}</h2>
 
-            <p>未來將結合 Prophet 預測能源比例與供電成本壓力變化。</p>
+            <p>{t("electricity.futureDesc")}</p>
 
-            <div className="trend-placeholder">Future Trend Chart</div>
+            <div className="trend-placeholder">
+              {t("electricity.futureChart")}
+            </div>
           </div>
 
           {/* ========================= */}

@@ -329,7 +329,7 @@ const resources = {
         hydro: "水力",
 
         costTitle: "供電成本壓力",
-        costIndex: "Energy Cost Pressure Index",
+        costIndex: "供電成本壓力指數",
 
         structure: "能源結構分析",
         impact: "成本影響分析",
@@ -360,13 +360,13 @@ const resources = {
         impactDescription:
           "本分析根據能源使用比例、平均發電成本（LCOE）、燃料價格敏感度、供電依賴程度進行估算。系統會評估不同能源對整體供電成本與電價風險的影響程度。本系統屬於 AI 能源風險分析模型，並非台電實際電價計算公式。",
 
-        veryHigh: "極高",
-        high: "高",
-        medium: "中",
-        low: "低",
+        impactVeryHigh: "極高",
+        impactHigh: "高",
+        impactMedium: "中",
+        impactLow: "低",
 
         impactIndex: "成本影響指數：",
-
+        futureChart: "未來趨勢圖"
       },
       rag: {
         subtitle: "Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索",
@@ -520,12 +520,13 @@ const resources = {
         impactDescription:
           "This analysis is estimated based on energy usage ratio, average generation cost (LCOE), fuel price sensitivity, and power dependency. The system evaluates the impact of different energy sources on overall electricity cost and pricing risks. This system is an AI energy risk analysis model and not Taipower's official pricing formula.",
 
-        veryHigh: "Very High",
-        high: "High",
-        medium: "Medium",
-        low: "Low",
+        impactVeryHigh: "Very High",
+        impactHigh: "High",
+        impactMedium: "Medium",
+        impactLow: "Low",
 
         impactIndex: "Cost Impact Index:",
+        futureChart: "Future Trend Chart"
       },
       dashboard: {
         status_live: "Using real-time data",
