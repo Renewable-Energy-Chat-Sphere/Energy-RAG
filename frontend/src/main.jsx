@@ -14,6 +14,7 @@ import Feedback from "./pages/Feedback";
 import Prediction from "./pages/Prediction";
 import ElectricityAnalysis from "./pages/ElectricityAnalysis";
 import PowerPlantController from "./pages/PowerPlantController";
+import Login from "./pages/Login";
 
 const router = createBrowserRouter(
   [
@@ -35,6 +36,7 @@ const router = createBrowserRouter(
           path: "/electricity-analysis",
           element: <ElectricityAnalysis />,
         },
+        { path: "/login", element: <Login /> },
       ],
     },
   ],

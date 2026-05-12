@@ -1,7 +1,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, session
 from flask_cors import CORS
 import io
 import os, json, re, pickle
@@ -11,6 +11,8 @@ from power_api import get_power_units
 
 # 資料庫 專用
 import sqlite3
+# 權限管理 專用
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # 🔮 Predict 專用（新增）
 from prophet import Prophet
@@ -34,6 +36,7 @@ from tables import tables_bp
 from scheduler import start_scheduler
 
 app = Flask(__name__)
+app.secret_key = "enerSphere_2026"
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024
@@ -47,6 +50,115 @@ app.config.update(
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
+
+# =========================
+# 🔐 Register
+# =========================
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.json or {}
+
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    role = data.get("role", "user").strip()
+
+    if not username or not password:
+        return jsonify({"error": "請輸入帳號與密碼"}), 400
+
+    if role not in ["admin", "manager", "user"]:
+        return jsonify({"error": "角色不正確"}), 400
+
+    DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO users (username, password, role)
+            VALUES (?, ?, ?)
+            """,
+            (username, generate_password_hash(password), role),
+        )
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "message": "註冊成功",
+            "username": username,
+            "role": role
+        })
+
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "帳號已存在"}), 409
+
+# =========================
+# 🔐 Auth Login
+# =========================
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json or {}
+
+    username = data.get("username", "")
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"error": "請輸入帳號與密碼"}), 400
+
+    DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,)
+    )
+
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        return jsonify({"error": "帳號不存在"}), 401
+
+    if not check_password_hash(user["password"], password):
+        return jsonify({"error": "密碼錯誤"}), 401
+
+    session["user_id"] = user["id"]
+    session["username"] = user["username"]
+    session["role"] = user["role"]
+
+    return jsonify({
+        "message": "登入成功",
+        "username": user["username"],
+        "role": user["role"]
+    })
+
+
+@app.route("/me", methods=["GET"])
+def me():
+    if "user_id" not in session:
+        return jsonify({
+            "logged_in": False
+        })
+
+    return jsonify({
+        "logged_in": True,
+        "username": session.get("username"),
+        "role": session.get("role")
+    })
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+
+    return jsonify({
+        "message": "已登出"
+    })
 import smtplib
 from email.mime.text import MIMEText
 

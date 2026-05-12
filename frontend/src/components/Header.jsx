@@ -141,6 +141,7 @@ export default function Header() {
             <Link to="/Prediction">{t("nav.prediction")}</Link>
             <Link to="/contact">{t("nav.contact")}</Link>
             <Link to="/Feedback">{t("nav.feedback")}</Link>
+            <Link to="/Login">{t("nav.Login")}</Link>
           </nav>
 
           <div id="themeToggle">🌙</div>
