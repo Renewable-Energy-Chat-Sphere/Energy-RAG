@@ -7,14 +7,14 @@ from flask import Blueprint, request, jsonify, current_app
 chat_bp = Blueprint("chat", __name__)
 
 # ===== 記憶設定 =====
-CHAT_MAX_MESSAGES = 30
+CHAT_MAX_MESSAGES = 10
 CHAT_SESSIONS = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
 
 URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
 
 
 # =====================================================
-# 🌍 語言控制（萬用多語🔥）
+# 語言控制（萬用多語）
 # =====================================================
 def get_language_prompt(user_text):
     return f"""
@@ -33,7 +33,7 @@ def get_language_prompt(user_text):
 
 
 # =====================================================
-# 🧠 問題模式判斷（最終版🔥）
+# 問題模式判斷（最終版）
 # =====================================================
 def detect_query_mode(text):
     text = text.lower()
@@ -51,7 +51,7 @@ def detect_query_mode(text):
 
 
 # =====================================================
-# 🎯 結果強化（最終版🔥）
+# 結果強化（最終版）
 # =====================================================
 def enhance_answer_by_mode(answer, mode):
     if mode == "analysis":
@@ -84,7 +84,7 @@ def enhance_answer_by_mode(answer, mode):
 
 
 # =====================================================
-# 💬 聊天模式判斷
+# 聊天模式判斷
 # =====================================================
 def is_simple_chat(text):
     simple_words = ["你好", "hi", "hello", "嗨", "在嗎"]
@@ -92,7 +92,7 @@ def is_simple_chat(text):
 
 
 # =====================================================
-# 🤖 Energy Sphere 專屬助手 Prompt（🔥核心）
+# Energy Sphere 專屬助手 Prompt（核心）
 # =====================================================
 BASE_ASSISTANT_PROMPT = """
 你是「Energy Sphere 智慧能源平台」的虛擬助理。
@@ -111,16 +111,20 @@ BASE_ASSISTANT_PROMPT = """
 
 【語言規則（最高優先）】
 - 回答語言必須與使用者輸入完全一致
-- 不得自行切換語言
+- 不得自行切換語言或輸入法（如：中文/英文、繁體中文/簡體中文）
 - 不得翻譯
 
-【禁止】
-- 不要胡亂捏造數據
+【資料限制（最高優先）】
+- 只能根據已提供資料回答
+- 如果資料中不存在，不得自行推測
+- 不得猜測數值
+- 不得幻想原因
+- 若資料不足，直接說：「目前資料庫中沒有足夠資訊」
 """
 
 
 # =====================================================
-# 📊 分析模式 Prompt
+# 分析模式 Prompt
 # =====================================================
 DEFAULT_SYSTEM_PROMPT = """
 請使用正式分析報告風格回答：
@@ -144,7 +148,7 @@ DEFAULT_SYSTEM_PROMPT = """
 
 
 # =====================================================
-# 🧠 建立對話上下文
+# 建立對話上下文
 # =====================================================
 def _build_messages(session_id: str, user_text: str, system_prompt: str):
     msgs = [{"role": "system", "content": system_prompt}]
@@ -157,7 +161,7 @@ def _build_messages(session_id: str, user_text: str, system_prompt: str):
 
 
 # =====================================================
-# 💾 儲存對話
+# 儲存對話
 # =====================================================
 def _store_turn(session_id: str, user_text: str, assistant_text: str):
     CHAT_SESSIONS[session_id].append(("user", user_text))
@@ -165,25 +169,158 @@ def _store_turn(session_id: str, user_text: str, assistant_text: str):
 
 
 # =====================================================
-# 🚀 CHAT API
+# CHAT API
 # =====================================================
 @chat_bp.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json(force=True) or {}
+    session_id = (
+        request.form.get("session_id") or "default"
+    ).strip() or "default"
 
-    session_id = (data.get("session_id") or "default").strip() or "default"
-    user_text = (data.get("user") or "").strip()
-    model = (data.get("model") or "gpt-4o-mini").strip()
-    rag_auto = bool(data.get("rag_auto", True))
+    user_text = (
+        request.form.get("user") or ""
+    ).strip()
 
-    if not user_text:
+    model = (
+        request.form.get("model") or "gpt-4o-mini"
+    ).strip()
+
+    rag_auto = (
+        request.form.get("rag_auto", "true").lower()
+        == "true"
+    )
+
+    file = request.files.get("file")
+
+    if not user_text and not file:
         return jsonify({"error": "請輸入問題內容"}), 400
+
+    # =====================================================
+    # Unified File Router
+    # =====================================================
+    if file:
+
+        filename = file.filename.lower()
+
+        # PDF
+        if filename.endswith(".pdf"):
+
+            qa_over_pdf = current_app.config.get("QA_OVER_PDF")
+
+            answer, sources, structured_data = qa_over_pdf(
+                user_text,
+                file
+            )
+
+            return jsonify(
+                {
+                    "answer": answer,
+                    "sources": sources,
+                    "structured_data": structured_data,
+                    "results": [],
+                    "card_type": "default",
+                    "session_id": session_id,
+                    "model": "pdf_rag",
+                    "uses_openai": bool(
+                        current_app.config.get("OPENAI_CLIENT")
+                    ),
+                }
+            )
+
+        # Excel / CSV
+        elif filename.endswith((
+            ".xlsx",
+            ".xls",
+            ".csv",
+            ".tsv"
+        )):
+
+            from tables import read_table, build_md, ask_llm, extract_json
+
+            sheets = read_table(file)
+
+            md = build_md(sheets)
+
+            client = current_app.config.get("OPENAI_CLIENT")
+
+            answer = ask_llm(
+                user_text,
+                md,
+                client
+            )
+
+            structured_data = extract_json(answer)
+
+            return jsonify(
+                {
+                    "answer": answer,
+                    "sources": [
+                        {
+                            "sheet": name,
+                            "rows": int(df.shape[0]),
+                            "columns": list(df.columns),
+                        }
+                        for name, df in sheets.items()
+                    ],
+                    "structured_data": structured_data,
+                    "results": [],
+                    "card_type": "default",
+                    "session_id": session_id,
+                    "model": "table_rag",
+                    "uses_openai": bool(client),
+                }
+            )
+
+        # TXT
+        elif filename.endswith(".txt"):
+
+            text = file.read().decode("utf-8")
+
+            prompt = f"""
+以下是使用者上傳的文字內容：
+
+{text}
+
+問題：
+{user_text}
+"""
+
+            resp = current_app.config.get(
+                "OPENAI_CLIENT"
+            ).responses.create(
+                model=model,
+                input=prompt,
+                temperature=0.2,
+                max_output_tokens=1000,
+            )
+
+            return jsonify(
+                {
+                    "answer": resp.output_text,
+                    "sources": [filename],
+                    "results": [],
+                    "card_type": "default",
+                    "session_id": session_id,
+                    "model": "txt_rag",
+                    "uses_openai": True,
+                }
+            )
+
+        else:
+
+            return jsonify(
+                {
+                    "answer": "⚠️ 不支援的檔案格式",
+                    "sources": [],
+                    "results": [],
+                }
+            )
 
     openai_client = current_app.config.get("OPENAI_CLIENT")
     qa_over_web = current_app.config.get("QA_OVER_WEB")
 
     # =====================================================
-    # 🌐 URL → RAG
+    # URL 轉換 RAG
     # =====================================================
     if rag_auto and qa_over_web:
         m = URL_RE.search(user_text)
@@ -210,11 +347,11 @@ def chat():
                 user_text = f"(網址處理失敗) {e}\n\n{user_text}"
 
     # =====================================================
-    # ⚡ Energy RAG Router
+    # Energy RAG Router
     # =====================================================
     if should_use_energy_rag(user_text):
         try:
-            mode = detect_query_mode(user_text)  # 🔥核心
+            mode = detect_query_mode(user_text)  # 核心
 
             result = answer_energy_question(user_text)
             assistant_text = result.get("answer", "（無回應）")
@@ -225,7 +362,7 @@ def chat():
             assistant_text = humanize_answer(assistant_text)
 
             # =====================================================
-            # 🔥 真正升級（分析模式用 LLM）
+            #  真正升級（分析模式用 LLM）
             # =====================================================
             if mode == "analysis" and openai_client:
 
@@ -261,11 +398,12 @@ def chat():
 
                 assistant_text = resp.output_text.strip()
 
-            # 🔵 精準模式（保留你原本）
+            # 精準模式（保留你原本）
             else:
                 assistant_text = enhance_answer_by_mode(assistant_text, mode)
-                # =====================================
-            # 📎 自動加資料來源（完整版🔥）
+            
+            # =====================================
+            # 自動加資料來源（完整版）
             # =====================================
             import re
 
@@ -273,14 +411,14 @@ def chat():
             years = sorted(list(set(years)))
 
             if len(years) == 1:
-                assistant_text += f"\n\n📎 資料來源：民國{years[0]}年能源平衡表"
+                assistant_text += f"\n\n🔗 資料來源：民國{years[0]}年能源平衡表"
 
             elif len(years) >= 2:
                 year_text = "、".join([f"民國{y}年" for y in years])
-                assistant_text += f"\n\n📎 資料來源：{year_text}能源平衡表"
+                assistant_text += f"\n\n🔗 資料來源：{year_text}能源平衡表"
 
             else:
-                assistant_text += "\n\n📎 資料來源：能源平衡表資料庫"
+                assistant_text += "\n\n🔗 資料來源：能源平衡表資料庫"
                     
             _store_turn(session_id, user_text, assistant_text)
 
@@ -311,7 +449,7 @@ def chat():
             )
 
     # =====================================================
-    # 🧠 模式判斷（聊天 / 分析）
+    # 模式判斷（聊天/分析）
     # =====================================================
     def is_analysis_question(text):
         keywords = ["分析", "報告", "整理", "比較", "趨勢", "analysis", "report"]
@@ -329,7 +467,7 @@ def chat():
     )
 
     # =====================================================
-    # 🤖 呼叫模型
+    # 呼叫模型
     # =====================================================
     if openai_client:
         try:

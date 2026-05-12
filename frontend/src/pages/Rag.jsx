@@ -352,7 +352,10 @@ export default function Rag() {
   const { t } = useTranslation();
   const [structuredData, setStructuredData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const API = "/api";
+  const [selectedFileName, setSelectedFileName] = useState("");
+  
+  // const API = "/api";
+  const API = "http://127.0.0.1:8000";
   async function generateFile(reportData = structuredData) {
     if (!reportData) {
       alert(t("rag.noExport"));
@@ -493,13 +496,25 @@ export default function Rag() {
       e.preventDefault();
 
       const userText = inputUser.value.trim();
+      const fileInput = form.querySelector("input[name='file']");
+      const file = fileInput?.files?.[0];
 
-      if (!userText) return;
       inputUser.value = "";
+      inputUser.style.height = "auto";
+      setSelectedFileName("");
+
+      if (!userText && !file) return;
+
+      if (!userText && !file) return;
+
       inputUser.value = "";
       inputUser.style.height = "48px";
-      
-      // 使用者訊息
+
+      if (fileInput) {
+        fileInput.value = "";
+      }
+
+      // user message
       const userWrap = document.createElement("div");
       userWrap.className = "rag-message user";
 
@@ -507,24 +522,23 @@ export default function Rag() {
       userInner.className = "rag-message-inner";
 
       userInner.innerHTML = `
-    <div class="user-bubble">
-      ${marked.parse(userText)}
-    </div>
-  `;
+        <div class="user-bubble">
+          ${marked.parse(userText || "🔗 Uploaded File")}
+          ${
+            file
+              ? `<div class="upload-file-name">📄 ${file.name}</div>`
+              : ""
+          }
+        </div>
+      `;
 
       userWrap.appendChild(userInner);
       chatLog.appendChild(userWrap);
       chatLog.scrollTop = chatLog.scrollHeight;
 
-      const payload = {
-        user: userText,
-        system: inputSystem?.value || "",
-        session_id: inputSid?.value || "web-ui",
-        rag_auto: !!inputRag?.checked,
-        model: "gpt-4o-mini",
-      };
-
       try {
+
+        // Thinking UI
         const thinkingWrap = document.createElement("div");
         thinkingWrap.className = "rag-message assistant";
 
@@ -532,25 +546,40 @@ export default function Rag() {
         thinkingInner.className = "rag-message-inner";
 
         thinkingInner.innerHTML = `
-    <div class="ai-card thinking">
-      <span></span><span></span><span></span>
-    </div>
-  `;
+          <div class="ai-card thinking">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        `;
 
         thinkingWrap.appendChild(thinkingInner);
         chatLog.appendChild(thinkingWrap);
         chatLog.scrollTop = chatLog.scrollHeight;
+
+        // FormData
+        const fd = new FormData();
+        fd.append("user", userText);
+        fd.append("system", inputSystem?.value || "");
+        fd.append("session_id", inputSid?.value || "web-ui");
+        fd.append("rag_auto", !!inputRag?.checked);
+        fd.append("model", "gpt-4o-mini");
+
+        if (file) {
+          fd.append("file", file);
+        }
+
+        // API
         const res = await fetch(`${API}/chat`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: fd,
         });
 
         const data = await res.json();
 
         thinkingWrap.remove();
 
-        // AI 回答
+        // AI Message
         const aiWrap = document.createElement("div");
         aiWrap.className = "rag-message assistant";
 
@@ -563,70 +592,150 @@ export default function Rag() {
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
-          extraHtml = renderComparisonCards(data.results, t);
-        } else if (data.card_type === "multi_year") {
-          extraHtml = renderMultiYearCards(data.results, t);
-        } else if (Array.isArray(data.results) && data.results.length) {
+          extraHtml = renderComparisonCards(
+            data.results,
+            t,
+          );
+
+        } else if (
+          data.card_type === "multi_year"
+        ) {
+
+          extraHtml = renderMultiYearCards(
+            data.results,
+            t,
+          );
+
+        } else if (
+          Array.isArray(data.results) &&
+          data.results.length
+        ) {
+
           const hasValueCards = data.results.every(
             (r) =>
-              r && (r.supply_name_zh || r.demand_name) && r.value !== undefined,
+              r &&
+              (
+                r.supply_name_zh ||
+                r.demand_name
+              ) &&
+              r.value !== undefined,
           );
 
           if (hasValueCards) {
-            extraHtml = renderEnergyTopCards(data.results);
+            extraHtml = renderEnergyTopCards(
+              data.results,
+            );
           }
         }
 
-        card.innerHTML = "";
+        // markdown
+        let answerHtml = marked.parse(
+          data.answer || t("rag.noResponse")
+        );
 
-        // 解析 HTML
-        let answerHtml = marked.parse(data.answer || "");
-
-        // 資料來源 icon + tooltip
+        // Source Tooltip
         const sourceMatch = answerHtml.match(
-          /📎\s*(資料來源|Source)[:：]\s*(.+)/,
+          /🔗\s*(資料來源|Source)[:：]\s*(.+)/,
         );
 
         if (sourceMatch) {
           const sourceText = sourceMatch[2];
 
-          const years = sourceText.match(/民國\d+年|Year\s*\d+/g) || [];
+          const years =
+            sourceText.match(
+              /民國\d+年|Year\s*\d+/g,
+            ) || [];
 
           const tooltipItems = years
             .map(
               (y) => `
-      <div>
-        ${t("rag.formula")}<br>
-        ${t("rag.formulaDesc", { year: y })}<br>
-        <img 
-          src="/Ener-Sphere/images/formula.png"
-        />
-      </div>`,
+                <div>
+                  ${t("rag.formula")}<br>
+                  ${t("rag.formulaDesc", {
+                    year: y,
+                  })}<br>
+
+                  <img 
+                    src="/Ener-Sphere/images/formula.png"
+                  />
+                </div>
+              `,
             )
             .join("");
 
           const sourceHtml = `
             <div class="source-row">
-              📎 ${sourceText}
-              <span class="source-icon">ⓘ</span>
+              🔗 ${sourceText}
+
+              <span class="source-icon">
+                ⓘ
+              </span>
+
               <div class="source-tooltip">
                 ${tooltipItems}
               </div>
             </div>
           `;
 
-          // 替換原本純文字
           answerHtml = answerHtml.replace(
-            /📎\s*(資料來源|Source)[:：].+/,
+            /🔗\s*(資料來源|Source)[:：].+/,
             sourceHtml,
           );
         }
 
-        // 打字動畫（用新的）
+        // Typing Animation
+        card.innerHTML = "";
         sentenceWriter(card, answerHtml, 20);
 
-        // 原本卡片（保留）
-        card.insertAdjacentHTML("beforeend", extraHtml);
+        card.insertAdjacentHTML(
+          "beforeend",
+          extraHtml,
+        );
+
+        // Download Button
+        if (data.structured_data) {
+
+          const buttons = `
+            <div class="download-section">
+              <hr/>
+
+              <p>
+                <strong>
+                  📄 ${t("rag.generated")}
+                </strong>
+              </p>
+
+              <button id="pdf-btn">
+                ${t("rag.download")}
+              </button>
+            </div>
+          `;
+
+          card.insertAdjacentHTML(
+            "beforeend",
+            buttons,
+          );
+
+          setStructuredData(
+            data.structured_data,
+          );
+
+          setTimeout(() => {
+
+            const pdfBtn =
+              document.getElementById("pdf-btn");
+
+            if (pdfBtn) {
+
+              pdfBtn.onclick = () => {
+                generateFile(
+                  data.structured_data,
+                );
+              };
+            }
+
+          }, 0);
+        }
 
         inner.appendChild(card);
         aiWrap.appendChild(inner);
@@ -634,278 +743,24 @@ export default function Rag() {
 
         chatLog.scrollTop = chatLog.scrollHeight;
       } catch (err) {
+
         console.error(err);
-      }
-    };
 
-    form.addEventListener("submit", handleSubmit);
+        const errWrap =
+          document.createElement("div");
 
-    return () => {
-      form.removeEventListener("submit", handleSubmit);
-    };
-  }, []);
+        errWrap.className =
+          "rag-message assistant";
 
-  /* Web */
-  useEffect(() => {
-    const form = document.getElementById("rag-form-web");
-    if (!form) return;
+        errWrap.innerHTML = `
+          <div class="rag-message-inner">
+            <div class="ai-card">
+              ❌ ${err}
+            </div>
+          </div>
+        `;
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const question = form.question.value.trim();
-      const url = form.url.value.trim();
-      const out = document.getElementById("out-web");
-      const src = document.getElementById("src-web");
-
-      showLoading(out, t("rag.loadingWeb"));
-      src.textContent = "";
-
-      const payload = { question, url };
-      setLoading(true);
-      const res = await fetch(`${API}/ask_web`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (data.structured_data) {
-        setStructuredData(data.structured_data);
-      }
-      const html = marked.parse(data.answer || t("rag.noResponse"));
-
-      out.innerHTML = `<div class="ai-card">${html}</div>`;
-
-      setTimeout(() => {
-        out.querySelectorAll("h1, h2, ul, p").forEach((el, i) => {
-          el.style.opacity = 0;
-          el.style.transform = "translateY(10px)";
-          setTimeout(() => {
-            el.style.transition = "all 0.4s ease";
-            el.style.opacity = 1;
-            el.style.transform = "translateY(0)";
-          }, i * 120);
-        });
-      }, 50);
-      src.textContent = (data.sources || []).join("\n");
-    });
-  }, []);
-
-  /* PDF */
-  useEffect(() => {
-    const form = document.getElementById("rag-form-pdf");
-    if (!form) return;
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const file = form.file.files[0];
-      const question = form.question.value.trim();
-      const out = document.getElementById("out-pdf");
-      const src = document.getElementById("src-pdf");
-
-      showLoading(out, t("rag.loadingPdf"));
-      src.textContent = "";
-
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("question", question);
-
-      const res = await fetch(`${API}/ask_pdf`, {
-        method: "POST",
-        body: fd,
-      });
-
-      const data = await res.json();
-
-      if (data.structured_data && data.structured_data.data) {
-        setStructuredData(data.structured_data);
-        console.log("structuredData:", data.structured_data);
-      }
-      
-      let answerText = data.answer || t("rag.noResponse");
-      let buttons = "";
-
-      if (data.structured_data) {
-        buttons = `
-  <div class="download-section">
-    <hr/>
-    <p><strong>📄 ${t("rag.generated")}</strong></p>
-    <button id="pdf-btn">${t("rag.download")}</button>
-  </div>
-`;
-      }
-
-      const html = marked.parse(answerText);
-
-      out.innerHTML = `
-      <div class="ai-card">
-        ${html}
-        ${buttons}
-      </div>
-    `;
-
-      // 綁定按鈕
-      setTimeout(() => {
-        const pdfBtn = document.getElementById("pdf-btn");
-
-        if (pdfBtn) {
-          pdfBtn.onclick = () => {
-            generateFile(data.structured_data);
-          };
-        }
-      }, 0);
-      src.textContent = (data.sources || []).join("\n");
-    });
-  }, []);
-
-  /* AV (問影片/音訊) */
-  useEffect(() => {
-    const form = document.getElementById("rag-form-av");
-    if (!form) return;
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const file = form.file.files[0];
-      const question = form.question.value.trim();
-
-      const out = document.getElementById("out-av");
-      const src = document.getElementById("src-av");
-
-      showLoading(out, t("rag.loadingAv"));
-      src.textContent = "";
-
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("question", question);
-
-      const res = await fetch(`${API}/ask_av`, {
-        method: "POST",
-        body: fd,
-      });
-
-      const data = await res.json();
-
-      // 如果有 structured_data 存起來
-      if (data.structured_data) {
-        setStructuredData(data.structured_data);
-      }
-
-      const html = marked.parse(data.answer || t("rag.noResponse"));
-
-      out.innerHTML = `
-      <div class="ai-card">
-        ${html}
-      </div>
-    `;
-
-      // 動畫效果（跟 Web 一樣）
-      setTimeout(() => {
-        out.querySelectorAll("h1, h2, ul, p").forEach((el, i) => {
-          el.style.opacity = 0;
-          el.style.transform = "translateY(10px)";
-          setTimeout(() => {
-            el.style.transition = "all 0.4s ease";
-            el.style.opacity = 1;
-            el.style.transform = "translateY(0)";
-          }, i * 120);
-        });
-      }, 50);
-
-      // 來源顯示
-      if (data.sources?.length) {
-        src.innerHTML = `
-        <div class="source-card">
-          <strong>🎬 ${t("rag.avSource")}：</strong>
-          ${data.sources.map((s) => `<div>• ${s}</div>`).join("")}
-        </div>
-      `;
-      }
-    });
-  }, []);
-
-  /* TABLE (問 Excel/CSV + 匯出報告) */
-  useEffect(() => {
-    const form = document.getElementById("rag-form-table");
-    if (!form) return;
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-
-      const file = form.file.files[0];
-      const question = form.question.value.trim();
-
-      const out = document.getElementById("out-table");
-      const src = document.getElementById("src-table");
-
-      showLoading(out, t("rag.loadingTable"));
-      src.textContent = "";
-
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("question", question);
-
-      const res = await fetch(`${API}/ask_table`, {
-        method: "POST",
-        body: fd,
-      });
-
-      const data = await res.json();
-
-      if (!data.success) {
-        out.innerHTML = `<div class="ai-card">❌ ${data.error}</div>`;
-        return;
-      }
-
-      if (data.structured_data) {
-        setStructuredData(data.structured_data);
-      }
-
-      const html = marked.parse(data.answer || t("rag.noResponse"));
-
-      let buttons = "";
-
-      if (data.structured_data) {
-        buttons = `
-        <div class="download-section">
-          <hr/>
-          <p><strong>📊 ${t("rag.generated")}</strong></p>
-          <button id="excel-btn">${t("rag.download")}</button>
-        </div>
-      `;
-      }
-
-      out.innerHTML = `
-      <div class="ai-card">
-        ${html}
-        ${buttons}
-      </div>
-    `;
-
-      setTimeout(() => {
-        const excelBtn = document.getElementById("excel-btn");
-
-        if (excelBtn) {
-          excelBtn.onclick = () => {
-            generateExcel(data.structured_data);
-          };
-        }
-      }, 0);
-
-      if (data.sources?.length) {
-        src.innerHTML = `
-        <div class="source-card">
-          <strong>📊 ${t("rag.tableSource")}：</strong>
-          ${data.sources
-            .map(
-              (s) =>
-                `<div>• ${s.sheet}（${s.rows} ${t("rag.rows")} / ${s.columns_count} ${t("rag.cols")}</div>`,
-            )
-            .join("")}
-        </div>
-      `;
+        chatLog.appendChild(errWrap);
       }
     };
 
@@ -983,16 +838,30 @@ export default function Rag() {
                   audio/*,
                   video/*
                 "
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+
+                  if (file) {
+                    setSelectedFileName(file.name);
+                  }
+                }}
               />
             </label>
 
             {/* 文字輸入 */}
-            <textarea
-              name="user"
-              rows="1"
-              required
-              placeholder={t("rag.chatPlaceholder")}
-            />
+            <div className="chat-input-area">
+              {selectedFileName && (
+                <div className="selected-file-inside">
+                  🔗 {selectedFileName}
+                </div>
+              )}
+
+              <textarea
+                name="user"
+                rows="1"
+                placeholder={t("rag.chatPlaceholder")}
+              />
+            </div>
 
             {/* 送出 */}
             <button type="submit">
