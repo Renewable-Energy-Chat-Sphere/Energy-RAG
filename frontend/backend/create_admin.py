@@ -1,4 +1,5 @@
 import sqlite3
+from db import get_db
 import os
 
 from werkzeug.security import generate_password_hash
@@ -13,7 +14,7 @@ DB_PATH = os.path.join(BASE_DIR, "energy.db")
 # =========================
 # 🔗 連接 SQLite
 # =========================
-conn = sqlite3.connect(DB_PATH)
+conn = get_db()
 
 cursor = conn.cursor()
 

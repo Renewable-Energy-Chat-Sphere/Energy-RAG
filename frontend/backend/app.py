@@ -11,6 +11,7 @@ from power_api import get_power_units
 
 # 資料庫 專用
 import sqlite3
+from db import get_db
 # 權限管理 專用
 from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
@@ -74,7 +75,7 @@ def register():
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db()
         cursor = conn.cursor()
 
         cursor.execute(
@@ -112,7 +113,7 @@ def login():
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -800,7 +801,7 @@ def contact():
     # =========================
     # 💾 存 SQLite
     # =========================
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
 
     cursor = conn.cursor()
 
@@ -894,7 +895,7 @@ def get_feedback():
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
 
     # 🔥 row → dict
     conn.row_factory = sqlite3.Row
@@ -930,7 +931,7 @@ def resolve_feedback():
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
 
     cursor = conn.cursor()
 
@@ -965,7 +966,7 @@ def delete_feedback():
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
 
     cursor = conn.cursor()
 
