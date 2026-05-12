@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import "./power.css";
-import "@flaticon/flaticon-uicons/css/regular/rounded.css";
 import { useTranslation } from "react-i18next";
 import BackToTopButton from "../components/BackToTopButton";
 /* ========================
