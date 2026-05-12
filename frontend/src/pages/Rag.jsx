@@ -354,8 +354,8 @@ export default function Rag() {
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   
-  const API = "/api";
-  //const API = "http://127.0.0.1:8000";
+  // const API = "/api";
+  const API = "http://127.0.0.1:8000";
   
   async function generateFile(reportData = structuredData) {
     if (!reportData) {
@@ -460,16 +460,36 @@ export default function Rag() {
         INPUT_MIN_HEIGHT,
       )}px`;
     };
-    inputUser.addEventListener("input", resetHeight);
-    requestAnimationFrame(resetHeight);
+    
+    /* textarea 存在才綁定 */
+    if (inputUser) {
 
-    /* Shift+Enter 換行，Enter 送出 */
-    inputUser.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        form.requestSubmit();
-      }
-    });
+      inputUser.addEventListener(
+        "input",
+        resetHeight
+      );
+
+      requestAnimationFrame(
+        resetHeight
+      );
+
+      /* Shift+Enter 換行 */
+      inputUser.addEventListener(
+        "keydown",
+        (e) => {
+
+          if (
+            e.key === "Enter" &&
+            !e.shiftKey
+          ) {
+
+            e.preventDefault();
+
+            form.requestSubmit();
+          }
+        }
+      );
+    }
 
     /* 泡泡 UI */
     const bubble = (role, html, isLoading = false) => {
@@ -494,6 +514,12 @@ export default function Rag() {
 
     /* Chat 提交 */
     const handleSubmit = async (e) => {
+      chatLog.classList.add("active");
+      document
+        .querySelector(".rag-chat-wrapper")
+        ?.classList.add("active");
+
+      e.preventDefault();
       e.preventDefault();
 
       const userText = inputUser.value.trim();
@@ -860,7 +886,28 @@ export default function Rag() {
             <div className="chat-input-area">
               {selectedFileName && (
                 <div className="selected-file-inside">
-                  🔗 {selectedFileName}
+                  <span className="file-name">
+                    🔗 {selectedFileName}
+                  </span>
+
+                  <span
+                    className="remove-file-btn"
+                    onClick={() => {
+                      const fileInput =
+                        document.getElementsByName(
+                          "file"
+                        )[0];
+
+                      if (fileInput) {
+                        fileInput.value = "";
+                      }
+
+                      setSelectedFileName("");
+                    }}
+                  >
+                    ✕
+                  </span>
+
                 </div>
               )}
 
@@ -869,6 +916,7 @@ export default function Rag() {
                 rows="1"
                 placeholder={t("rag.chatPlaceholder")}
               />
+
             </div>
 
             {/* 送出 */}
