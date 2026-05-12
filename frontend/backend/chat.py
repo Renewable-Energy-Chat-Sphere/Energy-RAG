@@ -18,18 +18,18 @@ URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
 # =====================================================
 def get_language_prompt(user_text):
     return f"""
-請嚴格遵守以下語言規則：
+        請嚴格遵守以下語言規則：
 
-1. 使用與使用者輸入「完全相同的語言」回答
-2. 不得切換語言
-3. 不得翻譯
-4. 保持語氣與文字系統一致
+        1. 使用與使用者輸入「完全相同的語言」回答
+        2. 不得切換語言
+        3. 不得翻譯
+        4. 保持語氣與文字系統一致
 
-使用者輸入：
-\"\"\"{user_text}\"\"\"
+        使用者輸入：
+        \"\"\"{user_text}\"\"\"
 
-請用相同語言回答。
-"""
+        請用相同語言回答。
+    """
 
 
 # =====================================================
@@ -56,29 +56,29 @@ def detect_query_mode(text):
 def enhance_answer_by_mode(answer, mode):
     if mode == "analysis":
         return f"""
-## 📊 能源資料完整分析
+            ## 📊 能源資料完整分析
 
-{answer}
+            {answer}
 
----
+            ---
 
-### 🔍 綜合說明
-- 已整合所有相關能源數據
-- 包含結構比例、主要能源分布
-- 可觀察長期趨勢與變化方向
+            ### 🔍 綜合說明
+            - 已整合所有相關能源數據
+            - 包含結構比例、主要能源分布
+            - 可觀察長期趨勢與變化方向
 
-### 📈 建議解讀方向
-- 注意高占比能源 → 代表依賴性
-- 觀察變化 → 可能代表產業轉型
-"""
+            ### 📈 建議解讀方向
+            - 注意高占比能源 → 代表依賴性
+            - 觀察變化 → 可能代表產業轉型
+        """
 
     elif mode == "precise":
         return f"""
-🎯 **精確查詢結果**
+            🎯 **精確查詢結果**
 
-{answer}
+            {answer}
 
-"""
+        """
 
     return answer
 
@@ -95,31 +95,31 @@ def is_simple_chat(text):
 # Energy Sphere 專屬助手 Prompt（核心）
 # =====================================================
 BASE_ASSISTANT_PROMPT = """
-你是「Energy Sphere 智慧能源平台」的虛擬助理。
+    你是「Energy Sphere 智慧能源平台」的虛擬助理。
+    你的任務是協助使用者理解本網站的能源資料、分析結果與視覺化內容。
 
-你的任務是協助使用者理解本網站的能源資料、分析結果與視覺化內容。
+    【角色定位】
+    - 你是本網站專屬 AI（不是一般聊天機器人）
+    - 熟悉能源需求、供給、比例、相似度分析與 3D 能源球
+    - 可以解釋圖表、數據與分析結果
 
-【角色定位】
-- 你是本網站專屬 AI（不是一般聊天機器人）
-- 熟悉能源需求、供給、比例、相似度分析與 3D 能源球
-- 可以解釋圖表、數據與分析結果
+    【回答原則】
+    - 簡單問題 → 簡短自然回答
+    - 專業問題 → 條理清楚、易懂
+    - 優先以平台邏輯解釋（不要亂編）
 
-【回答原則】
-- 簡單問題 → 簡短自然回答
-- 專業問題 → 條理清楚、易懂
-- 優先以平台邏輯解釋（不要亂編）
+    【語言規則（最高優先）】
+    - 回答語言必須與使用者輸入完全一致
+    - 不得自行切換語言或輸入法（如：中文/英文、繁體中文/簡體中文）
+    - 不得翻譯
 
-【語言規則（最高優先）】
-- 回答語言必須與使用者輸入完全一致
-- 不得自行切換語言或輸入法（如：中文/英文、繁體中文/簡體中文）
-- 不得翻譯
-
-【資料限制（最高優先）】
-- 只能根據已提供資料回答
-- 如果資料中不存在，不得自行推測
-- 不得猜測數值
-- 不得幻想原因
-- 若資料不足，直接說：「目前資料庫中沒有足夠資訊」
+    【資料限制（最高優先）】
+    - 優先根據已提供資料回答
+    - 回答時請附上資料來源
+    - 不得捏造不存在的數據
+    - 若本地資料不足，可使用網路搜尋補充資訊
+    - 若使用網路資料，請在回答最後附上來源網址
+    - 若使用網路查詢無果，才顯示「目前沒有足夠資訊」
 """
 
 
@@ -167,6 +167,74 @@ def _store_turn(session_id: str, user_text: str, assistant_text: str):
     CHAT_SESSIONS[session_id].append(("user", user_text))
     CHAT_SESSIONS[session_id].append(("assistant", assistant_text))
 
+# =====================================================
+# 統一資料來源格式化
+# =====================================================
+def append_sources(answer, sources):
+
+    if not sources:
+        return answer
+
+    source_lines = []
+
+    for s in sources:
+
+        # 字串
+        if isinstance(s, str):
+
+            source_lines.append(f"- {s}")
+
+        # dict
+        elif isinstance(s, dict):
+
+            # 網頁來源
+            if s.get("url"):
+
+                title = s.get("title", "網頁資料")
+
+                source_lines.append(
+                    f"- [{title}]({s['url']})"
+                )
+
+            # Excel
+            elif s.get("sheet"):
+
+                sheet = s.get("sheet")
+                rows = s.get("rows", "?")
+
+                source_lines.append(
+                    f"- 工作表：{sheet}（{rows} rows）"
+                )
+
+            # Energy RAG
+            elif s.get("year"):
+
+                year = s.get("year")
+
+                if s.get("sheet"):
+
+                    source_lines.append(
+                        f"- 民國{year}年｜{s['sheet']}"
+                    )
+
+                else:
+
+                    source_lines.append(
+                        f"- 民國{year}年能源資料"
+                    )
+
+    # 去重複
+    source_lines = list(dict.fromkeys(source_lines))
+
+    if not source_lines:
+        return answer
+
+    return (
+        answer
+        + "\n\n---\n"
+        + "### 🔗 資料來源\n"
+        + "\n".join(source_lines)
+    )
 
 # =====================================================
 # CHAT API
@@ -214,7 +282,7 @@ def chat():
 
             return jsonify(
                 {
-                    "answer": answer,
+                    "answer": append_sources(answer, sources),
                     "sources": sources,
                     "structured_data": structured_data,
                     "results": [],
@@ -253,7 +321,17 @@ def chat():
 
             return jsonify(
                 {
-                    "answer": answer,
+                    "answer": append_sources(
+                        answer,
+                        [
+                            {
+                                "sheet": name,
+                                "rows": int(df.shape[0]),
+                            }
+                            for name, df in sheets.items()
+                        ]
+                    ),
+
                     "sources": [
                         {
                             "sheet": name,
@@ -277,13 +355,13 @@ def chat():
             text = file.read().decode("utf-8")
 
             prompt = f"""
-以下是使用者上傳的文字內容：
+                以下是使用者上傳的文字內容：
 
-{text}
+                {text}
 
-問題：
-{user_text}
-"""
+                問題：
+                {user_text}
+            """
 
             resp = current_app.config.get(
                 "OPENAI_CLIENT"
@@ -296,7 +374,10 @@ def chat():
 
             return jsonify(
                 {
-                    "answer": resp.output_text,
+                    "answer": append_sources(
+                        resp.output_text,
+                        [filename]
+                    ),
                     "sources": [filename],
                     "results": [],
                     "card_type": "default",
@@ -330,6 +411,7 @@ def chat():
 
             try:
                 answer, sources = qa_over_web(question_only, url=url)
+                answer = append_sources(answer, sources)
                 _store_turn(session_id, user_text, answer)
 
                 return jsonify(
@@ -350,90 +432,163 @@ def chat():
     # Energy RAG Router
     # =====================================================
     if should_use_energy_rag(user_text):
+
         try:
-            mode = detect_query_mode(user_text)  # 核心
+
+            mode = detect_query_mode(user_text)
 
             result = answer_energy_question(user_text)
-            assistant_text = result.get("answer", "（無回應）")
 
-            def humanize_answer(text):
-                return text.replace("根據相關年度已生成的能源資料", "我幫你查了一下")
-
-            assistant_text = humanize_answer(assistant_text)
-
-            # =====================================================
-            #  真正升級（分析模式用 LLM）
-            # =====================================================
-            if mode == "analysis" and openai_client:
-
-                analysis_prompt = f"""
-            你是一個能源分析專家。
-
-            以下是資料：
-            {assistant_text}
-
-            請做「完整分析」，不要只是列資料：
-
-            1️⃣ 哪些能源最多？排名
-            2️⃣ 結構特徵（集中？分散？）
-            3️⃣ 為什麼會這樣（產業/政策/結構）
-            4️⃣ 有沒有值得注意的現象
-            5️⃣ 給一個總結
-
-            要求：
-            - 條理清楚
-            - 用條列＋段落
-            - 用與使用者相同語言
-            """
-
-                resp = openai_client.responses.create(
-                    model=model,
-                    input=[
-                        {"role": "system", "content": "請使用與使用者相同語言回答"},
-                        {"role": "user", "content": analysis_prompt},
-                    ],
-                    temperature=0.3,
-                    max_output_tokens=1000,
-                )
-
-                assistant_text = resp.output_text.strip()
-
-            # 精準模式（保留你原本）
-            else:
-                assistant_text = enhance_answer_by_mode(assistant_text, mode)
-            
-            # =====================================
-            # 自動加資料來源（完整版）
-            # =====================================
-            import re
-
-            years = re.findall(r"(?:民國)?(\d{2,3})年", user_text)
-            years = sorted(list(set(years)))
-
-            if len(years) == 1:
-                assistant_text += f"\n\n🔗 資料來源：民國{years[0]}年能源平衡表"
-
-            elif len(years) >= 2:
-                year_text = "、".join([f"民國{y}年" for y in years])
-                assistant_text += f"\n\n🔗 資料來源：{year_text}能源平衡表"
-
-            else:
-                assistant_text += "\n\n🔗 資料來源：能源平衡表資料庫"
-                    
-            _store_turn(session_id, user_text, assistant_text)
-
-            return jsonify(
-                {
-                    "answer": assistant_text,
-                    "sources": result.get("sources", []),
-                    "results": result.get("results", []),
-                    "session_id": session_id,
-                    "model": "energy_rag",
-                    "uses_openai": False,
-                }
+            assistant_text = result.get(
+                "answer",
+                "（無回應）"
             )
 
+            # =====================================
+            # 🔥 如果 Energy RAG 找不到資料
+            # → 不 return
+            # → 繼續往下走 GPT Web Search
+            # =====================================
+            if (
+                "目前資料庫中沒有足夠資訊" not in assistant_text
+                and "無相關資料" not in assistant_text
+            ):
+
+                def humanize_answer(text):
+
+                    return text.replace(
+                        "根據相關年度已生成的能源資料",
+                        "我幫你查了一下"
+                    )
+
+                assistant_text = humanize_answer(
+                    assistant_text
+                )
+
+                # =====================================================
+                # 分析模式 LLM
+                # =====================================================
+                if mode == "analysis" and openai_client:
+
+                    analysis_prompt = f"""
+                        你是一個能源分析專家。
+
+                        以下是資料：
+                        {assistant_text}
+
+                        請做「完整分析」，不要只是列資料：
+
+                        1️⃣ 哪些能源最多？排名
+                        2️⃣ 結構特徵（集中？分散？）
+                        3️⃣ 為什麼會這樣（產業/政策/結構）
+                        4️⃣ 有沒有值得注意的現象
+                        5️⃣ 給一個總結
+
+                        要求：
+                        - 條理清楚
+                        - 用條列＋段落
+                        - 用與使用者相同語言
+                    """
+
+                    resp = openai_client.responses.create(
+                        model=model,
+                        tools=[{"type": "web_search"}],
+                        input=[
+                            {
+                                "role": "system",
+                                "content": "請使用與使用者相同語言回答"
+                            },
+                            {
+                                "role": "user",
+                                "content": analysis_prompt
+                            },
+                        ],
+                        temperature=0.3,
+                        max_output_tokens=1000,
+                    )
+
+                    assistant_text = (
+                        resp.output_text.strip()
+                    )
+
+                    # =====================================
+                    # GPT / Web Search 來源
+                    # =====================================
+                    sources = []
+
+                    try:
+
+                        if hasattr(resp, "sources"):
+
+                            for s in resp.sources:
+
+                                sources.append({
+                                    "title": getattr(
+                                        s,
+                                        "title",
+                                        "網頁來源"
+                                    ),
+                                    "url": getattr(
+                                        s,
+                                        "url",
+                                        ""
+                                    )
+                                })
+
+                    except:
+                        pass
+
+                    assistant_text = append_sources(
+                        assistant_text,
+                        sources
+                    )
+
+                # =====================================
+                # 精準模式
+                # =====================================
+                else:
+
+                    assistant_text = enhance_answer_by_mode(
+                        assistant_text,
+                        mode
+                    )
+
+                # =====================================
+                # 如果 analysis mode 沒有 web sources
+                # 才加 Energy RAG sources
+                # =====================================
+                if "### 🔗 資料來源" not in assistant_text:
+
+                    assistant_text = append_sources(
+                        assistant_text,
+                        result.get("sources", [])
+                    )
+
+                _store_turn(
+                    session_id,
+                    user_text,
+                    assistant_text
+                )
+
+                return jsonify(
+                    {
+                        "answer": assistant_text,
+                        "sources": result.get(
+                            "sources",
+                            []
+                        ),
+                        "results": result.get(
+                            "results",
+                            []
+                        ),
+                        "session_id": session_id,
+                        "model": "energy_rag",
+                        "uses_openai": False,
+                    }
+                )
+
         except Exception as e:
+
             return (
                 jsonify(
                     {
@@ -449,7 +604,7 @@ def chat():
             )
 
     # =====================================================
-    # 模式判斷（聊天/分析）
+    # 模式判斷
     # =====================================================
     def is_analysis_question(text):
         keywords = ["分析", "報告", "整理", "比較", "趨勢", "analysis", "report"]
@@ -469,12 +624,22 @@ def chat():
     # =====================================================
     # 呼叫模型
     # =====================================================
+    final_sources = []
     if openai_client:
+
         try:
-            messages = _build_messages(session_id, user_text, system_prompt)
+            messages = _build_messages(
+                session_id,
+                user_text,
+                system_prompt
+            )
 
             resp = openai_client.responses.create(
                 model=model,
+
+                # 允許 GPT 上網搜尋
+                tools=[{"type": "web_search"}],
+
                 input=messages,
                 temperature=0.2,
                 max_output_tokens=800,
@@ -486,8 +651,33 @@ def chat():
                 else "（模型沒有回傳內容）"
             )
 
+            # GPT 一般來源
+            sources = []
+            try:
+
+                if hasattr(resp, "sources"):
+
+                    for s in resp.sources:
+
+                        item = {
+                            "title": getattr(s, "title", "網頁來源"),
+                            "url": getattr(s, "url", "")
+                        }
+
+                        sources.append(item)
+                        final_sources.append(item)
+
+            except:
+                pass
+
+            assistant_text = append_sources(
+                assistant_text,
+                sources
+            )
+
         except Exception as e:
             assistant_text = f"⚠️ 模型錯誤：{e}"
+            final_sources = []
 
     else:
         assistant_text = "⚠️ 尚未設定 OpenAI API Key"
@@ -497,7 +687,7 @@ def chat():
     return jsonify(
         {
             "answer": assistant_text,
-            "sources": [],
+            "sources": final_sources,
             "results": [],
             "card_type": "default",
             "session_id": session_id,
