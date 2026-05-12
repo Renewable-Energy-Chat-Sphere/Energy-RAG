@@ -6,16 +6,51 @@ import LanguageSwitch from "./LanguageSwitch";
 export default function Header() {
   const { t } = useTranslation();
 
+  // =========================
+  // 🔐 使用者資訊
+  // =========================
+  const storedUser = localStorage.getItem("user");
+
+  const user = storedUser
+    ? JSON.parse(storedUser)
+    : { username: "訪客", role: "user" };
+
+  const isLoggedIn = !!storedUser;
+  const isAdmin = user.role === "admin";
+  const isManager = user.role === "manager";
+
+  // =========================
+  // 🔓 登出
+  // =========================
+  const handleLogout = async () => {
+    try {
+      await fetch("http://127.0.0.1:8000/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    localStorage.removeItem("user");
+    window.location.href = "/Ener-Sphere/";
+  };
+
   useEffect(() => {
     const header = document.querySelector("header");
 
     const onScroll = () => {
       if (!header) return;
-      if (window.scrollY > 50) header.classList.add("scrolled");
-      else header.classList.remove("scrolled");
+
+      if (window.scrollY > 50) {
+        header.classList.add("scrolled");
+      } else {
+        header.classList.remove("scrolled");
+      }
     };
 
     window.addEventListener("scroll", onScroll);
+
     /* ------------------------------
        2. 漢堡選單
     ------------------------------*/
@@ -39,49 +74,27 @@ export default function Header() {
     overlay?.addEventListener("click", closeMenu);
 
     /* ------------------------------
-       3. 下拉選單
-    ------------------------------*/
-    const dropdown = document.querySelector(".dropdown");
-    const dropdownBtn = dropdown?.querySelector(".dropdown-btn");
-
-    const toggleDropdown = (e) => {
-      e.stopPropagation();
-      dropdown?.classList.toggle("show");
-    };
-
-    const closeDropdown = (e) => {
-      if (!dropdown) return;
-      if (!dropdown.contains(e.target)) {
-        dropdown.classList.remove("show");
-      }
-    };
-
-    dropdownBtn?.addEventListener("click", toggleDropdown);
-    window.addEventListener("click", closeDropdown);
-
-    /* ------------------------------
-       4. 🌙 深色模式（完整修正版）
+       3. 🌙 深色模式
     ------------------------------*/
     const themeToggle = document.getElementById("themeToggle");
     const main = document.getElementById("main-content");
-
     const savedTheme = localStorage.getItem("theme");
 
-    // 🔥 初始化（頁面重整也會套用）
     if (savedTheme === "dark") {
       main?.classList.add("dark");
-      document.body.classList.add("dark"); // 🔥 關鍵
+      document.body.classList.add("dark");
+
       if (themeToggle) themeToggle.textContent = "☀️";
     } else {
       main?.classList.remove("dark");
       document.body.classList.remove("dark");
+
       if (themeToggle) themeToggle.textContent = "🌙";
     }
 
-    // 🔥 切換
     const changeTheme = () => {
       main?.classList.toggle("dark");
-      document.body.classList.toggle("dark"); // 🔥 關鍵
+      document.body.classList.toggle("dark");
 
       if (main?.classList.contains("dark")) {
         if (themeToggle) themeToggle.textContent = "☀️";
@@ -96,13 +109,12 @@ export default function Header() {
 
     return () => {
       window.removeEventListener("scroll", onScroll);
-      dropdownBtn?.removeEventListener("click", toggleDropdown);
-      window.removeEventListener("click", closeDropdown);
       hamburger?.removeEventListener("click", toggleMenu);
       overlay?.removeEventListener("click", closeMenu);
       themeToggle?.removeEventListener("click", changeTheme);
     };
   }, []);
+
   return (
     <>
       <div id="overlay"></div>
@@ -115,6 +127,7 @@ export default function Header() {
               alt="EnerSphere TW Logo"
               style={{ height: "70px" }}
             />
+
             <span
               style={{
                 fontSize: "26px",
@@ -133,15 +146,57 @@ export default function Header() {
             <div className="mobile-lang">
               <LanguageSwitch />
             </div>
-            <Link to="/">{t("nav.home")}</Link>
+
+            {/* 訪客 / admin 才顯示首頁；manager 不顯示首頁 */}
+            {(!isLoggedIn || isAdmin) && (
+              <Link to="/">{t("nav.home")}</Link>
+            )}
+
             <Link to="/global">{t("nav.global")}</Link>
+
             <Link to="/powerplant">{t("nav.powerplant")}</Link>
+
             <Link to="/rag">{t("nav.rag")}</Link>
-            <Link to="/electricity-analysis">供電成本分析中心</Link>
-            <Link to="/Prediction">{t("nav.prediction")}</Link>
-            <Link to="/contact">{t("nav.contact")}</Link>
-            <Link to="/Feedback">{t("nav.feedback")}</Link>
-            <Link to="/Login">{t("nav.Login")}</Link>
+
+            {/* manager / admin 才顯示 */}
+            {(isManager || isAdmin) && (
+              <>
+                <Link to="/electricity-analysis">供電成本分析中心</Link>
+
+                <Link to="/Prediction">{t("nav.prediction")}</Link>
+              </>
+            )}
+
+            {/* admin 專屬 */}
+            {isAdmin && <Link to="/Feedback">{t("nav.feedback")}</Link>}
+
+            {/* admin 不顯示聯絡我們；訪客與 manager 顯示 */}
+            {!isAdmin && <Link to="/contact">{t("nav.contact")}</Link>}
+
+            {/* Login / Logout */}
+            {isLoggedIn && user.role !== "user" ? (
+
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "700",
+                  fontSize: "15px",
+                }}
+              >
+                登出（{user.role}）
+              </button>
+
+            ) : (
+
+              <Link to="/Login">
+                Login
+              </Link>
+
+            )}
           </nav>
 
           <div id="themeToggle">🌙</div>
