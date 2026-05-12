@@ -235,8 +235,7 @@ def qa_over_pdf(question, file):
 好的，我已經幫你完成整理與排版 📄✨
 
 📁 檔名：{new_filename}  
-📄 來源頁數：{len(pages)} 頁  
-📦 預估內容大小：約 {estimated_size} KB  
+📄 來源頁數：{len(pages)} 頁 
 
 你可以在下方點擊「下載檔案/報告」下載完整資料。
 """
