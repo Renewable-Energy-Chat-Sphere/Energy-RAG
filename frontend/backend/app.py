@@ -1344,6 +1344,7 @@ def electricity_ai_analysis():
         nuclearNote = data.get("nuclearNote", "")
         cost_pressure = data.get("costPressure", 0)
         historical = data.get("historicalAnalysis", {})
+        language = data.get("language", "zh")
 
         prompt = f"""
 你是一位台灣能源分析 AI。
@@ -1400,7 +1401,7 @@ def electricity_ai_analysis():
 限制：
 
 - 200字內
-- 使用繁體中文
+- 使用 {"English" if language == "en" else "繁體中文"}
 - 像 GPT 專業分析
 - 不要條列
 """

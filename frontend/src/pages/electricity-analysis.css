@@ -269,3 +269,169 @@
 
   text-align: center;
 }
+.ai-switching {
+  opacity: 0.7;
+  transition: all 0.35s ease;
+}
+
+.ai-language-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #60a5fa;
+
+  font-weight: 600;
+
+  animation: pulseAI 1.2s infinite;
+}
+
+@keyframes pulseAI {
+  0% {
+    opacity: 0.4;
+    transform: translateY(0px);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
+  100% {
+    opacity: 0.4;
+    transform: translateY(0px);
+  }
+}
+.live-bar-row {
+  margin-bottom: 26px;
+}
+
+.live-bar-top {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 10px;
+
+  font-size: 16px;
+
+  font-weight: 700;
+}
+
+.live-bar-bg {
+  width: 100%;
+
+  height: 20px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.06)
+  );
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+
+  position: relative;
+
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.05);
+}
+
+.live-bar-fill {
+  height: 100%;
+
+  border-radius: 999px;
+
+  transition:
+    width 0.7s ease,
+    opacity 0.3s ease;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+/* 🔥 火力 */
+.live-bar-fill.thermal {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+/* ☀️ 太陽能 */
+.live-bar-fill.solar {
+  background: linear-gradient(90deg, #facc15, #f59e0b);
+}
+
+/* ⚛️ 核能 */
+.live-bar-fill.nuclear {
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+}
+
+/* 🌬️ 風力 */
+.live-bar-fill.wind {
+  background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+}
+
+/* 💧 水力 */
+.live-bar-fill.hydro {
+  background: linear-gradient(90deg, #60a5fa, #2563eb);
+}
+/* =========================
+   💰 成本影響分析 Progress
+========================= */
+
+.impact-progress-bg {
+  height: 14px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.05)
+  );
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+
+  position: relative;
+
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.05);
+}
+
+.impact-progress-fill {
+  height: 100%;
+
+  border-radius: 999px;
+
+  position: relative;
+
+  overflow: hidden;
+
+  transition: width 0.7s ease;
+}
+
+.impact-progress-fill::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(255, 255, 255, 0)
+  );
+
+  opacity: 0.6;
+}

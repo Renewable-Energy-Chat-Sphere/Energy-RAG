@@ -12,7 +12,7 @@ export default function ElectricityAnalysis() {
   const [liveUnits, setLiveUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aiAnalysis, setAiAnalysis] = useState("");
-
+  const [aiSwitching, setAiSwitching] = useState(false);
   const [updateTime, setUpdateTime] = useState("");
   async function fetchPowerData() {
     setLoading(true);
@@ -45,7 +45,6 @@ export default function ElectricityAnalysis() {
   useEffect(() => {
     fetchPowerData();
 
-    // 🔥 每10分鐘更新
     const interval = setInterval(
       () => {
         fetchPowerData();
@@ -55,6 +54,16 @@ export default function ElectricityAnalysis() {
 
     return () => clearInterval(interval);
   }, []);
+  useEffect(() => {
+    if (liveUnits.length > 0) {
+      // 🔥 已經有 AI 結果才顯示切換動畫
+      if (aiAnalysis) {
+        setAiSwitching(true);
+      }
+
+      fetchAIAnalysis(liveUnits);
+    }
+  }, [i18n.language]);
 
   const supplyTotals = {};
 
@@ -231,8 +240,12 @@ export default function ElectricityAnalysis() {
       });
       const nuclearNote =
         nuclear === 0
-          ? "目前無核能發電資料（依台電即時數據）"
-          : `核能發電量為 ${nuclear} MW`;
+          ? i18n.language === "en"
+            ? "Currently no nuclear generation data (based on Taipower real-time data)"
+            : "目前無核能發電資料（依台電即時數據）"
+          : i18n.language === "en"
+            ? `Current nuclear generation is ${nuclear} MW`
+            : `核能發電量為 ${nuclear} MW`;
       const historicalAnalysis = {
         trend: "近30年台灣供電仍以火力發電為主，但燃氣與再生能源占比持續增加。",
 
@@ -260,13 +273,16 @@ export default function ElectricityAnalysis() {
           costPressure: Number(costPressure.toFixed(2)),
 
           historicalAnalysis,
+          language: i18n.language,
         }),
       });
 
       const data = await res.json();
 
       setAiAnalysis(data.analysis);
+      setAiSwitching(false);
     } catch (err) {
+      setAiSwitching(false);
       console.log(err);
 
       setLoading(false);
@@ -381,47 +397,139 @@ ${renewablePercent}% ，
             <div className="electricity-card">
               <h2>🔋 {t("electricity.realtime")}</h2>
 
-              <div className="info-row">
-                <span>🔥 {t("electricity.thermal")}</span>
+              {/* 🔥 火力 */}
+              <div className="live-bar-row">
+                <div className="live-bar-top">
+                  <span>🔥 {t("electricity.thermal")}</span>
 
-                <strong>
-                  {liveEnergy.thermal.toFixed(0)}
-                  MW
-                </strong>
+                  <span>{liveEnergy.thermal.toFixed(0)} MW</span>
+                </div>
+
+                <div className="live-bar-bg">
+                  <div
+                    className="live-bar-fill thermal"
+                    style={{
+                      width: `${Math.min(
+                        (liveEnergy.thermal /
+                          (liveEnergy.thermal +
+                            liveEnergy.solar +
+                            liveEnergy.wind +
+                            liveEnergy.hydro +
+                            liveEnergy.nuclear)) *
+                          100,
+                        100,
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="info-row">
-                <span>☀️ {t("electricity.solar")}</span>
+              {/* ☀️ 太陽能 */}
+              <div className="live-bar-row">
+                <div className="live-bar-top">
+                  <span>☀️ {t("electricity.solar")}</span>
 
-                <strong>
-                  {liveEnergy.solar.toFixed(0)}
-                  MW
-                </strong>
+                  <span>{liveEnergy.solar.toFixed(0)} MW</span>
+                </div>
+
+                <div className="live-bar-bg">
+                  <div
+                    className="live-bar-fill solar"
+                    style={{
+                      width: `${Math.min(
+                        (liveEnergy.solar /
+                          (liveEnergy.thermal +
+                            liveEnergy.solar +
+                            liveEnergy.wind +
+                            liveEnergy.hydro +
+                            liveEnergy.nuclear)) *
+                          100,
+                        100,
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="info-row">
-                <span>⚛️ {t("electricity.nuclear")}</span>
 
-                <strong>
-                  {liveEnergy.nuclear.toFixed(0)}
-                  MW
-                </strong>
+              {/* ⚛️ 核能 */}
+              <div className="live-bar-row">
+                <div className="live-bar-top">
+                  <span>⚛️ {t("electricity.nuclear")}</span>
+
+                  <span>{liveEnergy.nuclear.toFixed(0)} MW</span>
+                </div>
+
+                <div className="live-bar-bg">
+                  <div
+                    className="live-bar-fill nuclear"
+                    style={{
+                      width: `${Math.min(
+                        (liveEnergy.nuclear /
+                          (liveEnergy.thermal +
+                            liveEnergy.solar +
+                            liveEnergy.wind +
+                            liveEnergy.hydro +
+                            liveEnergy.nuclear)) *
+                          100,
+                        100,
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="info-row">
-                <span>🌬️ {t("electricity.wind")}</span>
 
-                <strong>
-                  {liveEnergy.wind.toFixed(0)}
-                  MW
-                </strong>
+              {/* 🌬️ 風力 */}
+              <div className="live-bar-row">
+                <div className="live-bar-top">
+                  <span>🌬️ {t("electricity.wind")}</span>
+
+                  <span>{liveEnergy.wind.toFixed(0)} MW</span>
+                </div>
+
+                <div className="live-bar-bg">
+                  <div
+                    className="live-bar-fill wind"
+                    style={{
+                      width: `${Math.min(
+                        (liveEnergy.wind /
+                          (liveEnergy.thermal +
+                            liveEnergy.solar +
+                            liveEnergy.wind +
+                            liveEnergy.hydro +
+                            liveEnergy.nuclear)) *
+                          100,
+                        100,
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="info-row">
-                <span>💧 {t("electricity.hydro")}</span>
+              {/* 💧 水力 */}
+              <div className="live-bar-row">
+                <div className="live-bar-top">
+                  <span>💧 {t("electricity.hydro")}</span>
 
-                <strong>
-                  {liveEnergy.hydro.toFixed(0)}
-                  MW
-                </strong>
+                  <span>{liveEnergy.hydro.toFixed(0)} MW</span>
+                </div>
+
+                <div className="live-bar-bg">
+                  <div
+                    className="live-bar-fill hydro"
+                    style={{
+                      width: `${Math.min(
+                        (liveEnergy.hydro /
+                          (liveEnergy.thermal +
+                            liveEnergy.solar +
+                            liveEnergy.wind +
+                            liveEnergy.hydro +
+                            liveEnergy.nuclear)) *
+                          100,
+                        100,
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -584,15 +692,9 @@ ${renewablePercent}% ，
                       </span>
                     </div>
 
-                    <div
-                      style={{
-                        height: "12px",
-                        borderRadius: "999px",
-                        background: "rgba(255,255,255,0.08)",
-                        overflow: "hidden",
-                      }}
-                    >
+                    <div className="impact-progress-bg">
                       <div
+                        className="impact-progress-fill"
                         style={{
                           width: `${percent}%`,
 
@@ -648,8 +750,20 @@ ${renewablePercent}% ，
           <div className="electricity-card big-card">
             <h2>🤖 {t("electricity.ai")}</h2>
 
-            <p className="ai-box">
-              {aiAnalysis ? aiAnalysis : t("electricity.aiLoading")}
+            <p className={`ai-box ${aiSwitching ? "ai-switching" : ""}`}>
+              {aiSwitching ? (
+                <span className="ai-language-loading">
+                  🌐{" "}
+                  {i18n.language === "en"
+                    ? "Switching AI language"
+                    : "AI 語言切換中"}
+                  <span className="dot-animation"></span>
+                </span>
+              ) : aiAnalysis ? (
+                aiAnalysis
+              ) : (
+                t("electricity.aiLoading")
+              )}
             </p>
           </div>
         </div>
