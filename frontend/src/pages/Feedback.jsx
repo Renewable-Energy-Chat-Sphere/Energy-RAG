@@ -334,7 +334,7 @@ export default function Feedback() {
           padding: 6px 14px;
           border-radius: 999px;
           border: 1px solid var(--card-border);
-          background: var(--card-bg);
+          background: rgba(120, 180, 255, 0.4);
           color: var(--text);
           cursor: pointer;
           transition: 0.3s;
