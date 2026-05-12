@@ -351,11 +351,12 @@ import { useTranslation } from "react-i18next";
 export default function Rag() {
   const { t } = useTranslation();
   const [structuredData, setStructuredData] = useState(null);
+  const [exportFileName, setExportFileName] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   
-  // const API = "/api";
-  const API = "http://127.0.0.1:8000";
+  const API = "/api";
+  //const API = "http://127.0.0.1:8000";
   
   async function generateFile(reportData = structuredData) {
     if (!reportData) {
@@ -384,7 +385,7 @@ export default function Rag() {
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = reportData.file_name || "AI_Report.pdf";
+      a.download = exportFileName.replace(".xlsx", ".pdf") || "AI_Report.pdf";
 
       document.body.appendChild(a);
       a.click();
@@ -423,9 +424,7 @@ export default function Rag() {
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = reportData.file_name
-        ? reportData.file_name.replace(".pdf", ".xlsx")
-        : "AI_Report.xlsx";
+      a.download = exportFileName || "AI_Report.xlsx";
 
       document.body.appendChild(a);
       a.click();
@@ -655,10 +654,27 @@ export default function Rag() {
           }
         }
 
-        // markdown
-        let answerHtml = marked.parse(
-          data.answer || t("rag.noResponse")
+        let cleanAnswer =
+          data.answer || t("rag.noResponse");
+
+        // 移除 structured_data 區塊
+        cleanAnswer = cleanAnswer.replace(
+          /structured_data[\s\S]*?(接下來|接著|我將|我會)/gi,
+          "$1"
         );
+
+        // 移除 json 標題 + JSON內容
+        cleanAnswer = cleanAnswer.replace(
+          /json[\s\S]*?(接下來|接著|我將|我會)/gi,
+          "$1"
+        );
+        cleanAnswer = cleanAnswer.replace(
+          /接下來，我將生成[\s\S]*/gi,
+          ""
+        );
+        // markdown → html
+        let answerHtml = marked.parse(cleanAnswer);
+        
 
         // Source Tooltip
         const sourceMatch = answerHtml.match(
@@ -729,20 +745,23 @@ export default function Rag() {
             answerBox.insertAdjacentHTML("afterend", extra);
           }
 
-          const btn = card.querySelector(".pdf-btn");
-
-          if (btn) {
-            btn.onclick = () => generateFile(sd);
-          }
-
         }, 300);
 
         // Download Button
-        const sd = data.structured_data?.data ?? data.structured_data;
+        const sd =
+          data?.structured_data?.data ||
+          data?.structured_data;
 
         if (sd) {
 
-          setStructuredData(data.structured_data);
+          // 🔥 存真正表格資料
+          setStructuredData(sd);
+
+          // 🔥 存檔名
+          setExportFileName(
+            data?.structured_data?.file_name ||
+            "AI_Report.xlsx"
+          );
 
           const buttons = `
             <div class="download-section">
@@ -754,19 +773,42 @@ export default function Rag() {
                 </strong>
               </p>
 
-              <button class="pdf-btn">
-                ${t("rag.download")}
-              </button>
+              <div class="download-buttons">
+
+                <button class="pdf-btn">
+                  PDF
+                </button>
+
+                <button class="excel-btn">
+                  XLSX
+                </button>
+
+              </div>
             </div>
           `;
 
-          card.insertAdjacentHTML("beforeend", buttons);
+          card.insertAdjacentHTML(
+            "beforeend",
+            buttons
+          );
 
-          const btn = card.querySelector(".pdf-btn");
+          // PDF
+          const pdfBtn =
+            card.querySelector(".pdf-btn");
 
-          if (btn) {
-            btn.onclick = () => {
+          if (pdfBtn) {
+            pdfBtn.onclick = () => {
               generateFile(sd);
+            };
+          }
+
+          // XLSX
+          const excelBtn =
+            card.querySelector(".excel-btn");
+
+          if (excelBtn) {
+            excelBtn.onclick = () => {
+              generateExcel(sd);
             };
           }
         }

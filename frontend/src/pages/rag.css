@@ -618,3 +618,121 @@
     grid-template-columns: 1fr;
   }
 }
+/* =========================
+   Download Buttons
+========================= */
+
+.download-section {
+  margin-top: 22px;
+}
+
+.download-section hr {
+  border: none;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin-bottom: 18px;
+}
+
+.download-buttons {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.pdf-btn,
+.excel-btn {
+  border: none;
+  outline: none;
+
+  padding: 12px 22px;
+
+  border-radius: 14px;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease,
+    opacity 0.25s ease;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-width: 120px;
+
+  color: white;
+
+  box-shadow:
+    0 6px 18px rgba(0,0,0,0.18);
+}
+
+/* PDF */
+
+.pdf-btn {
+  background:
+    linear-gradient(
+      135deg,
+      #ff5f6d,
+      #d7263d
+    );
+}
+
+.pdf-btn::before {
+  content: "📄";
+  font-size: 16px;
+}
+
+/* Excel */
+
+.excel-btn {
+  background:
+    linear-gradient(
+      135deg,
+      #34d399,
+      #059669
+    );
+}
+
+.excel-btn::before {
+  content: "📊";
+  font-size: 16px;
+}
+
+/* Hover */
+
+.pdf-btn:hover,
+.excel-btn:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 10px 25px rgba(0,0,0,0.28);
+
+  opacity: 0.95;
+}
+
+/* Click */
+
+.pdf-btn:active,
+.excel-btn:active {
+  transform: scale(0.96);
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .download-buttons {
+    flex-direction: column;
+  }
+
+  .pdf-btn,
+  .excel-btn {
+    width: 100%;
+  }
+}
