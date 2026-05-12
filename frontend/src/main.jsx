@@ -15,6 +15,7 @@ import Prediction from "./pages/Prediction";
 import ElectricityAnalysis from "./pages/ElectricityAnalysis";
 import PowerPlantController from "./pages/PowerPlantController";
 import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const router = createBrowserRouter(
   [
@@ -22,26 +23,76 @@ const router = createBrowserRouter(
       path: "/",
       element: <Layout />,
       children: [
+
+        // =========================
+        // 🌍 公開頁面
+        // =========================
+
         { index: true, element: <Home /> },
+
         { path: "/global", element: <Global /> },
+
         {
           path: "/powerplant",
           element: <PowerPlantController />,
         },
+
         { path: "/rag", element: <Rag /> },
+
         { path: "/contact", element: <Contact /> },
-        { path: "/Feedback", element: <Feedback /> },
-        { path: "/prediction", element: <Prediction /> },
+
+        { path: "/login", element: <Login /> },
+
+        // =========================
+        // 🔥 manager + admin
+        // =========================
+
+        {
+          path: "/prediction",
+
+          element: (
+            <ProtectedRoute
+              allowedRoles={["manager", "admin"]}
+            >
+              <Prediction />
+            </ProtectedRoute>
+          ),
+        },
+
         {
           path: "/electricity-analysis",
-          element: <ElectricityAnalysis />,
+
+          element: (
+            <ProtectedRoute
+              allowedRoles={["manager", "admin"]}
+            >
+              <ElectricityAnalysis />
+            </ProtectedRoute>
+          ),
         },
-        { path: "/login", element: <Login /> },
+
+        // =========================
+        // 🔒 admin only
+        // =========================
+
+        {
+          path: "/Feedback",
+
+          element: (
+            <ProtectedRoute
+              allowedRoles={["admin"]}
+            >
+              <Feedback />
+            </ProtectedRoute>
+          ),
+        },
+
       ],
     },
   ],
+
   {
-    basename: "/Ener-Sphere", // ⭐⭐⭐ 加這一行（關鍵）
+    basename: "/Ener-Sphere",
   },
 );
 
