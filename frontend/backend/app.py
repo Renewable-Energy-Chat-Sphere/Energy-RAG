@@ -13,6 +13,7 @@ from power_api import get_power_units
 import sqlite3
 # 權限管理 專用
 from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
 
 # 🔮 Predict 專用（新增）
 from prophet import Prophet
@@ -65,8 +66,10 @@ def register():
     if not username or not password:
         return jsonify({"error": "請輸入帳號與密碼"}), 400
 
-    if role not in ["admin", "manager", "user"]:
-        return jsonify({"error": "角色不正確"}), 400
+    if role != "manager":
+        return jsonify({
+            "error": "只能註冊 manager"
+        }), 403
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "energy.db")
 
@@ -159,6 +162,25 @@ def logout():
     return jsonify({
         "message": "已登出"
     })
+# =========================
+# 🔒 權限檢查工具
+# =========================
+def require_role(*allowed_roles):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            role = session.get("role", "user")
+
+            if role not in allowed_roles:
+                return jsonify({
+                    "error": "權限不足"
+                }), 403
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 import smtplib
 from email.mime.text import MIMEText
 
@@ -863,6 +885,7 @@ Email: {email}
 # 📊 讀取
 # =========================
 @app.route("/get_feedback")
+@require_role("admin")
 def get_feedback():
 
     from flask import jsonify
@@ -896,6 +919,7 @@ def get_feedback():
 # ✅ 標記完成
 # =========================
 @app.route("/resolve_feedback", methods=["POST"])
+@require_role("admin")
 def resolve_feedback():
 
     import sqlite3
@@ -930,6 +954,7 @@ def resolve_feedback():
 # ❌ 刪除
 # =========================
 @app.route("/delete_feedback", methods=["POST"])
+@require_role("admin")
 def delete_feedback():
 
     import sqlite3
