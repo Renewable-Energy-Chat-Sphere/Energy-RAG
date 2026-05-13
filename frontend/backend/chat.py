@@ -11,6 +11,21 @@ CHAT_MAX_MESSAGES = 10
 CHAT_SESSIONS = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
 
 URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
+def detect_language(text):
+
+    # 中文
+    if re.search(r"[\u4e00-\u9fff]", text):
+        return "Traditional Chinese"
+
+    # 日文
+    if re.search(r"[\u3040-\u30ff]", text):
+        return "Japanese"
+
+    # 韓文
+    if re.search(r"[\uac00-\ud7af]", text):
+        return "Korean"
+
+    return "English"
 
 
 # =====================================================
@@ -22,7 +37,7 @@ def get_language_prompt(user_text):
 
         1. 使用與使用者輸入「完全相同的語言」回答
         2. 不得切換語言
-        3. 不得翻譯
+        3. 若資料來源與使用者語言不同，請翻譯成使用者語言
         4. 保持語氣與文字系統一致
 
         使用者輸入：
@@ -110,8 +125,9 @@ BASE_ASSISTANT_PROMPT = """
 
     【語言規則（最高優先）】
     - 回答語言必須與使用者輸入完全一致
-    - 不得自行切換語言或輸入法（如：中文/英文、繁體中文/簡體中文）
-    - 不得翻譯
+    - 不得自行切換語言或輸入法
+    - 若資料來源語言不同，請翻譯成使用者語言
+    - 不可中英混用
 
     【資料限制（最高優先）】
     - 優先根據已提供資料回答
@@ -469,26 +485,29 @@ def chat():
                 # =====================================
                 if openai_client:
 
+                    target_lang = detect_language(user_text)
+
                     lang_fix_prompt = f"""
-                        You are a professional multilingual translator.
+                    You are a professional multilingual AI assistant.
 
-                        User question:
-                        {user_text}
+                    Target language:
+                    {target_lang}
 
-                        Current answer:
-                        {assistant_text}
+                    User question:
+                    {user_text}
 
-                        IMPORTANT RULES:
+                    Current answer:
+                    {assistant_text}
 
-                        1. Reply ONLY in the same language as the user's question
-                        2. Fully translate ALL content into that language
-                        3. Never keep the original language
-                        4. Never mix multiple languages
-                        5. Preserve the original meaning
-                        6. Keep the response natural and fluent
+                    CRITICAL RULES:
+                    - The ENTIRE response MUST be in {target_lang}
+                    - Translate ALL content into {target_lang}
+                    - Never mix languages
+                    - Preserve the original meaning
+                    - Keep the wording natural and fluent
 
-                        Output ONLY the translated result.
-                        """
+                    Return ONLY the final translated answer.
+                    """
 
                     lang_resp = openai_client.responses.create(
                         model=model,
@@ -570,11 +589,56 @@ def chat():
 
                     except:
                         pass
+                    # =====================================
+                    # 🔥 最終語言統一
+                    # =====================================
+                    target_lang = detect_language(user_text)
 
-                    assistant_text = append_sources(
-                        assistant_text,
-                        sources
+                    lang_fix_prompt = f"""
+                    You are a professional multilingual AI assistant.
+
+                    Target language:
+                    {target_lang}
+
+                    User question:
+                    {user_text}
+
+                    Current answer:
+                    {assistant_text}
+
+                    CRITICAL RULES:
+                    - The ENTIRE response MUST be in {target_lang}
+                    - Translate ALL content into {target_lang}
+                    - Never mix languages
+                    - Preserve the original meaning
+                    - Keep the wording natural and fluent
+
+                    Return ONLY the final translated answer.
+                    """
+
+                    lang_resp = openai_client.responses.create(
+                        model=model,
+                        input=lang_fix_prompt,
+                        temperature=0
                     )
+
+                    assistant_text = lang_resp.output_text.strip()
+                    if re.search(r"[a-zA-Z]", user_text):
+
+                        assistant_text += "\n\n---\nSources:\n"
+
+                        for s in sources:
+
+                            if s.get("url"):
+
+                                assistant_text += f"- {s['url']}\n"
+
+                    else:
+
+                        assistant_text = append_sources(
+                            assistant_text,
+                            sources
+                        )
 
                 # =====================================
                 # 精準模式
@@ -591,7 +655,40 @@ def chat():
                 # 才加 Energy RAG sources
                 # =====================================
                 if "### 🔗 資料來源" not in assistant_text:
+                    # =====================================
+                    # 🔥 最終語言統一
+                    # =====================================
+                    target_lang = detect_language(user_text)
 
+                    lang_fix_prompt = f"""
+                    You are a professional multilingual AI assistant.
+
+                    Target language:
+                    {target_lang}
+
+                    User question:
+                    {user_text}
+
+                    Current answer:
+                    {assistant_text}
+
+                    CRITICAL RULES:
+                    - The ENTIRE response MUST be in {target_lang}
+                    - Translate ALL content into {target_lang}
+                    - Never mix languages
+                    - Preserve the original meaning
+                    - Keep the wording natural and fluent
+
+                    Return ONLY the final translated answer.
+                    """
+
+                    lang_resp = openai_client.responses.create(
+                        model=model,
+                        input=lang_fix_prompt,
+                        temperature=0
+                    )
+
+                    assistant_text = lang_resp.output_text.strip()
                     assistant_text = append_sources(
                         assistant_text,
                         result.get("sources", [])
@@ -702,11 +799,54 @@ def chat():
 
             except:
                 pass
+            # =====================================
+            # 🔥 最終語言統一
+            # =====================================
+            target_lang = detect_language(user_text)
 
-            assistant_text = append_sources(
-                assistant_text,
-                sources
+            lang_fix_prompt = f"""
+            You are a professional multilingual AI assistant.
+
+            Target language:
+            {target_lang}
+
+            User question:
+            {user_text}
+
+            Current answer:
+            {assistant_text}
+
+            CRITICAL RULES:
+            - The ENTIRE response MUST be in {target_lang}
+            - Translate ALL content into {target_lang}
+            - Never mix languages
+            - Preserve the original meaning
+            - Keep the wording natural and fluent
+
+            Return ONLY the final translated answer.
+            """
+
+            lang_resp = openai_client.responses.create(
+                model=model,
+                input=lang_fix_prompt,
+                temperature=0
             )
+
+            assistant_text = lang_resp.output_text.strip()
+            if re.search(r"[a-zA-Z]", user_text):
+
+                assistant_text += "\n\n---\nSources:\n"
+
+                for s in sources:
+                    if s.get("url"):
+                        assistant_text += f"- {s['url']}\n"
+
+            else:
+
+                assistant_text = append_sources(
+                    assistant_text,
+                    sources
+                )
 
         except Exception as e:
             assistant_text = f"⚠️ 模型錯誤：{e}"

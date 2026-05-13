@@ -171,7 +171,7 @@ export default function Global({ isMobile }) {
       hoverDemand: "相關需求項目",
       hoverSupply: "相關能源供給",
       empty: "點擊模型節點查看資訊",
-      askPlaceholder: `例如：${year}年 ${getName(selected?.code) || ""} 的能源佔比`,
+      askPlaceholder: `例如：${formatYear(year, language)} ${getName(selected?.code) || ""} 的能源佔比`,
       aiPrediction: "能源結構預測（AI 模型）",
       aiLoading: "AI 正在預測中...",
       changeAnalysis: "變化分析",
@@ -193,7 +193,7 @@ export default function Global({ isMobile }) {
       hoverDemand: "Related Demand Sectors",
       hoverSupply: "Related Energy Sources",
       empty: "Click nodes to view information",
-      askPlaceholder: `Example: ${year} energy ratio of ${getName(selected?.code) || ""}`,
+      askPlaceholder: `Example: ${formatYear(year, language)} energy ratio of ${getName(selected?.code) || ""}`,
       aiPrediction: "AI Energy Structure Prediction",
       aiLoading: "AI is predicting...",
       changeAnalysis: "Change Analysis",
@@ -238,6 +238,15 @@ export default function Global({ isMobile }) {
     }
 
     return search(hierarchy) || code;
+  }
+  function formatYear(year, lang) {
+    const y = Number(year);
+
+    if (lang === "en") {
+      return y + 1911;
+    }
+
+    return y; // 中文維持民國
   }
 
   function getEnergyList(node = selected) {
@@ -369,9 +378,9 @@ export default function Global({ isMobile }) {
       });
 
       const data = await res.json();
-      typeWriter(data.answer || "沒有回應");
+      typeWriter(data.answer || t.noResponse);
     } catch {
-      setAnswer("❌ 發生錯誤");
+      setAnswer(language === "en" ? "❌ Error occurred" : "❌ 發生錯誤");
     } finally {
       setLoading(false);
       setQuestion("");
@@ -408,7 +417,7 @@ export default function Global({ isMobile }) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        question: `${year}年 ${getName(selected.code)} 下一年能源用量`,
+        question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
         year: year,
         mode: "dynamic",
       }),
@@ -478,12 +487,16 @@ export default function Global({ isMobile }) {
 
     const datasets = [
       {
-        label: `${year}年（實際）`,
+        label: language === "en"
+          ? `${formatYear(year, language)} (Actual)`
+          : `${formatYear(year, language)}年（實際）`,
         data: allKeys.map((k) => currentPercent[k] || 0),
         backgroundColor: "#3b82f6",
       },
       {
-        label: `${Number(year) + 1}年（預測）`,
+        label: language === "en"
+          ? `${formatYear(Number(year)+1, language)} (Predicted)`
+          : `${formatYear(Number(year)+1, language)}年（預測）`,
         data: allKeys.map((k) => deptPred[k] || 0),
         backgroundColor: "#ef4444",
       },
@@ -658,7 +671,7 @@ export default function Global({ isMobile }) {
             <select value={year} onChange={(e) => setYear(e.target.value)}>
               {years.map((y) => (
                 <option key={y} value={y}>
-                  {y}
+                  {formatYear(y, language)}
                 </option>
               ))}
             </select>
@@ -915,8 +928,9 @@ export default function Global({ isMobile }) {
 
                       {getCompareChartData() && (
                         <>
-                          <h3 style={{ marginTop: "12px" }}>
-                            {year}年 vs {Number(year) + 1}年
+                          <h3>
+                            {formatYear(year, language)} {language === "en" ? "" : "年"} vs{" "}
+                            {formatYear(Number(year) + 1, language)} {language === "en" ? "" : "年"}
                           </h3>{" "}
                           <Bar
                             data={getCompareChartData()}
@@ -940,15 +954,25 @@ export default function Global({ isMobile }) {
                                     label: function (context) {
                                       const yearNow = year;
                                       const yearNext = Number(year) + 1;
+                                      const y1 = formatYear(yearNow, language);
+                                      const y2 = formatYear(yearNext, language);
 
                                       let label = "";
 
                                       if (context.datasetIndex === 0) {
-                                        label = `${yearNow}年（實際）`;
-                                      } else if (context.datasetIndex === 1) {
-                                        label = `${yearNext}年（預測）`;
-                                      } else if (context.datasetIndex === 2) {
-                                        label = `${yearNext}年（實際）`;
+                                        label = language === "en"
+                                          ? `${y1} (Actual)`
+                                          : `${y1}年（實際）`;
+                                      }
+                                      else if (context.datasetIndex === 1) {
+                                        label = language === "en"
+                                          ? `${y2} (Predicted)`
+                                          : `${y2}年（預測）`;
+                                      }
+                                      else if (context.datasetIndex === 2) {
+                                        label = language === "en"
+                                          ? `${y2} (Actual)`
+                                          : `${y2}年（實際）`;
                                       }
 
                                       return `${label}: ${context.raw.toFixed(1)}%`;
@@ -1114,7 +1138,9 @@ export default function Global({ isMobile }) {
             }}
           >
             <div className="ai-header" onMouseDown={handleMouseDown}>
-              <span className="ai-title">Energy Assistant</span>
+              <span className="ai-title">
+                {language === "en" ? "Energy Assistant" : "能源助理"}
+              </span>
               <span className="ai-close" onClick={() => setShowAI(false)}>
                 ✕
               </span>
