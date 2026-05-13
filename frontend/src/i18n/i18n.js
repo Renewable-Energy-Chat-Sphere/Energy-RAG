@@ -83,7 +83,9 @@ const resources = {
         electricityAnalysis: "供電成本分析中心",
         prediction: "能源預測",
         contact: "聯絡我們",
-        feedback: "回饋分析"
+        feedback: "回饋分析",
+        login: "登入",
+        logout: "登出"
       },
       footer: {
         desc: "多模態視覺能源球系統，提供能源資料查詢、 三維視覺化與智慧代理決策輔助。",
@@ -587,7 +589,9 @@ const resources = {
         electricityAnalysis: "Electricity Cost Analysis Center",
         prediction: "Prediction",
         contact: "Contact",
-        feedback: "Feedback"
+        feedback: "Feedback",
+        login: "Login",
+        logout: "Logout"
       },
       footer: {
         desc: "The Multi-modal energy visualization system provides energy data retrieval, 3D visualization, and intelligent agent decision support.",
