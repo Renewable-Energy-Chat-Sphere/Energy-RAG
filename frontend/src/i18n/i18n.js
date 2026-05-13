@@ -369,7 +369,7 @@ const resources = {
         futureChart: "未來趨勢圖"
       },
       rag: {
-        subtitle: "Chat / Web / PDF / Audio,Video / Table — 多模態能源資料檢索",
+        subtitle: "Chat / Web / PDF / Table — 多模態能源資料檢索",
 
         badge1: "多模態分析支援",
         badge2: "能源決策助理",

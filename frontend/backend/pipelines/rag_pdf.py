@@ -237,7 +237,7 @@ def qa_over_pdf(question, file):
 📁 檔名：{new_filename}  
 📄 來源頁數：{len(pages)} 頁 
 
-你可以在下方點擊「下載檔案/報告」下載完整資料。
+下滑點擊檔案格式即可下載完整資料。
 """
 
         return (

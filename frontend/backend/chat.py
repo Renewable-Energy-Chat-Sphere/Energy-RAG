@@ -464,6 +464,39 @@ def chat():
                 assistant_text = humanize_answer(
                     assistant_text
                 )
+                # =====================================
+                # 🔥 強制翻譯成使用者語言
+                # =====================================
+                if openai_client:
+
+                    lang_fix_prompt = f"""
+                        You are a professional multilingual translator.
+
+                        User question:
+                        {user_text}
+
+                        Current answer:
+                        {assistant_text}
+
+                        IMPORTANT RULES:
+
+                        1. Reply ONLY in the same language as the user's question
+                        2. Fully translate ALL content into that language
+                        3. Never keep the original language
+                        4. Never mix multiple languages
+                        5. Preserve the original meaning
+                        6. Keep the response natural and fluent
+
+                        Output ONLY the translated result.
+                        """
+
+                    lang_resp = openai_client.responses.create(
+                        model=model,
+                        input=lang_fix_prompt,
+                        temperature=0
+                    )
+
+                    assistant_text = lang_resp.output_text.strip()
 
                 # =====================================================
                 # 分析模式 LLM
