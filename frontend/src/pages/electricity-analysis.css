@@ -435,3 +435,52 @@
 
   opacity: 0.6;
 }
+/* =========================
+   🔥 Forecast Tooltip
+========================= */
+
+.forecast-badge {
+  position: relative;
+  overflow: visible;
+}
+
+.forecast-tooltip {
+  position: absolute;
+
+  top: 120%;
+  left: 0;
+
+  width: 260px;
+
+  padding: 12px 14px;
+
+  border-radius: 16px;
+
+  background: rgba(15, 23, 42, 0.96);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  color: white;
+
+  font-size: 13px;
+
+  line-height: 1.7;
+
+  opacity: 0;
+
+  transform: translateY(8px);
+
+  pointer-events: none;
+
+  transition: all 0.25s ease;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  z-index: 999;
+}
+
+.forecast-badge:hover .forecast-tooltip {
+  opacity: 1;
+
+  transform: translateY(0);
+}

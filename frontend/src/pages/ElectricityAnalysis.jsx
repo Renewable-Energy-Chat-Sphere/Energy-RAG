@@ -4,8 +4,24 @@ import "./electricity-analysis.css";
 import energyData from "../data/113_energy_demand_supply.json";
 import supplyCatalog from "../data/supply_catalog.json";
 import { useTranslation } from "react-i18next";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+  Area,
+  ReferenceLine,
+} from "recharts";
 import costMap from "../data/energy_cost_mapping.json";
+import historicalCost from "../data/historical_cost_pressure.json";
+import predictedCost from "../data/predicted_cost_pressure.json";
 import { getCategory } from "./PowerPlantLive";
 export default function ElectricityAnalysis() {
   const { t, i18n } = useTranslation();
@@ -191,6 +207,112 @@ export default function ElectricityAnalysis() {
     }
   });
   liveCostPressure = Number(liveCostPressure.toFixed(2));
+  // =========================
+  // 🔥 成本壓力趨勢資料
+  // =========================
+
+  const trendData = historicalCost.map((item) => {
+    const predicted = predictedCost.find((p) => p.year === item.year + 1911);
+
+    return {
+      year: item.year + 1911,
+
+      historical: item.costPressure,
+
+      predicted: predicted?.predictedCostPressure || null,
+
+      lower: predicted?.lower || null,
+
+      upper: predicted?.upper || null,
+    };
+  });
+
+  // 🔥 加入未來年份
+  predictedCost.forEach((item) => {
+    if (item.year <= 2025) return;
+
+    trendData.push({
+      year: item.year,
+
+      historical: null,
+
+      predicted: item.predictedCostPressure,
+
+      lower: item.lower,
+
+      upper: item.upper,
+    });
+  });
+  // =========================
+  // 🔥 自訂 Tooltip
+  // =========================
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || !payload.length) {
+      return null;
+    }
+
+    return (
+      <div
+        style={{
+          background: "#0f172a",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: "16px",
+          padding: "10px 14px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+          color: "#fff",
+          minWidth: "140px",
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 700,
+            marginBottom: "8px",
+            color: "#94a3b8",
+            fontSize: "13px",
+          }}
+        >
+          {label}
+        </div>
+
+        {payload.map((entry, index) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "12px",
+              marginBottom: "6px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: entry.color,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <div
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: entry.color,
+                }}
+              />
+
+              <span>{entry.name}</span>
+            </div>
+
+            <span>{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
   // 🔥 PieChart 顏色
   const COLORS = [
     "#3b82f6",
@@ -648,7 +770,23 @@ ${renewablePercent}% ，
                     ))}
                   </Pie>
 
-                  <Tooltip />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      if (name === "historical") {
+                        return [
+                          value,
+                          i18n.language === "en"
+                            ? "Historical Cost"
+                            : "歷史成本壓力",
+                        ];
+                      }
+
+                      return [
+                        value,
+                        i18n.language === "en" ? "Predicted Cost" : "未來預測",
+                      ];
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -734,12 +872,118 @@ ${renewablePercent}% ，
           {/* ========================= */}
 
           <div className="electricity-card big-card">
-            <h2>📊 {t("electricity.future")}</h2>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                flexWrap: "wrap",
+              }}
+            >
+              <h2 style={{ margin: 0 }}>📊 {t("electricity.future")}</h2>
+
+              <div
+                className="forecast-badge"
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "999px",
+                  background: "rgba(59,130,246,0.12)",
+                  border: "1px solid rgba(59,130,246,0.25)",
+                  color: "#60a5fa",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "help",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                🛈 
+                {i18n.language === "en" ? "Trend Forecast" : "趨勢預測模型"}
+                <div className="forecast-tooltip">
+                  {i18n.language === "en"
+                    ? "This forecast is based on historical energy structure, LCOE cost coefficients, and Prophet time-series trend analysis."
+                    : "本預測基於歷史能源結構、LCOE 成本係數與 Prophet 時間序列模型進行趨勢分析。"}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "999px",
+                  background: "rgba(34,197,94,0.12)",
+                  border: "1px solid rgba(34,197,94,0.22)",
+                  color: "#4ade80",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                ⬤ {i18n.language === "en" ? "Reference Value" : "具參考性"}
+              </div>
+            </div>
 
             <p>{t("electricity.futureDesc")}</p>
 
-            <div className="trend-placeholder">
-              {t("electricity.futureChart")}
+            <div
+              style={{
+                width: "100%",
+                height: "420px",
+                marginTop: "30px",
+              }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+
+                  <XAxis dataKey="year" />
+
+                  <YAxis />
+
+                  <Tooltip content={<CustomTooltip />} />
+
+                  <Legend />
+                  <ReferenceLine
+                    x={2026}
+                    stroke="#ef4444"
+                    strokeDasharray="5 5"
+                    label={i18n.language === "en" ? "Current" : "目前"}
+                  />
+
+                  {/* 🔥 預測區間 */}
+                  <Area
+                    type="monotone"
+                    dataKey="upper"
+                    stroke="transparent"
+                    fill="rgba(59,130,246,0.15)"
+                  />
+
+                  {/* 🔥 歷史 */}
+                  <Line
+                    type="monotone"
+                    dataKey="historical"
+                    stroke="#22c55e"
+                    strokeWidth={3}
+                    dot={{ r: 3 }}
+                    name={
+                      i18n.language === "en" ? "Historical" : "歷史成本壓力"
+                    }
+                  />
+
+                  {/* 🔥 預測 */}
+                  <Line
+                    type="monotone"
+                    dataKey="predicted"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    strokeDasharray="6 6"
+                    dot={{ r: 4 }}
+                    name={i18n.language === "en" ? "Prediction" : "未來預測"}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
 

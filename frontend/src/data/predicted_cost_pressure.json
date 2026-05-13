@@ -1,0 +1,236 @@
+[
+  {
+    "year": 1991,
+    "predictedCostPressure": 53.96,
+    "lower": 53.4,
+    "upper": 54.47
+  },
+  {
+    "year": 1992,
+    "predictedCostPressure": 54.31,
+    "lower": 53.76,
+    "upper": 54.81
+  },
+  {
+    "year": 1993,
+    "predictedCostPressure": 54.66,
+    "lower": 54.14,
+    "upper": 55.2
+  },
+  {
+    "year": 1994,
+    "predictedCostPressure": 55.01,
+    "lower": 54.45,
+    "upper": 55.55
+  },
+  {
+    "year": 1995,
+    "predictedCostPressure": 55.36,
+    "lower": 54.82,
+    "upper": 55.9
+  },
+  {
+    "year": 1996,
+    "predictedCostPressure": 55.71,
+    "lower": 55.19,
+    "upper": 56.24
+  },
+  {
+    "year": 1997,
+    "predictedCostPressure": 56.06,
+    "lower": 55.56,
+    "upper": 56.63
+  },
+  {
+    "year": 1998,
+    "predictedCostPressure": 56.41,
+    "lower": 55.9,
+    "upper": 56.96
+  },
+  {
+    "year": 1999,
+    "predictedCostPressure": 56.65,
+    "lower": 56.11,
+    "upper": 57.22
+  },
+  {
+    "year": 2000,
+    "predictedCostPressure": 56.88,
+    "lower": 56.36,
+    "upper": 57.44
+  },
+  {
+    "year": 2001,
+    "predictedCostPressure": 57.12,
+    "lower": 56.6,
+    "upper": 57.67
+  },
+  {
+    "year": 2002,
+    "predictedCostPressure": 57.35,
+    "lower": 56.82,
+    "upper": 57.87
+  },
+  {
+    "year": 2003,
+    "predictedCostPressure": 57.58,
+    "lower": 57.07,
+    "upper": 58.11
+  },
+  {
+    "year": 2004,
+    "predictedCostPressure": 57.82,
+    "lower": 57.28,
+    "upper": 58.36
+  },
+  {
+    "year": 2005,
+    "predictedCostPressure": 58.05,
+    "lower": 57.54,
+    "upper": 58.57
+  },
+  {
+    "year": 2006,
+    "predictedCostPressure": 58.14,
+    "lower": 57.59,
+    "upper": 58.65
+  },
+  {
+    "year": 2007,
+    "predictedCostPressure": 58.24,
+    "lower": 57.71,
+    "upper": 58.77
+  },
+  {
+    "year": 2008,
+    "predictedCostPressure": 58.33,
+    "lower": 57.82,
+    "upper": 58.86
+  },
+  {
+    "year": 2009,
+    "predictedCostPressure": 58.43,
+    "lower": 57.92,
+    "upper": 58.94
+  },
+  {
+    "year": 2010,
+    "predictedCostPressure": 58.52,
+    "lower": 57.99,
+    "upper": 59.05
+  },
+  {
+    "year": 2011,
+    "predictedCostPressure": 58.93,
+    "lower": 58.41,
+    "upper": 59.45
+  },
+  {
+    "year": 2012,
+    "predictedCostPressure": 59.35,
+    "lower": 58.83,
+    "upper": 59.96
+  },
+  {
+    "year": 2013,
+    "predictedCostPressure": 59.77,
+    "lower": 59.23,
+    "upper": 60.24
+  },
+  {
+    "year": 2014,
+    "predictedCostPressure": 60.18,
+    "lower": 59.69,
+    "upper": 60.74
+  },
+  {
+    "year": 2015,
+    "predictedCostPressure": 60.6,
+    "lower": 60.03,
+    "upper": 61.1
+  },
+  {
+    "year": 2016,
+    "predictedCostPressure": 61.01,
+    "lower": 60.5,
+    "upper": 61.52
+  },
+  {
+    "year": 2017,
+    "predictedCostPressure": 61.44,
+    "lower": 60.92,
+    "upper": 61.97
+  },
+  {
+    "year": 2018,
+    "predictedCostPressure": 61.87,
+    "lower": 61.32,
+    "upper": 62.4
+  },
+  {
+    "year": 2019,
+    "predictedCostPressure": 62.3,
+    "lower": 61.76,
+    "upper": 62.82
+  },
+  {
+    "year": 2020,
+    "predictedCostPressure": 62.73,
+    "lower": 62.21,
+    "upper": 63.27
+  },
+  {
+    "year": 2021,
+    "predictedCostPressure": 63.16,
+    "lower": 62.62,
+    "upper": 63.67
+  },
+  {
+    "year": 2022,
+    "predictedCostPressure": 63.59,
+    "lower": 63.04,
+    "upper": 64.11
+  },
+  {
+    "year": 2023,
+    "predictedCostPressure": 64.02,
+    "lower": 63.49,
+    "upper": 64.57
+  },
+  {
+    "year": 2024,
+    "predictedCostPressure": 64.45,
+    "lower": 63.9,
+    "upper": 64.93
+  },
+  {
+    "year": 2024,
+    "predictedCostPressure": 64.88,
+    "lower": 64.35,
+    "upper": 65.42
+  },
+  {
+    "year": 2025,
+    "predictedCostPressure": 65.31,
+    "lower": 64.76,
+    "upper": 65.84
+  },
+  {
+    "year": 2026,
+    "predictedCostPressure": 65.74,
+    "lower": 65.18,
+    "upper": 66.27
+  },
+  {
+    "year": 2027,
+    "predictedCostPressure": 66.17,
+    "lower": 65.58,
+    "upper": 66.71
+  },
+  {
+    "year": 2028,
+    "predictedCostPressure": 66.6,
+    "lower": 66.02,
+    "upper": 67.19
+  }
+]
