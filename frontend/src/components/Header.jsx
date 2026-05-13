@@ -182,14 +182,36 @@ export default function Header() {
                   border: "none",
                   color: "white",
                   cursor: "pointer",
-                  fontWeight: "700",
                   fontSize: "15px",
+                  fontWeight: "700",
+                  fontFamily: "inherit",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: 0,
+                  margin: 0,
+                  transition: "opacity 0.2s ease",
                 }}
+                onMouseEnter={(e) => (e.target.style.opacity = "0.8")}
+                onMouseLeave={(e) => (e.target.style.opacity = "1")}
               >
-                登出（{user.role}）
+                {t("nav.logout")}（{user.role}）
               </button>
             ) : (
-              <Link to="/Login">Login</Link>
+              <Link
+                to="/Login"
+                style={{
+                  color: "white",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  textDecoration: "none",
+                  transition: "opacity 0.2s ease",
+                }}
+                onMouseEnter={(e) => (e.target.style.opacity = "0.8")}
+                onMouseLeave={(e) => (e.target.style.opacity = "1")}
+              >
+                {t("nav.login")}
+              </Link>
             )}
           </nav>
 
