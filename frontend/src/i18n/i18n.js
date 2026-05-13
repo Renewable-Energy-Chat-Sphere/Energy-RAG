@@ -435,7 +435,7 @@ const resources = {
 
         departmentHighlight: "{{department}}較突出",
 
-        yearLabel: "{{year}}年",
+        yearLabel: "{{year}}{{unit}}",
 
         separator: "、",
 
