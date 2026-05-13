@@ -1,12 +1,11 @@
 from energy_chat_router import should_use_energy_rag, answer_energy_question
 import re
-import time
 from collections import defaultdict, deque
 from flask import Blueprint, request, jsonify, current_app
 
 chat_bp = Blueprint("chat", __name__)
 
-# ===== 記憶設定 =====
+# 記憶設定
 CHAT_MAX_MESSAGES = 10
 CHAT_SESSIONS = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
 
@@ -29,7 +28,7 @@ def detect_language(text):
 
 
 # =====================================================
-# 語言控制（萬用多語）
+# 回覆語種控制
 # =====================================================
 def get_language_prompt(user_text):
     return f"""
@@ -48,66 +47,7 @@ def get_language_prompt(user_text):
 
 
 # =====================================================
-# 問題模式判斷（最終版）
-# =====================================================
-def detect_query_mode(text):
-    text = text.lower()
-
-    if any(k in text for k in ["分析", "詳細", "整理", "趨勢", "report", "analysis"]):
-        return "analysis"
-
-    if any(
-        k in text
-        for k in ["最多", "哪個", "找出", "最高", "最低", "多少", "which", "max", "top"]
-    ):
-        return "precise"
-
-    return "normal"
-
-
-# =====================================================
-# 結果強化（最終版）
-# =====================================================
-def enhance_answer_by_mode(answer, mode):
-    if mode == "analysis":
-        return f"""
-            ## 📊 能源資料完整分析
-
-            {answer}
-
-            ---
-
-            ### 🔍 綜合說明
-            - 已整合所有相關能源數據
-            - 包含結構比例、主要能源分布
-            - 可觀察長期趨勢與變化方向
-
-            ### 📈 建議解讀方向
-            - 注意高占比能源 → 代表依賴性
-            - 觀察變化 → 可能代表產業轉型
-        """
-
-    elif mode == "precise":
-        return f"""
-            🎯 **精確查詢結果**
-
-            {answer}
-
-        """
-
-    return answer
-
-
-# =====================================================
-# 聊天模式判斷
-# =====================================================
-def is_simple_chat(text):
-    simple_words = ["你好", "hi", "hello", "嗨", "在嗎"]
-    return text.lower() in simple_words or len(text) <= 6
-
-
-# =====================================================
-# Energy Sphere 專屬助手 Prompt（核心）
+# Energy Sphere Prompt
 # =====================================================
 BASE_ASSISTANT_PROMPT = """
     你是「Energy Sphere 智慧能源平台」的虛擬助理。
@@ -162,6 +102,23 @@ DEFAULT_SYSTEM_PROMPT = """
 - 不要口語化
 """
 
+# =====================================================
+# 指令關鍵字判斷
+# =====================================================
+def detect_query_mode(text):
+    text = text.lower()
+
+    if any(k in text for k in ["分析", "詳細", "整理", "趨勢", "report", "analysis"]):
+        return "analysis"
+
+    if any(
+        k in text
+        for k in ["最多", "哪個", "找出", "最高", "最低", "多少", "which", "max", "top"]
+    ):
+        return "precise"
+
+    return "normal"
+
 
 # =====================================================
 # 建立對話上下文
@@ -183,8 +140,75 @@ def _store_turn(session_id: str, user_text: str, assistant_text: str):
     CHAT_SESSIONS[session_id].append(("user", user_text))
     CHAT_SESSIONS[session_id].append(("assistant", assistant_text))
 
+
 # =====================================================
-# 統一資料來源格式化
+# 結果強化
+# =====================================================
+def enhance_answer_by_mode(answer, mode):
+    if mode == "analysis":
+        return f"""
+            ## 📊 能源資料完整分析
+
+            {answer}
+
+            ---
+
+            ### 🔍 綜合說明
+            - 已整合所有相關能源數據
+            - 包含結構比例、主要能源分布
+            - 可觀察長期趨勢與變化方向
+
+            ### 📈 建議解讀方向
+            - 注意高占比能源 → 代表依賴性
+            - 觀察變化 → 可能代表產業轉型
+        """
+
+    elif mode == "precise":
+        return f"""
+            🎯 **精確查詢結果**
+
+            {answer}
+
+        """
+
+    return answer
+
+# =====================================================
+# 回覆口語化
+# =====================================================
+def humanize_answer(text):
+
+    return text.replace(
+        "根據相關年度已生成的能源資料",
+        "我幫你查了一下"
+    )
+
+
+# =====================================================
+# 數字格式化
+# =====================================================
+def clean_numbers(text):
+
+    # 小數超過 2 位 → 四捨五入
+    def repl(match):
+
+        num = float(match.group())
+
+        # 整數不處理
+        if num.is_integer():
+            return str(int(num))
+
+        return f"{num:.2f}"
+
+    return re.sub(
+        r"\d+\.\d+",
+        repl,
+        text
+    )
+
+
+# =====================================================
+# 內部資料格式化
 # =====================================================
 def append_sources(answer, sources):
 
@@ -197,7 +221,6 @@ def append_sources(answer, sources):
 
         # 字串
         if isinstance(s, str):
-
             source_lines.append(f"- {s}")
 
         # dict
@@ -224,17 +247,14 @@ def append_sources(answer, sources):
 
             # Energy RAG
             elif s.get("year"):
-
                 year = s.get("year")
 
                 if s.get("sheet"):
-
                     source_lines.append(
                         f"- 民國{year}年｜{s['sheet']}"
                     )
 
                 else:
-
                     source_lines.append(
                         f"- 民國{year}年能源資料"
                     )
@@ -251,6 +271,123 @@ def append_sources(answer, sources):
         + "### 🔗 資料來源\n"
         + "\n".join(source_lines)
     )
+
+# =====================================================
+# 網路資料來源格式化
+# =====================================================
+def extract_sources(resp):
+    sources = []
+
+    try:
+        if hasattr(resp, "output"):
+
+            for item in resp.output:
+                if hasattr(item, "content"):
+
+                    for c in item.content:
+                        if hasattr(c, "annotations"):
+
+                            for ann in c.annotations:
+                                if getattr(ann, "type", "") == "url_citation":
+                                    sources.append({
+                                        "title": getattr(
+                                            ann,
+                                            "title",
+                                            "網頁來源"
+                                        ),
+                                        "url": getattr(
+                                            ann,
+                                            "url",
+                                            ""
+                                        )
+                                    })
+
+        # 去重複
+        sources = list({
+            s["url"]: s for s in sources
+            if s.get("url")
+        }.values())
+
+    except Exception as e:
+        print("來源解析失敗:", e)
+
+    return sources
+
+
+# =====================================================
+# 取得模型輸出文字
+# =====================================================
+def get_output_text(resp):
+
+    if hasattr(resp, "output_text") and resp.output_text:
+        return resp.output_text.strip()
+
+    return "（模型沒有回傳內容）"
+
+
+# =====================================================
+# 輸出語言翻譯
+# =====================================================
+def translate_answer(openai_client, model, user_text, answer):
+
+    target_lang = detect_language(user_text)
+
+    lang_fix_prompt = f"""
+    You are a professional multilingual AI assistant.
+
+    Target language:
+    {target_lang}
+
+    User question:
+    {user_text}
+
+    Current answer:
+    {answer}
+
+    CRITICAL RULES:
+    - The ENTIRE response MUST be in {target_lang}
+    - Translate ALL content into {target_lang}
+    - Never mix languages
+    - Preserve the original meaning
+    - Keep the wording natural and fluent
+
+    Return ONLY the final translated answer.
+    """
+
+    resp = openai_client.responses.create(
+        model=model,
+        input=lang_fix_prompt,
+        temperature=0
+    )
+
+    return clean_numbers(
+        get_output_text(resp)
+    )
+
+
+# =====================================================
+# 輸出回覆整理
+# =====================================================
+def finalize_answer(
+    openai_client,
+    model,
+    user_text,
+    assistant_text,
+    sources
+):
+
+    assistant_text = translate_answer(
+        openai_client,
+        model,
+        user_text,
+        assistant_text
+    )
+
+    return append_sources(
+        assistant_text,
+        sources
+    )
+
 
 # =====================================================
 # CHAT API
@@ -283,12 +420,10 @@ def chat():
     # Unified File Router
     # =====================================================
     if file:
-
         filename = file.filename.lower()
 
         # PDF
         if filename.endswith(".pdf"):
-
             qa_over_pdf = current_app.config.get("QA_OVER_PDF")
 
             answer, sources, structured_data = qa_over_pdf(
@@ -322,9 +457,7 @@ def chat():
             from tables import read_table, build_md, ask_llm, extract_json
 
             sheets = read_table(file)
-
             md = build_md(sheets)
-
             client = current_app.config.get("OPENAI_CLIENT")
 
             answer = ask_llm(
@@ -372,7 +505,6 @@ def chat():
 
             prompt = f"""
                 以下是使用者上傳的文字內容：
-
                 {text}
 
                 問題：
@@ -391,7 +523,7 @@ def chat():
             return jsonify(
                 {
                     "answer": append_sources(
-                        resp.output_text,
+                        get_output_text(resp),
                         [filename]
                     ),
                     "sources": [filename],
@@ -452,7 +584,6 @@ def chat():
         try:
 
             mode = detect_query_mode(user_text)
-
             result = answer_energy_question(user_text)
 
             assistant_text = result.get(
@@ -460,62 +591,18 @@ def chat():
                 "（無回應）"
             )
 
-            # =====================================
-            # 🔥 如果 Energy RAG 找不到資料
-            # → 不 return
-            # → 繼續往下走 GPT Web Search
-            # =====================================
+            sources = []
+
+            # 如果 Energy RAG 找不到資料不直接 return
+            # 繼續往下走 GPT Web Search
             if (
                 "目前資料庫中沒有足夠資訊" not in assistant_text
                 and "無相關資料" not in assistant_text
             ):
 
-                def humanize_answer(text):
-
-                    return text.replace(
-                        "根據相關年度已生成的能源資料",
-                        "我幫你查了一下"
-                    )
-
                 assistant_text = humanize_answer(
                     assistant_text
                 )
-                # =====================================
-                # 🔥 強制翻譯成使用者語言
-                # =====================================
-                if openai_client:
-
-                    target_lang = detect_language(user_text)
-
-                    lang_fix_prompt = f"""
-                    You are a professional multilingual AI assistant.
-
-                    Target language:
-                    {target_lang}
-
-                    User question:
-                    {user_text}
-
-                    Current answer:
-                    {assistant_text}
-
-                    CRITICAL RULES:
-                    - The ENTIRE response MUST be in {target_lang}
-                    - Translate ALL content into {target_lang}
-                    - Never mix languages
-                    - Preserve the original meaning
-                    - Keep the wording natural and fluent
-
-                    Return ONLY the final translated answer.
-                    """
-
-                    lang_resp = openai_client.responses.create(
-                        model=model,
-                        input=lang_fix_prompt,
-                        temperature=0
-                    )
-
-                    assistant_text = lang_resp.output_text.strip()
 
                 # =====================================================
                 # 分析模式 LLM
@@ -523,18 +610,15 @@ def chat():
                 if mode == "analysis" and openai_client:
 
                     analysis_prompt = f"""
-                        你是一個能源分析專家。
-
-                        以下是資料：
+                        你是一個能源分析專家，以下是資料：
                         {assistant_text}
 
                         請做「完整分析」，不要只是列資料：
-
-                        1️⃣ 哪些能源最多？排名
-                        2️⃣ 結構特徵（集中？分散？）
-                        3️⃣ 為什麼會這樣（產業/政策/結構）
-                        4️⃣ 有沒有值得注意的現象
-                        5️⃣ 給一個總結
+                        1. 哪些能源最多？排名
+                        2. 結構特徵（集中？分散？）
+                        3. 為什麼會這樣（產業/政策/結構）
+                        4. 有沒有值得注意的現象
+                        5. 給一個總結
 
                         要求：
                         - 條理清楚
@@ -559,86 +643,19 @@ def chat():
                         max_output_tokens=1000,
                     )
 
-                    assistant_text = (
-                        resp.output_text.strip()
+                    assistant_text = get_output_text(resp)
+                    sources = extract_sources(resp)
+
+                    # =====================================
+                    # 輸出語言統一
+                    # =====================================
+                    assistant_text = finalize_answer(
+                        openai_client,
+                        model,
+                        user_text,
+                        assistant_text,
+                        sources
                     )
-
-                    # =====================================
-                    # GPT / Web Search 來源
-                    # =====================================
-                    sources = []
-
-                    try:
-
-                        if hasattr(resp, "sources"):
-
-                            for s in resp.sources:
-
-                                sources.append({
-                                    "title": getattr(
-                                        s,
-                                        "title",
-                                        "網頁來源"
-                                    ),
-                                    "url": getattr(
-                                        s,
-                                        "url",
-                                        ""
-                                    )
-                                })
-
-                    except:
-                        pass
-                    # =====================================
-                    # 🔥 最終語言統一
-                    # =====================================
-                    target_lang = detect_language(user_text)
-
-                    lang_fix_prompt = f"""
-                    You are a professional multilingual AI assistant.
-
-                    Target language:
-                    {target_lang}
-
-                    User question:
-                    {user_text}
-
-                    Current answer:
-                    {assistant_text}
-
-                    CRITICAL RULES:
-                    - The ENTIRE response MUST be in {target_lang}
-                    - Translate ALL content into {target_lang}
-                    - Never mix languages
-                    - Preserve the original meaning
-                    - Keep the wording natural and fluent
-
-                    Return ONLY the final translated answer.
-                    """
-
-                    lang_resp = openai_client.responses.create(
-                        model=model,
-                        input=lang_fix_prompt,
-                        temperature=0
-                    )
-
-                    assistant_text = lang_resp.output_text.strip()
-                    if re.search(r"[a-zA-Z]", user_text):
-
-                        assistant_text += "\n\n---\nSources:\n"
-
-                        for s in sources:
-
-                            if s.get("url"):
-
-                                assistant_text += f"- {s['url']}\n"
-
-                    else:
-
-                        assistant_text = append_sources(
-                            assistant_text,
-                            sources
-                        )
 
                 # =====================================
                 # 精準模式
@@ -650,48 +667,19 @@ def chat():
                         mode
                     )
 
-                # =====================================
                 # 如果 analysis mode 沒有 web sources
                 # 才加 Energy RAG sources
-                # =====================================
                 if "### 🔗 資料來源" not in assistant_text:
+                    
                     # =====================================
-                    # 🔥 最終語言統一
+                    # 輸出語言統一
                     # =====================================
-                    target_lang = detect_language(user_text)
-
-                    lang_fix_prompt = f"""
-                    You are a professional multilingual AI assistant.
-
-                    Target language:
-                    {target_lang}
-
-                    User question:
-                    {user_text}
-
-                    Current answer:
-                    {assistant_text}
-
-                    CRITICAL RULES:
-                    - The ENTIRE response MUST be in {target_lang}
-                    - Translate ALL content into {target_lang}
-                    - Never mix languages
-                    - Preserve the original meaning
-                    - Keep the wording natural and fluent
-
-                    Return ONLY the final translated answer.
-                    """
-
-                    lang_resp = openai_client.responses.create(
-                        model=model,
-                        input=lang_fix_prompt,
-                        temperature=0
-                    )
-
-                    assistant_text = lang_resp.output_text.strip()
-                    assistant_text = append_sources(
+                    assistant_text = finalize_answer(
+                        openai_client,
+                        model,
+                        user_text,
                         assistant_text,
-                        result.get("sources", [])
+                        sources
                     )
 
                 _store_turn(
@@ -733,14 +721,7 @@ def chat():
                 500,
             )
 
-    # =====================================================
-    # 模式判斷
-    # =====================================================
-    def is_analysis_question(text):
-        keywords = ["分析", "報告", "整理", "比較", "趨勢", "analysis", "report"]
-        return any(k in text.lower() for k in keywords)
-
-    if is_analysis_question(user_text):
+    if detect_query_mode(user_text) == "analysis":
         mode_prompt = DEFAULT_SYSTEM_PROMPT
     else:
         mode_prompt = "請用自然聊天方式回答，不要用報告格式。"
@@ -775,78 +756,21 @@ def chat():
                 max_output_tokens=800,
             )
 
-            assistant_text = (
-                resp.output_text.strip()
-                if hasattr(resp, "output_text") and resp.output_text
-                else "（模型沒有回傳內容）"
-            )
+            assistant_text = get_output_text(resp)
 
-            # GPT 一般來源
-            sources = []
-            try:
-
-                if hasattr(resp, "sources"):
-
-                    for s in resp.sources:
-
-                        item = {
-                            "title": getattr(s, "title", "網頁來源"),
-                            "url": getattr(s, "url", "")
-                        }
-
-                        sources.append(item)
-                        final_sources.append(item)
-
-            except:
-                pass
+            sources = extract_sources(resp)
+            final_sources.extend(sources)
+            
             # =====================================
-            # 🔥 最終語言統一
+            # 輸出語言統一
             # =====================================
-            target_lang = detect_language(user_text)
-
-            lang_fix_prompt = f"""
-            You are a professional multilingual AI assistant.
-
-            Target language:
-            {target_lang}
-
-            User question:
-            {user_text}
-
-            Current answer:
-            {assistant_text}
-
-            CRITICAL RULES:
-            - The ENTIRE response MUST be in {target_lang}
-            - Translate ALL content into {target_lang}
-            - Never mix languages
-            - Preserve the original meaning
-            - Keep the wording natural and fluent
-
-            Return ONLY the final translated answer.
-            """
-
-            lang_resp = openai_client.responses.create(
-                model=model,
-                input=lang_fix_prompt,
-                temperature=0
+            assistant_text = finalize_answer(
+                openai_client,
+                model,
+                user_text,
+                assistant_text,
+                sources
             )
-
-            assistant_text = lang_resp.output_text.strip()
-            if re.search(r"[a-zA-Z]", user_text):
-
-                assistant_text += "\n\n---\nSources:\n"
-
-                for s in sources:
-                    if s.get("url"):
-                        assistant_text += f"- {s['url']}\n"
-
-            else:
-
-                assistant_text = append_sources(
-                    assistant_text,
-                    sources
-                )
 
         except Exception as e:
             assistant_text = f"⚠️ 模型錯誤：{e}"
