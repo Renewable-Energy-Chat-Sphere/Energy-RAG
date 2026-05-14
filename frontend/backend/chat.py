@@ -596,6 +596,59 @@ def chat():
             # 如果 Energy RAG 找不到資料不直接 return
             # 繼續往下走 GPT Web Search
             if (
+                "目前資料庫中沒有足夠資訊" in assistant_text
+                or "無相關資料" in assistant_text
+            ):
+
+                resp = openai_client.responses.create(
+                    model=model,
+                    tools=[{"type": "web_search"}],
+
+                    input=f"""
+                    使用最新網路資料回答：
+
+                    {user_text}
+
+                    要求：
+                    - 優先查詢台電、能源署與政府網站公開資料
+                    - 如果檢索到數據直接印出
+                    - 使用相同的語種回覆
+                    - 附上資料來源
+                    """,
+
+                    temperature=0.2,
+                    max_output_tokens=1000,
+                )
+
+                assistant_text = get_output_text(resp)
+                sources = extract_sources(resp)
+
+                assistant_text = finalize_answer(
+                    openai_client,
+                    model,
+                    user_text,
+                    assistant_text,
+                    sources
+                )
+
+                _store_turn(
+                    session_id,
+                    user_text,
+                    assistant_text
+                )
+
+                return jsonify(
+                    {
+                        "answer": assistant_text,
+                        "sources": sources,
+                        "results": [],
+                        "session_id": session_id,
+                        "model": "web_fallback",
+                        "uses_openai": True,
+                    }
+                )
+
+            if (
                 "目前資料庫中沒有足夠資訊" not in assistant_text
                 and "無相關資料" not in assistant_text
             ):
@@ -622,8 +675,8 @@ def chat():
 
                         要求：
                         - 條理清楚
-                        - 用條列＋段落
-                        - 用與使用者相同語言
+                        - 以條列式回覆並適當分段
+                        - 使用相同的語種回覆
                     """
 
                     resp = openai_client.responses.create(
@@ -632,7 +685,7 @@ def chat():
                         input=[
                             {
                                 "role": "system",
-                                "content": "請使用與使用者相同語言回答"
+                                "content": "請使用相同的語種問答"
                             },
                             {
                                 "role": "user",
