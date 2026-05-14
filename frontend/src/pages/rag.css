@@ -195,7 +195,7 @@
 
 /* markdown */
 .rag-page .ai-card p {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   color: var(--text);
   line-height: 1.5;
   letter-spacing: 0.2px;
@@ -204,19 +204,45 @@
 .rag-page .ai-card h1,
 .rag-page .ai-card h2,
 .rag-page .ai-card h3 {
-  color: var(--text);
-  margin-top: 30px;
+  margin-top: 28px;
   margin-bottom: 14px;
+  color: var(--text);
+  line-height: 1.5;
 }
 
-.rag-page .ai-card ul {
-  padding-left: 24px;
+.rag-page .ai-card ul,
+.rag-page .ai-card ol {
+  padding-left: 28px;
+  margin: 14px 0;
+  list-style-position: outside;
 }
 
 .rag-page .ai-card li {
   margin-bottom: 10px;
   color: var(--text);
-  line-height: 1.8;
+  line-height: 1.5;
+  padding-left: 6px;
+}
+
+.rag-page .ai-card ol li::marker {
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.rag-page .ai-card ul li::marker {
+  color: #94a3b8;
+}
+
+.rag-page .ai-card strong {
+  font-weight: 700;
+}
+
+/* 分隔線 */
+.rag-page .ai-card hr {
+  margin: 24px 0;
+  border: none;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.2);
 }
 
 /* code */
@@ -440,13 +466,6 @@
   }
 }
 
-/* answer */
-.rag-page .answer {
-  max-height: 65vh;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
 /* energy cards */
 .energy-cards {
   display: grid;
@@ -618,10 +637,8 @@
     grid-template-columns: 1fr;
   }
 }
-/* =========================
-   Download Buttons
-========================= */
 
+/* Download Buttons */
 .download-section {
   margin-top: 22px;
 }
@@ -629,7 +646,7 @@
 .download-section hr {
   border: none;
   height: 1px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   margin-bottom: 18px;
 }
 
@@ -644,16 +661,11 @@
 .excel-btn {
   border: none;
   outline: none;
-
   padding: 12px 22px;
-
   border-radius: 14px;
-
   font-size: 15px;
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     transform 0.2s ease,
     box-shadow 0.25s ease,
@@ -663,17 +675,13 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-
   min-width: 120px;
-
   color: white;
-
   box-shadow:
-    0 6px 18px rgba(0,0,0,0.18);
+    0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 /* PDF */
-
 .pdf-btn {
   background:
     linear-gradient(
@@ -689,7 +697,6 @@
 }
 
 /* Excel */
-
 .excel-btn {
   background:
     linear-gradient(
@@ -705,28 +712,22 @@
 }
 
 /* Hover */
-
 .pdf-btn:hover,
 .excel-btn:hover {
   transform: translateY(-3px);
-
   box-shadow:
-    0 10px 25px rgba(0,0,0,0.28);
+    0 10px 25px rgba(0, 0, 0, 0.28);
 
   opacity: 0.95;
 }
 
 /* Click */
-
 .pdf-btn:active,
 .excel-btn:active {
   transform: scale(0.96);
 }
 
-/* Mobile */
-
 @media (max-width: 768px) {
-
   .download-buttons {
     flex-direction: column;
   }
