@@ -237,7 +237,7 @@ export default function Home() {
                       [
                         import.meta.env.BASE_URL + "images/sphere.png",
                         import.meta.env.BASE_URL + "images/analysis.png",
-                        import.meta.env.BASE_URL + "images/ai.jpg",
+                        import.meta.env.BASE_URL + "images/ai.png",
                       ][i]
                     }
                     alt={item.title}
