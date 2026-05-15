@@ -508,19 +508,72 @@ def get_evaluation_data(dept_filters=None):
 
 
 # =========================
-# 🧠 年份解析
+# 🧠 年份解析（智慧版）
 # =========================
 def parse_year(text):
+
     now = datetime.now().year
 
+    # =========================
+    # 🔥 中文數字 mapping
+    # =========================
+    zh_map = {
+        "一": 1,
+        "二": 2,
+        "兩": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
+    }
+
+    # =========================
+    # 🔹 今年 / 明年
+    # =========================
     if "今年" in text:
         return now
+
     if "明年" in text:
         return now + 1
 
-    match = re.search(r"\d+", text)
+    # =========================
+    # 🔥 未來X年 / 後X年
+    # =========================
+    future_match = re.search(
+        r"(未來|後|接下來)\s*([0-9一二兩三四五六七八九十]+)\s*年",
+        text
+    )
+
+    if future_match:
+
+        raw_num = future_match.group(2)
+
+        # 🔥 阿拉伯數字
+        if raw_num.isdigit():
+            n = int(raw_num)
+
+        # 🔥 中文數字
+        else:
+            n = zh_map.get(raw_num, 1)
+
+        return now + n
+
+    # =========================
+    # 🔹 西元 / 民國年份
+    # =========================
+    match = re.search(
+        r"(20\d{2}|1\d{2})",
+        text
+    )
+
     if match:
+
         y = int(match.group())
+
         return y if y > 1911 else y + 1911
 
     return None
@@ -533,33 +586,188 @@ def parse_year(text):
 def predict_department_energy():
 
     data = request.json or {}
-    question = data.get("question", "")
-    question = data.get("question", "")
+    question = data.get("question", "").strip()
+
+    # =========================
+    # 🔥 預測關鍵字檢查
+    # =========================
+    forecast_keywords = [
+        "預測",
+        "未來",
+        "明年",
+        "後年",
+        "接下來",
+        "趨勢",
+        "能源結構",
+    ]
+
+    if not any(k in question for k in forecast_keywords):
+
+        return jsonify({
+            "mode": "guide",
+            "message":
+                "⚠️ 此頁面為 AI 能源預測系統，請輸入預測相關問題。\n\n"
+                "例如：\n"
+                "• 114工業部門能源結構\n"
+                "• 未來5年農業能源\n"
+                "• 明年住宅部門用電"
+        })
+
+    # =========================
+    # 🔥 解析年份 / 部門
+    # =========================
     target_year = parse_year(question)
     dept_filters = detect_depts(question)
-    mode = data.get("mode", "full")
 
+    # =========================
+    # 🔥 沒有年份
+    # =========================
     if not target_year:
-        return jsonify({"error": "請輸入年份，例如 2025 或 明年"})
 
-    prediction = run_prediction(target_year, dept_filters, mode)
-    evaluation = get_evaluation_data(dept_filters)
+        return jsonify({
+            "mode": "guide",
+            "message":
+                "💡 請指定預測年份。\n\n"
+                "例如：\n"
+                "• 2028工業部門能源結構\n"
+                "• 114農業能源\n"
+                "• 未來5年住宅用電"
+        })
+
+    # =========================
+    # 🔥 民國年份
+    # =========================
+    roc_year = (
+        target_year - 1911
+        if target_year > 1911
+        else target_year
+    )
+
+    # =========================
+    # 🔥 太舊資料
+    # =========================
+    if roc_year < 80:
+
+        return jsonify({
+            "mode": "guide",
+            "message":
+                "📁 目前系統僅支援民國80年以後資料，較早年份資料暫時無法取得。"
+        })
+
+    # =========================
+    # 🔥 超過10年
+    # =========================
+    latest_year = max(load_all_years().keys())
+
+    if roc_year > latest_year + 10:
+
+        return jsonify({
+            "mode": "guide",
+            "message":
+                "⚠️ 建議預測10年內資料。\n\n"
+                "由於長期能源變化可能受政策、國際情勢與能源轉型影響，"
+                "超過10年的預測可能降低準確性。"
+        })
+
+    # =========================
+    # 📘 歷史資料模式
+    # =========================
+    all_data = load_all_years()
+
+    if roc_year <= latest_year:
+
+        raw = all_data.get(roc_year)
+
+        if not raw:
+
+            return jsonify({
+                "mode": "guide",
+                "message":
+                    f"📁 找不到 {roc_year} 年能源資料。"
+            })
+
+        normalized = normalize(raw)
+
+        result = {}
+
+        for dept, energies in normalized.items():
+
+            if dept_filters and dept not in dept_filters:
+                continue
+
+            result[dept] = {
+                k: v * 100
+                for k, v in energies.items()
+            }
+
+        summary = []
+
+        for dept, energies in result.items():
+
+            top = sorted(
+                energies.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:3]
+
+            summary.append({
+                "dept": dept,
+                "top": top
+            })
+
+        return jsonify({
+            "mode": "history",
+            "year": roc_year,
+            "message":
+                f"📘 {roc_year} 年已有真實能源資料，以下為實際能源結構結果。",
+            "prediction": result,
+            "summary": summary,
+        })
+
+    # =========================
+    # 🔮 未來 AI 預測模式
+    # =========================
+    prediction = run_prediction(
+        target_year,
+        dept_filters,
+        mode="full"
+    )
+
+    # =========================
+    # 🔥 沒有預測結果
+    # =========================
+    if not prediction:
+
+        return jsonify({
+            "mode": "guide",
+            "message":
+                "⚠️ 無法產生預測結果，請重新嘗試其他年份或部門。"
+        })
 
     summary = []
+
     for dept, energies in prediction.items():
-        top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-        summary.append({"dept": dept, "top": top})
+        top = sorted(
+            energies.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:3]
 
-    return jsonify(
-        {
-            "year": target_year,
-            "prediction": prediction,
-            "summary": summary,
-            "evaluation": evaluation,
-            "accuracy": ACCURACY_CACHE,  # 🔥 新增
-        }
-    )
+        summary.append({
+            "dept": dept,
+            "top": top
+        })
+
+    return jsonify({
+        "mode": "forecast",
+        "year": target_year,
+        "message":
+            f"🔮 {roc_year} 年為未來年份，以下為 AI 能源預測結果。",
+        "prediction": prediction,
+        "summary": summary,
+    })
+
 
 
 # =========================
