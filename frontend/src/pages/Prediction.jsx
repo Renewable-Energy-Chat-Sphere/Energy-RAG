@@ -27,6 +27,7 @@ export default function Prediction() {
   const [energyMap, setEnergyMap] = useState({});
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedForecastYear, setSelectedForecastYear] = useState(null);
   const { t } = useTranslation();
   // =========================
   // 📥 JSON mapping
@@ -115,8 +116,17 @@ const runPredict = async () => {
 
     // =========================
     // ✅ success
-    // =========================
     setData(result);
+
+    // 🔥 未來多年預測
+    if (
+      result.mode === "forecast_range" &&
+      result.available_years?.length
+    ) {
+      setSelectedForecastYear(
+        result.available_years[0]
+      );
+    }
 
   } catch (err) {
 
@@ -239,7 +249,7 @@ const runPredict = async () => {
       data.mode !== "guide" &&
       !data.error && (
         <div style={{ marginTop: 40 }}>
-          
+
           {/* 🔹 使用者問題 */}
           <div style={{ marginBottom: 20 }}>
             {t("prediction.yourQuestion")}：{question}
@@ -276,11 +286,59 @@ const runPredict = async () => {
               : "🔮 此結果為 AI 未來能源預測，僅供趨勢分析與研究參考。"}
           </div>
 
-          {data.summary?.map((item, i) => {
+          {/* 🔥 多年份切換 */}
+          {data.mode === "forecast_range" && (
+            <div
+              style={{
+                marginBottom: 24,
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>
+                📅 選擇年份
+              </span>
 
-            // 🔥 改成 prediction
+              <select
+                value={selectedForecastYear || ""}
+                onChange={(e) =>
+                  setSelectedForecastYear(
+                    Number(e.target.value)
+                  )
+                }
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "white",
+                  border:
+                    "1px solid rgba(255,255,255,0.15)",
+                }}
+              >
+                {data.available_years?.map((y) => (
+                  <option key={y} value={y}>
+                    {y} 年
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {(
+            data.mode === "forecast_range"
+              ? data.years?.[selectedForecastYear]
+                  ?.summary
+              : data.summary
+          )?.map((item, i) => {
+
+            // 🔥 多年份 / 單年份共用
             const fullData =
-              data?.prediction?.[item.dept] || {};
+              data.mode === "forecast_range"
+                ? data?.years?.[
+                    selectedForecastYear
+                  ]?.prediction?.[item.dept] || {}
+                : data?.prediction?.[item.dept] || {};
 
             return (
               <div
