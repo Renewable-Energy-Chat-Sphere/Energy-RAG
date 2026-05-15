@@ -37,9 +37,6 @@ from pipelines.rag_pdf import qa_over_pdf
 from chat import chat_bp
 from tables import tables_bp
 
-# 🔥 加回 scheduler
-from scheduler import start_scheduler
-
 app = Flask(__name__)
 app.secret_key = "enerSphere_2026"
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -971,55 +968,6 @@ def delete_feedback():
     return jsonify({"status": "ok"})
 
 
-@app.route("/dashboard", methods=["GET"])
-def dashboard():
-    try:
-        import requests
-        from bs4 import BeautifulSoup
-
-        url = "https://datatw.net/data/energy"
-        res = requests.get(url, timeout=10)
-
-        soup = BeautifulSoup(res.text, "html.parser")
-
-        # 👉 找數字（比抓 JSON 穩）
-        text = soup.get_text()
-
-        import re
-
-        # 🔥 改成抓「即時用電量 + 支援逗號」
-        power_match = re.search(r"即時用電量.*?([\d,]+)", text)
-        if power_match:
-            power = int(power_match.group(1).replace(",", ""))
-        else:
-            power = 30000
-
-        # 🔥 再生能源（避免抓錯）
-        renewable_match = re.search(r"再生能源.*?([\d]+)\s*%", text)
-        if renewable_match:
-            renewable = int(renewable_match.group(1).replace(",", ""))
-        else:
-            renewable = 20
-
-        return {
-            "power": power,
-            "renewable": renewable,
-            "peak": power + 2000,
-            "carbon": 12000,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
-
-    except Exception as e:
-        print(e)
-        return {
-            "power": 30000,
-            "renewable": 20,
-            "peak": 35000,
-            "carbon": 12000,
-            "timestamp": "error",
-        }
-
-
 # ====================================
 # 1. Web 問答
 # ====================================
@@ -1445,8 +1393,5 @@ if __name__ == "__main__":
 
     print("🔥 初始化預測資料...")
     init_data()  # 🔥 加這行（關鍵）
-
-    print("🔥 Scheduler starting...")
-    start_scheduler()
 
     app.run(host="0.0.0.0", port=8000)

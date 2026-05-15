@@ -3,12 +3,11 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import BackToTopButton from "../components/BackToTopButton";
 import EnergyNews from "../components/EnergyNews";
-import Dashboard from "../components/Dashboard";
+
 import ExternalLinks from "../components/ExternalLinks";
 import LinkCarousel from "../components/LinkCarousel";
 import "../pages/home.css";
 import { useTranslation } from "react-i18next";
-
 
 export default function Home() {
   const { t } = useTranslation();
@@ -217,8 +216,6 @@ export default function Home() {
         </div>
       </section>
 
-     
-
       <div className="page-container">
         {/* Energy News */}
         <div className="reveal">
@@ -248,9 +245,7 @@ export default function Home() {
                   <h3>{item.title}</h3>
                   <p>{item.desc}</p>
 
-                  <div className="accordion">
-                    {t("features_more")}
-                  </div>
+                  <div className="accordion">{t("features_more")}</div>
 
                   <div className="accordion-content">
                     <p>{item.detail}</p>

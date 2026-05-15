@@ -45,14 +45,14 @@ export default function ElectricityAnalysis() {
 
         setUpdateTime(new Date().toLocaleString());
         setLoading(false);
-
-        setTimeout(() => {
-          fetchAIAnalysis(data);
-        }, 100);
       } else if (Array.isArray(data.data)) {
         setLiveUnits(data.data);
+        setUpdateTime(new Date().toLocaleString());
+        setLoading(false);
       } else if (Array.isArray(data.units)) {
         setLiveUnits(data.units);
+        setUpdateTime(new Date().toLocaleString());
+        setLoading(false);
       }
     } catch (err) {
       console.log(err);
@@ -72,14 +72,13 @@ export default function ElectricityAnalysis() {
   }, []);
   useEffect(() => {
     if (liveUnits.length > 0) {
-      // 🔥 已經有 AI 結果才顯示切換動畫
       if (aiAnalysis) {
         setAiSwitching(true);
       }
 
-      fetchAIAnalysis(liveUnits);
+      fetchAIAnalysis();
     }
-  }, [i18n.language]);
+  }, [liveUnits, i18n.language]);
 
   const supplyTotals = {};
 
@@ -137,18 +136,7 @@ export default function ElectricityAnalysis() {
     .sort((a, b) => b.impact - a.impact)
 
     .slice(0, 6);
-  const hydroPlants = [
-    "大觀",
-    "明潭",
-    "曾文",
-    "桂山",
-    "石門",
-    "萬大",
-    "蘭陽",
-    "東部",
-    "大甲溪",
-    "高屏",
-  ];
+
   // 🔥 即時能源統計
   const liveEnergy = {
     solar: 0,
@@ -168,7 +156,7 @@ export default function ElectricityAnalysis() {
     const value = parseFloat(u.value) || 0;
 
     const plant = u.name || "";
-    const percent = value <= 0 ? 0 : value / 1000;
+    const scaledValue = value <= 0 ? 0 : value / 1000;
     const category = getCategory(plant, value);
 
     const main = category.main;
@@ -182,28 +170,28 @@ export default function ElectricityAnalysis() {
     if (main.includes("太陽能")) {
       liveEnergy.solar += value;
 
-      liveCostPressure += percent * 0.7;
+      liveCostPressure += scaledValue * 0.7;
     }
 
     // 🌬️ 風力
     else if (main.includes("風力")) {
       liveEnergy.wind += value;
 
-      liveCostPressure += percent * 0.8;
+      liveCostPressure += scaledValue * 0.8;
     }
 
     // 💧 水力
     else if (main.includes("水力")) {
       liveEnergy.hydro += value;
 
-      liveCostPressure += percent * 0.6;
+      liveCostPressure += scaledValue * 0.6;
     }
 
     // 🔥 火力
     else {
       liveEnergy.thermal += value;
 
-      liveCostPressure += percent * 1.8;
+      liveCostPressure += scaledValue * 1.8;
     }
   });
   liveCostPressure = Number(liveCostPressure.toFixed(2));
@@ -324,42 +312,18 @@ export default function ElectricityAnalysis() {
     "#f97316",
     "#84cc16",
   ];
-  async function fetchAIAnalysis(units) {
-    if (units.length <= 0) return;
+  async function fetchAIAnalysis() {
+    if (liveUnits.length <= 0) return;
 
     try {
-      let thermal = 0;
-      let costPressure = 0;
-      let renewable = 0;
+      // 🔥 直接使用頁面已經算好的資料
+      const thermal = liveEnergy.thermal;
 
-      let nuclear = 0;
+      const renewable = liveEnergy.solar + liveEnergy.wind + liveEnergy.hydro;
 
-      units.forEach((u) => {
-        const value = parseFloat(u.value) || 0;
+      const nuclear = liveEnergy.nuclear;
 
-        const plant = u.name || "";
-
-        const category = getCategory(plant, value);
-
-        const main = category.main;
-
-        if (plant.includes("核")) {
-          nuclear += value;
-          costPressure += (value / 1000) * 0.5;
-        } else if (
-          main.includes("太陽能") ||
-          main.includes("風力") ||
-          main.includes("水力")
-        ) {
-          renewable += value;
-
-          costPressure += (value / 1000) * 0.7;
-        } else {
-          thermal += value;
-
-          costPressure += (value / 1000) * 1.8;
-        }
-      });
+      const costPressure = liveCostPressure;
       const nuclearNote =
         nuclear === 0
           ? i18n.language === "en"
@@ -898,7 +862,7 @@ ${renewablePercent}% ，
                   gap: "6px",
                 }}
               >
-                🛈 
+                🛈
                 {i18n.language === "en" ? "Trend Forecast" : "趨勢預測模型"}
                 <div className="forecast-tooltip">
                   {i18n.language === "en"
