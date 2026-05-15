@@ -307,17 +307,17 @@ const runPredict = async () => {
                     Number(e.target.value)
                   )
                 }
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  background: "rgba(255,255,255,0.08)",
-                  color: "white",
-                  border:
-                    "1px solid rgba(255,255,255,0.15)",
-                }}
+                style={selectStyle}
               >
                 {data.available_years?.map((y) => (
-                  <option key={y} value={y}>
+                  <option
+                    key={y}
+                    value={y}
+                    style={{
+                      background: "white",
+                      color: "#111827",
+                    }}
+                  >
                     {y} 年
                   </option>
                 ))}
@@ -586,4 +586,19 @@ const closeBtn = {
 
 const chartBox = {
   height: "260px",
+};
+const selectStyle = {
+  padding: "10px 14px",
+  borderRadius: "12px",
+
+  border: "1px solid rgba(148,163,184,0.35)",
+
+  background: "var(--card-bg)",
+  color: "var(--text-color)",
+
+  fontSize: "15px",
+  fontWeight: "600",
+
+  outline: "none",
+  cursor: "pointer",
 };
