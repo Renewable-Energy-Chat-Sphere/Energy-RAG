@@ -413,10 +413,8 @@ def init_data(force_retrain=False):
 # 📈 預測
 # =========================
 
-def run_recursive_forecast(
-    future_year,
-    dept_filters=None
-):
+
+def run_recursive_forecast(future_year, dept_filters=None):
 
     import copy
 
@@ -430,10 +428,7 @@ def run_recursive_forecast(
     # =========================
     latest_year = max(load_all_years().keys())
 
-    for current_year in range(
-        latest_year + 1,
-        future_year + 1
-    ):
+    for current_year in range(latest_year + 1, future_year + 1):
 
         yearly_result = {}
 
@@ -458,12 +453,9 @@ def run_recursive_forecast(
             try:
 
                 # 🔥 建 dataframe
-                df = pd.DataFrame({
-                    "ds": pd.to_datetime(
-                        [str(y + 1911) for y in years]
-                    ),
-                    "y": values
-                })
+                df = pd.DataFrame(
+                    {"ds": pd.to_datetime([str(y + 1911) for y in years]), "y": values}
+                )
 
                 # 🔥 每年重新訓練
                 model = Prophet()
@@ -471,16 +463,11 @@ def run_recursive_forecast(
                 model.fit(df)
 
                 # 🔥 只預測下一年
-                future = model.make_future_dataframe(
-                    periods=1,
-                    freq="YE"
-                )
+                future = model.make_future_dataframe(periods=1, freq="YE")
 
                 forecast = model.predict(future)
 
-                pred = float(
-                    forecast.iloc[-1]["yhat"]
-                )
+                pred = float(forecast.iloc[-1]["yhat"])
 
                 pred = max(pred, 0)
 
@@ -495,18 +482,14 @@ def run_recursive_forecast(
         # =========================
         for dept in yearly_result:
 
-            total = sum(
-                yearly_result[dept].values()
-            )
+            total = sum(yearly_result[dept].values())
 
             if total > 0:
 
                 for energy in yearly_result[dept]:
 
                     yearly_result[dept][energy] = (
-                        yearly_result[dept][energy]
-                        / total
-                        * 100
+                        yearly_result[dept][energy] / total * 100
                     )
 
         # =========================
@@ -518,13 +501,9 @@ def run_recursive_forecast(
 
                 key = f"{dept}_{energy}"
 
-                recursive_series[key]["years"].append(
-                    current_year
-                )
+                recursive_series[key]["years"].append(current_year)
 
-                recursive_series[key]["values"].append(
-                    value / 100
-                )
+                recursive_series[key]["values"].append(value / 100)
 
         # 🔥 保存這一年結果
         result[current_year] = yearly_result
@@ -661,8 +640,7 @@ def parse_year(text):
     # 🔥 未來X年 / 後X年
     # =========================
     future_match = re.search(
-        r"(未來|後|接下來)\s*([0-9一二兩三四五六七八九十]+)\s*年",
-        text
+        r"(未來|後|接下來)\s*([0-9一二兩三四五六七八九十]+)\s*年", text
     )
 
     if future_match:
@@ -687,10 +665,7 @@ def parse_year(text):
     # 2025、2027
     # 114與117
     # =========================
-    multi_matches = re.findall(
-        r"(20\d{2}|\d{1,3})",
-        text
-    )
+    multi_matches = re.findall(r"(20\d{2}|\d{1,3})", text)
 
     # 🔥 多年份
     if len(multi_matches) >= 2:
@@ -707,18 +682,12 @@ def parse_year(text):
 
         years = sorted(list(set(years)))
 
-        return {
-            "type": "multi",
-            "years": years
-        }
+        return {"type": "multi", "years": years}
 
     # =========================
     # 🔹 單年份
     # =========================
-    match = re.search(
-        r"(20\d{2}|\d{1,3})",
-        text
-    )
+    match = re.search(r"(20\d{2}|\d{1,3})", text)
 
     if match:
 
@@ -727,6 +696,7 @@ def parse_year(text):
         return y if y > 1911 else y + 1911
 
     return None
+
 
 # =========================
 # 🌐 API
@@ -747,8 +717,7 @@ def predict_department_energy():
     # 🔥 未來X年偵測
     # =========================
     future_range_match = re.search(
-        r"未來\s*([0-9一二兩三四五六七八九十]+)\s*年",
-        question
+        r"未來\s*([0-9一二兩三四五六七八九十]+)\s*年", question
     )
 
     future_range_n = None
@@ -787,15 +756,16 @@ def predict_department_energy():
     # =========================
     if not target_year:
 
-        return jsonify({
-            "mode": "guide",
-            "message":
-                "💡 請指定預測年份。\n\n"
+        return jsonify(
+            {
+                "mode": "guide",
+                "message": "💡 請指定預測年份。\n\n"
                 "例如：\n"
                 "• 2028工業部門能源結構\n"
                 "• 114農業能源\n"
-                "• 未來5年住宅用電"
-        })
+                "• 未來5年住宅用電",
+            }
+        )
 
     # =========================
     # 🔥 多年份模式
@@ -804,28 +774,22 @@ def predict_department_energy():
     # 2025、2027
     # 114與117
     # =========================
-    if (
-        isinstance(target_year, dict)
-        and
-        target_year.get("type") == "multi"
-    ):
+    if isinstance(target_year, dict) and target_year.get("type") == "multi":
 
         years = target_year["years"]
 
         # 🔥 超過10年限制
         if max(years) - (latest_year + 1911) > 10:
 
-            return jsonify({
-                "mode": "guide",
-                "message":
-                    "⚠️ 建議預測10年內資料。\n\n"
-                    "超過10年的長期預測可能降低準確性。"
-            })
+            return jsonify(
+                {
+                    "mode": "guide",
+                    "message": "⚠️ 建議預測10年內資料。\n\n"
+                    "超過10年的長期預測可能降低準確性。",
+                }
+            )
 
-        predictions = run_recursive_forecast(
-            max(years) - 1911,
-            dept_filters
-        )
+        predictions = run_recursive_forecast(max(years) - 1911, dept_filters)
 
         forecast_range = {}
 
@@ -841,63 +805,54 @@ def predict_department_energy():
 
             for dept, energies in pred.items():
 
-                top = sorted(
-                    energies.items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )[:3]
+                top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-                summary.append({
-                    "dept": dept,
-                    "top": top
-                })
+                summary.append({"dept": dept, "top": top})
 
             forecast_range[forecast_year] = {
                 "prediction": pred,
                 "summary": summary,
             }
 
-        return jsonify({
-            "mode": "forecast_range",
-            "years": forecast_range,
-            "available_years":
-                list(forecast_range.keys()),
-            "message":
-                "🔮 以下為指定年份 AI 能源預測結果。"
-        })
+        return jsonify(
+            {
+                "mode": "forecast_range",
+                "years": forecast_range,
+                "available_years": list(forecast_range.keys()),
+                "message": "🔮 以下為指定年份 AI 能源預測結果。",
+            }
+        )
 
     # =========================
     # 🔥 民國年份
     # =========================
-    roc_year = (
-        target_year - 1911
-        if target_year > 1911
-        else target_year
-    )
+    roc_year = target_year - 1911 if target_year > 1911 else target_year
 
     # =========================
     # 🔥 太舊資料
     # =========================
     if roc_year < 80:
 
-        return jsonify({
-            "mode": "guide",
-            "message":
-                "📁 目前系統僅支援民國80年以後資料，較早年份資料暫時無法取得。"
-        })
+        return jsonify(
+            {
+                "mode": "guide",
+                "message": "📁 目前系統僅支援民國80年以後資料，較早年份資料暫時無法取得。",
+            }
+        )
 
     # =========================
     # 🔥 超過10年
     # =========================
     if roc_year > latest_year + 10:
 
-        return jsonify({
-            "mode": "guide",
-            "message":
-                "⚠️ 建議預測10年內資料。\n\n"
+        return jsonify(
+            {
+                "mode": "guide",
+                "message": "⚠️ 建議預測10年內資料。\n\n"
                 "由於長期能源變化可能受政策、國際情勢與能源轉型影響，"
-                "超過10年的預測可能降低準確性。"
-        })
+                "超過10年的預測可能降低準確性。",
+            }
+        )
 
     # =========================
     # 🔮 未來多年預測模式
@@ -907,17 +862,15 @@ def predict_department_energy():
         # 🔥 超過10年
         if future_range_n > 10:
 
-            return jsonify({
-                "mode": "guide",
-                "message":
-                    "⚠️ 建議預測10年內資料。\n\n"
-                    "超過10年的長期預測可能降低準確性。"
-            })
+            return jsonify(
+                {
+                    "mode": "guide",
+                    "message": "⚠️ 建議預測10年內資料。\n\n"
+                    "超過10年的長期預測可能降低準確性。",
+                }
+            )
 
-        predictions = run_recursive_forecast(
-            latest_year + future_range_n,
-            dept_filters
-        )
+        predictions = run_recursive_forecast(latest_year + future_range_n, dept_filters)
 
         forecast_range = {}
 
@@ -927,29 +880,23 @@ def predict_department_energy():
 
             for dept, energies in pred.items():
 
-                top = sorted(
-                    energies.items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )[:3]
+                top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-                summary.append({
-                    "dept": dept,
-                    "top": top
-                })
+                summary.append({"dept": dept, "top": top})
 
             forecast_range[forecast_year] = {
                 "prediction": pred,
                 "summary": summary,
             }
 
-        return jsonify({
-            "mode": "forecast_range",
-            "years": forecast_range,
-            "available_years": list(forecast_range.keys()),
-            "message":
-                f"🔮 以下為未來 {future_range_n} 年 AI 能源預測結果。"
-        })
+        return jsonify(
+            {
+                "mode": "forecast_range",
+                "years": forecast_range,
+                "available_years": list(forecast_range.keys()),
+                "message": f"🔮 以下為未來 {future_range_n} 年 AI 能源預測結果。",
+            }
+        )
 
     # =========================
     # 📘 歷史資料模式
@@ -960,11 +907,9 @@ def predict_department_energy():
 
         if not raw:
 
-            return jsonify({
-                "mode": "guide",
-                "message":
-                    f"📁 找不到 {roc_year} 年能源資料。"
-            })
+            return jsonify(
+                {"mode": "guide", "message": f"📁 找不到 {roc_year} 年能源資料。"}
+            )
 
         normalized = normalize(raw)
 
@@ -975,75 +920,58 @@ def predict_department_energy():
             if dept_filters and dept not in dept_filters:
                 continue
 
-            result[dept] = {
-                k: v * 100
-                for k, v in energies.items()
-            }
+            result[dept] = {k: v * 100 for k, v in energies.items()}
 
         summary = []
 
         for dept, energies in result.items():
 
-            top = sorted(
-                energies.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )[:3]
+            top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-            summary.append({
-                "dept": dept,
-                "top": top
-            })
+            summary.append({"dept": dept, "top": top})
 
-        return jsonify({
-            "mode": "history",
-            "year": roc_year,
-            "message":
-                f"📘 {roc_year} 年已有真實能源資料，以下為實際能源結構結果。",
-            "prediction": result,
-            "summary": summary,
-        })
+        return jsonify(
+            {
+                "mode": "history",
+                "year": roc_year,
+                "message": f"📘 {roc_year} 年已有真實能源資料，以下為實際能源結構結果。",
+                "prediction": result,
+                "summary": summary,
+            }
+        )
 
     # =========================
     # 🔮 單一年份 AI 預測
     # =========================
-    prediction = run_prediction(
-        target_year,
-        dept_filters,
-        mode="full"
-    )
+    prediction = run_prediction(target_year, dept_filters, mode="full")
 
     if not prediction:
 
-        return jsonify({
-            "mode": "guide",
-            "message":
-                "⚠️ 無法產生預測結果，請重新嘗試其他年份或部門。"
-        })
+        return jsonify(
+            {
+                "mode": "guide",
+                "message": "⚠️ 無法產生預測結果，請重新嘗試其他年份或部門。",
+            }
+        )
 
     summary = []
 
     for dept, energies in prediction.items():
 
-        top = sorted(
-            energies.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:3]
+        top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-        summary.append({
-            "dept": dept,
-            "top": top
-        })
+        summary.append({"dept": dept, "top": top})
 
-    return jsonify({
-        "mode": "forecast",
-        "year": roc_year,
-        "message":
-            f"🔮 {roc_year} 年為未來年份，以下為 AI 能源預測結果。",
-        "prediction": prediction,
-        "summary": summary,
-    })
+    return jsonify(
+        {
+            "mode": "forecast",
+            "year": roc_year,
+            "message": f"🔮 {roc_year} 年為未來年份，以下為 AI 能源預測結果。",
+            "prediction": prediction,
+            "summary": summary,
+        }
+    )
+
 
 # =========================
 # 📩 Contact
@@ -1752,6 +1680,19 @@ def get_energy_news():
 def power_units():
 
     return jsonify(get_power_units())
+
+
+# ====================================
+# 📊 Forecast Metrics
+# ====================================
+@app.route("/forecast-metrics")
+def forecast_metrics():
+
+    values = list(ACCURACY_CACHE.values())
+
+    avg = sum(values) / len(values) if values else 0
+
+    return jsonify({"mape": round(avg, 2)})
 
 
 # ====================================
