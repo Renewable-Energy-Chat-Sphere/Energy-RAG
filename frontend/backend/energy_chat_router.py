@@ -60,40 +60,32 @@ ENERGY_SYNONYMS = {
     "液化天然氣": "天然氣",
     "lng": "天然氣",
     "LNG": "天然氣",
-
     "電力": "電力",
     "用電": "電力",
     "電": "電力",
-
     "煤": "煤及煤產品",
     "煤炭": "煤及煤產品",
     "煤及煤產品": "煤及煤產品",
-
     "石油": "原油及石油產品",
     "油": "原油及石油產品",
     "原油": "原油及石油產品",
     "原油及石油產品": "原油及石油產品",
-
     "太陽能": "太陽光電",
     "光電": "太陽光電",
     "太陽光電": "太陽光電",
-
     "風電": "風力",
     "風能": "風力",
     "風力": "風力",
-
     "熱": "熱能",
     "熱能": "熱能",
-
     "核電": "核能",
     "核能": "核能",
-
     "水電": "水力",
     "水力": "水力",
-
     "生質能": "生質能",
     "廢棄物": "廢棄物",
 }
+
 
 def should_use_energy_rag(user_text: str):
     text = user_text.strip()
@@ -127,27 +119,43 @@ def should_use_energy_rag(user_text: str):
     # =====================================================
     # 🎯 3. 部門 → 問能源
     # =====================================================
-    if department and any(k in text for k in [
-        "主要使用", "使用哪些能源", "用哪些能源",
-        "主要用什麼", "最多", "前幾", "排名"
-    ]):
+    if department and any(
+        k in text
+        for k in [
+            "主要使用",
+            "使用哪些能源",
+            "用哪些能源",
+            "主要用什麼",
+            "最多",
+            "前幾",
+            "排名",
+        ]
+    ):
         return True
 
     # =====================================================
     # 🎯 4. 能源 → 問部門
     # =====================================================
-    if energy_name and any(k in text for k in [
-        "哪些部門", "誰在用", "用在哪", "使用情況"
-    ]):
+    if energy_name and any(
+        k in text for k in ["哪些部門", "誰在用", "用在哪", "使用情況"]
+    ):
         return True
 
     # =====================================================
     # 🎯 5. 有「能源語意」但沒完全命中
     # =====================================================
     energy_keywords = [
-        "能源", "用電", "耗能", "電力",
-        "天然氣", "石油", "煤", "再生能源",
-        "使用量", "比例", "結構"
+        "能源",
+        "用電",
+        "耗能",
+        "電力",
+        "天然氣",
+        "石油",
+        "煤",
+        "再生能源",
+        "使用量",
+        "比例",
+        "結構",
     ]
 
     if any(k in text for k in energy_keywords):
@@ -157,9 +165,14 @@ def should_use_energy_rag(user_text: str):
     # ❌ 6. 明顯聊天（避免誤觸 RAG）
     # =====================================================
     casual_keywords = [
-        "你好", "嗨", "hello", "hi",
-        "你是誰", "可以做什麼",
-        "謝謝", "thanks"
+        "你好",
+        "嗨",
+        "hello",
+        "hi",
+        "你是誰",
+        "可以做什麼",
+        "謝謝",
+        "thanks",
     ]
 
     if any(k.lower() in text.lower() for k in casual_keywords):
@@ -169,6 +182,7 @@ def should_use_energy_rag(user_text: str):
     # 🎯 fallback（保守策略）
     # =====================================================
     return False
+
 
 # =====================================================
 # 判斷是不是能源問題
@@ -188,6 +202,7 @@ def is_energy_question(text: str) -> bool:
         "排名",
     ]
     return any(k in text for k in keywords)
+
 
 def extract_top_n(text: str):
     text = text.lower()
@@ -215,6 +230,7 @@ def extract_top_n(text: str):
         return 10
 
     return 5  # 預設
+
 
 # =====================================================
 # 年份抽取
@@ -255,7 +271,9 @@ def normalize_department(text: str):
             return dept
 
     # 再找同義詞
-    for alias, canonical in sorted(DEPARTMENT_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True):
+    for alias, canonical in sorted(
+        DEPARTMENT_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True
+    ):
         if alias in text:
             return canonical
 
@@ -272,7 +290,9 @@ def normalize_energy(text: str):
             return name
 
     # 再找同義詞
-    for alias, canonical in sorted(ENERGY_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True):
+    for alias, canonical in sorted(
+        ENERGY_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True
+    ):
         if alias in text:
             # 如果 canonical 本身在正式能源名稱中，直接回傳
             if canonical in ENERGY_NAMES:
@@ -284,6 +304,8 @@ def normalize_energy(text: str):
                     return name
 
     return None
+
+
 def extract_years(text: str):
     years = re.findall(r"(?:民國)?(\d{2,3})年", text)
     years = [int(y) for y in years]
@@ -293,6 +315,7 @@ def extract_years(text: str):
     years += [int(y) for y in years2]
 
     return sorted(list(set(years)))
+
 
 # =====================================================
 # 問題意圖判斷
@@ -306,21 +329,31 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
         len(years) >= 2
         and ("最多" in text or "最大" in text)
         and ("能源" in text or "資源" in text)
-        and ("分別" in text or "各自" in text or "各年" in text or "跟" in text or "和" in text)
-        ):
+        and (
+            "分別" in text
+            or "各自" in text
+            or "各年" in text
+            or "跟" in text
+            or "和" in text
+        )
+    ):
         return "top_energy_overall"
-    
+
     # 0. 多年份整體能源比較
     if (
         len(years) >= 2
         and ("比較" in text or "差異" in text or "差別" in text)
         and ("能源" in text or "資源" in text)
         and department is None
-        ):
+    ):
         return "compare_years_overall"
-    
+
     # 1. 同部門跨年份比較
-    if len(years) >= 2 and department and ("差" in text or "比較" in text or "差異" in text):
+    if (
+        len(years) >= 2
+        and department
+        and ("差" in text or "比較" in text or "差異" in text)
+    ):
         return "compare_department_across_years"
 
     # 2. 同年份跨部門比較
@@ -329,12 +362,21 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
 
     # 3. 問整體最多能源
     if (
-            ("最多" in text or "最大" in text or "排名" in text 
-            or "前" in text   # ⭐關鍵！
-            or "top" in text.lower())
-            and ("能源" in text or "使用量" in text or energy_name is not None or "資源" in text)
-            and department is None
-        ):
+        (
+            "最多" in text
+            or "最大" in text
+            or "排名" in text
+            or "前" in text  # ⭐關鍵！
+            or "top" in text.lower()
+        )
+        and (
+            "能源" in text
+            or "使用量" in text
+            or energy_name is not None
+            or "資源" in text
+        )
+        and department is None
+    ):
         return "top_energy_overall"
 
     # 4. 問某部門主要用哪些能源
@@ -364,14 +406,18 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
         return "top_department_by_energy"
 
     # 6. 問某部門有沒有使用某能源
-    if department and energy_name and (
-        "有沒有使用" in text
-        or "有沒有用" in text
-        or "有用嗎" in text
-        or "有用到嗎" in text
-        or "是否使用" in text
-        or "有沒有" in text
-        or ("是否" in text and "使用" in text)
+    if (
+        department
+        and energy_name
+        and (
+            "有沒有使用" in text
+            or "有沒有用" in text
+            or "有用嗎" in text
+            or "有用到嗎" in text
+            or "是否使用" in text
+            or "有沒有" in text
+            or ("是否" in text and "使用" in text)
+        )
     ):
         return "check_usage"
 
@@ -382,14 +428,12 @@ def detect_intent(user_text: str, year=None, department=None, energy_name=None):
     # 8. 如果有部門但沒明確句型，也常常是部門→能源
     if department and energy_name is None and ("能源" in text or "資源" in text):
         return "top_energy_by_department"
-    
+
     #  fallback（避免掉到 semantic_search）
     if year and ("能源" in text or "使用量" in text or "前" in text):
         return "top_energy_overall"
-    
+
     return "semantic_search"
-
-
 
 
 # =====================================================
@@ -411,9 +455,9 @@ def search_energy_records(question: str, k: int = 20):
 # =====================================================
 def get_ratio_records(year=None, department=None, energy_name=None):
     result = [
-        r for r in records
-        if r.get("record_type") == "ratio"
-        and r.get("sheet") == "總比例換算"
+        r
+        for r in records
+        if r.get("record_type") == "ratio" and r.get("sheet") == "總比例換算"
     ]
 
     if year is not None:
@@ -421,13 +465,15 @@ def get_ratio_records(year=None, department=None, energy_name=None):
 
     if department is not None:
         result = [
-            r for r in result
+            r
+            for r in result
             if str(r.get("demand_name", "")).strip() == department.strip()
         ]
 
     if energy_name is not None:
         result = [
-            r for r in result
+            r
+            for r in result
             if str(r.get("supply_name_zh", "")).strip() == energy_name.strip()
         ]
 
@@ -512,7 +558,9 @@ def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5)
 # 某年某部門有沒有使用某能源
 # =====================================================
 def answer_check_usage(department: str, energy_name: str, year=None):
-    matches = get_ratio_records(year=year, department=department, energy_name=energy_name)
+    matches = get_ratio_records(
+        year=year, department=department, energy_name=energy_name
+    )
 
     year_text = f"{year}年" if year else "指定年度"
 
@@ -529,7 +577,7 @@ def answer_check_usage(department: str, energy_name: str, year=None):
 
     return {
         "success": True,
-        "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（（{round(best['value'],2)}%）。",
+        "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（{round(best['value'],2)}%）。",
         "sources": ["energy_rag_all_years_meta.json"],
         "results": [best],
     }
@@ -581,6 +629,7 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
         "results": top,
     }
 
+
 # =====================================================
 # 取得某年某部門 top energies
 # =====================================================
@@ -590,7 +639,6 @@ def get_top_energies_for_department(department: str, year=None, top_n: int = 5):
     return ratio_records[:top_n]
 
 
-
 def answer_multi_year_top_energy(years, top_n=5):
     results = []
 
@@ -598,10 +646,7 @@ def answer_multi_year_top_energy(years, top_n=5):
         r = answer_top_energy_overall(year=y, top_n=top_n)
 
         if r["success"]:
-            results.append({
-                "year": y,
-                "top": r["results"]
-            })
+            results.append({"year": y, "top": r["results"]})
 
     if not results:
         return {
@@ -619,16 +664,15 @@ def answer_multi_year_top_energy(years, top_n=5):
         answer += f"{r['year']}年：{names}\n"
 
     return {
-    "success": True,
-    "answer": answer,
-    "years": [r["year"] for r in results],  
-    "results": results,
-    "card_type": "multi_year",
-    "sources": [
-        "energy_rag_all_years_meta.json",
-        "energy_rag_all_years.index"
-    ]
-}
+        "success": True,
+        "answer": answer,
+        "years": [r["year"] for r in results],
+        "results": results,
+        "card_type": "multi_year",
+        "sources": ["energy_rag_all_years_meta.json", "energy_rag_all_years.index"],
+    }
+
+
 def answer_compare_years_overall(years, top_n=5):
     years = sorted(years)
 
@@ -637,10 +681,7 @@ def answer_compare_years_overall(years, top_n=5):
     for y in years:
         r = answer_top_energy_overall(year=y, top_n=top_n)
         if r["success"]:
-            results.append({
-                "year": y,
-                "top": r["results"]
-            })
+            results.append({"year": y, "top": r["results"]})
 
     if not results:
         return {
@@ -664,6 +705,8 @@ def answer_compare_years_overall(years, top_n=5):
         "results": results,
         "card_type": "comparison",
     }
+
+
 # =====================================================
 # 問題：同部門跨年份比較
 # 例：85年和113年工業部門主要能源差異
@@ -675,18 +718,14 @@ def answer_compare_department_across_years(department, years, top_n=5):
 
     for y in years:
         top = get_top_energies_for_department(department, year=y, top_n=top_n)
-        results.append({
-            "year": y,
-            "top": top
-        })
+        results.append({"year": y, "top": top})
 
     answer = f"### {department} 多年度能源比較\n\n"
 
     for r in results:
-        names = "、".join([
-            f"{e['supply_name_zh']}（{round(e['value'],2)}%）"
-            for e in r["top"]
-        ])
+        names = "、".join(
+            [f"{e['supply_name_zh']}（{round(e['value'],2)}%）" for e in r["top"]]
+        )
         answer += f"{r['year']}年：{names}\n\n"
 
     return {
@@ -707,19 +746,15 @@ def answer_compare_departments_same_year(departments, year=None, top_n=5):
 
     for dept in departments:
         top = get_top_energies_for_department(dept, year=year, top_n=top_n)
-        results.append({
-            "department": dept,
-            "top": top
-        })
+        results.append({"department": dept, "top": top})
 
     year_text = f"{year}年" if year else "指定年度"
     answer = f"### {year_text} 多部門能源比較\n\n"
 
     for r in results:
-        names = "、".join([
-            f"{e['supply_name_zh']}（{round(e['value'],2)}%）"
-            for e in r["top"]
-        ])
+        names = "、".join(
+            [f"{e['supply_name_zh']}（{round(e['value'],2)}%）" for e in r["top"]]
+        )
         answer += f"{r['department']}：{names}\n\n"
 
     return {
@@ -739,11 +774,14 @@ def extract_departments(text: str):
         if dept in text and dept not in found:
             found.append(dept)
 
-    for alias, canonical in sorted(DEPARTMENT_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True):
+    for alias, canonical in sorted(
+        DEPARTMENT_SYNONYMS.items(), key=lambda x: len(x[0]), reverse=True
+    ):
         if alias in text and canonical not in found:
             found.append(canonical)
 
     return found
+
 
 # =====================================================
 # fallback：語意檢索
@@ -787,9 +825,11 @@ def answer_energy_question(user_text: str):
     department = normalize_department(user_text)
     departments = extract_departments(user_text)
     energy_name = normalize_energy(user_text)
-    intent = detect_intent(user_text, year=year, department=department, energy_name=energy_name)
+    intent = detect_intent(
+        user_text, year=year, department=department, energy_name=energy_name
+    )
     top_n = extract_top_n(user_text)
-    
+
     if intent == "compare_years_overall":
         return answer_compare_years_overall(years, top_n=top_n)
 

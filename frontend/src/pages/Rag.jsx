@@ -9,24 +9,22 @@ export default function Rag() {
   const [exportFileName, setExportFileName] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
-  
+
   const API = "/api";
   // const API = "http://127.0.0.1:8000";
-  
+
   async function downloadFile({
     endpoint,
     filename,
     errorKey,
     reportData = structuredData,
   }) {
-
     if (!reportData) {
       alert(t("rag.noExport"));
       return;
     }
 
     try {
-
       const res = await fetch(`${API}/${endpoint}`, {
         method: "POST",
         headers: {
@@ -53,9 +51,7 @@ export default function Rag() {
       a.remove();
 
       window.URL.revokeObjectURL(url);
-
     } catch (err) {
-
       console.error(err);
       alert(t("rag.downloadError"));
     }
@@ -81,42 +77,26 @@ export default function Rag() {
         INPUT_MIN_HEIGHT,
       )}px`;
     };
-    
+
     /* textarea 存在才綁定 */
     if (inputUser) {
+      inputUser.addEventListener("input", resetHeight);
 
-      inputUser.addEventListener(
-        "input",
-        resetHeight
-      );
-
-      requestAnimationFrame(
-        resetHeight
-      );
+      requestAnimationFrame(resetHeight);
 
       /* Shift+Enter 換行 */
-      inputUser.addEventListener(
-        "keydown",
-        (e) => {
-
-          if (
-            e.key === "Enter" &&
-            !e.shiftKey
-          ) {
-
-            e.preventDefault();
-            form.requestSubmit();
-          }
+      inputUser.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          form.requestSubmit();
         }
-      );
+      });
     }
 
     /* Chat 提交 */
     const handleSubmit = async (e) => {
       chatLog.classList.add("active");
-      document
-        .querySelector(".rag-chat-wrapper")
-        ?.classList.add("active");
+      document.querySelector(".rag-chat-wrapper")?.classList.add("active");
 
       e.preventDefault();
 
@@ -147,11 +127,7 @@ export default function Rag() {
       userInner.innerHTML = `
         <div class="user-bubble">
           ${marked.parse(userText || "🔗 Uploaded File")}
-          ${
-            file
-              ? `<div class="upload-file-name">📄 ${file.name}</div>`
-              : ""
-          }
+          ${file ? `<div class="upload-file-name">📄 ${file.name}</div>` : ""}
         </div>
       `;
 
@@ -160,7 +136,6 @@ export default function Rag() {
       chatLog.scrollTop = chatLog.scrollHeight;
 
       try {
-
         // Thinking UI
         const thinkingWrap = document.createElement("div");
         thinkingWrap.className = "rag-message assistant";
@@ -215,63 +190,36 @@ export default function Rag() {
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
-          extraHtml = renderComparisonCards(
-            data.results,
-            t,
-          );
-
-        } else if (
-          data.card_type === "multi_year"
-        ) {
-
-          extraHtml = renderMultiYearCards(
-            data.results,
-            t,
-          );
-
-        } else if (
-          Array.isArray(data.results) &&
-          data.results.length
-        ) {
-
+          extraHtml = renderComparisonCards(data.results, t);
+        } else if (data.card_type === "multi_year") {
+          extraHtml = renderMultiYearCards(data.results, t);
+        } else if (Array.isArray(data.results) && data.results.length) {
           const hasValueCards = data.results.every(
             (r) =>
-              r &&
-              (
-                r.supply_name_zh ||
-                r.demand_name
-              ) &&
-              r.value !== undefined,
+              r && (r.supply_name_zh || r.demand_name) && r.value !== undefined,
           );
 
           if (hasValueCards) {
-            extraHtml = renderEnergyTopCards(
-              data.results,
-            );
+            extraHtml = renderEnergyTopCards(data.results);
           }
         }
 
-        let cleanAnswer =
-          data.answer || t("rag.noResponse");
+        let cleanAnswer = data.answer || t("rag.noResponse");
 
         // 移除 structured_data 區塊
         cleanAnswer = cleanAnswer.replace(
           /structured_data[\s\S]*?(接下來|接著|我將|我會)/gi,
-          "$1"
+          "$1",
         );
 
         // 移除 json 標題 + JSON內容
         cleanAnswer = cleanAnswer.replace(
           /json[\s\S]*?(接下來|接著|我將|我會)/gi,
-          "$1"
+          "$1",
         );
-        cleanAnswer = cleanAnswer.replace(
-          /接下來，我將生成[\s\S]*/gi,
-          ""
-        );
+        cleanAnswer = cleanAnswer.replace(/接下來，我將生成[\s\S]*/gi, "");
         // markdown → html
         let answerHtml = marked.parse(cleanAnswer);
-        
 
         // Source Tooltip
         const sourceMatch = answerHtml.match(
@@ -281,10 +229,7 @@ export default function Rag() {
         if (sourceMatch) {
           const sourceText = sourceMatch[2];
 
-          const years =
-            sourceText.match(
-              /民國\d+年|Year\s*\d+/g,
-            ) || [];
+          const years = sourceText.match(/民國\d+年|Year\s*\d+/g) || [];
 
           const tooltipItems = years
             .map(
@@ -335,29 +280,23 @@ export default function Rag() {
 
         // 等動畫完成再加 UI
         setTimeout(() => {
-
           const extra = extraHtml;
 
           if (extra) {
             answerBox.insertAdjacentHTML("afterend", extra);
           }
-
         }, 300);
 
         // Download Button
-        const sd =
-          data?.structured_data?.data ||
-          data?.structured_data;
+        const sd = data?.structured_data?.data || data?.structured_data;
 
         if (sd) {
-
           // 存真正表格資料
           setStructuredData(sd);
 
           // 存檔名
           setExportFileName(
-            data?.structured_data?.file_name ||
-            "AI_Report.xlsx"
+            data?.structured_data?.file_name || "AI_Report.xlsx",
           );
 
           const buttons = `
@@ -384,22 +323,17 @@ export default function Rag() {
             </div>
           `;
 
-          card.insertAdjacentHTML(
-            "beforeend",
-            buttons
-          );
+          card.insertAdjacentHTML("beforeend", buttons);
 
           // PDF
-          const pdfBtn =
-            card.querySelector(".pdf-btn");
+          const pdfBtn = card.querySelector(".pdf-btn");
 
           if (pdfBtn) {
             pdfBtn.onclick = () => {
               downloadFile({
                 endpoint: "export_pdf",
                 filename:
-                  exportFileName.replace(".xlsx", ".pdf") ||
-                  "AI_Report.pdf",
+                  exportFileName.replace(".xlsx", ".pdf") || "AI_Report.pdf",
                 errorKey: "rag.pdfError",
                 reportData: sd,
               });
@@ -407,15 +341,13 @@ export default function Rag() {
           }
 
           // XLSX
-          const excelBtn =
-            card.querySelector(".excel-btn");
+          const excelBtn = card.querySelector(".excel-btn");
 
           if (excelBtn) {
             excelBtn.onclick = () => {
               downloadFile({
                 endpoint: "export_excel",
-                filename:
-                  exportFileName || "AI_Report.xlsx",
+                filename: exportFileName || "AI_Report.xlsx",
                 errorKey: "rag.excelError",
                 reportData: sd,
               });
@@ -429,14 +361,11 @@ export default function Rag() {
 
         chatLog.scrollTop = chatLog.scrollHeight;
       } catch (err) {
-
         console.error(err);
 
-        const errWrap =
-          document.createElement("div");
+        const errWrap = document.createElement("div");
 
-        errWrap.className =
-          "rag-message assistant";
+        errWrap.className = "rag-message assistant";
 
         errWrap.innerHTML = `
           <div class="rag-message-inner">
@@ -460,7 +389,6 @@ export default function Rag() {
   return (
     <div className="rag-page">
       <div className="rag-container">
-
         {/* HERO */}
         <div className="rag-hero">
           <h1>Energy RAG Assistant</h1>
@@ -469,23 +397,15 @@ export default function Rag() {
 
           <div className="rag-badges">
             <span className="rag-badge">{t("rag.badge1")}</span>
-            <span className="rag-badge alt">
-              {t("rag.badge2")}
-            </span>
-            <span className="rag-badge">
-              {t("rag.badge3")}
-            </span>
+            <span className="rag-badge alt">{t("rag.badge2")}</span>
+            <span className="rag-badge">{t("rag.badge3")}</span>
           </div>
         </div>
 
         {/* 聊天主區 */}
         <div className="rag-chat-wrapper">
-
           {/* 聊天紀錄 */}
-          <div
-            id="rag-chat-log"
-            className="rag-chat-log"
-          >
+          <div id="rag-chat-log" className="rag-chat-log">
             {loading && (
               <div className="rag-message assistant">
                 <div className="rag-message-inner">
@@ -505,12 +425,9 @@ export default function Rag() {
             className="rag-unified-form"
             encType="multipart/form-data"
           >
-
             {/* 上傳按鈕 */}
             <label className="upload-btn">
-
               +
-
               <input
                 type="file"
                 name="file"
@@ -538,17 +455,12 @@ export default function Rag() {
             <div className="chat-input-area">
               {selectedFileName && (
                 <div className="selected-file-inside">
-                  <span className="file-name">
-                    🔗 {selectedFileName}
-                  </span>
+                  <span className="file-name">🔗 {selectedFileName}</span>
 
                   <span
                     className="remove-file-btn"
                     onClick={() => {
-                      const fileInput =
-                        document.getElementsByName(
-                          "file"
-                        )[0];
+                      const fileInput = document.getElementsByName("file")[0];
 
                       if (fileInput) {
                         fileInput.value = "";
@@ -567,7 +479,6 @@ export default function Rag() {
                 rows="1"
                 placeholder={t("rag.chatPlaceholder")}
               />
-
             </div>
 
             {/* 送出 */}
@@ -580,7 +491,6 @@ export default function Rag() {
     </div>
   );
 }
-
 
 /* helper functions */
 function sentenceWriter(element, html, speed = 20) {

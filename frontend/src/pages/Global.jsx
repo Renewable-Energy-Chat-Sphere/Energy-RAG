@@ -51,7 +51,7 @@ Object.entries(energyFiles).forEach(([path, module]) => {
 });
 
 const years = Object.keys(energyMap).sort((a, b) => b - a);
-
+const API = "http://127.0.0.1:8000";
 export default function Global({ isMobile }) {
   function findNodeByCode(code, tree) {
     for (const key in tree) {
@@ -89,11 +89,13 @@ export default function Global({ isMobile }) {
   };
 
   const onSelect = (data) => {
+    if (!data) return;
+
     if (selected?.code === data.code) {
-      setSelected(null);
-    } else {
-      setSelected(data);
+      return;
     }
+
+    setSelected(data);
   };
 
   const handleMouseDown = () => setDragging(true);
@@ -199,7 +201,8 @@ export default function Global({ isMobile }) {
       changeAnalysis: "Change Analysis",
       noPrediction: "No prediction data available for this sector.",
       accuracy: "Prediction Accuracy",
-      trendAnalysis: "AI Prediction Trend Analysis (Historical Actual vs Predicted)",
+      trendAnalysis:
+        "AI Prediction Trend Analysis (Historical Actual vs Predicted)",
     },
   };
 
@@ -367,7 +370,7 @@ export default function Global({ isMobile }) {
     setAnswer("");
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${API}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -378,7 +381,18 @@ export default function Global({ isMobile }) {
       });
 
       const data = await res.json();
-      typeWriter(data.answer || t.noResponse);
+
+      if (!data?.answer) {
+        setAnswer(
+          language === "en" ? "❌ Invalid backend response" : "❌ 後端回傳錯誤",
+        );
+
+        console.error("Backend Error:", data);
+
+        return;
+      }
+
+      typeWriter(data.answer);
     } catch {
       setAnswer(language === "en" ? "❌ Error occurred" : "❌ 發生錯誤");
     } finally {
@@ -402,45 +416,50 @@ export default function Global({ isMobile }) {
       if (i >= text.length) clearInterval(interval);
     }, 20);
   }
-
   useEffect(() => {
     if (!selected) return;
     if (selected.code.startsWith("S")) return;
+
     setQuestion(`${year} ${getName(selected.code)} 能源比例`);
+  }, [selected?.code, year]);
+  useEffect(() => {
+    if (!selected) return;
+    if (selected.code.startsWith("S")) return;
 
-    setLoading(true); // 開始動畫
-    setPredictionData(null); // 清空舊資料
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setPredictionData(null);
 
-    fetch("http://127.0.0.1:8000/predict_department_energy", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
-        year: year,
-        mode: "dynamic",
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setTimeout(() => {
-          // 模擬動畫延遲
+      fetch(`${API}/predict_department_energy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
+          year: year,
+          mode: "full",
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
           setPredictionData(data);
           setLoading(false);
-        }, 500); // 0.5秒動畫感
-      })
-      .catch(() => {
-        setPredictionData(null);
-        setLoading(false);
-      });
+        })
+        .catch(() => {
+          setPredictionData(null);
+          setLoading(false);
+        });
+    }, 400);
 
     const currentDept = energyData[selected.code];
 
     if (currentDept) {
       setCurrentData(currentDept);
     }
-  }, [selected, year]);
+
+    return () => clearTimeout(timer);
+  }, [selected?.code, year]);
   function getCompareChartData() {
     if (!predictionData || !currentData || !selected) return null;
 
@@ -487,16 +506,18 @@ export default function Global({ isMobile }) {
 
     const datasets = [
       {
-        label: language === "en"
-          ? `${formatYear(year, language)} (Actual)`
-          : `${formatYear(year, language)}年（實際）`,
+        label:
+          language === "en"
+            ? `${formatYear(year, language)} (Actual)`
+            : `${formatYear(year, language)}年（實際）`,
         data: allKeys.map((k) => currentPercent[k] || 0),
         backgroundColor: "#3b82f6",
       },
       {
-        label: language === "en"
-          ? `${formatYear(Number(year)+1, language)} (Predicted)`
-          : `${formatYear(Number(year)+1, language)}年（預測）`,
+        label:
+          language === "en"
+            ? `${formatYear(Number(year) + 1, language)} (Predicted)`
+            : `${formatYear(Number(year) + 1, language)}年（預測）`,
         data: allKeys.map((k) => deptPred[k] || 0),
         backgroundColor: "#ef4444",
       },
@@ -663,7 +684,8 @@ export default function Global({ isMobile }) {
       <div className="control-panel">
         <div className="panel-row">
           <span className="title-content">
-            <i className="fi fi-br-settings"></i>{t.panel}
+            <i className="fi fi-br-settings"></i>
+            {t.panel}
           </span>
 
           <div className="label-group">
@@ -686,7 +708,6 @@ export default function Global({ isMobile }) {
             {t.flow}
           </label>
 
-          
           <div className="ai-box" onClick={() => setShowAI(true)}>
             <i
               className="fi fi-br-comments"
@@ -800,8 +821,7 @@ export default function Global({ isMobile }) {
                   <h3>
                     {selected?.code?.startsWith("S")
                       ? t.mainDemand
-                      : t.mainSupply
-                    }
+                      : t.mainSupply}
                   </h3>
                   <p>
                     {getEnergyList()
@@ -862,7 +882,8 @@ export default function Global({ isMobile }) {
                               key={index}
                               fill={
                                 selected?.code?.startsWith("S")
-                                  ? DEPT_COLOR[getRootDept(entry.id)] || "#808080"
+                                  ? DEPT_COLOR[getRootDept(entry.id)] ||
+                                    "#808080"
                                   : CATEGORY_COLOR[entry.category] || "#808080"
                               }
                             />
@@ -899,10 +920,13 @@ export default function Global({ isMobile }) {
                                       style={{
                                         width: 8,
                                         height: 8,
-                                        background:
-                                          selected?.code?.startsWith("S")
-                                            ? DEPT_COLOR[getRootDept(item.id)] || "#808080"
-                                            : CATEGORY_COLOR[item.category] || "#808080",
+                                        background: selected?.code?.startsWith(
+                                          "S",
+                                        )
+                                          ? DEPT_COLOR[getRootDept(item.id)] ||
+                                            "#808080"
+                                          : CATEGORY_COLOR[item.category] ||
+                                            "#808080",
                                         marginRight: 4,
                                       }}
                                     />
@@ -929,8 +953,10 @@ export default function Global({ isMobile }) {
                       {getCompareChartData() && (
                         <>
                           <h3>
-                            {formatYear(year, language)} {language === "en" ? "" : "年"} vs{" "}
-                            {formatYear(Number(year) + 1, language)} {language === "en" ? "" : "年"}
+                            {formatYear(year, language)}{" "}
+                            {language === "en" ? "" : "年"} vs{" "}
+                            {formatYear(Number(year) + 1, language)}{" "}
+                            {language === "en" ? "" : "年"}
                           </h3>{" "}
                           <Bar
                             data={getCompareChartData()}
@@ -960,19 +986,20 @@ export default function Global({ isMobile }) {
                                       let label = "";
 
                                       if (context.datasetIndex === 0) {
-                                        label = language === "en"
-                                          ? `${y1} (Actual)`
-                                          : `${y1}年（實際）`;
-                                      }
-                                      else if (context.datasetIndex === 1) {
-                                        label = language === "en"
-                                          ? `${y2} (Predicted)`
-                                          : `${y2}年（預測）`;
-                                      }
-                                      else if (context.datasetIndex === 2) {
-                                        label = language === "en"
-                                          ? `${y2} (Actual)`
-                                          : `${y2}年（實際）`;
+                                        label =
+                                          language === "en"
+                                            ? `${y1} (Actual)`
+                                            : `${y1}年（實際）`;
+                                      } else if (context.datasetIndex === 1) {
+                                        label =
+                                          language === "en"
+                                            ? `${y2} (Predicted)`
+                                            : `${y2}年（預測）`;
+                                      } else if (context.datasetIndex === 2) {
+                                        label =
+                                          language === "en"
+                                            ? `${y2} (Actual)`
+                                            : `${y2}年（實際）`;
                                       }
 
                                       return `${label}: ${context.raw.toFixed(1)}%`;
@@ -995,7 +1022,9 @@ export default function Global({ isMobile }) {
 
                       {predictionData && (
                         <div className="prediction-box">
-                          <h4 style={{ marginTop: "10px" }}>{t.changeAnalysis}</h4>
+                          <h4 style={{ marginTop: "10px" }}>
+                            {t.changeAnalysis}
+                          </h4>
 
                           {getPredictionDiff()
                             .filter((item) => Math.abs(item.diff) > 1)
@@ -1022,9 +1051,7 @@ export default function Global({ isMobile }) {
 
                             if (!deptPred) {
                               return (
-                                <p style={{ opacity: 0.6 }}>
-                                  {t.noPrediction}
-                                </p>
+                                <p style={{ opacity: 0.6 }}>{t.noPrediction}</p>
                               );
                             }
 
@@ -1096,10 +1123,10 @@ export default function Global({ isMobile }) {
                       <span key={i}>
                         {d.name}
                         {i !== arr.length - 1
-                            ? language === "en"
-                              ? ", "
-                              : "、"
-                            : ""}
+                          ? language === "en"
+                            ? ", "
+                            : "、"
+                          : ""}
                       </span>
                     ));
                   })()}
@@ -1115,10 +1142,10 @@ export default function Global({ isMobile }) {
                       <span key={i}>
                         {d.name}
                         {i !== arr.length - 1
-                            ? language === "en"
-                              ? ", "
-                              : "、"
-                            : ""}
+                          ? language === "en"
+                            ? ", "
+                            : "、"
+                          : ""}
                       </span>
                     ));
                   })()}
@@ -1172,7 +1199,7 @@ export default function Global({ isMobile }) {
               </span>
             </div>
 
-            {getPredictionLineData() && (
+            {getAIPredictionLineData() && (
               <Line
                 data={getAIPredictionLineData()}
                 options={{

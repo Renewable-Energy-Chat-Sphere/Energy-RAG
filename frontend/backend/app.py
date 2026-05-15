@@ -8,7 +8,9 @@ import os, json, re, pickle
 from datetime import datetime
 from flask import request, jsonify
 from power_api import get_power_units
+import logging
 
+logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
 # 資料庫 專用
 import sqlite3
 from db import get_db
@@ -199,6 +201,7 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 SERIES_CACHE = {}
 MODEL_CACHE = {}
 ACCURACY_CACHE = {}  # 🔥 新增（完全不影響原本）
+EVALUATION_CACHE = {}
 
 # =========================
 # 🧠 hierarchy
@@ -323,19 +326,20 @@ def normalize(data):
 # 🔥 初始化（只加準確度）
 # =========================
 def init_data(force_retrain=False):
-    global SERIES_CACHE, MODEL_CACHE, ACCURACY_CACHE
+    global SERIES_CACHE, MODEL_CACHE, ACCURACY_CACHE, EVALUATION_CACHE
 
     print("⚡ 初始化資料...")
 
     model_path = os.path.join(MODEL_DIR, "models.pkl")
     series_path = os.path.join(MODEL_DIR, "series.pkl")
     acc_path = os.path.join(MODEL_DIR, "accuracy.pkl")
-
+    eval_path = os.path.join(MODEL_DIR, "evaluation.pkl")
     if not force_retrain:
         try:
             MODEL_CACHE = pickle.load(open(model_path, "rb"))
             SERIES_CACHE = pickle.load(open(series_path, "rb"))
             ACCURACY_CACHE = pickle.load(open(acc_path, "rb"))
+            EVALUATION_CACHE = pickle.load(open(eval_path, "rb"))
             print("✅ 已載入模型 + 準確度")
             return
         except:
@@ -347,7 +351,7 @@ def init_data(force_retrain=False):
     series = {}
     models = {}
     accuracy = {}
-
+    evaluation = {}
     for year, data in normalized.items():
         for dept, energies in data.items():
             for e, v in energies.items():
@@ -375,6 +379,11 @@ def init_data(force_retrain=False):
 
             # 🔥 新增：準確度
             forecast = model.predict(df)
+            evaluation[key] = {
+                "years": years_ad,
+                "actual": list(df["y"]),
+                "predicted": list(forecast["yhat"]),
+            }
             actual = list(df["y"])
             predicted = list(forecast["yhat"])
 
@@ -394,10 +403,11 @@ def init_data(force_retrain=False):
     SERIES_CACHE = series
     MODEL_CACHE = models
     ACCURACY_CACHE = accuracy
-
+    EVALUATION_CACHE = evaluation
     pickle.dump(MODEL_CACHE, open(model_path, "wb"))
     pickle.dump(SERIES_CACHE, open(series_path, "wb"))
     pickle.dump(ACCURACY_CACHE, open(acc_path, "wb"))
+    pickle.dump(EVALUATION_CACHE, open(eval_path, "wb"))
 
     print("✅ 訓練完成 + 準確度完成")
 
@@ -481,34 +491,18 @@ def run_prediction(target_year, dept_filters=None, mode="full"):
 # 📊 evaluation
 # =========================
 def get_evaluation_data(dept_filters=None):
+
     result = {}
 
-    for key, model in MODEL_CACHE.items():
+    for key, val in EVALUATION_CACHE.items():
+
         dept, energy = key.split("_")
 
         if dept_filters and dept not in dept_filters:
             continue
 
-        years = SERIES_CACHE[key]["years"]
-        values = SERIES_CACHE[key]["values"]
-
-        if len(years) < 3:
-            continue
-
-        years_ad = [y + 1911 for y in years]
-
-        df = pd.DataFrame(
-            {"ds": pd.to_datetime([str(y) for y in years_ad]), "y": values}
-        )
-
-        forecast = model.predict(df)
-
         result.setdefault(dept, {})
-        result[dept][energy] = {
-            "years": years_ad,
-            "actual": list(df["y"]),
-            "predicted": list(forecast["yhat"]),
-        }
+        result[dept][energy] = val
 
     return result
 

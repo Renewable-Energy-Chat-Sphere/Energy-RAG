@@ -10,6 +10,8 @@ CHAT_MAX_MESSAGES = 10
 CHAT_SESSIONS = defaultdict(lambda: deque(maxlen=CHAT_MAX_MESSAGES))
 
 URL_RE = re.compile(r"(https?://[^\s]+)", re.IGNORECASE)
+
+
 def detect_language(text):
 
     # 中文
@@ -102,6 +104,7 @@ DEFAULT_SYSTEM_PROMPT = """
 - 不要口語化
 """
 
+
 # =====================================================
 # 指令關鍵字判斷
 # =====================================================
@@ -173,15 +176,13 @@ def enhance_answer_by_mode(answer, mode):
 
     return answer
 
+
 # =====================================================
 # 回覆口語化
 # =====================================================
 def humanize_answer(text):
 
-    return text.replace(
-        "根據相關年度已生成的能源資料",
-        "我幫你查了一下"
-    )
+    return text.replace("根據相關年度已生成的能源資料", "我幫你查了一下")
 
 
 # =====================================================
@@ -200,11 +201,7 @@ def clean_numbers(text):
 
         return f"{num:.2f}"
 
-    return re.sub(
-        r"\d+\.\d+",
-        repl,
-        text
-    )
+    return re.sub(r"\d+\.\d+", repl, text)
 
 
 # =====================================================
@@ -231,9 +228,7 @@ def append_sources(answer, sources):
 
                 title = s.get("title", "網頁資料")
 
-                source_lines.append(
-                    f"- [{title}]({s['url']})"
-                )
+                source_lines.append(f"- [{title}]({s['url']})")
 
             # Excel
             elif s.get("sheet"):
@@ -241,23 +236,17 @@ def append_sources(answer, sources):
                 sheet = s.get("sheet")
                 rows = s.get("rows", "?")
 
-                source_lines.append(
-                    f"- 工作表：{sheet}（{rows} rows）"
-                )
+                source_lines.append(f"- 工作表：{sheet}（{rows} rows）")
 
             # Energy RAG
             elif s.get("year"):
                 year = s.get("year")
 
                 if s.get("sheet"):
-                    source_lines.append(
-                        f"- 民國{year}年｜{s['sheet']}"
-                    )
+                    source_lines.append(f"- 民國{year}年｜{s['sheet']}")
 
                 else:
-                    source_lines.append(
-                        f"- 民國{year}年能源資料"
-                    )
+                    source_lines.append(f"- 民國{year}年能源資料")
 
     # 去重複
     source_lines = list(dict.fromkeys(source_lines))
@@ -265,12 +254,8 @@ def append_sources(answer, sources):
     if not source_lines:
         return answer
 
-    return (
-        answer
-        + "\n\n---\n"
-        + "### 🔗 資料來源\n"
-        + "\n".join(source_lines)
-    )
+    return answer + "\n\n---\n" + "### 🔗 資料來源\n" + "\n".join(source_lines)
+
 
 # =====================================================
 # 網路資料來源格式化
@@ -289,24 +274,15 @@ def extract_sources(resp):
 
                             for ann in c.annotations:
                                 if getattr(ann, "type", "") == "url_citation":
-                                    sources.append({
-                                        "title": getattr(
-                                            ann,
-                                            "title",
-                                            "網頁來源"
-                                        ),
-                                        "url": getattr(
-                                            ann,
-                                            "url",
-                                            ""
-                                        )
-                                    })
+                                    sources.append(
+                                        {
+                                            "title": getattr(ann, "title", "網頁來源"),
+                                            "url": getattr(ann, "url", ""),
+                                        }
+                                    )
 
         # 去重複
-        sources = list({
-            s["url"]: s for s in sources
-            if s.get("url")
-        }.values())
+        sources = list({s["url"]: s for s in sources if s.get("url")}.values())
 
     except Exception as e:
         print("來源解析失敗:", e)
@@ -355,38 +331,20 @@ def translate_answer(openai_client, model, user_text, answer):
     """
 
     resp = openai_client.responses.create(
-        model=model,
-        input=lang_fix_prompt,
-        temperature=0
+        model=model, input=lang_fix_prompt, temperature=0
     )
 
-    return clean_numbers(
-        get_output_text(resp)
-    )
+    return clean_numbers(get_output_text(resp))
 
 
 # =====================================================
 # 輸出回覆整理
 # =====================================================
-def finalize_answer(
-    openai_client,
-    model,
-    user_text,
-    assistant_text,
-    sources
-):
+def finalize_answer(openai_client, model, user_text, assistant_text, sources):
 
-    assistant_text = translate_answer(
-        openai_client,
-        model,
-        user_text,
-        assistant_text
-    )
+    assistant_text = translate_answer(openai_client, model, user_text, assistant_text)
 
-    return append_sources(
-        assistant_text,
-        sources
-    )
+    return append_sources(assistant_text, sources)
 
 
 # =====================================================
@@ -394,25 +352,21 @@ def finalize_answer(
 # =====================================================
 @chat_bp.route("/chat", methods=["POST"])
 def chat():
-    session_id = (
-        request.form.get("session_id") or "default"
-    ).strip() or "default"
 
-    user_text = (
-        request.form.get("user") or ""
-    ).strip()
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form
 
-    model = (
-        request.form.get("model") or "gpt-4o-mini"
-    ).strip()
+    session_id = (data.get("session_id") or "default").strip() or "default"
 
-    rag_auto = (
-        request.form.get("rag_auto", "true").lower()
-        == "true"
-    )
+    user_text = (data.get("user") or "").strip()
+
+    model = (data.get("model") or "gpt-4o-mini").strip()
+
+    rag_auto = str(data.get("rag_auto", "true")).lower() == "true"
 
     file = request.files.get("file")
-
     if not user_text and not file:
         return jsonify({"error": "請輸入問題內容"}), 400
 
@@ -426,10 +380,7 @@ def chat():
         if filename.endswith(".pdf"):
             qa_over_pdf = current_app.config.get("QA_OVER_PDF")
 
-            answer, sources, structured_data = qa_over_pdf(
-                user_text,
-                file
-            )
+            answer, sources, structured_data = qa_over_pdf(user_text, file)
 
             return jsonify(
                 {
@@ -440,19 +391,12 @@ def chat():
                     "card_type": "default",
                     "session_id": session_id,
                     "model": "pdf_rag",
-                    "uses_openai": bool(
-                        current_app.config.get("OPENAI_CLIENT")
-                    ),
+                    "uses_openai": bool(current_app.config.get("OPENAI_CLIENT")),
                 }
             )
 
         # Excel / CSV
-        elif filename.endswith((
-            ".xlsx",
-            ".xls",
-            ".csv",
-            ".tsv"
-        )):
+        elif filename.endswith((".xlsx", ".xls", ".csv", ".tsv")):
 
             from tables import read_table, build_md, ask_llm, extract_json
 
@@ -460,11 +404,7 @@ def chat():
             md = build_md(sheets)
             client = current_app.config.get("OPENAI_CLIENT")
 
-            answer = ask_llm(
-                user_text,
-                md,
-                client
-            )
+            answer = ask_llm(user_text, md, client)
 
             structured_data = extract_json(answer)
 
@@ -478,9 +418,8 @@ def chat():
                                 "rows": int(df.shape[0]),
                             }
                             for name, df in sheets.items()
-                        ]
+                        ],
                     ),
-
                     "sources": [
                         {
                             "sheet": name,
@@ -511,9 +450,7 @@ def chat():
                 {user_text}
             """
 
-            resp = current_app.config.get(
-                "OPENAI_CLIENT"
-            ).responses.create(
+            resp = current_app.config.get("OPENAI_CLIENT").responses.create(
                 model=model,
                 input=prompt,
                 temperature=0.2,
@@ -522,10 +459,7 @@ def chat():
 
             return jsonify(
                 {
-                    "answer": append_sources(
-                        get_output_text(resp),
-                        [filename]
-                    ),
+                    "answer": append_sources(get_output_text(resp), [filename]),
                     "sources": [filename],
                     "results": [],
                     "card_type": "default",
@@ -586,10 +520,7 @@ def chat():
             mode = detect_query_mode(user_text)
             result = answer_energy_question(user_text)
 
-            assistant_text = result.get(
-                "answer",
-                "（無回應）"
-            )
+            assistant_text = result.get("answer", "（無回應）")
 
             sources = []
 
@@ -603,7 +534,6 @@ def chat():
                 resp = openai_client.responses.create(
                     model=model,
                     tools=[{"type": "web_search"}],
-
                     input=f"""
                     使用最新網路資料回答：
 
@@ -615,7 +545,6 @@ def chat():
                     - 使用相同的語種回覆
                     - 附上資料來源
                     """,
-
                     temperature=0.2,
                     max_output_tokens=1000,
                 )
@@ -624,18 +553,10 @@ def chat():
                 sources = extract_sources(resp)
 
                 assistant_text = finalize_answer(
-                    openai_client,
-                    model,
-                    user_text,
-                    assistant_text,
-                    sources
+                    openai_client, model, user_text, assistant_text, sources
                 )
 
-                _store_turn(
-                    session_id,
-                    user_text,
-                    assistant_text
-                )
+                _store_turn(session_id, user_text, assistant_text)
 
                 return jsonify(
                     {
@@ -653,9 +574,7 @@ def chat():
                 and "無相關資料" not in assistant_text
             ):
 
-                assistant_text = humanize_answer(
-                    assistant_text
-                )
+                assistant_text = humanize_answer(assistant_text)
 
                 # =====================================================
                 # 分析模式 LLM
@@ -683,14 +602,8 @@ def chat():
                         model=model,
                         tools=[{"type": "web_search"}],
                         input=[
-                            {
-                                "role": "system",
-                                "content": "請使用相同的語種回答"
-                            },
-                            {
-                                "role": "user",
-                                "content": analysis_prompt
-                            },
+                            {"role": "system", "content": "請使用相同的語種回答"},
+                            {"role": "user", "content": analysis_prompt},
                         ],
                         temperature=0.3,
                         max_output_tokens=1000,
@@ -703,11 +616,7 @@ def chat():
                     # 輸出語種統一
                     # =====================================
                     assistant_text = finalize_answer(
-                        openai_client,
-                        model,
-                        user_text,
-                        assistant_text,
-                        sources
+                        openai_client, model, user_text, assistant_text, sources
                     )
 
                 # =====================================
@@ -715,43 +624,26 @@ def chat():
                 # =====================================
                 else:
 
-                    assistant_text = enhance_answer_by_mode(
-                        assistant_text,
-                        mode
-                    )
+                    assistant_text = enhance_answer_by_mode(assistant_text, mode)
 
                 # 如果 analysis mode 沒有 web sources
                 # 才加 Energy RAG sources
                 if "### 🔗 資料來源" not in assistant_text:
-                    
+
                     # =====================================
                     # 輸出語種統一
                     # =====================================
                     assistant_text = finalize_answer(
-                        openai_client,
-                        model,
-                        user_text,
-                        assistant_text,
-                        sources
+                        openai_client, model, user_text, assistant_text, sources
                     )
 
-                _store_turn(
-                    session_id,
-                    user_text,
-                    assistant_text
-                )
+                _store_turn(session_id, user_text, assistant_text)
 
                 return jsonify(
                     {
                         "answer": assistant_text,
-                        "sources": result.get(
-                            "sources",
-                            []
-                        ),
-                        "results": result.get(
-                            "results",
-                            []
-                        ),
+                        "sources": result.get("sources", []),
+                        "results": result.get("results", []),
                         "session_id": session_id,
                         "model": "energy_rag",
                         "uses_openai": False,
@@ -792,18 +684,12 @@ def chat():
     if openai_client:
 
         try:
-            messages = _build_messages(
-                session_id,
-                user_text,
-                system_prompt
-            )
+            messages = _build_messages(session_id, user_text, system_prompt)
 
             resp = openai_client.responses.create(
                 model=model,
-
                 # 允許 GPT 上網搜尋
                 tools=[{"type": "web_search"}],
-
                 input=messages,
                 temperature=0.2,
                 max_output_tokens=800,
@@ -813,16 +699,12 @@ def chat():
 
             sources = extract_sources(resp)
             final_sources.extend(sources)
-            
+
             # =====================================
             # 輸出語種統一
             # =====================================
             assistant_text = finalize_answer(
-                openai_client,
-                model,
-                user_text,
-                assistant_text,
-                sources
+                openai_client, model, user_text, assistant_text, sources
             )
 
         except Exception as e:
