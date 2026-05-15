@@ -566,7 +566,7 @@ def parse_year(text):
     # 🔹 西元 / 民國年份
     # =========================
     match = re.search(
-        r"(20\d{2}|1\d{2})",
+        r"(20\d{2}|\d{1,3})",
         text
     )
 
@@ -587,31 +587,6 @@ def predict_department_energy():
 
     data = request.json or {}
     question = data.get("question", "").strip()
-
-    # =========================
-    # 🔥 預測關鍵字檢查
-    # =========================
-    forecast_keywords = [
-        "預測",
-        "未來",
-        "明年",
-        "後年",
-        "接下來",
-        "趨勢",
-        "能源結構",
-    ]
-
-    if not any(k in question for k in forecast_keywords):
-
-        return jsonify({
-            "mode": "guide",
-            "message":
-                "⚠️ 此頁面為 AI 能源預測系統，請輸入預測相關問題。\n\n"
-                "例如：\n"
-                "• 114工業部門能源結構\n"
-                "• 未來5年農業能源\n"
-                "• 明年住宅部門用電"
-        })
 
     # =========================
     # 🔥 解析年份 / 部門
@@ -655,25 +630,27 @@ def predict_department_energy():
         })
 
     # =========================
-    # 🔥 超過10年
+    # 🔥 載入資料
     # =========================
-    latest_year = max(load_all_years().keys())
+    all_data = load_all_years()
+    latest_year = max(all_data.keys())  # 113
 
-    if roc_year > latest_year + 10:
+    # =========================
+    # 🔥 超過20年
+    # =========================
+    if roc_year > latest_year + 20:
 
         return jsonify({
             "mode": "guide",
             "message":
-                "⚠️ 建議預測10年內資料。\n\n"
+                "⚠️ 建議預測20年內資料。\n\n"
                 "由於長期能源變化可能受政策、國際情勢與能源轉型影響，"
-                "超過10年的預測可能降低準確性。"
+                "超過20年的預測可能降低準確性。"
         })
 
     # =========================
     # 📘 歷史資料模式
     # =========================
-    all_data = load_all_years()
-
     if roc_year <= latest_year:
 
         raw = all_data.get(roc_year)
@@ -761,14 +738,12 @@ def predict_department_energy():
 
     return jsonify({
         "mode": "forecast",
-        "year": target_year,
+        "year": roc_year,
         "message":
             f"🔮 {roc_year} 年為未來年份，以下為 AI 能源預測結果。",
         "prediction": prediction,
         "summary": summary,
     })
-
-
 
 # =========================
 # 📩 Contact

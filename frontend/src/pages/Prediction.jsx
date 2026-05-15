@@ -235,7 +235,9 @@ const runPredict = async () => {
       )}
 
       {/* 🔹 卡片 */}
-      {data && !data.error && (
+      {data &&
+      data.mode !== "guide" &&
+      !data.error && (
         <div style={{ marginTop: 40 }}>
           
           {/* 🔹 使用者問題 */}
