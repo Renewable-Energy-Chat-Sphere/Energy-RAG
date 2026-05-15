@@ -10,8 +10,8 @@ export default function Rag() {
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
 
-  const API = "/api";
-  // const API = "http://127.0.0.1:8000";
+  // const API = "/api";
+  const API = "http://127.0.0.1:8000";
 
   async function downloadFile({
     endpoint,
@@ -217,7 +217,20 @@ export default function Rag() {
           /json[\s\S]*?(接下來|接著|我將|我會)/gi,
           "$1",
         );
+
         cleanAnswer = cleanAnswer.replace(/接下來，我將生成[\s\S]*/gi, "");
+        cleanAnswer = cleanAnswer.replace(
+          /(https?:\/\/[a-zA-Z0-9./?=_-]+|www\.[a-zA-Z0-9./?=_-]+)/g,
+          (url) => {
+
+            const href = url.startsWith("http")
+              ? url
+              : `https://${url}`;
+
+            return `[${url}](${href})`;
+          }
+        );
+        
         // markdown → html
         let answerHtml = marked.parse(cleanAnswer);
 
@@ -275,17 +288,30 @@ export default function Rag() {
 
         const answerBox = card.querySelector(".answer-box");
 
-        // 只打字在 answer box
-        sentenceWriter(answerBox, answerHtml, 20);
+        // 直接渲染 HTML（不要逐字動畫）
+        answerBox.innerHTML = answerHtml.replace(
+          /<a /g,
+          '<a target="_blank" rel="noopener noreferrer" '
+        );
 
-        // 等動畫完成再加 UI
+        // 直接加入額外卡片
+        if (extraHtml) {
+          card.insertAdjacentHTML("beforeend", extraHtml);
+        }
+
+        requestAnimationFrame(() => {
+          chatLog.scrollTo({
+            top: chatLog.scrollHeight,
+            behavior: "smooth",
+          });
+        });
+
         setTimeout(() => {
-          const extra = extraHtml;
-
-          if (extra) {
-            answerBox.insertAdjacentHTML("afterend", extra);
-          }
-        }, 300);
+          chatLog.scrollTo({
+            top: chatLog.scrollHeight,
+            behavior: "smooth",
+          });
+        }, 100);
 
         // Download Button
         const sd = data?.structured_data?.data || data?.structured_data;
@@ -359,7 +385,17 @@ export default function Rag() {
         aiWrap.appendChild(inner);
         chatLog.appendChild(aiWrap);
 
-        chatLog.scrollTop = chatLog.scrollHeight;
+        setTimeout(() => {
+          const y =
+            aiWrap.getBoundingClientRect().bottom +
+            window.scrollY -
+            window.innerHeight + 220;
+
+          window.scrollTo({
+            top: y,
+            behavior: "smooth",
+          });
+        }, 100);
       } catch (err) {
         console.error(err);
 
@@ -493,23 +529,6 @@ export default function Rag() {
 }
 
 /* helper functions */
-function sentenceWriter(element, html, speed = 20) {
-  element.innerHTML = "";
-
-  let i = 0;
-
-  function typing() {
-    element.innerHTML = html.slice(0, i + 1);
-    i++;
-
-    if (i < html.length) {
-      setTimeout(typing, speed);
-    }
-  }
-
-  typing();
-}
-
 function renderMultiYearCards(results, t) {
   if (!Array.isArray(results) || !results.length) return "";
 
@@ -529,7 +548,13 @@ function renderMultiYearCards(results, t) {
                         <div class="energy-title">${r.supply_name_zh}</div>
                         <div class="energy-sub">${r.supply_code}</div>
                       </div>
-                      <div class="energy-value">${r.value}</div>
+                      <div class="energy-value">
+                        ${
+                          typeof r.value === "number"
+                            ? `${r.value.toFixed(2)}%`
+                            : r.value ?? "-"
+                        }
+                      </div>
                     </div>
                   `,
                 )
@@ -556,7 +581,13 @@ function renderEnergyTopCards(results) {
                 <div class="energy-title">${r.supply_name_zh || r.demand_name || "-"}</div>
                 <div class="energy-sub">${r.supply_code || r.demand_code || ""}</div>
               </div>
-              <div class="energy-value">${r.value ?? "-"}</div>
+              <div class="energy-value">
+                ${
+                  typeof r.value === "number"
+                    ? `${r.value.toFixed(2)}%`
+                    : r.value ?? "-"
+                }
+              </div>
             </div>
           `,
         )
@@ -585,7 +616,13 @@ function renderComparisonCards(results, t) {
               <div class="energy-title">${r.supply_name_zh}</div>
               <div class="energy-sub">${r.supply_code}</div>
             </div>
-            <div class="energy-value">${r.value}</div>
+            <div class="energy-value">
+              ${
+                typeof r.value === "number"
+                  ? `${r.value.toFixed(2)}%`
+                  : r.value ?? "-"
+              }
+            </div>
           </div>
         `,
           )
@@ -602,7 +639,13 @@ function renderComparisonCards(results, t) {
               <div class="energy-title">${r.supply_name_zh}</div>
               <div class="energy-sub">${r.supply_code}</div>
             </div>
-            <div class="energy-value">${r.value}</div>
+            <div class="energy-value">
+              ${
+                typeof r.value === "number"
+                  ? `${r.value.toFixed(2)}%`
+                  : r.value ?? "-"
+              }
+            </div>
           </div>
         `,
           )
@@ -655,7 +698,13 @@ ${
                     <div class="energy-title">${r.supply_name_zh}</div>
                     <div class="energy-sub">${r.supply_code}</div>
                   </div>
-                  <div class="energy-value">${r.value}</div>
+                  <div class="energy-value">
+                    ${
+                      typeof r.value === "number"
+                        ? `${r.value.toFixed(2)}%`
+                        : r.value ?? "-"
+                    }
+                  </div>
                 </div>
               `,
       )
@@ -675,7 +724,13 @@ ${
                     <div class="energy-title">${r.supply_name_zh}</div>
                     <div class="energy-sub">${r.supply_code}</div>
                   </div>
-                  <div class="energy-value">${r.value}</div>
+                  <div class="energy-value">
+                    ${
+                      typeof r.value === "number"
+                        ? `${r.value.toFixed(2)}%`
+                        : r.value ?? "-"
+                    }
+                  </div>
                 </div>
               `,
             )
@@ -744,7 +799,13 @@ ${
                     <div class="energy-title">${r.supply_name_zh}</div>
                     <div class="energy-sub">${r.supply_code}</div>
                   </div>
-                  <div class="energy-value">${r.value}</div>
+                  <div class="energy-value">
+                    ${
+                      typeof r.value === "number"
+                        ? `${r.value.toFixed(2)}%`
+                        : r.value ?? "-"
+                    }
+                  </div>
                 </div>
               `,
             )
@@ -770,7 +831,13 @@ ${
                     <div class="energy-title">${r.supply_name_zh}</div>
                     <div class="energy-sub">${r.supply_code}</div>
                   </div>
-                  <div class="energy-value">${r.value}</div>
+                  <div class="energy-value">
+                    ${
+                      typeof r.value === "number"
+                        ? `${r.value.toFixed(2)}%`
+                        : r.value ?? "-"
+                    }
+                  </div>
                 </div>
               `,
             )

@@ -266,7 +266,6 @@
   align-items: flex-end;
   gap: 12px;
   padding: 30px;
-  border-top: 1px solid var(--border);
   background: transparent;
   backdrop-filter: blur(18px);
 }
@@ -458,6 +457,23 @@
   from {
     opacity: 0;
     transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.answer-box {
+  animation: fadeInUp 0.25s ease;
+  will-change: opacity, transform;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 
   to {

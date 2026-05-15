@@ -61,9 +61,14 @@ BASE_ASSISTANT_PROMPT = """
     - 可以解釋圖表、數據與分析結果
 
     【回答原則】
-    - 簡單問題 → 簡短自然回答
-    - 專業問題 → 條理清楚、易懂
-    - 優先以平台邏輯解釋，不得編造虛假資訊
+    - 回答必須精準對應使用者問題
+    - 不得偏離問題主題
+    - 不得自行延伸不必要內容
+    - 不得猜測不存在的資訊
+    - 如果資料不足，明確說明不足的部分
+    - 優先直接回答結論，再補充解釋
+    - 有數據時優先列出數據
+    - 不得使用模糊描述替代資料
 
     【語言規則（最高優先）】
     - 回覆語種必須與使用者輸入完全一致
@@ -190,18 +195,25 @@ def humanize_answer(text):
 # =====================================================
 def clean_numbers(text):
 
-    # 小數超過 2 位 → 四捨五入
     def repl(match):
+        raw = match.group(0)
+        try:
+            num = float(raw)
 
-        num = float(match.group())
+            if num.is_integer():
+                return str(int(num))
 
-        # 整數不處理
-        if num.is_integer():
-            return str(int(num))
+            # 四捨五入到兩位
+            return str(round(num, 2))
 
-        return f"{num:.2f}"
+        except:
+            return raw
 
-    return re.sub(r"\d+\.\d+", repl, text)
+    return re.sub(
+        r"-?\d+\.\d+",
+        repl,
+        text
+    )
 
 
 # =====================================================
@@ -274,10 +286,16 @@ def extract_sources(resp):
 
                             for ann in c.annotations:
                                 if getattr(ann, "type", "") == "url_citation":
+                                    url = getattr(ann, "url", "")
+                                    title = getattr(ann, "title", "")
+
+                                    if not title:
+                                        title = url
+
                                     sources.append(
                                         {
-                                            "title": getattr(ann, "title", "網頁來源"),
-                                            "url": getattr(ann, "url", ""),
+                                            "title": title,
+                                            "url": url,
                                         }
                                     )
 
@@ -340,12 +358,18 @@ def translate_answer(openai_client, model, user_text, answer):
 # =====================================================
 # 輸出回覆整理
 # =====================================================
-def finalize_answer(openai_client, model, user_text, assistant_text, sources):
+def finalize_answer(
+    openai_client,
+    model,
+    user_text,
+    assistant_text,
+    sources
+):
 
-    assistant_text = translate_answer(openai_client, model, user_text, assistant_text)
-
-    return append_sources(assistant_text, sources)
-
+    return append_sources(
+        clean_numbers(assistant_text),
+        sources
+    )
 
 # =====================================================
 # CHAT API
@@ -543,7 +567,8 @@ def chat():
                     - 優先查詢台電、能源署與政府網站公開資料
                     - 如果檢索到數據直接印出
                     - 使用相同的語種回覆
-                    - 附上資料來源
+                    - 回答最後必須附上來源網址
+                    - 如果找不到答案，也必須列出可供查詢的相關網站連結
                     """,
                     temperature=0.2,
                     max_output_tokens=1000,
@@ -688,6 +713,7 @@ def chat():
 
             resp = openai_client.responses.create(
                 model=model,
+
                 # 允許 GPT 上網搜尋
                 tools=[{"type": "web_search"}],
                 input=messages,
