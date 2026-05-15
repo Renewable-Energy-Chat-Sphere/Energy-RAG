@@ -35,7 +35,7 @@ export default function Prediction() {
     const map = {};
     const traverse = (obj) => {
       Object.entries(obj).forEach(([key, val]) => {
-        map[key] = val.name;
+        map[key] = val.name_zh || val.name_en || key;
         if (val.children) traverse(val.children);
       });
     };
@@ -50,41 +50,88 @@ export default function Prediction() {
   }, []);
 
   // =========================
-  // 🔮 API
-  // =========================
-  const runPredict = async () => {
-    if (!question) return alert("請輸入問題");
+// 🔮 API
+// =========================
+const runPredict = async () => {
 
-    setLoading(true);
-    setData(null);
-    setSelectedCard(null);
+  if (!question) {
+    setData({
+      mode: "guide",
+      message:
+        "💡 請輸入預測問題，例如：114工業部門能源結構、未來5年農業能源。",
+    });
 
-    try {
-      const res = await fetch(
-        "http://127.0.0.1:8000/predict_department_energy",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ question }),
+    return;
+  }
+
+  setLoading(true);
+  setData(null);
+  setSelectedCard(null);
+
+  try {
+
+    const res = await fetch(
+      "http://127.0.0.1:8000/predict_department_energy",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
-
-      const result = await res.json();
-
-      if (result.error) {
-        setData({ error: result.error });
-        return;
+        body: JSON.stringify({
+          question,
+        }),
       }
+    );
 
-      setData(result);
-    } catch {
-      setData({ error: "API 連線失敗" });
+    const result = await res.json();
+
+    // =========================
+    // 🔥 guide mode
+    // =========================
+    if (result.mode === "guide") {
+
+      setData({
+        mode: "guide",
+        message: result.message,
+      });
+
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
-  };
+    // =========================
+    // 🔥 backend error
+    // =========================
+    if (result.error) {
+
+      setData({
+        mode: "guide",
+        message: result.error,
+      });
+
+      setLoading(false);
+      return;
+    }
+
+    // =========================
+    // ✅ success
+    // =========================
+    setData(result);
+
+  } catch (err) {
+
+    console.error(err);
+
+    // 🔥 真正 API 壞掉才顯示這個
+    setData({
+      mode: "guide",
+      message:
+        "❌ 無法連接 AI 預測服務，請確認後端是否已啟動。",
+    });
+  }
+
+  setLoading(false);
+};
 
   // =========================
   // 📊 圖表
@@ -164,45 +211,118 @@ export default function Prediction() {
       </button>
 
       {loading && <p style={{ marginTop: 20 }}>⏳ {t("prediction.loading")}</p>}
-      {data?.error && (
-        <p style={{ marginTop: 20, color: "red" }}>
-          ❌ {t("prediction.error")}
-        </p>
+      {/* 🔥 Guide / Error Message */}
+      {data?.mode === "guide" && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: "16px 18px",
+            borderRadius: "14px",
+
+            background: "rgba(59,130,246,0.12)",
+
+            border:
+              "1px solid rgba(59,130,246,0.35)",
+
+            color: "#93c5fd",
+
+            lineHeight: 1.8,
+            fontSize: "15px",
+          }}
+        >
+          {data.message}
+        </div>
       )}
 
       {/* 🔹 卡片 */}
-      {data && !data.error && (
+      {data &&
+      data.mode !== "guide" &&
+      !data.error && (
         <div style={{ marginTop: 40 }}>
+          
+          {/* 🔹 使用者問題 */}
           <div style={{ marginBottom: 20 }}>
             {t("prediction.yourQuestion")}：{question}
           </div>
 
+          {/* 🔥 歷史 / AI 模式提示 */}
+          <div
+            style={{
+              marginBottom: 24,
+              padding: "14px 18px",
+              borderRadius: "12px",
+
+              background:
+                data.mode === "history"
+                  ? "rgba(59,130,246,0.12)"
+                  : "rgba(34,197,94,0.12)",
+
+              border:
+                data.mode === "history"
+                  ? "1px solid rgba(59,130,246,0.35)"
+                  : "1px solid rgba(34,197,94,0.35)",
+
+              color:
+                data.mode === "history"
+                  ? "#93c5fd"
+                  : "#86efac",
+
+              lineHeight: 1.7,
+              fontSize: "15px",
+            }}
+          >
+            {data.mode === "history"
+              ? "📘 此年份已有真實能源資料，以下為實際能源結構結果。"
+              : "🔮 此結果為 AI 未來能源預測，僅供趨勢分析與研究參考。"}
+          </div>
+
           {data.summary?.map((item, i) => {
-            const fullData = data?.full?.[item.dept] || [];
+
+            // 🔥 改成 prediction
+            const fullData =
+              data?.prediction?.[item.dept] || {};
 
             return (
               <div
                 key={i}
                 style={{
                   ...card,
-                  transform: selectedCard === i ? "scale(1.03)" : "scale(1)",
+                  transform:
+                    selectedCard === i
+                      ? "scale(1.03)"
+                      : "scale(1)",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-6px)";
+                  e.currentTarget.style.transform =
+                    "translateY(-6px)";
+
                   e.currentTarget.style.boxShadow =
                     "0 0 25px rgba(34,197,94,0.4)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-                onClick={() => setSelectedCard(selectedCard === i ? null : i)}
-              >
-                <h3 style={cardTitle}>🏭 {deptMap[item.dept]}</h3>
+                  e.currentTarget.style.transform =
+                    "translateY(0)";
 
+                  e.currentTarget.style.boxShadow =
+                    "none";
+                }}
+                onClick={() =>
+                  setSelectedCard(
+                    selectedCard === i ? null : i
+                  )
+                }
+              >
+                {/* 🔹 部門名稱 */}
+                <h3 style={cardTitle}>
+                  🏭 {deptMap[item.dept] || item.dept}
+                </h3>
+
+                {/* 🔹 Top3 */}
                 {item.top?.map((t, idx) => (
                   <div key={idx} style={row}>
-                    <span style={label}>{energyMap[t[0]]}</span>
+                    <span style={label}>
+                      {energyMap[t[0]] || t[0]}
+                    </span>
 
                     <div style={barBg}>
                       <div
@@ -213,29 +333,41 @@ export default function Prediction() {
                       />
                     </div>
 
-                    <span style={percent}>{t[1].toFixed(1)}%</span>
+                    <span style={percent}>
+                      {t[1].toFixed(1)}%
+                    </span>
                   </div>
                 ))}
 
+                {/* 🔹 詳細資料 */}
                 {selectedCard === i && (
                   <div style={detailBox}>
-                    <h4>📌 {t("prediction.allEnergy")}</h4>
+                    <h4>
+                      📌 {t("prediction.allEnergy")}
+                    </h4>
 
-                    {fullData.length === 0 && <p>{t("prediction.noData")}</p>}
+                    {Object.keys(fullData).length === 0 && (
+                      <p>
+                        {t("prediction.noData")}
+                      </p>
+                    )}
 
-                    {fullData.map((e, idx) => (
-                      <div key={idx} style={detailRow}>
-                        <span>{energyMap[e.name] || e.name}</span>
-                        <span>
-                          {e.value?.toFixed(1) ?? t("prediction.unknown")}%
-                        </span>
-                        <span>
-                          {e.toe
-                            ? `${e.toe} ${t("prediction.toe")}`
-                            : t("prediction.unknown")}
-                        </span>
-                      </div>
-                    ))}
+                    {Object.entries(fullData)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([energy, value], idx) => (
+                        <div
+                          key={idx}
+                          style={detailRow}
+                        >
+                          <span>
+                            {energyMap[energy] || energy}
+                          </span>
+
+                          <span>
+                            {value.toFixed(2)}%
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
