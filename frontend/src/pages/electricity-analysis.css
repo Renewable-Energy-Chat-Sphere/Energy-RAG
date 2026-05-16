@@ -561,3 +561,45 @@
     transform: translateY(0) scale(1);
   }
 }
+.energy-info-tooltip {
+  position: relative;
+}
+
+.energy-info-box {
+  position: absolute;
+
+  top: 42px;
+  left: 0;
+
+  width: 300px;
+
+  padding: 16px 18px;
+
+  border-radius: 18px;
+
+  background: #0f172a;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  color: white;
+
+  font-size: 13px;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform: translateY(8px);
+
+  transition: all 0.25s ease;
+
+  z-index: 999;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.energy-info-tooltip:hover .energy-info-box {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translateY(0);
+}

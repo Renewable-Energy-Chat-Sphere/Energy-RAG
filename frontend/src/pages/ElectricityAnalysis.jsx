@@ -808,6 +808,18 @@ ${renewablePercent}% ，
                 }}
               >
                 {t("electricity.costDescription")}
+                <p
+                  style={{
+                    marginTop: "12px",
+                    opacity: 0.55,
+                    fontSize: "12px",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {i18n.language === "en"
+                    ? "Based on weighted energy structure analysis and LCOE (Levelized Cost of Energy) reference models."
+                    : "依據能源結構加權分析與 LCOE（均化能源成本）概念進行估算。"}
+                </p>
               </p>
               <div className="cost-value">{liveCostPressure}</div>
 
@@ -1335,6 +1347,51 @@ ${renewablePercent}% ，
                 {i18n.language === "en"
                   ? " Long-term Energy Structure"
                   : " 長期能源結構"}
+                <div
+                  className="energy-info-tooltip"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginLeft: "12px",
+                    position: "relative",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "999px",
+                      background: "rgba(168,85,247,0.12)",
+                      border: "1px solid rgba(168,85,247,0.25)",
+                      color: "#a855f7",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      cursor: "help",
+                    }}
+                  >
+                    🟣 資料分析
+                  </div>
+
+                  <div className="energy-info-box">
+                    <strong>長期能源結構分析</strong>
+
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      • 使用台灣近十年能源統計資料
+                      <br />
+                      • 根據能源平衡表進行比例統計
+                      <br />
+                      • 非 AI 預測模型
+                      <br />
+                      • 用於分析長期能源使用結構
+                      <br />• 資料來源：能源署歷史能源資料
+                    </div>
+                  </div>
+                </div>
               </h2>
 
               <p
@@ -1346,8 +1403,8 @@ ${renewablePercent}% ，
                 }}
               >
                 {i18n.language === "en"
-                  ? "Based on Taiwan energy statistics over the past 10 years."
-                  : "根據台灣近十年能源統計資料分析。"}
+                  ? "The long-term energy structure chart is generated through statistical analysis of Taiwan’s energy consumption data over the past decade."
+                  : "長期能源結構圖根據台灣近十年能源統計資料進行能源比例分析與視覺化呈現。"}
               </p>
 
               <div className="chart-wrapper">
@@ -1522,9 +1579,9 @@ ${renewablePercent}% ，
                       <strong>Model Methodology</strong>
 
                       <div style={{ marginTop: "10px", lineHeight: 1.8 }}>
-                        • Historical Taiwan energy data over the past 10 years
-                        <br />
-                        • Real-time Taipower generation API
+                        • Historical Taiwan energy data over the past 30
+                        years(Data Source: Taiwan Energy Balance Sheets
+                        published by the Energy Administration)
                         <br />
                         • Prophet time-series forecasting
                         <br />
@@ -1537,9 +1594,8 @@ ${renewablePercent}% ，
                       <strong>模型依據</strong>
 
                       <div style={{ marginTop: "10px", lineHeight: 1.8 }}>
-                        • 使用台灣近十年能源資料
-                        <br />
-                        • 台電即時供電 API
+                        • 使用台灣 80~113
+                        年能源統計資料(資料來源：能源署能源平衡表)
                         <br />
                         • Prophet 時間序列模型
                         <br />

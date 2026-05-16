@@ -339,7 +339,7 @@ const resources = {
         future: "未來成本趨勢",
 
         futureDesc:
-          "結合 Prophet 預測能源比例與供電成本壓力變化。",
+          "結合 Prophet 預測未來供電成本壓力變化趨勢。",
 
         ai: "AI 智慧建議",
 
@@ -498,7 +498,7 @@ const resources = {
         future: "Future Cost Trend",
 
         futureDesc:
-          "Integration with Prophet prediction for energy ratio and cost pressure changes.",
+          "Using the Prophet time-series model to analyze future electricity cost pressure trends.",
 
         ai: "AI Smart Suggestions",
 
