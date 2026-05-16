@@ -374,9 +374,14 @@ export default function Global({ isMobile }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user: question,
-          session_id: "energy_sphere",
-          rag_auto: true,
+          question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
+          year: year,
+
+          // ⭐ 新增
+          from_global: true,
+
+          // ⭐ 改 dynamic
+          mode: "dynamic",
         }),
       });
 
@@ -435,10 +440,19 @@ export default function Global({ isMobile }) {
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
+
           year: year,
-          mode: "full",
+
+          // ⭐ 告訴 backend
+          // 這是球頁 AI 回驗
+          from_global: true,
+
+          // ⭐ 動態訓練
+          // 用80~108預測109
+          mode: "dynamic",
         }),
       })
         .then((res) => res.json())

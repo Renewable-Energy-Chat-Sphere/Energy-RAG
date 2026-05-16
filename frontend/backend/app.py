@@ -706,6 +706,7 @@ def predict_department_energy():
 
     data = request.json or {}
     question = data.get("question", "").strip()
+    from_global = data.get("from_global", False)
 
     # =========================
     # 🔥 載入資料
@@ -901,7 +902,7 @@ def predict_department_energy():
     # =========================
     # 📘 歷史資料模式
     # =========================
-    if roc_year <= latest_year:
+    if roc_year <= latest_year and not from_global:
 
         raw = all_data.get(roc_year)
 
@@ -934,8 +935,15 @@ def predict_department_energy():
             {
                 "mode": "history",
                 "year": roc_year,
+
                 "message": f"📘 {roc_year} 年已有真實能源資料，以下為實際能源結構結果。",
+
+                # 🔥 真實資料
                 "prediction": result,
+
+                # 🔥 AI 回驗資料（新增）
+                "evaluation": get_evaluation_data(dept_filters),
+
                 "summary": summary,
             }
         )
@@ -966,8 +974,15 @@ def predict_department_energy():
         {
             "mode": "forecast",
             "year": roc_year,
+
             "message": f"🔮 {roc_year} 年為未來年份，以下為 AI 能源預測結果。",
+
+            # 🔥 AI 預測
             "prediction": prediction,
+
+            # 🔥 AI 回驗資料（新增）
+            "evaluation": get_evaluation_data(dept_filters),
+
             "summary": summary,
         }
     )
