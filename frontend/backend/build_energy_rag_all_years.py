@@ -57,6 +57,7 @@ def main():
 
     if hierarchy_path.exists():
         all_records.extend(parse_hierarchy_json(hierarchy_path))
+
     if supply_catalog_path.exists():
         all_records.extend(parse_supply_catalog_json(supply_catalog_path))
 
@@ -69,6 +70,7 @@ def main():
         json.dumps(all_records, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
+    
     preview_path.write_text(
         json.dumps(all_records[:50], ensure_ascii=False, indent=2),
         encoding="utf-8"

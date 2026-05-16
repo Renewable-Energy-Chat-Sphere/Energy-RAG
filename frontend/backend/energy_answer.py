@@ -8,9 +8,8 @@ META_PATH = PROCESSED_DIR / "energy_rag_core_meta.json"
 records = json.loads(META_PATH.read_text(encoding="utf-8"))
 
 # ===============================
-# 🔍 工具函式
+# 工具函式
 # ===============================
-
 def get_ratio_records():
     return [
         r for r in records
@@ -19,8 +18,19 @@ def get_ratio_records():
     ]
 
 
+def format_value(record):
+
+    value = round(record.get("value") or 0, 2)
+
+    # ratio 才顯示 %
+    if record.get("record_type") == "ratio":
+        return f"{value}%"
+
+    return str(value)
+
+
 # ===============================
-# 1️⃣ 部門 → 能源
+# 從需求項目查詢能源
 # ===============================
 def get_top_energy_by_demand(demand_name, top_n=5):
     data = get_ratio_records()
@@ -33,14 +43,28 @@ def get_top_energy_by_demand(demand_name, top_n=5):
     if not matches:
         return f"❌ 找不到「{demand_name}」的資料"
 
-    matches = sorted(matches, key=lambda x: x.get("value", 0), reverse=True)
+    matches = sorted(
+        matches,
+        key=lambda x: x.get("value") or 0,
+        reverse=True
+    )
 
     top = matches[:top_n]
 
-    answer_parts = [
-        f"{r['supply_name_zh']}（{r['value']}）"
-        for r in top
-    ]
+    answer_parts = []
+
+    for r in top:
+
+        # 總計顯示需求項目名稱
+        if r.get("supply_name_zh", "") == "總計":
+            name = r.get("demand_name", "")
+
+        else:
+            name = r.get("supply_name_zh", "")
+
+        answer_parts.append(
+            f"{name}（{format_value(r)}）"
+        )
 
     return (
         f"{demand_name}主要使用的能源包括："
@@ -50,9 +74,10 @@ def get_top_energy_by_demand(demand_name, top_n=5):
 
 
 # ===============================
-# 2️⃣ 能源 → 部門
+# 從能源查詢需求項目
 # ===============================
 def get_top_demand_by_energy(supply_name, top_n=5):
+
     data = get_ratio_records()
 
     matches = [
@@ -63,14 +88,23 @@ def get_top_demand_by_energy(supply_name, top_n=5):
     if not matches:
         return f"❌ 找不到能源「{supply_name}」的資料"
 
-    matches = sorted(matches, key=lambda x: x.get("value", 0), reverse=True)
+    matches = sorted(
+        matches,
+        key=lambda x: x.get("value") or 0,
+        reverse=True
+    )
 
     top = matches[:top_n]
 
-    answer_parts = [
-        f"{r['demand_name']}（{r['value']}）"
-        for r in top
-    ]
+    answer_parts = []
+
+    for r in top:
+
+        name = r.get("demand_name", "")
+
+        answer_parts.append(
+            f"{name}（{format_value(r)}）"
+        )
 
     return (
         f"{supply_name}主要使用於："
@@ -80,7 +114,7 @@ def get_top_demand_by_energy(supply_name, top_n=5):
 
 
 # ===============================
-# 3️⃣ 是否使用
+# 是否使用
 # ===============================
 def check_usage(demand_name, supply_name):
     data = get_ratio_records()
@@ -94,16 +128,26 @@ def check_usage(demand_name, supply_name):
     if not matches:
         return f"{demand_name}沒有使用{supply_name}。"
 
-    value = matches[0].get("value", 0)
+    value = matches[0].get("value") or 0
 
     if value > 0:
-        return f"{demand_name}有使用{supply_name}（{value}）。"
+
+        value_text = round(value, 2)
+
+        if matches[0].get("record_type") == "ratio":
+            value_text = f"{value_text}%"
+
+        return (
+            f"{demand_name}有使用"
+            f"{supply_name}（{value_text}）。"
+        )
+
     else:
         return f"{demand_name}未使用{supply_name}。"
 
 
 # ===============================
-# 🧪 測試入口
+# 測試入口
 # ===============================
 if __name__ == "__main__":
 

@@ -27,6 +27,7 @@ def safe_float(value: Any):
         if pd.isna(value) or value == "":
             return None
         return float(value)
+    
     except Exception:
         return None
 
@@ -51,8 +52,10 @@ def parse_ratio_like_sheet(file_path: Path, sheet_name: str, year: int) -> List[
 
     # 第 0 列: S1~S54
     supply_codes = [normalize_code(v) for v in df.iloc[0, 2:].tolist()]
+
     # 第 1 列: 中文能源名稱
     supply_names_zh = [normalize_text(v) for v in df.iloc[1, 2:].tolist()]
+
     # 第 2 列: 英文能源名稱
     supply_names_en = [normalize_text(v) for v in df.iloc[2, 2:].tolist()]
 
@@ -83,6 +86,7 @@ def parse_ratio_like_sheet(file_path: Path, sheet_name: str, year: int) -> List[
                     f"{year}年，{demand_name}（代碼 {demand_code}）"
                     f"在「{sheet_name}」表中的總值為 {value}。"
                 )
+
                 records.append({
                     "text": text,
                     "source_type": "excel",
@@ -108,6 +112,7 @@ def parse_ratio_like_sheet(file_path: Path, sheet_name: str, year: int) -> List[
                     f"數值為 {value}。"
                 )
                 record_type = "ratio"
+                
             else:
                 text = (
                     f"{year}年，{demand_name}（代碼 {demand_code}）"
@@ -156,6 +161,7 @@ def walk_hierarchy(node_code: str, node_data: Dict[str, Any], parent_code: str =
     text = f"需求節點 {node_code} 的名稱是 {node_name}。"
     if level is not None:
         text += f" 它屬於第 {level} 層。"
+
     if parent_code:
         text += f" 上層節點是 {parent_name}（代碼 {parent_code}）。"
 
@@ -181,6 +187,7 @@ def walk_hierarchy(node_code: str, node_data: Dict[str, Any], parent_code: str =
             + "、".join(child_pairs)
             + "。"
         )
+
         yield {
             "text": children_text,
             "source_type": "json",
@@ -232,17 +239,20 @@ def parse_supply_catalog_json(file_path: Path) -> List[Dict[str, Any]]:
             or item.get("label_zh")
             or ""
         )
+
         name_en = normalize_text(
             item.get("name_en")
             or item.get("en")
             or item.get("label_en")
             or ""
         )
+
         category = normalize_text(item.get("category") or item.get("type") or "")
 
         text = f"供給代碼 {supply_code} 的名稱是 {name_zh}。"
         if name_en:
             text += f" 英文名稱是 {name_en}。"
+
         if category:
             text += f" 類別是 {category}。"
 
@@ -288,7 +298,7 @@ def main():
         all_records.extend(parse_supply_catalog_json(supply_catalog_path))
 
     # 輸出
-    output_path = output_dir / "energy_rag_core_records.json"
+    output_path = output_dir / "energy_rag_core_meta.json"
     output_path.write_text(json.dumps(all_records, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # 額外輸出前 20 筆方便檢查
