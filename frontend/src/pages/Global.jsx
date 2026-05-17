@@ -83,9 +83,7 @@ export default function Global({ isMobile }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user"))
-  );
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
 
   const onHover = (data) => {
     setHovered(data);
@@ -377,13 +375,9 @@ export default function Global({ isMobile }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
+          question: question,
           year: year,
-
-          // ⭐ 新增
           from_global: true,
-
-          // ⭐ 改 dynamic
           mode: "dynamic",
         }),
       });
@@ -695,7 +689,7 @@ export default function Global({ isMobile }) {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [dragging]);
-    
+
   return (
     <div className="global-page">
       <div className="control-panel">
@@ -958,8 +952,7 @@ export default function Global({ isMobile }) {
                   </div>
                   {!selected?.code?.startsWith("S") && (
                     <>
-                      {(user?.role === "admin" ||
-                        user?.role === "manager") ? (
+                      {user?.role === "admin" || user?.role === "manager" ? (
                         <>
                           <h2>{t.aiPrediction}</h2>
 
@@ -1000,8 +993,14 @@ export default function Global({ isMobile }) {
                                         label: function (context) {
                                           const yearNow = year;
                                           const yearNext = Number(year) + 1;
-                                          const y1 = formatYear(yearNow, language);
-                                          const y2 = formatYear(yearNext, language);
+                                          const y1 = formatYear(
+                                            yearNow,
+                                            language,
+                                          );
+                                          const y2 = formatYear(
+                                            yearNext,
+                                            language,
+                                          );
 
                                           let label = "";
 
@@ -1010,12 +1009,16 @@ export default function Global({ isMobile }) {
                                               language === "en"
                                                 ? `${y1} (Actual)`
                                                 : `${y1}年（實際）`;
-                                          } else if (context.datasetIndex === 1) {
+                                          } else if (
+                                            context.datasetIndex === 1
+                                          ) {
                                             label =
                                               language === "en"
                                                 ? `${y2} (Predicted)`
                                                 : `${y2}年（預測）`;
-                                          } else if (context.datasetIndex === 2) {
+                                          } else if (
+                                            context.datasetIndex === 2
+                                          ) {
                                             label =
                                               language === "en"
                                                 ? `${y2} (Actual)`
@@ -1049,7 +1052,10 @@ export default function Global({ isMobile }) {
                               {getPredictionDiff()
                                 .filter((item) => Math.abs(item.diff) > 1)
                                 .map((item) => (
-                                  <div key={item.code} className="prediction-item">
+                                  <div
+                                    key={item.code}
+                                    className="prediction-item"
+                                  >
                                     <span>{item.name}</span>
                                     <span
                                       style={{
