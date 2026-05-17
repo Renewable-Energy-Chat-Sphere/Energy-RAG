@@ -10,7 +10,7 @@ export default function Rag() {
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
 
-  const API = "http://127.0.0.1:8000";
+   const API = "/api";
   // const API = "http://127.0.0.1:8000";
 
   async function downloadFile({
