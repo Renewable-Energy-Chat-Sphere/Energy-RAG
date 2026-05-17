@@ -1118,7 +1118,7 @@ export default function Global({ isMobile }) {
                         </>
                       ) : (
                         <div className="permission-lock">
-                          🔒 AI 預測分析僅限高層管理者查看
+                          🔒 AI 預測分析僅限有登入的使用者查看
                         </div>
                       )}
                     </>
