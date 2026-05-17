@@ -13,6 +13,7 @@ import data112 from "../data/112_energy_demand_supply.json";
 import data113 from "../data/113_energy_demand_supply.json";
 import supplyCatalog from "../data/supply_catalog.json";
 import { useTranslation } from "react-i18next";
+import "@flaticon/flaticon-uicons/css/all/all.css";
 import {
   PieChart,
   Pie,
@@ -451,6 +452,7 @@ export default function ElectricityAnalysis() {
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
+                letterSpacing: "0.5px",
               }}
             >
               <div
@@ -655,12 +657,29 @@ ${renewablePercent}% ，
 
           <div className="electricity-grid">
             <div className="electricity-card">
-              <h2>🔋 {t("electricity.realtime")}</h2>
+              <h2>
+                <i
+                  className="fi fi-rr-bolt"
+                  style={{
+                    marginRight: "10px",
+                    color: "#facc15",
+                  }}
+                ></i>
+
+                {t("electricity.realtime")}
+              </h2>
 
               {/* 🔥 火力 */}
               <div className="live-bar-row">
                 <div className="live-bar-top">
-                  <span>🔥 {t("electricity.thermal")}</span>
+                  <span>
+                    <i
+                      className="fi fi-rr-fire-flame-curved"
+                      style={{ marginRight: "8px", color: "#ef4444" }}
+                    ></i>
+
+                    {t("electricity.thermal")}
+                  </span>
 
                   <span>{liveEnergy.thermal.toFixed(0)} MW</span>
                 </div>
@@ -687,7 +706,14 @@ ${renewablePercent}% ，
               {/* ☀️ 太陽能 */}
               <div className="live-bar-row">
                 <div className="live-bar-top">
-                  <span>☀️ {t("electricity.solar")}</span>
+                  <span>
+                    <i
+                      className="fi fi-rr-sun"
+                      style={{ marginRight: "8px", color: "#facc15" }}
+                    ></i>
+
+                    {t("electricity.solar")}
+                  </span>
 
                   <span>{liveEnergy.solar.toFixed(0)} MW</span>
                 </div>
@@ -714,7 +740,17 @@ ${renewablePercent}% ，
               {/* ⚛️ 核能 */}
               <div className="live-bar-row">
                 <div className="live-bar-top">
-                  <span>⚛️ {t("electricity.nuclear")}</span>
+                  <span>
+                    <i
+                      className="fi fi-rr-radiation"
+                      style={{
+                        marginRight: "8px",
+                        color: "#8b5cf6",
+                      }}
+                    ></i>
+
+                    {t("electricity.nuclear")}
+                  </span>
 
                   <span>{liveEnergy.nuclear.toFixed(0)} MW</span>
                 </div>
@@ -741,7 +777,14 @@ ${renewablePercent}% ，
               {/* 🌬️ 風力 */}
               <div className="live-bar-row">
                 <div className="live-bar-top">
-                  <span>🌬️ {t("electricity.wind")}</span>
+                  <span>
+                    <i
+                      className="fi fi-rr-wind"
+                      style={{ marginRight: "8px", color: "#06b6d4" }}
+                    ></i>
+
+                    {t("electricity.wind")}
+                  </span>
 
                   <span>{liveEnergy.wind.toFixed(0)} MW</span>
                 </div>
@@ -768,7 +811,14 @@ ${renewablePercent}% ，
               {/* 💧 水力 */}
               <div className="live-bar-row">
                 <div className="live-bar-top">
-                  <span>💧 {t("electricity.hydro")}</span>
+                  <span>
+                    <i
+                      className="fi fi-rr-raindrops"
+                      style={{ marginRight: "8px", color: "#3b82f6" }}
+                    ></i>
+
+                    {t("electricity.hydro")}
+                  </span>
 
                   <span>{liveEnergy.hydro.toFixed(0)} MW</span>
                 </div>
@@ -798,7 +848,17 @@ ${renewablePercent}% ，
             {/* ========================= */}
 
             <div className="electricity-card">
-              <h2>📈 {t("electricity.costTitle")}</h2>
+              <h2>
+                <i
+                  className="fi fi-rr-chart-line-up"
+                  style={{
+                    marginRight: "10px",
+                    color: "#60a5fa",
+                  }}
+                ></i>
+
+                {t("electricity.costTitle")}
+              </h2>
               <p
                 style={{
                   opacity: 0.7,
@@ -901,7 +961,13 @@ ${renewablePercent}% ，
 
           <div className="electricity-card big-card">
             <h2>
-              📊{" "}
+              <i
+                className="fi fi-rr-chart-pie"
+                style={{
+                  marginRight: "10px",
+                  color: "#a855f7",
+                }}
+              ></i>
               {i18n.language === "en"
                 ? "AI Electricity Cost Analysis"
                 : "AI 電價風險分析"}
@@ -1018,7 +1084,14 @@ ${renewablePercent}% ，
                     fontWeight: 600,
                   }}
                 >
-                  ⚡
+                  <i
+                    className="fi fi-rr-bolt"
+                    style={{
+                      marginRight: "8px",
+                      color: "#60a5fa",
+                    }}
+                  ></i>
+
                   {i18n.language === "en"
                     ? " Official Taipower Estimate"
                     : " 官方台電試算"}
@@ -1092,7 +1165,19 @@ ${renewablePercent}% ，
                     fontWeight: 600,
                   }}
                 >
-                  🤖
+                  <i
+                    className="fi fi-rr-robot"
+                    style={{
+                      marginRight: "8px",
+                      color:
+                        liveCostPressure >= 40
+                          ? "#ef4444"
+                          : liveCostPressure >= 25
+                            ? "#f97316"
+                            : "#22c55e",
+                    }}
+                  ></i>
+
                   {i18n.language === "en"
                     ? " AI Electricity Cost Risk"
                     : " AI 電價風險分析"}
@@ -1179,7 +1264,13 @@ ${renewablePercent}% ，
                 }}
               >
                 <h2 style={{ margin: 0 }}>
-                  🌍
+                  <i
+                    className="fi fi-rr-globe"
+                    style={{
+                      marginRight: "10px",
+                      color: "#22c55e",
+                    }}
+                  ></i>
                   {i18n.language === "en"
                     ? " Real-time Power Structure"
                     : " 即時供電結構"}
@@ -1261,17 +1352,52 @@ ${renewablePercent}% ，
                       liveEnergy.wind +
                       liveEnergy.hydro +
                       liveEnergy.nuclear) >
-                  0.7
-                    ? "🔴 火力主導中"
-                    : liveEnergy.thermal /
-                          (liveEnergy.thermal +
-                            liveEnergy.solar +
-                            liveEnergy.wind +
-                            liveEnergy.hydro +
-                            liveEnergy.nuclear) >
-                        0.4
-                      ? "🟠 混合供電中"
-                      : "🟢 綠能占比提升"}
+                  0.7 ? (
+                    <>
+                      <div
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          borderRadius: "50%",
+                          background: "#ef4444",
+                          boxShadow: "0 0 12px #ef4444",
+                        }}
+                      />
+                      火力主導中
+                    </>
+                  ) : liveEnergy.thermal /
+                      (liveEnergy.thermal +
+                        liveEnergy.solar +
+                        liveEnergy.wind +
+                        liveEnergy.hydro +
+                        liveEnergy.nuclear) >
+                    0.4 ? (
+                    <>
+                      <div
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          borderRadius: "50%",
+                          background: "#f97316",
+                          boxShadow: "0 0 12px #f97316",
+                        }}
+                      />
+                      混合供電中
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          borderRadius: "50%",
+                          background: "#22c55e",
+                          boxShadow: "0 0 12px #22c55e",
+                        }}
+                      />
+                      綠能占比提升
+                    </>
+                  )}
                 </div>
               </div>
               <p
@@ -1343,7 +1469,13 @@ ${renewablePercent}% ，
             </div>
             <div className="electricity-card big-card">
               <h2>
-                🌍
+                <i
+                  className="fi fi-rr-globe"
+                  style={{
+                    marginRight: "10px",
+                    color: "#3b82f6",
+                  }}
+                ></i>
                 {i18n.language === "en"
                   ? " Long-term Energy Structure"
                   : " 長期能源結構"}
@@ -1367,9 +1499,23 @@ ${renewablePercent}% ，
                       fontSize: "12px",
                       fontWeight: "700",
                       cursor: "help",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
                     }}
                   >
-                    🟣 資料分析
+                    <>
+                      <div
+                        style={{
+                          width: "8px",
+                          height: "8px",
+                          borderRadius: "50%",
+                          background: "#a855f7",
+                          boxShadow: "0 0 10px #a855f7",
+                        }}
+                      />
+                      資料分析
+                    </>
                   </div>
 
                   <div className="energy-info-box">
@@ -1466,7 +1612,17 @@ ${renewablePercent}% ，
           </div>
 
           <div className="electricity-card big-card">
-            <h2>💰 {t("electricity.impact")}</h2>
+            <h2>
+              <i
+                className="fi fi-rr-coins"
+                style={{
+                  marginRight: "10px",
+                  color: "#22c55e",
+                }}
+              ></i>
+
+              {t("electricity.impact")}
+            </h2>
             <p
               style={{
                 opacity: 0.75,
@@ -1493,14 +1649,47 @@ ${renewablePercent}% ，
                     >
                       <strong>{item.name}</strong>
 
-                      <span>
+                      <span
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "10px",
+                            height: "10px",
+                            borderRadius: "50%",
+
+                            background:
+                              item.impact >= maxImpact * 0.75
+                                ? "#ef4444"
+                                : item.impact >= maxImpact * 0.45
+                                  ? "#f97316"
+                                  : item.impact >= maxImpact * 0.2
+                                    ? "#facc15"
+                                    : "#22c55e",
+
+                            boxShadow:
+                              item.impact >= maxImpact * 0.75
+                                ? "0 0 12px #ef4444"
+                                : item.impact >= maxImpact * 0.45
+                                  ? "0 0 12px #f97316"
+                                  : item.impact >= maxImpact * 0.2
+                                    ? "0 0 12px #facc15"
+                                    : "0 0 12px #22c55e",
+                          }}
+                        />
+
                         {item.impact >= maxImpact * 0.75
-                          ? `🔴 ${t("electricity.impactVeryHigh")}`
+                          ? t("electricity.impactVeryHigh")
                           : item.impact >= maxImpact * 0.45
-                            ? `🟠 ${t("electricity.impactHigh")}`
+                            ? t("electricity.impactHigh")
                             : item.impact >= maxImpact * 0.2
-                              ? `🟡 ${t("electricity.impactMedium")}`
-                              : `🟢 ${t("electricity.impactLow")}`}
+                              ? t("electricity.impactMedium")
+                              : t("electricity.impactLow")}
                       </span>
                     </div>
 
@@ -1553,7 +1742,17 @@ ${renewablePercent}% ，
                 flexWrap: "wrap",
               }}
             >
-              <h2 style={{ margin: 0 }}>📊 {t("electricity.future")}</h2>
+              <h2 style={{ margin: 0 }}>
+                <i
+                  className="fi fi-rr-chart-histogram"
+                  style={{
+                    marginRight: "10px",
+                    color: "#60a5fa",
+                  }}
+                ></i>
+
+                {t("electricity.future")}
+              </h2>
 
               <div
                 className="forecast-badge"
@@ -1571,7 +1770,8 @@ ${renewablePercent}% ，
                   gap: "6px",
                 }}
               >
-                🛈
+                <i className="fi fi-rr-chart-line-up"></i>
+
                 {i18n.language === "en" ? "Trend Forecast" : "趨勢預測模型"}
                 <div className="forecast-tooltip">
                   {i18n.language === "en" ? (
@@ -1621,7 +1821,19 @@ ${renewablePercent}% ，
                   gap: "6px",
                 }}
               >
-                ⬤ {i18n.language === "en" ? "Reference Value" : "具參考性"}
+                <>
+                  <div
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#22c55e",
+                      boxShadow: "0 0 10px #22c55e",
+                    }}
+                  />
+
+                  {i18n.language === "en" ? "Reference Value" : "具參考性"}
+                </>
               </div>
               <div
                 className="forecast-badge"
@@ -1640,7 +1852,18 @@ ${renewablePercent}% ，
                   cursor: "help",
                 }}
               >
-                ⬤ MAPE {forecastMAPE.toFixed(1)}%
+                <>
+                  <div
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#c084fc",
+                      boxShadow: "0 0 10px #c084fc",
+                    }}
+                  />
+                  MAPE {forecastMAPE.toFixed(1)}%
+                </>
                 <div className="forecast-tooltip">
                   {i18n.language === "en" ? (
                     <>
@@ -1753,7 +1976,17 @@ ${renewablePercent}% ，
           {/* ========================= */}
 
           <div className="electricity-card big-card">
-            <h2>🤖 {t("electricity.ai")}</h2>
+            <h2>
+              <i
+                className="fi fi-rr-robot"
+                style={{
+                  marginRight: "10px",
+                  color: "#a855f7",
+                }}
+              ></i>
+
+              {t("electricity.ai")}
+            </h2>
 
             <p className={`ai-box ${aiSwitching ? "ai-switching" : ""}`}>
               {aiSwitching ? (
