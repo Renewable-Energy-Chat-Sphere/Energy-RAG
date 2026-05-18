@@ -153,7 +153,13 @@ export default function Header() {
 
             <Link to="/global">{t("nav.global")}</Link>
 
-            <Link to="/powerplant">{t("nav.powerplant")}</Link>
+            {user &&
+              (user.role === "admin" ||
+                user.role === "manager") && (
+                <Link to="/powerplant">
+                  {t("nav.powerplant")}
+                </Link>
+            )}
 
             <Link to="/rag">{t("nav.rag")}</Link>
 
