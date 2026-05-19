@@ -88,7 +88,16 @@ export default function Feedback() {
         </div>
         {/* 列表 */}
         {filteredList.length === 0 ? (
-          <div className="empty-box">📭 {t("feedback.empty")}</div>
+          <div className="empty-box">
+            <i
+              className="fi fi-rr-inbox-out"
+              style={{
+                marginRight: "10px",
+                color: "#94a3b8",
+              }}
+            ></i>
+            {t("feedback.empty")}
+          </div>
         ) : (
           <div className="list-container">
             {filteredList.map((item) => (
@@ -112,7 +121,24 @@ export default function Feedback() {
                   </span>
 
                   {item.priority === "高" && (
-                    <span className="tag high">🔥</span>
+                    <span
+                      className="tag high"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <i
+                        className="fi fi-rr-fire-flame-curved"
+                        style={{
+                          color: "#facc15",
+                          fontSize: "13px",
+                          filter: "drop-shadow(0 0 6px #facc15)",
+                        }}
+                      ></i>
+                      高優先
+                    </span>
                   )}
 
                   {/* ⭐ 新增 status */}
@@ -132,7 +158,21 @@ export default function Feedback() {
       {selected && (
         <div className="modal">
           <div className="modal-card">
-            <h3>📩 {t("feedback.modalTitle")}</h3>
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <i
+                className="fi fi-rr-envelope"
+                style={{
+                  color: "#60a5fa",
+                }}
+              ></i>{" "}
+              {t("feedback.modalTitle")}
+            </h3>
 
             <p>
               <strong>{t("feedback.name")}：</strong>
@@ -165,8 +205,17 @@ export default function Feedback() {
               <span className="tag category">{selected.category}</span>
 
               {selected.priority === "高" && (
-                <span className="tag high">
-                  🔥 {t("feedback.priorityHigh")}
+                <span className="priority-badge">
+                  <i
+                    className="fi fi-rr-fire-flame-curved"
+                    style={{
+                      color: "#facc15",
+                      fontSize: "13px",
+                      filter: "drop-shadow(0 0 6px #facc15)",
+                    }}
+                  ></i>
+
+                  {t("feedback.priorityHigh")}
                 </span>
               )}
 
@@ -182,7 +231,16 @@ export default function Feedback() {
             {selected.reply && (
               <>
                 <p style={{ marginTop: "10px" }}>
-                  <strong>🤖 {t("feedback.reply")}：</strong>
+                  <strong>
+                    <i
+                      className="fi fi-rr-robot"
+                      style={{
+                        marginRight: "8px",
+                        color: "#a855f7",
+                      }}
+                    ></i>
+                    {t("feedback.reply")}：
+                  </strong>
                 </p>
                 <div className="reply-box">{selected.reply}</div>
               </>
@@ -229,7 +287,13 @@ export default function Feedback() {
                     }
                   }}
                 >
-                  ✅ {t("feedback.statusClosed")}
+                  <i
+                    className="fi fi-rr-check"
+                    style={{
+                      marginRight: "8px",
+                    }}
+                  ></i>{" "}
+                  {t("feedback.statusClosed")}
                 </button>
               )}
 
@@ -266,7 +330,13 @@ export default function Feedback() {
                   }
                 }}
               >
-                ❌ 刪除
+                <i
+                  className="fi fi-rr-trash"
+                  style={{
+                    marginRight: "8px",
+                  }}
+                ></i>
+                刪除
               </button>
 
               {/* 關閉 */}
@@ -519,6 +589,26 @@ export default function Feedback() {
         button:active {
           transform: scale(0.95);
         }
+          button:active {
+  transform: scale(0.95);
+}
+
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 3px 8px;
+
+  border-radius: 6px;
+
+  background: #ef4444;
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 700;
+}
         `}</style>
       <BackToTopButton />
     </div>

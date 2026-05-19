@@ -305,7 +305,8 @@ def load_all_years():
                 year = int(file.split("_")[0])
                 with open(os.path.join(DATA_DIR, file), "r", encoding="utf-8") as f:
                     data[year] = json.load(f)
-            except:
+            except Exception as e:
+                print("❌ Prophet training error:", e)
                 continue
 
     return dict(sorted(data.items()))
@@ -394,7 +395,8 @@ def init_data(force_retrain=False):
             models[key] = model
             accuracy[key] = mape
 
-        except:
+        except Exception as e:
+            print("❌ Prophet training error:", e)
             continue
 
     SERIES_CACHE = series
@@ -474,7 +476,8 @@ def run_recursive_forecast(future_year, dept_filters=None):
                 yearly_result.setdefault(dept, {})
                 yearly_result[dept][energy] = pred
 
-            except:
+            except Exception as e:
+                print("❌ Prophet training error:", e)
                 continue
 
         # =========================
@@ -935,15 +938,11 @@ def predict_department_energy():
             {
                 "mode": "history",
                 "year": roc_year,
-
                 "message": f"📘 {roc_year} 年已有真實能源資料，以下為實際能源結構結果。",
-
                 # 🔥 真實資料
                 "prediction": result,
-
                 # 🔥 AI 回驗資料（新增）
                 "evaluation": get_evaluation_data(dept_filters),
-
                 "summary": summary,
             }
         )
@@ -974,15 +973,11 @@ def predict_department_energy():
         {
             "mode": "forecast",
             "year": roc_year,
-
             "message": f"🔮 {roc_year} 年為未來年份，以下為 AI 能源預測結果。",
-
             # 🔥 AI 預測
             "prediction": prediction,
-
             # 🔥 AI 回驗資料（新增）
             "evaluation": get_evaluation_data(dept_filters),
-
             "summary": summary,
         }
     )
@@ -1042,11 +1037,77 @@ def contact():
             "火大",
             "氣死",
             "垃圾",
-            "not food",
+            "笑死人",
+            "遜",
+            "奇葩",
+            "一堆問題",
+            "神經",
+            "北七",
+            "幹",
+            "超她媽難用",
+            "機掰",
+            "八七",
+            "87",
+            "機歪",
+            "雞雞歪歪",
+            "煩死",
+            "吐了",
+            "拉完了",
+            "F級",
+            "卡頓",
+            "有問題",
+            "不穩定",
+            "複雜",
+            "困難",
+            "錯誤",
+            "不清楚",
+            "麻煩",
+            "延遲",
+            "崩潰",
+            "不準確",
+            "屁",
+            "大便",
+            "屎",
+            "操你媽",
+            "智障",
+            "弱智",
+            "憨",
+            "操你媽",
+            "白癡",
+            "信你個鬼",
+            "stupid",
+            "not good",
             "shit",
             "bad",
             "trash",
             "angry",
+            "mad",
+            "unhappy",
+            "confusing",
+            "slow",
+            "unstable",
+            "complicated",
+            "inaccurate",
+            "difficult",
+            "incomplete",
+            "buggy",
+            "laggy",
+            "outdated",
+            "unclear",
+            "misleading",
+            "limited",
+            "frustrating",
+            "inefficient",
+            "bug",
+            "confusing",
+            "slow",
+            "unstable",
+            "complicated",
+            "inaccurate",
+            "difficult",
+            "buggy",
+            "laggy",
+            "frustrating",
         ]
 
         POSITIVE_WORDS = [
@@ -1058,13 +1119,55 @@ def contact():
             "清楚",
             "漂亮",
             "讚",
+            "很好",
+            "好棒",
+            "優秀",
+            "專業",
+            "實用",
+            "方便",
+            "清楚",
+            "流暢",
+            "快速",
+            "穩定",
+            "厲害",
+            "準確",
+            "有幫助",
+            "完善",
+            "創新",
+            "good",
+            "great",
+            "amazing",
+            "helpful",
+            "useful",
+            "innovative",
+            "impressive",
+            "smooth",
+            "informative",
+            "professional",
+            "accurate",
+            "efficient",
+            "excellent",
+            "clear",
+            "smart",
+            "convenient",
+            "reliable",
         ]
 
         SUGGEST_WORDS = [
             "希望",
             "建議",
-            "可以",
+            "增加",
             "應該",
+            "蠻酷的",
+            "改善",
+            "優化",
+            
+            "suggestion",
+            "proposal",
+            "recommendation",
+            "propose",
+            "recommend",
+            "suggest",
         ]
 
         negative_score = sum(word in text for word in NEGATIVE_WORDS)
@@ -1074,25 +1177,97 @@ def contact():
         suggest_score = sum(word in text for word in SUGGEST_WORDS)
 
         # 🔥 feeling 加權
+        STRONG_NEGATIVE = [
+            "垃圾",
+            "爛",
+            "超難用",
+            "氣死",
+            "幹",
+            "機掰",
+            "北七",
+            "87",
+            "崩潰",
+            "完全不能用",
+            "一堆bug",
+            "糟",
+            "火大",
+            "氣死",
+            "垃圾",
+            "笑死人",
+            "遜",
+            "一堆問題",
+            "神經",
+            "北七",
+            "幹",
+            "超她媽難用",
+            "機掰",
+            "八七",
+            "87",
+            "機歪",
+            "雞雞歪歪",
+            "煩死",
+            "吐了",
+            "拉完了",
+            "F級",
+            "卡頓",
+            "有問題",
+            "不穩定",
+            "複雜",
+            "困難",
+            "錯誤",
+            "崩潰",
+            "不準確",
+            "屁",
+            "大便",
+            "屎",
+            "信你個鬼",
+            "操你媽",
+            "智障",
+            "弱智",
+            "憨",
+            "操你媽",
+            "白癡",
+            "bad",
+            "shit",
+            "fuck",
+            "trash",
+        ]
+        STRONG_POSITIVE = [
+            "超好用",
+            "超讚",
+            "神網站",
+            "愛死",
+            "完美",
+            "超棒",
+            "非常方便",
+            "太厲害了",
+            "超漂亮",
+            "很專業",
+        ]
+
+        # 🔥 feeling 加權
         if "非常不滿意" in feeling:
-            negative_score += 3
+            negative_score += 1
 
         elif "不滿意" in feeling:
-            negative_score += 2
+            negative_score += 0.5
 
         elif "非常滿意" in feeling:
-            positive_score += 3
-
-        elif "滿意" in feeling:
             positive_score += 1
 
-        # =====================
-        # 情緒判定
-        # =====================
-        if negative_score > positive_score:
+        elif "滿意" in feeling:
+            positive_score += 0.5
+        if any(word in text for word in STRONG_NEGATIVE):
             sentiment = "負面"
 
-        elif positive_score > negative_score:
+        elif any(word in text for word in STRONG_POSITIVE):
+            sentiment = "正面"
+        elif positive_score >= 1 and negative_score >= 1:
+            sentiment = "混合"
+        elif negative_score > positive_score:
+            sentiment = "負面"
+
+        elif positive_score >= 2 and positive_score > negative_score:
             sentiment = "正面"
 
         else:
@@ -1101,11 +1276,11 @@ def contact():
         # =====================
         # 類型
         # =====================
-        if suggest_score > 0:
-            category = "建議"
-
-        elif sentiment == "負面":
+        if sentiment in ["負面", "混合"]:
             category = "問題"
+
+        elif suggest_score > 0:
+            category = "建議"
 
         else:
             category = "其他"
@@ -1113,11 +1288,50 @@ def contact():
         # =====================
         # 優先級
         # =====================
-        if sentiment == "負面" and negative_score >= 3:
+
+        HIGH_PRIORITY_WORDS = [
+            "垃圾",
+            "爛",
+            "超難用",
+            "氣死",
+            "幹",
+            "機掰",
+            "北七",
+            "87",
+            "崩潰",
+            "完全不能用",
+            "一堆bug",
+            "糟",
+            "火大",
+            "笑死人",
+            "遜",
+            "神經",
+            "機歪",
+            "雞雞歪歪",
+            "煩死",
+            "F級",
+            "卡頓",
+            "信你個鬼",
+            "操你媽",
+            "智障",
+            "白癡",
+            "bad",
+            "shit",
+            "fuck",
+            "trash",
+        ]
+
+        if any(word in text for word in HIGH_PRIORITY_WORDS):
             priority = "高"
 
-        elif sentiment == "負面":
+        elif sentiment == "負面" and negative_score >= 3:
+            priority = "高"
+
+        elif sentiment in ["負面", "混合"]:
             priority = "中"
+
+        elif category == "建議":
+            priority = "低"
 
         else:
             priority = "低"

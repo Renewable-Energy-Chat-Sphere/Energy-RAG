@@ -87,7 +87,7 @@ export default function Login() {
             style={mode === "register" ? styles.activeTab : styles.tab}
             onClick={() => setMode("register")}
           >
-            註冊高層帳號
+            成為付費使用者
           </button>
         </div>
 
@@ -108,7 +108,7 @@ export default function Login() {
 
         {mode === "register" && (
           <div style={styles.roleHint}>
-            註冊後角色固定為：公司高層 manager
+            註冊後角色固定為：付費使用者
           </div>
         )}
 
@@ -121,7 +121,7 @@ export default function Login() {
             ? "處理中..."
             : mode === "login"
               ? "登入"
-              : "建立高層帳號"}
+              : "建立付費帳號"}
         </button>
 
         <button

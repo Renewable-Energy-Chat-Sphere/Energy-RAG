@@ -83,6 +83,7 @@ export default function Global({ isMobile }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
 
   const onHover = (data) => {
     setHovered(data);
@@ -378,13 +379,9 @@ export default function Global({ isMobile }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: `${formatYear(year, language)} ${getName(selected.code)} 下一年能源用量`,
+          question: question,
           year: year,
-
-          // ⭐ 新增
           from_global: true,
-
-          // ⭐ 改 dynamic
           mode: "dynamic",
         }),
       });
@@ -968,156 +965,179 @@ export default function Global({ isMobile }) {
                   </div>
                   {!selected?.code?.startsWith("S") && (
                     <>
-                      <h2>{t.aiPrediction}</h2>
-
-                      {loading && (
-                        <div className="prediction-loading">
-                          <div className="loading-bar"></div>
-                          <p>{t.aiLoading}</p>
-                        </div>
-                      )}
-
-                      {getCompareChartData() && (
+                      {user?.role === "admin" || user?.role === "manager" ? (
                         <>
-                          <h3>
-                            {formatYear(year, language)}{" "}
-                            {language === "en" ? "" : "年"} vs{" "}
-                            {formatYear(Number(year) + 1, language)}{" "}
-                            {language === "en" ? "" : "年"}
-                          </h3>{" "}
-                          <Bar
-                            data={getCompareChartData()}
-                            options={{
-                              responsive: true,
+                          <h2>{t.aiPrediction}</h2>
 
-                              interaction: {
-                                mode: "index",
-                                intersect: false,
-                              },
-                              hover: {
-                                mode: "index",
-                                intersect: false,
-                              },
-                              plugins: {
-                                tooltip: {
-                                  enabled: true,
-                                  mode: "index",
-                                  intersect: false,
-                                  callbacks: {
-                                    label: function (context) {
-                                      const yearNow = year;
-                                      const yearNext = Number(year) + 1;
-                                      const y1 = formatYear(yearNow, language);
-                                      const y2 = formatYear(yearNext, language);
+                          {loading && (
+                            <div className="prediction-loading">
+                              <div className="loading-bar"></div>
+                              <p>{t.aiLoading}</p>
+                            </div>
+                          )}
 
-                                      let label = "";
+                          {getCompareChartData() && (
+                            <>
+                              <h3>
+                                {formatYear(year, language)}{" "}
+                                {language === "en" ? "" : "年"} vs{" "}
+                                {formatYear(Number(year) + 1, language)}{" "}
+                                {language === "en" ? "" : "年"}
+                              </h3>{" "}
+                              <Bar
+                                data={getCompareChartData()}
+                                options={{
+                                  responsive: true,
 
-                                      if (context.datasetIndex === 0) {
-                                        label =
-                                          language === "en"
-                                            ? `${y1} (Actual)`
-                                            : `${y1}年（實際）`;
-                                      } else if (context.datasetIndex === 1) {
-                                        label =
-                                          language === "en"
-                                            ? `${y2} (Predicted)`
-                                            : `${y2}年（預測）`;
-                                      } else if (context.datasetIndex === 2) {
-                                        label =
-                                          language === "en"
-                                            ? `${y2} (Actual)`
-                                            : `${y2}年（實際）`;
-                                      }
+                                  interaction: {
+                                    mode: "index",
+                                    intersect: false,
+                                  },
+                                  hover: {
+                                    mode: "index",
+                                    intersect: false,
+                                  },
+                                  plugins: {
+                                    tooltip: {
+                                      enabled: true,
+                                      mode: "index",
+                                      intersect: false,
+                                      callbacks: {
+                                        label: function (context) {
+                                          const yearNow = year;
+                                          const yearNext = Number(year) + 1;
+                                          const y1 = formatYear(
+                                            yearNow,
+                                            language,
+                                          );
+                                          const y2 = formatYear(
+                                            yearNext,
+                                            language,
+                                          );
 
-                                      return `${label}: ${context.raw.toFixed(1)}%`;
+                                          let label = "";
+
+                                          if (context.datasetIndex === 0) {
+                                            label =
+                                              language === "en"
+                                                ? `${y1} (Actual)`
+                                                : `${y1}年（實際）`;
+                                          } else if (
+                                            context.datasetIndex === 1
+                                          ) {
+                                            label =
+                                              language === "en"
+                                                ? `${y2} (Predicted)`
+                                                : `${y2}年（預測）`;
+                                          } else if (
+                                            context.datasetIndex === 2
+                                          ) {
+                                            label =
+                                              language === "en"
+                                                ? `${y2} (Actual)`
+                                                : `${y2}年（實際）`;
+                                          }
+
+                                          return `${label}: ${context.raw.toFixed(1)}%`;
+                                        },
+                                      },
                                     },
                                   },
-                                },
-                              },
 
-                              scales: {
-                                y: {
-                                  ticks: {
-                                    callback: (v) => v + "%",
+                                  scales: {
+                                    y: {
+                                      ticks: {
+                                        callback: (v) => v + "%",
+                                      },
+                                    },
                                   },
-                                },
-                              },
-                            }}
-                          />
-                        </>
-                      )}
+                                }}
+                              />
+                            </>
+                          )}
 
-                      {predictionData && (
-                        <div className="prediction-box">
-                          <h4 style={{ marginTop: "10px" }}>
-                            {t.changeAnalysis}
-                          </h4>
+                          {predictionData && (
+                            <div className="prediction-box">
+                              <h4 style={{ marginTop: "10px" }}>
+                                {t.changeAnalysis}
+                              </h4>
 
-                          {getPredictionDiff()
-                            .filter((item) => Math.abs(item.diff) > 1)
-                            .map((item) => (
-                              <div key={item.code} className="prediction-item">
-                                <span>{item.name}</span>
-                                <span
-                                  style={{
-                                    color:
-                                      item.diff > 0 ? "#22c55e" : "#ef4444",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {item.diff > 0 ? "↑" : "↓"}{" "}
-                                  {Math.abs(item.diff).toFixed(1)}%
-                                </span>
-                              </div>
-                            ))}
+                              {getPredictionDiff()
+                                .filter((item) => Math.abs(item.diff) > 1)
+                                .map((item) => (
+                                  <div
+                                    key={item.code}
+                                    className="prediction-item"
+                                  >
+                                    <span>{item.name}</span>
+                                    <span
+                                      style={{
+                                        color:
+                                          item.diff > 0 ? "#22c55e" : "#ef4444",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {item.diff > 0 ? "↑" : "↓"}{" "}
+                                      {Math.abs(item.diff).toFixed(1)}%
+                                    </span>
+                                  </div>
+                                ))}
 
-                          {/* 原本 prediction-card 保持不動 */}
-                          {(() => {
-                            const deptPred =
-                              predictionData.prediction?.[selected.code];
+                              {(() => {
+                                const deptPred =
+                                  predictionData.prediction?.[selected.code];
 
-                            if (!deptPred) {
-                              return (
-                                <p style={{ opacity: 0.6 }}>{t.noPrediction}</p>
-                              );
-                            }
+                                if (!deptPred) {
+                                  return (
+                                    <p style={{ opacity: 0.6 }}>
+                                      {t.noPrediction}
+                                    </p>
+                                  );
+                                }
 
-                            return (
-                              <div className="prediction-card">
-                                <div
-                                  className="accuracy-badge"
-                                  onClick={() => setShowAccuracyChart(true)}
-                                >
-                                  {getPredictionAccuracy() !== null
-                                    ? `${getPredictionAccuracy().toFixed(1)}%`
-                                    : "?"}
+                                return (
+                                  <div className="prediction-card">
+                                    <div
+                                      className="accuracy-badge"
+                                      onClick={() => setShowAccuracyChart(true)}
+                                    >
+                                      {getPredictionAccuracy() !== null
+                                        ? `${getPredictionAccuracy().toFixed(1)}%`
+                                        : "?"}
 
-                                  {/* ⭐ 這個才是你要的 tooltip */}
-                                  <div className="tooltip">{t.accuracy}</div>
-                                </div>
-
-                                <div className="prediction-title">
-                                  {getName(selected.code)}
-                                </div>
-
-                                <div className="prediction-list">
-                                  {Object.entries(deptPred).map(
-                                    ([sCode, value]) => (
-                                      <div
-                                        key={sCode}
-                                        className="prediction-item"
-                                      >
-                                        <span>{getName(sCode)}</span>
-                                        <span className="value">
-                                          {Number(value).toFixed(1)}%
-                                        </span>
+                                      <div className="tooltip">
+                                        {t.accuracy}
                                       </div>
-                                    ),
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
+                                    </div>
+
+                                    <div className="prediction-title">
+                                      {getName(selected.code)}
+                                    </div>
+
+                                    <div className="prediction-list">
+                                      {Object.entries(deptPred).map(
+                                        ([sCode, value]) => (
+                                          <div
+                                            key={sCode}
+                                            className="prediction-item"
+                                          >
+                                            <span>{getName(sCode)}</span>
+                                            <span className="value">
+                                              {Number(value).toFixed(1)}%
+                                            </span>
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="permission-lock">
+                          🔒 AI 預測分析僅限有登入的使用者查看
                         </div>
                       )}
                     </>

@@ -209,11 +209,7 @@ def clean_numbers(text):
         except:
             return raw
 
-    return re.sub(
-        r"-?\d+\.\d+",
-        repl,
-        text
-    )
+    return re.sub(r"-?\d+\.\d+", repl, text)
 
 
 # =====================================================
@@ -358,18 +354,10 @@ def translate_answer(openai_client, model, user_text, answer):
 # =====================================================
 # 輸出回覆整理
 # =====================================================
-def finalize_answer(
-    openai_client,
-    model,
-    user_text,
-    assistant_text,
-    sources
-):
+def finalize_answer(openai_client, model, user_text, assistant_text, sources):
 
-    return append_sources(
-        clean_numbers(assistant_text),
-        sources
-    )
+    return append_sources(clean_numbers(assistant_text), sources)
+
 
 # =====================================================
 # CHAT API
@@ -384,8 +372,7 @@ def chat():
 
     session_id = (data.get("session_id") or "default").strip() or "default"
 
-    user_text = (data.get("user") or "").strip()
-
+    user_text = (data.get("question") or data.get("user") or "").strip()
     model = (data.get("model") or "gpt-4o-mini").strip()
 
     rag_auto = str(data.get("rag_auto", "true")).lower() == "true"
@@ -713,7 +700,6 @@ def chat():
 
             resp = openai_client.responses.create(
                 model=model,
-
                 # 允許 GPT 上網搜尋
                 tools=[{"type": "web_search"}],
                 input=messages,

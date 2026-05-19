@@ -147,12 +147,19 @@ export default function Header() {
               <LanguageSwitch />
             </div>
 
-            {/* 訪客 / admin 才顯示首頁；manager 不顯示首頁 */}
-            {(!isLoggedIn || isAdmin) && <Link to="/">{t("nav.home")}</Link>}
+            {(!isLoggedIn || isAdmin || isManager) && (
+              <Link to="/">{t("nav.home")}</Link>
+            )}
 
             <Link to="/global">{t("nav.global")}</Link>
 
-            <Link to="/powerplant">{t("nav.powerplant")}</Link>
+            {user &&
+              (user.role === "admin" ||
+                user.role === "manager") && (
+                <Link to="/powerplant">
+                  {t("nav.powerplant")}
+                </Link>
+            )}
 
             <Link to="/rag">{t("nav.rag")}</Link>
 
