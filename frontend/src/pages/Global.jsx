@@ -36,6 +36,7 @@ import "./global.css";
 import BackToTopButton from "../components/BackToTopButton";
 import hierarchy from "../data/hierarchy.json";
 import supplyCatalog from "../data/supply_catalog.json";
+import totalSupply from "../data/consumption.json";
 
 const energyFiles = import.meta.glob("../data/*_energy_demand_supply.json", {
   eager: true,
@@ -263,15 +264,35 @@ export default function Global({ isMobile }) {
 
       return Object.entries(demandData)
         .map(([supplyId, value]) => {
+
+          const ratio =
+            typeof value === "object"
+              ? value.ratio
+              : value;
+
+          const total =
+            totalSupply?.[String(year)]?.value || 0;
+
+          const actualUsage =
+            total * ratio / 1000;
           const supply = supplyCatalog[supplyId];
 
           const name = getName(supplyId);
 
           return {
             id: supplyId,
+
             name,
             fullName: name,
-            value,
+
+            // pie 比例
+            value: ratio,
+
+            // 真正使用量
+            actualUsage,
+
+            totalSupply: total,
+
             category: supply?.category || "Other",
           };
         })
@@ -281,21 +302,49 @@ export default function Global({ isMobile }) {
     // 供給對需求關聯
     const result = [];
 
-    Object.entries(energyData).forEach(([dCode, supplies]) => {
-      if (supplies[node.code]) {
-        const name = getName(dCode);
+    Object.entries(energyData).forEach(
+      ([dCode, supplies]) => {
 
-        result.push({
-          id: dCode,
-          name,
-          fullName: name,
-          value: supplies[node.code],
-          category: "Other",
-        });
+        if (supplies[node.code]) {
+
+          const name = getName(dCode);
+
+          const ratio =
+            typeof supplies[node.code] === "object"
+              ? supplies[node.code].ratio
+              : supplies[node.code];
+
+          const total =
+            totalSupply?.[
+              String(year)
+            ]?.value || 0;
+
+          const actualUsage =
+            total * ratio;
+
+          result.push({
+            id: dCode,
+
+            name,
+            fullName: name,
+
+            // pie 比例
+            value: ratio,
+
+            // 真正使用量
+            actualUsage,
+
+            totalSupply: total,
+
+            category: "Other",
+          });
+        }
       }
-    });
+    );
 
-    return result.sort((a, b) => b.value - a.value);
+    return result.sort(
+      (a, b) => b.value - a.value
+    );
   }
 
   function getDepth(code, tree, depth = 0) {
@@ -354,16 +403,16 @@ export default function Global({ isMobile }) {
       }
     }
 
-    const total = filtered.reduce((a, b) => a + b.value, 0);
+    const total =
+      filtered.reduce((a, b) => a + b.value, 0) || 1;
 
     return filtered
       .map((d) => ({
         ...d,
+        rawValue: d.actualUsage || 0,
 
-        // 原始值（總量）
-        rawValue: d.value,
+        ratioValue: d.value,
 
-        // pie chart 用比例
         value: d.value / total,
       }))
   }
@@ -907,7 +956,21 @@ export default function Global({ isMobile }) {
 
                         <Tooltip
                           formatter={(v, name, props) => {
-                            const raw = props.payload.rawValue || 0;
+
+                            // 🔥 點供給（Sxx）
+                            // 不顯示 toe
+                            if (selected?.code?.startsWith("S")) {
+
+                              return [
+                                `${(v * 100).toFixed(1)}%`,
+                                props.payload.name,
+                              ];
+                            }
+
+                            // 🔥 點需求（Dxx）
+                            // 顯示使用量
+                            const raw =
+                              props?.payload?.rawValue || 0;
 
                             return [
                               language === "en"
