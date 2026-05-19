@@ -457,7 +457,20 @@ def get_ratio_records(year=None, department=None, energy_name=None):
     result = [
         r
         for r in records
-        if r.get("record_type") == "ratio" and r.get("sheet") == "總比例換算"
+        if (
+            r.get("record_type") == "ratio"
+            and r.get("sheet") == "總比例換算"
+
+            # 🔥 排除總計
+            and str(r.get("supply_code", "")).strip() != "S54"
+
+            # 🔥 排除 D1
+            and str(r.get("demand_code", "")).strip() != "D1"
+
+            # 🔥 排除名稱型總計（保險）
+            and "總計" not in str(r.get("supply_name_zh", ""))
+            and "能源消費" not in str(r.get("demand_name", ""))
+        )
     ]
 
     if year is not None:
@@ -501,7 +514,12 @@ def answer_top_energy_by_department(department: str, year=None, top_n: int = 5):
     year_text = f"{year}年" if year else "各年度"
     answer = (
         f"根據{year_text}已生成的能源資料，{department}主要使用的能源包括："
-        + "、".join([f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top])
+        + "、".join([
+            f"{r['supply_name_zh']}"
+            f"（比例 {round(r['value'],2)}%"
+            f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
+            for r in top
+        ])
         + "。"
     )
 
@@ -537,7 +555,11 @@ def answer_top_department_by_energy(energy_name: str, year=None, top_n: int = 5)
         dept = r["demand_name"]
         if dept not in seen:
             seen.add(dept)
-            answer_parts.append(dept)
+            answer_parts.append(
+                f"{dept}"
+                f"（比例 {round(r['value'],2)}%"
+                f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
+            )
 
     year_text = f"{year}年" if year else "各年度"
     answer = (
@@ -577,7 +599,7 @@ def answer_check_usage(department: str, energy_name: str, year=None):
 
     return {
         "success": True,
-        "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（{round(best['value'],2)}%）。",
+        "answer": f"根據{year_text}已生成的能源資料，{department}有使用{energy_name}（比例{round(best['value'],2)}%）｜使用量 {round(best.get('total_supply',0) * best['value'] / 1000,2):,}公噸油當量（toe））。",
         "sources": ["energy_rag_all_years_meta.json"],
         "results": [best],
     }
@@ -609,6 +631,7 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
                 "supply_name_zh": name,
                 "supply_code": code,
                 "value": 0,
+                "total_supply": r.get("total_supply", 0),
             }
         agg[name]["value"] += value
 
@@ -618,7 +641,12 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
     year_text = f"民國{year}年" if year else "指定年度"
     answer = (
         f"根據{year_text}已生成的能源資料，使用量最多的能源包括："
-        + "、".join([f"{r['supply_name_zh']}（{round(r['value'],2)}%）" for r in top])
+        + "、".join([
+            f"{r['supply_name_zh']}"
+            f"（比例 {round(r['value'],2)}%"
+            f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
+            for r in top
+        ])
         + "。"
     )
 
@@ -659,7 +687,10 @@ def answer_multi_year_top_energy(years, top_n=5):
 
     for r in results:
         names = "、".join(
-            [f"{e['supply_name_zh']}（{round(e['value'],2)}%）" for e in r["top"]]
+           [
+                f"{e['supply_name_zh']}（比例 {round(e['value'],2)}%｜使用量 {round(e.get('total_supply',0) * e['value'] / 1000,2):,}"
+                for e in r["top"]
+            ]
         )
         answer += f"{r['year']}年：{names}\n"
 
@@ -693,10 +724,13 @@ def answer_compare_years_overall(years, top_n=5):
     answer = "### 多年度能源比較\n\n"
 
     for r in results:
-        answer += f"**{r['year']}年**\n"
+        answer += f"\n**{r['year']}年**\n\n"
         for e in r["top"]:
-            answer += f"- {e['supply_name_zh']}（{round(e['value'],2)}%）\n"
-        answer += "\n"
+            answer += (
+                f"- {e['supply_name_zh']}"
+                f"（比例 {round(e['value'],2)}%"
+                f"｜使用量 {round(e.get('total_supply',0) * e['value'] / 1000,2):,}公噸油當量（toe））\n"
+            )
 
     return {
         "success": True,
@@ -724,7 +758,10 @@ def answer_compare_department_across_years(department, years, top_n=5):
 
     for r in results:
         names = "、".join(
-            [f"{e['supply_name_zh']}（{round(e['value'],2)}%）" for e in r["top"]]
+           [
+                f"{e['supply_name_zh']}（比例 {round(e['value'],2)}%｜使用量 {round(e.get('total_supply',0) * e['value'] / 1000,2):,}公噸油當量（toe））"
+                for e in r["top"]
+            ]
         )
         answer += f"{r['year']}年：{names}\n\n"
 
@@ -753,7 +790,10 @@ def answer_compare_departments_same_year(departments, year=None, top_n=5):
 
     for r in results:
         names = "、".join(
-            [f"{e['supply_name_zh']}（{round(e['value'],2)}%）" for e in r["top"]]
+            [
+                f"{e['supply_name_zh']}（比例 {round(e['value'],2)}%｜使用量 {round(e.get('total_supply',0) * e['value'] / 1000,2)}公噸油當量（toe））"
+                for e in r["top"]
+            ]
         )
         answer += f"{r['department']}：{names}\n\n"
 

@@ -358,9 +358,13 @@ export default function Global({ isMobile }) {
     return filtered
       .map((d) => ({
         ...d,
+
+        // 原始值（總量）
+        rawValue: d.value,
+
+        // pie chart 用比例
         value: d.value / total,
       }))
-      .sort((a, b) => b.value - a.value);
   }
 
   async function handleAsk() {
@@ -905,7 +909,16 @@ export default function Global({ isMobile }) {
                         </Pie>
 
                         <Tooltip
-                          formatter={(v) => `${(v * 100).toFixed(1)}%`}
+                          formatter={(v, name, props) => {
+                            const raw = props.payload.rawValue || 0;
+
+                            return [
+                              language === "en"
+                                ? `${(v * 100).toFixed(1)}% | ${raw.toLocaleString()} toe`
+                                : `${(v * 100).toFixed(1)}% ｜ ${raw.toLocaleString()} 公噸油當量（toe）`,
+                              props.payload.name,
+                            ];
+                          }}
                         />
 
                         <Legend

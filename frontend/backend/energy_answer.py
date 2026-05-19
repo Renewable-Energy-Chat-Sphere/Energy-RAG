@@ -11,10 +11,23 @@ records = json.loads(META_PATH.read_text(encoding="utf-8"))
 # 工具函式
 # ===============================
 def get_ratio_records():
-    return [
-        r for r in records
-        if r.get("record_type") == "ratio"
-        and r.get("sheet") == "總比例換算"
+    result = [
+        r
+        for r in records
+        if (
+            r.get("record_type") == "ratio"
+            and r.get("sheet") == "總比例換算"
+
+            # 🔥 排除總計
+            and str(r.get("supply_code", "")).strip() != "S54"
+
+            # 🔥 排除 D1
+            and str(r.get("demand_code", "")).strip() != "D1"
+
+            # 🔥 排除名稱型總計（保險）
+            and "總計" not in str(r.get("supply_name_zh", ""))
+            and "能源消費" not in str(r.get("demand_name", ""))
+        )
     ]
 
 

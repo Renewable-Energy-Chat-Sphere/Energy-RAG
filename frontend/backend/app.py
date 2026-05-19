@@ -535,7 +535,7 @@ def run_prediction(target_year, dept_filters=None, mode="full"):
 
             periods = max(1, target_year - last_year)
 
-            future = model.make_future_dataframe(periods=periods, freq="Y")
+            future = model.make_future_dataframe(periods=periods, freq="YE")
             forecast = model.predict(future)
 
             pred = float(forecast.iloc[-1]["yhat"])
