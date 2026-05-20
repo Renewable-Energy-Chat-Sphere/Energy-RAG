@@ -957,20 +957,8 @@ export default function Global({ isMobile }) {
                         <Tooltip
                           formatter={(v, name, props) => {
 
-                            // 🔥 點供給（Sxx）
-                            // 不顯示 toe
-                            if (selected?.code?.startsWith("S")) {
-
-                              return [
-                                `${(v * 100).toFixed(1)}%`,
-                                props.payload.name,
-                              ];
-                            }
-
-                            // 🔥 點需求（Dxx）
-                            // 顯示使用量
                             const raw =
-                              props?.payload?.rawValue || 0;
+                              props?.payload?.rawValue || 0
 
                             return [
                               language === "en"
