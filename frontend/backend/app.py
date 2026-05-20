@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_file, session
 from flask_cors import CORS
@@ -9,11 +10,16 @@ from datetime import datetime
 from flask import request, jsonify
 from power_api import get_power_units
 import logging
+from apscheduler.schedulers.background import BackgroundScheduler
+from utils.power_category import get_category
 
 logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
 # 資料庫 專用
 import sqlite3
 from db import get_db
+
+# 資料庫 歷史發電資料專用
+from datetime import datetime
 
 # 權限管理 專用
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -1161,7 +1167,6 @@ def contact():
             "蠻酷的",
             "改善",
             "優化",
-            
             "suggestion",
             "proposal",
             "recommendation",
@@ -1908,7 +1913,75 @@ def get_energy_news():
 @app.route("/power-units")
 def power_units():
 
-    return jsonify(get_power_units())
+    data = get_power_units()
+
+    print("🔥 POWER DATA =", data[:3])
+
+    # save_power_snapshot(data)
+
+    return jsonify(data)
+
+
+def save_power_snapshot(data):
+
+    conn = sqlite3.connect("energy.db")
+
+    cursor = conn.cursor()
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    totals = {}
+
+    for unit in data:
+
+        name = unit.get("name", "")
+
+        try:
+            value = float(unit.get("value") or 0)
+
+        except:
+            value = 0
+
+        category_data = get_category(name, value)
+
+        category = category_data["main"]
+
+        if category not in totals:
+            totals[category] = 0
+
+        totals[category] += value
+
+    for category, power in totals.items():
+
+        cursor.execute(
+            """
+            INSERT INTO power_generation_logs
+            (timestamp, category, power)
+            VALUES (?, ?, ?)
+        """,
+            (now, category, power),
+        )
+
+    conn.commit()
+
+    conn.close()
+
+    print("✅ 已儲存歷史發電資料")
+
+
+def scheduled_power_save():
+
+    try:
+
+        data = get_power_units()
+
+        save_power_snapshot(data)
+
+        print("✅ 定時儲存成功")
+
+    except Exception as e:
+
+        print("❌ 定時儲存失敗:", e)
 
 
 # ====================================
@@ -2048,6 +2121,19 @@ def power_live():
 if __name__ == "__main__":
 
     print("🔥 初始化預測資料...")
-    init_data()  # 🔥 加這行（關鍵）
+    init_data()
+
+    # =========================
+    # ⏰ APScheduler
+    # =========================
+    scheduler = BackgroundScheduler()
+
+    scheduler.add_job(scheduled_power_save, "interval", minutes=10)
+    # 🔥 啟動時先存一次
+    scheduled_power_save()
+
+    scheduler.start()
+
+    print("⏰ 已啟動每10分鐘歷史發電儲存")
 
     app.run(host="0.0.0.0", port=8000)

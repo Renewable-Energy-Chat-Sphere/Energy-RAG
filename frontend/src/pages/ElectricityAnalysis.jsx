@@ -859,7 +859,7 @@ ${renewablePercent}% ，
 
                 {t("electricity.costTitle")}
               </h2>
-              <p
+              <div
                 style={{
                   opacity: 0.7,
                   marginTop: "8px",
@@ -868,6 +868,7 @@ ${renewablePercent}% ，
                 }}
               >
                 {t("electricity.costDescription")}
+
                 <p
                   style={{
                     marginTop: "12px",
@@ -880,7 +881,7 @@ ${renewablePercent}% ，
                     ? "Based on weighted energy structure analysis and LCOE (Levelized Cost of Energy) reference models."
                     : "依據能源結構加權分析與 LCOE（均化能源成本）概念進行估算。"}
                 </p>
-              </p>
+              </div>
               <div className="cost-value">{liveCostPressure}</div>
 
               <div className="cost-label">{t("electricity.costIndex")}</div>
