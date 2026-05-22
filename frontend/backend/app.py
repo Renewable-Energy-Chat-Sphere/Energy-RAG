@@ -2162,11 +2162,10 @@ def daily_report():
     today = datetime.now().strftime("%Y-%m-%d")
 
     cursor.execute("""
-    SELECT *
-    FROM daily_stats
-    ORDER BY report_date DESC
-    LIMIT 20
-    """)
+SELECT *
+FROM daily_stats
+ORDER BY report_date DESC, id ASC
+""")
 
     rows = cursor.fetchall()
 

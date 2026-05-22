@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import "./power.css";
 import {
   PieChart,
   Pie,
@@ -40,6 +40,11 @@ function DailyReport() {
 
   const borderColor = isDark ? "#334155" : "#e2e8f0";
   const [data, setData] = useState([]);
+  const [allData, setAllData] = useState([]);
+
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [downloadMode, setDownloadMode] = useState("month");
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [taipower, setTaipower] = useState(null);
@@ -60,13 +65,15 @@ function DailyReport() {
       .then((res) => res.json())
       .then((res) => {
         // 🔥 找最新日期
+        setAllData(res);
+
         const latestDate = res[0]?.report_date;
 
-        // 🔥 只保留最新日期
+        setSelectedDate(latestDate);
+        setSelectedMonth(latestDate.slice(0, 7));
         const filtered = res.filter((item) => item.report_date === latestDate);
 
         setData(filtered);
-
         setLoading(false);
       });
     fetch("http://127.0.0.1:8000/daily-trend")
@@ -82,11 +89,35 @@ function DailyReport() {
   }, []);
 
   // =========================
-  // 🔥 下載 JSON
+  // 🔥 下載 Excel(CSV)
   // =========================
   const downloadReport = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
+    let exportData = [];
+
+    if (downloadMode === "month") {
+      exportData = allData.filter(
+        (item) => item.report_date.slice(0, 7) === selectedMonth,
+      );
+    } else {
+      exportData = allData.filter((item) => item.report_date === selectedDate);
+    }
+
+    const headers = ["日期", "類型", "平均發電量(MW)", "占比(%)"];
+
+    const rows = exportData.map((item) => [
+      item.report_date,
+      item.category,
+      item.avg_power,
+      item.ratio,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
     });
 
     const url = URL.createObjectURL(blob);
@@ -95,28 +126,58 @@ function DailyReport() {
 
     a.href = url;
 
-    a.download = "daily_energy_report.json";
+    a.download =
+      downloadMode === "month"
+        ? `${selectedMonth}_energy_report.csv`
+        : `${selectedDate}_energy_report.csv`;
 
     a.click();
 
     URL.revokeObjectURL(url);
   };
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
 
+    const filtered = allData.filter((item) => item.report_date === date);
+
+    setData(filtered);
+  };
   // =========================
   // 🔥 總發電量
   // =========================
   const totalPower = data.reduce((sum, item) => sum + item.avg_power, 0);
-
+  const availableDates = [...new Set(allData.map((d) => d.report_date))];
+  const availableMonths = [
+    ...new Set(allData.map((d) => d.report_date.slice(0, 7))),
+  ];
   if (loading) {
     return (
       <div
+        className="power-container"
         style={{
-          padding: 40,
-          color: "white",
-          fontSize: 24,
+          minHeight: "calc(100vh - 320px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "18px",
         }}
       >
-        載入每日分析中...
+        <div className="loading-text">
+          <i className="fi fi-rr-chart-line-up loading-icon"></i>
+          載入每日能源分析
+          <span className="dot-animation"></span>
+        </div>
+
+        <div
+          style={{
+            opacity: 0.65,
+            fontSize: "14px",
+            color: isDark ? "#cbd5e1" : "#334155",
+          }}
+        >
+          正在同步最新能源資料...
+        </div>
       </div>
     );
   }
@@ -258,7 +319,40 @@ function DailyReport() {
         >
           {/* 台電即時資訊 */}
 
-          {taipower && (
+          {/* 台電即時資訊 */}
+
+          {!taipower ? (
+            <div
+              style={{
+                background: cardBg,
+                borderRadius: 20,
+                padding: 40,
+                minHeight: 420,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "18px",
+                transition: "background 0.35s ease",
+              }}
+            >
+              <div className="loading-text">
+                <i className="fi fi-rr-bolt loading-icon"></i>
+                載入台電即時資訊
+                <span className="dot-animation"></span>
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.65,
+                  fontSize: "14px",
+                  color: isDark ? "#cbd5e1" : "#334155",
+                }}
+              >
+                正在同步最新台電資料...
+              </div>
+            </div>
+          ) : (
             <div
               style={{
                 background: cardBg,
@@ -289,13 +383,20 @@ function DailyReport() {
                 <h1
                   style={{
                     fontSize: 48,
-                    color: "#60a5fa",
+                    color: "#2e79d4",
                   }}
                 >
                   {taipower.curr_load}
                 </h1>
 
-                <p>
+                <p
+                  style={{
+                    marginTop: 10,
+                    fontSize: 18,
+                    color: "#95c5ff",
+                    fontWeight: "bold",
+                  }}
+                >
                   使用率：
                   {taipower.curr_util_rate}%
                 </p>
@@ -315,7 +416,7 @@ function DailyReport() {
                 <h1
                   style={{
                     fontSize: 42,
-                    color: "#f59e0b",
+                    color: "#f55d0b",
                   }}
                 >
                   {taipower.fore_peak_dema_load}
@@ -324,7 +425,7 @@ function DailyReport() {
                   style={{
                     marginTop: 10,
                     fontSize: 18,
-                    color: "#facc15",
+                    color: "#fa9315",
                     fontWeight: "bold",
                   }}
                 >
@@ -358,7 +459,7 @@ function DailyReport() {
                 <h1
                   style={{
                     fontSize: 42,
-                    color: "#38bdf8",
+                    color: "#8838f8",
                     marginBottom: 10,
                   }}
                 >
@@ -384,8 +485,8 @@ function DailyReport() {
                   style={{
                     color:
                       taipower.fore_peak_resv_indicator?.trim() === "G"
-                        ? "#22c55e"
-                        : "#ef4444",
+                        ? "#008832"
+                        : "#bd0000",
 
                     fontSize: 42,
                     marginBottom: 10,
@@ -396,7 +497,17 @@ function DailyReport() {
                     : "🔴 供電吃緊"}
                 </h1>
 
-                <p>
+                <p
+                  style={{
+                    marginTop: 10,
+                    fontSize: 18,
+                    color:
+                      taipower.fore_peak_resv_indicator?.trim() === "G"
+                        ? "#6db14e"
+                        : "#ff6666",
+                    fontWeight: "bold",
+                  }}
+                >
                   備轉率：
                   {taipower.fore_peak_resv_rate}%
                 </p>
@@ -413,7 +524,67 @@ function DailyReport() {
               </div>
             </div>
           )}
+          {/* 備轉容量說明 */}
 
+          <div
+            style={{
+              background: cardBg,
+              borderRadius: 20,
+              padding: 24,
+              transition: "background 0.35s ease",
+            }}
+          >
+            <h2
+              style={{
+                marginBottom: 24,
+              }}
+            >
+              ⚡ 備轉容量燈號說明
+            </h2>
+
+            <img
+              src={import.meta.env.BASE_URL + "images/reserve-light.png"}
+              alt="備轉容量燈號"
+              style={{
+                width: "85%",
+                maxWidth: 420,
+                display: "block",
+                marginBottom: 24,
+                borderRadius: 18,
+              }}
+            />
+
+            <div
+              style={{
+                lineHeight: 2,
+                opacity: 0.82,
+                fontSize: 14,
+              }}
+            >
+              備轉容量率代表系統每日供電餘裕。
+              <br />
+              <br />
+              台電會根據：
+              <br />
+              • 用電預估
+              <br />
+              • 機組運轉狀態
+              <br />
+              • 再生能源變化
+              <br />
+              • 水情與氣候
+              <br />
+              動態調整每日備轉容量。
+            </div>
+          </div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 30,
+          }}
+        >
           {/* 圓餅圖 */}
 
           <div
@@ -421,7 +592,8 @@ function DailyReport() {
               background: cardBg,
               borderRadius: 20,
               padding: 20,
-              height: 500,
+              height: 560,
+              marginBottom: 30,
               transition: "background 0.35s ease, color 0.35s ease",
             }}
           >
@@ -451,78 +623,144 @@ function DailyReport() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        {/* ========================= */}
-        {/* 右側表格 */}
-        {/* ========================= */}
-
-        <div
-          style={{
-            background: cardBg,
-            borderRadius: 20,
-            padding: 20,
-            minHeight: 1030,
-            overflow: "auto",
-            transition: "background 0.35s ease, color 0.35s ease",
-          }}
-        >
+          {/* ========================= */}
+          {/* 右側表格 */}
+          {/* ========================= */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-            }}
-          >
-            <h2>📋 今日詳細能源報表</h2>
-
-            <button
-              onClick={downloadReport}
-              style={{
-                background: "#2563eb",
-                border: "none",
-                padding: "10px 18px",
-                borderRadius: 12,
-                color: isDark ? "white" : "#0f172a",
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: 14,
-              }}
-            >
-              ⬇️ 下載報表
-            </button>
-          </div>
-
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
+              background: cardBg,
+              borderRadius: 20,
+              padding: 20,
+              minHeight: 1030,
+              overflow: "auto",
               transition: "background 0.35s ease, color 0.35s ease",
             }}
           >
-            <thead>
-              <tr>
-                <th style={thStyle}>類型</th>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <h2>📋 能源報表</h2>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    marginTop: 10,
+                  }}
+                >
+                  <select
+                    value={downloadMode}
+                    onChange={(e) => setDownloadMode(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: `1px solid ${borderColor}`,
+                      background: isDark ? "#0f172a" : "white",
+                      color: textColor,
+                      fontSize: 14,
+                      outline: "none",
+                    }}
+                  >
+                    <option value="month">月報表</option>
+                    <option value="day">單日報表</option>
+                  </select>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: `1px solid ${borderColor}`,
+                      background: isDark ? "#0f172a" : "white",
+                      color: textColor,
+                      fontSize: 14,
+                      outline: "none",
+                    }}
+                  >
+                    {availableMonths.map((month) => (
+                      <option key={month} value={month}>
+                        {month}
+                      </option>
+                    ))}
+                  </select>
 
-                <th style={thStyle}>平均發電量</th>
+                  <select
+                    value={selectedDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: `1px solid ${borderColor}`,
+                      background: isDark ? "#0f172a" : "white",
+                      color: textColor,
+                      fontSize: 14,
+                      outline: "none",
+                    }}
+                  >
+                    {availableDates.map((date) => (
+                      <option key={date} value={date}>
+                        {date}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                <th style={thStyle}>占比</th>
-              </tr>
-            </thead>
+              <button
+                onClick={downloadReport}
+                style={{
+                  background: "#2563eb",
+                  border: "none",
+                  padding: "10px 18px",
+                  borderRadius: 12,
+                  color: isDark ? "white" : "#ffffff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                ⬇️ 下載報表
+              </button>
+            </div>
 
-            <tbody>
-              {data.map((item, index) => (
-                <tr key={index}>
-                  <td style={tdStyle}>{item.category}</td>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                transition: "background 0.35s ease, color 0.35s ease",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={thStyle}>類型</th>
 
-                  <td style={tdStyle}>{item.avg_power.toFixed(2)} MW</td>
+                  <th style={thStyle}>平均發電量</th>
 
-                  <td style={tdStyle}>{item.ratio}%</td>
+                  <th style={thStyle}>占比</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {data.map((item, index) => (
+                  <tr key={index}>
+                    <td style={tdStyle}>{item.category}</td>
+
+                    <td style={tdStyle}>{item.avg_power.toFixed(2)} MW</td>
+
+                    <td style={tdStyle}>{item.ratio}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
