@@ -10,9 +10,8 @@ export default function Rag() {
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
 
-  const API = "http://127.0.0.1:8000"
+  const API = "/api";
   //const API = "http://127.0.0.1:8000";
-
 
   async function downloadFile({
     endpoint,
@@ -223,15 +222,12 @@ export default function Rag() {
         cleanAnswer = cleanAnswer.replace(
           /(https?:\/\/[a-zA-Z0-9./?=_-]+|www\.[a-zA-Z0-9./?=_-]+)/g,
           (url) => {
-
-            const href = url.startsWith("http")
-              ? url
-              : `https://${url}`;
+            const href = url.startsWith("http") ? url : `https://${url}`;
 
             return `[${url}](${href})`;
-          }
+          },
         );
-        
+
         // markdown → html
         let answerHtml = marked.parse(cleanAnswer);
 
@@ -292,7 +288,7 @@ export default function Rag() {
         // 直接渲染 HTML（不要逐字動畫）
         answerBox.innerHTML = answerHtml.replace(
           /<a /g,
-          '<a target="_blank" rel="noopener noreferrer" '
+          '<a target="_blank" rel="noopener noreferrer" ',
         );
 
         // 直接加入額外卡片
@@ -390,7 +386,8 @@ export default function Rag() {
           const y =
             aiWrap.getBoundingClientRect().bottom +
             window.scrollY -
-            window.innerHeight + 220;
+            window.innerHeight +
+            220;
 
           window.scrollTo({
             top: y,
@@ -553,7 +550,7 @@ function renderMultiYearCards(results, t) {
                         ${
                           typeof r.value === "number"
                             ? `${r.value.toFixed(2)}%`
-                            : r.value ?? "-"
+                            : (r.value ?? "-")
                         }
                       </div>
                     </div>
@@ -586,7 +583,7 @@ function renderEnergyTopCards(results) {
                 ${
                   typeof r.value === "number"
                     ? `${r.value.toFixed(2)}%`
-                    : r.value ?? "-"
+                    : (r.value ?? "-")
                 }
               </div>
             </div>
@@ -621,7 +618,7 @@ function renderComparisonCards(results, t) {
               ${
                 typeof r.value === "number"
                   ? `${r.value.toFixed(2)}%`
-                  : r.value ?? "-"
+                  : (r.value ?? "-")
               }
             </div>
           </div>
@@ -644,7 +641,7 @@ function renderComparisonCards(results, t) {
               ${
                 typeof r.value === "number"
                   ? `${r.value.toFixed(2)}%`
-                  : r.value ?? "-"
+                  : (r.value ?? "-")
               }
             </div>
           </div>
@@ -703,7 +700,7 @@ ${
                     ${
                       typeof r.value === "number"
                         ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
+                        : (r.value ?? "-")
                     }
                   </div>
                 </div>
@@ -729,7 +726,7 @@ ${
                     ${
                       typeof r.value === "number"
                         ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
+                        : (r.value ?? "-")
                     }
                   </div>
                 </div>
@@ -804,7 +801,7 @@ ${
                     ${
                       typeof r.value === "number"
                         ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
+                        : (r.value ?? "-")
                     }
                   </div>
                 </div>
@@ -836,7 +833,7 @@ ${
                     ${
                       typeof r.value === "number"
                         ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
+                        : (r.value ?? "-")
                     }
                   </div>
                 </div>

@@ -12,6 +12,7 @@ from power_api import get_power_units
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from utils.power_category import get_category
+from analytics.daily_stats import generate_daily_stats
 
 logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
 # 資料庫 專用
@@ -2099,6 +2100,150 @@ def electricity_ai_analysis():
         return jsonify({"analysis": "AI 分析暫時無法使用"})
 
 
+@app.route("/taipower-status")
+def taipower_status():
+
+    from selenium import webdriver
+    from selenium.webdriver.edge.options import Options
+
+    import json
+    import time
+
+    try:
+
+        options = Options()
+
+        options.add_argument("--headless")
+
+        driver = webdriver.Edge(options=options)
+
+        url = "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/loadpara.json"
+
+        driver.get(url)
+
+        time.sleep(3)
+
+        # 🔥 抓 body JSON
+        text = driver.find_element("tag name", "body").text
+
+        driver.quit()
+
+        data = json.loads(text)
+
+        records = data["records"]
+
+        result = {}
+
+        for item in records:
+
+            result.update(item)
+
+        return jsonify(result)
+
+    except Exception as e:
+
+        print("❌ 台電資訊失敗:", e)
+
+        return jsonify({"error": str(e)}), 500
+
+
+# ====================================
+# 📊 Daily Report
+# ====================================
+@app.route("/daily-report")
+def daily_report():
+
+    conn = sqlite3.connect("energy.db")
+
+    conn.row_factory = sqlite3.Row
+
+    cursor = conn.cursor()
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    cursor.execute("""
+    SELECT *
+    FROM daily_stats
+    ORDER BY report_date DESC
+    LIMIT 20
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify([dict(r) for r in rows])
+
+
+# ====================================
+# 📈 Daily Trend
+# ====================================
+@app.route("/daily-trend")
+def daily_trend():
+
+    conn = sqlite3.connect("energy.db")
+
+    conn.row_factory = sqlite3.Row
+
+    cursor = conn.cursor()
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM power_generation_logs
+        WHERE DATE(timestamp)=?
+        ORDER BY timestamp ASC
+        """,
+        (today,),
+    )
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    result = {}
+
+    for row in rows:
+
+        time = row["timestamp"][11:16]
+
+        category = row["category"]
+
+        power = row["power"]
+
+        # 🔥 分類簡化
+        if "燃氣" in category:
+            category = "燃氣"
+
+        elif "燃煤" in category:
+            category = "燃煤"
+
+        elif "太陽能" in category:
+            category = "太陽能"
+
+        elif "風力" in category:
+            category = "風力"
+
+        elif "水力" in category:
+            category = "水力"
+
+        elif "核能" in category:
+            category = "核能"
+
+        elif "儲能" in category:
+            category = "儲能"
+
+        if time not in result:
+
+            result[time] = {"time": time}
+
+        result[time][category] = power
+
+    return jsonify(list(result.values()))
+
+
 @app.route("/power-live")
 def power_live():
 
@@ -2131,7 +2276,9 @@ if __name__ == "__main__":
     scheduler.add_job(scheduled_power_save, "interval", minutes=10)
     # 🔥 啟動時先存一次
     scheduled_power_save()
-
+    # 🔥 啟動時先重新統計一次
+    generate_daily_stats()
+    scheduler.add_job(generate_daily_stats, "cron", hour=0, minute=5)
     scheduler.start()
 
     print("⏰ 已啟動每10分鐘歷史發電儲存")

@@ -153,12 +153,16 @@ export default function Header() {
 
             <Link to="/global">{t("nav.global")}</Link>
 
-            {user &&
-              (user.role === "admin" ||
-                user.role === "manager") && (
-                <Link to="/powerplant">
-                  {t("nav.powerplant")}
-                </Link>
+            {user && (user.role === "admin" || user.role === "manager") && (
+              <div className="dropdown">
+                <span className="dropdown-title">{t("nav.todayPower")} ▾</span>
+
+                <div className="dropdown-menu">
+                  <Link to="/powerplant">{t("nav.powerplant")}</Link>
+
+                  <Link to="/daily-report">{t("nav.dailyReport")}</Link>
+                </div>
+              </div>
             )}
 
             <Link to="/rag">{t("nav.rag")}</Link>

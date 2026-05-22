@@ -14,6 +14,7 @@ import Feedback from "./pages/Feedback";
 import Prediction from "./pages/Prediction";
 import ElectricityAnalysis from "./pages/ElectricityAnalysis";
 import PowerPlantController from "./pages/PowerPlantController";
+import DailyReport from "./pages/DailyReport";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -23,7 +24,6 @@ const router = createBrowserRouter(
       path: "/",
       element: <Layout />,
       children: [
-
         // =========================
         // 🌍 公開頁面
         // =========================
@@ -42,7 +42,10 @@ const router = createBrowserRouter(
         { path: "/contact", element: <Contact /> },
 
         { path: "/login", element: <Login /> },
-
+        {
+          path: "/daily-report",
+          element: <DailyReport />,
+        },
         // =========================
         // 🔥 manager + admin
         // =========================
@@ -51,9 +54,7 @@ const router = createBrowserRouter(
           path: "/prediction",
 
           element: (
-            <ProtectedRoute
-              allowedRoles={["manager", "admin"]}
-            >
+            <ProtectedRoute allowedRoles={["manager", "admin"]}>
               <Prediction />
             </ProtectedRoute>
           ),
@@ -63,9 +64,7 @@ const router = createBrowserRouter(
           path: "/electricity-analysis",
 
           element: (
-            <ProtectedRoute
-              allowedRoles={["manager", "admin"]}
-            >
+            <ProtectedRoute allowedRoles={["manager", "admin"]}>
               <ElectricityAnalysis />
             </ProtectedRoute>
           ),
@@ -79,14 +78,11 @@ const router = createBrowserRouter(
           path: "/Feedback",
 
           element: (
-            <ProtectedRoute
-              allowedRoles={["admin"]}
-            >
+            <ProtectedRoute allowedRoles={["admin"]}>
               <Feedback />
             </ProtectedRoute>
           ),
         },
-
       ],
     },
   ],

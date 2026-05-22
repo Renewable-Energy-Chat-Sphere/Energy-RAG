@@ -390,15 +390,15 @@ footer {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   max-width: 1200px;
-  margin: 0 auto;  
+  margin: 0 auto;
   gap: 40px;
-  text-align: left; 
+  text-align: left;
 }
 
 .footer-col {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; 
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -407,9 +407,9 @@ footer {
   opacity: 0.7;
 
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: center;
-  gap: 20px;               
+  gap: 20px;
 
   padding: 15px 0;
 }
@@ -418,21 +418,22 @@ footer {
   font-size: 14px;
 }
 
-.lang-switch { 
-  display: flex; gap: 8px; 
-} 
-.lang-switch button { 
-  background: transparent; 
-  border: 1px solid #3b82f6; 
-  color: #3b82f6; 
-  padding: 4px 10px; 
-  border-radius: 6px; 
+.lang-switch {
+  display: flex;
+  gap: 8px;
+}
+.lang-switch button {
+  background: transparent;
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
+  padding: 4px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 13px; 
-} 
-.lang-switch button:hover { 
-  background: #3b82f6; 
-  color: white; 
+  font-size: 13px;
+}
+.lang-switch button:hover {
+  background: #3b82f6;
+  color: white;
 }
 
 nav.open {
@@ -473,7 +474,7 @@ nav.open {
     justify-content: center;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 1001; /* 🔥 關鍵 */
   }
@@ -485,7 +486,7 @@ nav.open {
     justify-content: center;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 1001;
   }
@@ -496,7 +497,7 @@ nav.open {
   display: none;
   margin-top: 20px;
   padding-top: 15px;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* -----------------------------
@@ -1575,15 +1576,15 @@ footer {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   max-width: 1200px;
-  margin: 0 auto;  
+  margin: 0 auto;
   gap: 40px;
-  text-align: left; 
+  text-align: left;
 }
 
 .footer-col {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; 
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -1592,9 +1593,9 @@ footer {
   opacity: 0.7;
 
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: center;
-  gap: 20px;               
+  gap: 20px;
 
   padding: 15px 0;
 }
@@ -1603,21 +1604,22 @@ footer {
   font-size: 14px;
 }
 
-.lang-switch { 
-  display: flex; gap: 8px; 
-} 
-.lang-switch button { 
-  background: transparent; 
-  border: 1px solid #3b82f6; 
-  color: #3b82f6; 
-  padding: 4px 10px; 
-  border-radius: 6px; 
+.lang-switch {
+  display: flex;
+  gap: 8px;
+}
+.lang-switch button {
+  background: transparent;
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
+  padding: 4px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 13px; 
-} 
-.lang-switch button:hover { 
-  background: #3b82f6; 
-  color: white; 
+  font-size: 13px;
+}
+.lang-switch button:hover {
+  background: #3b82f6;
+  color: white;
 }
 
 nav.open {
@@ -1658,7 +1660,7 @@ nav.open {
     justify-content: center;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 1001; /* 🔥 關鍵 */
   }
@@ -1670,7 +1672,7 @@ nav.open {
     justify-content: center;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 1001;
   }
@@ -1681,7 +1683,7 @@ nav.open {
   display: none;
   margin-top: 20px;
   padding-top: 15px;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* -----------------------------
@@ -2760,15 +2762,15 @@ footer {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   max-width: 1200px;
-  margin: 0 auto;  
+  margin: 0 auto;
   gap: 40px;
-  text-align: left; 
+  text-align: left;
 }
 
 .footer-col {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; 
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -2777,9 +2779,9 @@ footer {
   opacity: 0.7;
 
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: center;
-  gap: 20px;               
+  gap: 20px;
 
   padding: 15px 0;
 }
@@ -3864,15 +3866,15 @@ footer {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   max-width: 1200px;
-  margin: 0 auto;  
+  margin: 0 auto;
   gap: 40px;
-  text-align: left; 
+  text-align: left;
 }
 
 .footer-col {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; 
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -3881,9 +3883,9 @@ footer {
   opacity: 0.7;
 
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: center;
-  gap: 20px;               
+  gap: 20px;
 
   padding: 15px 0;
 }
@@ -3892,21 +3894,22 @@ footer {
   font-size: 14px;
 }
 
-.lang-switch { 
-  display: flex; gap: 8px; 
-} 
-.lang-switch button { 
-  background: transparent; 
-  border: 1px solid #3b82f6; 
-  color: #3b82f6; 
-  padding: 4px 10px; 
-  border-radius: 6px; 
+.lang-switch {
+  display: flex;
+  gap: 8px;
+}
+.lang-switch button {
+  background: transparent;
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
+  padding: 4px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 13px; 
-} 
-.lang-switch button:hover { 
-  background: #3b82f6; 
-  color: white; 
+  font-size: 13px;
+}
+.lang-switch button:hover {
+  background: #3b82f6;
+  color: white;
 }
 
 nav.open {
@@ -3947,7 +3950,7 @@ nav.open {
     justify-content: center;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 1001; /* 🔥 關鍵 */
   }
@@ -3959,7 +3962,7 @@ nav.open {
     justify-content: center;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 1001;
   }
@@ -3970,7 +3973,7 @@ nav.open {
   display: none;
   margin-top: 20px;
   padding-top: 15px;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* -----------------------------
@@ -4656,4 +4659,83 @@ body {
   font-weight: 600;
 
   margin-left: 0; /* 確保沒被推開 */
+}
+/* =========================
+   下拉選單
+========================= */
+
+.dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.dropdown-title:hover {
+  opacity: 0.8;
+}
+
+.dropdown-menu {
+  position: absolute;
+
+  top: calc(100% + 8px);
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  min-width: 220px;
+
+  background: rgba(15, 20, 40, 0.98);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  border-radius: 16px;
+
+  backdrop-filter: blur(16px);
+
+  display: flex;
+  flex-direction: column;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition: 0.2s ease;
+
+  z-index: 999;
+}
+
+.dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translateX(-50%);
+}
+
+.dropdown-menu a {
+  padding: 14px 18px;
+
+  color: white;
+
+  text-decoration: none;
+
+  font-size: 14px;
+
+  transition: 0.2s;
+}
+
+.dropdown-menu a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dropdown {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
