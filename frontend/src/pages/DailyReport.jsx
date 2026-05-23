@@ -245,8 +245,22 @@ function DailyReport() {
             transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
-          <h3>⚡ 今日平均總發電量</h3>
-
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <i
+              className="fi fi-rr-bolt"
+              style={{
+                color: "#facc15",
+                filter: "drop-shadow(0 0 6px #facc15)",
+              }}
+            ></i>
+            今日平均總發電量
+          </h3>
           <h1>{totalPower.toFixed(0)} MW</h1>
         </div>
 
@@ -258,7 +272,22 @@ function DailyReport() {
             transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
-          <h3>☀️ 再生能源占比</h3>
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <i
+              className="fi fi-rr-sun"
+              style={{
+                color: "#facc15",
+                filter: "drop-shadow(0 0 6px #facc15)",
+              }}
+            ></i>
+            再生能源占比
+          </h3>
 
           <h1>
             {data
@@ -282,7 +311,22 @@ function DailyReport() {
             transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
-          <h3>🔥 火力依賴</h3>
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <i
+              className="fi fi-rr-fire-flame-curved"
+              style={{
+                color: "#ef4444",
+                filter: "drop-shadow(0 0 6px #ef4444)",
+              }}
+            ></i>
+            火力依賴
+          </h3>
 
           <h1>
             {data
@@ -366,7 +410,23 @@ function DailyReport() {
                   marginBottom: 20,
                 }}
               >
-                ⚡ 台電即時資訊
+                <h2
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: 20,
+                  }}
+                >
+                  <i
+                    className="fi fi-rr-bolt"
+                    style={{
+                      color: "#facc15",
+                      filter: "drop-shadow(0 0 8px #facc15)",
+                    }}
+                  ></i>
+                  台電即時資訊
+                </h2>
               </h2>
 
               <div
@@ -481,21 +541,57 @@ function DailyReport() {
               >
                 <h3>供電狀態</h3>
 
-                <h1
+                <div
                   style={{
+                    marginTop: "10px",
+
+                    display: "inline-flex",
+
+                    alignItems: "center",
+
+                    gap: "10px",
+
+                    padding: "10px 18px",
+
+                    borderRadius: "999px",
+
+                    fontWeight: 700,
+
+                    background:
+                      taipower.fore_peak_resv_indicator?.trim() === "G"
+                        ? "rgba(34,197,94,0.18)"
+                        : "rgba(239,68,68,0.18)",
+
                     color:
                       taipower.fore_peak_resv_indicator?.trim() === "G"
-                        ? "#008832"
-                        : "#bd0000",
-
-                    fontSize: 42,
-                    marginBottom: 10,
+                        ? "#22c55e"
+                        : "#ef4444",
                   }}
                 >
+                  <div
+                    style={{
+                      width: "10px",
+
+                      height: "10px",
+
+                      borderRadius: "50%",
+
+                      background:
+                        taipower.fore_peak_resv_indicator?.trim() === "G"
+                          ? "#22c55e"
+                          : "#ef4444",
+
+                      boxShadow:
+                        taipower.fore_peak_resv_indicator?.trim() === "G"
+                          ? "0 0 12px #22c55e"
+                          : "0 0 12px #ef4444",
+                    }}
+                  />
+
                   {taipower.fore_peak_resv_indicator?.trim() === "G"
-                    ? "🟢 供電充裕"
-                    : "🔴 供電吃緊"}
-                </h1>
+                    ? "供電充裕"
+                    : "供電吃緊"}
+                </div>
 
                 <p
                   style={{
@@ -503,7 +599,7 @@ function DailyReport() {
                     fontSize: 18,
                     color:
                       taipower.fore_peak_resv_indicator?.trim() === "G"
-                        ? "#6db14e"
+                        ? "#088132"
                         : "#ff6666",
                     fontWeight: "bold",
                   }}
@@ -539,7 +635,23 @@ function DailyReport() {
                 marginBottom: 24,
               }}
             >
-              ⚡ 備轉容量燈號說明
+              <h2
+                style={{
+                  marginBottom: 24,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <i
+                  className="fi fi-rr-lightbulb-on"
+                  style={{
+                    color: "#facc15",
+                    filter: "drop-shadow(0 0 8px #facc15)",
+                  }}
+                ></i>
+                備轉容量燈號說明
+              </h2>
             </h2>
 
             <img
@@ -561,20 +673,19 @@ function DailyReport() {
                 fontSize: 14,
               }}
             >
-              備轉容量率代表系統每日供電餘裕。
+              • 備轉容量(Operating Reserve)：
               <br />
+              指當天實際可調度之發電容量裕度，亦即系統每天的供電餘裕。
               <br />
-              台電會根據：
+              ＝系統運轉淨尖峰能力－系統瞬時尖峰負載(瞬間值)。
               <br />
-              • 用電預估
+              • 備轉容量率(Percent Operating Reserve)：
               <br />
-              • 機組運轉狀態
+              係用來衡量每日供電可靠度之指標。
               <br />
-              • 再生能源變化
+              ＝（系統運轉淨尖峰供電能力－系統瞬時尖峰負載(瞬間值)）÷系統瞬時尖峰負載(瞬間值)×100%。
               <br />
-              • 水情與氣候
-              <br />
-              動態調整每日備轉容量。
+              *系統運轉淨尖峰供電能力：扣除歲修(機組大修)、小修(機組檢修)及故障機組容量、火力機組環保限制、輔機故障、氣溫變化、水力考慮水位、水文、灌溉及溢流等。
             </div>
           </div>
         </div>
@@ -602,7 +713,23 @@ function DailyReport() {
                 marginBottom: 20,
               }}
             >
-              ⚡ 今日能源結構占比
+              <h2
+                style={{
+                  marginBottom: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <i
+                  className="fi fi-rr-chart-pie"
+                  style={{
+                    color: "#60a5fa",
+                    filter: "drop-shadow(0 0 8px #60a5fa)",
+                  }}
+                ></i>
+                今日能源結構占比
+              </h2>
             </h2>
 
             <ResponsiveContainer width="100%" height={420}>
@@ -645,7 +772,22 @@ function DailyReport() {
               }}
             >
               <div>
-                <h2>📋 能源報表</h2>
+                <h2
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <i
+                    className="fi fi-rr-document"
+                    style={{
+                      color: "#60a5fa",
+                      filter: "drop-shadow(0 0 6px #60a5fa)",
+                    }}
+                  ></i>
+                  能源報表
+                </h2>
                 <div
                   style={{
                     display: "flex",
@@ -717,17 +859,29 @@ function DailyReport() {
               <button
                 onClick={downloadReport}
                 style={{
-                  background: "#2563eb",
-                  border: "none",
+                  background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
+                  border: "1px solid rgba(96,165,250,0.25)",
                   padding: "10px 18px",
-                  borderRadius: 12,
-                  color: isDark ? "white" : "#ffffff",
+                  borderRadius: 14,
+                  color: "#fff",
                   fontWeight: "bold",
                   cursor: "pointer",
                   fontSize: 14,
+
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+
+                  boxShadow: "0 8px 24px rgba(37,99,235,0.35)",
                 }}
               >
-                ⬇️ 下載報表
+                <i
+                  className="fi fi-rr-download"
+                  style={{
+                    color: "#bfdbfe",
+                  }}
+                ></i>
+                下載報表
               </button>
             </div>
 
@@ -783,7 +937,23 @@ function DailyReport() {
             marginBottom: 20,
           }}
         >
-          📈 今日電力走勢
+          <h2
+            style={{
+              marginBottom: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <i
+              className="fi fi-rr-chart-line-up"
+              style={{
+                color: "#22c55e",
+                filter: "drop-shadow(0 0 6px #22c55e)",
+              }}
+            ></i>
+            今日電力走勢
+          </h2>
         </h2>
 
         <ResponsiveContainer width="100%" height={430}>
