@@ -29,6 +29,8 @@ __pycache__/
 *.pyd
 *.sqlite3
 *.db
+*.db-wal
+*.db-shm
 *.log
 instance/
 .cache/
@@ -63,3 +65,4 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
