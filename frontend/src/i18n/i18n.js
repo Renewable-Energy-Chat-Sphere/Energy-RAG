@@ -5,7 +5,7 @@ const resources = {
   zh: {
     translation: {
       hero: {
-        title: "讓能源資料真正「看得見、問得到、用得上」",
+        title: "專為能源資訊探索與互動分析設計",
         subtitle: "結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台"
       },
       energyNews: {
@@ -454,7 +454,7 @@ const resources = {
   en: {
     translation: {
       hero: {
-        title: "Make energy data visible, queryable, and actionable",
+        title: "Designed for Energy Information Exploration and Interactive Analysis",
         subtitle: "A next-generation energy decision platform combining 3D energy globe and AI agents"
       },
       energyNews: {
