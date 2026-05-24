@@ -822,7 +822,7 @@ const resources = {
         "totalGeneration": "Total",
       },
       rag: {
-        subtitle: "Chat / Web / PDF / Audio,Video / Table — Multimodal Energy Retrieval",
+        subtitle: "Chat / Web / PDF / Table — Multimodal Energy Retrieval",
 
         badge1: "Multimodal Analysis",
         badge2: "Energy Decision Assistant",
@@ -837,7 +837,6 @@ const resources = {
         chatTab: "Chat",
         webTab: "Web",
         pdfTab: "PDF",
-        avTab: "Audio / Video",
         tableTab: "Table",
 
         webTitle: "Website Analysis",

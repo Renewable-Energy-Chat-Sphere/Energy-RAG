@@ -372,25 +372,37 @@ export default function Global({ isMobile }) {
       filtered = list;
     } else {
       if (level === 0) {
-        const deptMap = {};
 
-        list.forEach((item) => {
-          const root = getRootDept(item.id);
-          if (!root) return;
+      const deptMap = {};
 
-          if (!deptMap[root]) {
-            deptMap[root] = {
-              name: getName(root),
-              value: 0,
-              id: root,
-            };
-          }
+      list.forEach((item) => {
 
-          deptMap[root].value += item.value;
-        });
+        const root = getRootDept(item.id);
 
-        filtered = Object.values(deptMap);
-      } else if (level === 1) {
+        if (!root) return;
+
+        if (!deptMap[root]) {
+
+          deptMap[root] = {
+            name: getName(root),
+
+            value: 0,
+
+            rawValue: 0,
+
+            id: root,
+          };
+        }
+
+        // 比例
+        deptMap[root].value += item.value;
+
+        // 🔥 使用量
+        deptMap[root].rawValue += item.actualUsage || 0;
+      });
+
+      filtered = Object.values(deptMap);
+    } else if (level === 1) {
         filtered = list.filter((item) => {
           const depth = getDepth(item.id, hierarchy);
           return depth === 1;
