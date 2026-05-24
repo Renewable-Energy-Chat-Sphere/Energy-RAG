@@ -1,16 +1,18 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const API_BASE = "http://127.0.0.1:8000";
 
   const handleSubmit = async () => {
     if (!username || !password) {
-      alert("請輸入帳號與密碼");
+      alert(t("login.inputRequired"));
       return;
     }
 
@@ -36,7 +38,7 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "操作失敗");
+        alert(data.error || t("login.operationFailed"));
         return;
       }
 
@@ -53,7 +55,7 @@ export default function Login() {
       window.location.href = "/Ener-Sphere/";
     } catch (err) {
       console.error(err);
-      alert("無法連接後端，請確認 Flask 是否有啟動");
+      alert(t("login.backendError"));
     } finally {
       setLoading(false);
     }
@@ -68,11 +70,11 @@ export default function Login() {
     <div style={styles.page}>
       <div style={styles.card}>
         <h1 style={styles.title}>
-          {mode === "login" ? "登入" : "註冊"}
+          {mode === "login" ? t("login.titleLogin") : t("login.titleRegister")}
         </h1>
 
         <p style={styles.subtitle}>
-          未登入時預設為普通使用者，登入後才會解鎖高層或管理者功能。
+          {t("login.subtitle")}
         </p>
 
         <div style={styles.switchBox}>
@@ -80,20 +82,20 @@ export default function Login() {
             style={mode === "login" ? styles.activeTab : styles.tab}
             onClick={() => setMode("login")}
           >
-            登入
+            {t("login.login")}
           </button>
 
           <button
             style={mode === "register" ? styles.activeTab : styles.tab}
             onClick={() => setMode("register")}
           >
-            成為付費使用者
+            {t("login.register")}
           </button>
         </div>
 
         <input
           style={styles.input}
-          placeholder="帳號"
+          placeholder={t("login.username")}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
@@ -101,14 +103,14 @@ export default function Login() {
         <input
           style={styles.input}
           type="password"
-          placeholder="密碼"
+          placeholder={t("login.password")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
         {mode === "register" && (
           <div style={styles.roleHint}>
-            註冊後角色固定為：付費使用者
+            {t("login.roleHint")}
           </div>
         )}
 
@@ -118,21 +120,21 @@ export default function Login() {
           disabled={loading}
         >
           {loading
-            ? "處理中..."
+            ? t("login.loading")
             : mode === "login"
-              ? "登入"
-              : "建立付費帳號"}
+              ? t("login.login")
+              : t("login.register")}
         </button>
 
         <button
           style={styles.guestBtn}
           onClick={enterAsGuest}
         >
-          以普通使用者進入
+          {t("login.guest")}
         </button>
 
         <p style={styles.note}>
-          系統管理者 admin 不開放註冊，需由資料庫手動建立。
+          {t("login.note")}
         </p>
       </div>
     </div>

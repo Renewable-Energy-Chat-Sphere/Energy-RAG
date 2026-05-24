@@ -395,6 +395,31 @@ const resources = {
         impactIndex: "成本影響指數：",
         futureChart: "未來趨勢圖"
       },
+      login: {
+        titleLogin: "登入",
+        titleRegister: "註冊",
+
+        subtitle: "未登入時預設為普通使用者，登入後才會解鎖高層或管理者功能。",
+
+        login: "登入",
+        register: "成為付費使用者",
+
+        username: "帳號",
+        password: "密碼",
+
+        roleHint: "註冊後角色固定為：付費使用者",
+
+        loading: "處理中...",
+        createAccount: "建立付費帳號",
+
+        guest: "以普通使用者進入",
+
+        note: "系統管理者 admin 不開放註冊，需由資料庫手動建立。",
+
+        inputRequired: "請輸入帳號與密碼",
+        error: "操作失敗",
+        backendError: "無法連接後端，請確認 Flask 是否有啟動"
+      },
       rag: {
         subtitle: "Chat / Web / PDF / Table — 多模態能源資料檢索",
 
@@ -670,6 +695,31 @@ const resources = {
       section: {
         activity: "Activities",
         external: "External Links",
+      },
+      login: {
+        titleLogin: "Login",
+        titleRegister: "Register",
+
+        subtitle: "Guests are treated as normal users. Login to unlock advanced features.",
+
+        login: "Login",
+        register: "Become Premium User",
+
+        username: "Username",
+        password: "Password",
+
+        roleHint: "After registration, your role will be: Premium User",
+
+        loading: "Processing...",
+        createAccount: "Create Account",
+
+        guest: "Enter as Guest",
+
+        note: "Admin accounts cannot be registered and must be created manually in the database.",
+
+        inputRequired: "Please enter username and password",
+        error: "Operation failed",
+        backendError: "Cannot connect to backend. Please check if Flask is running."
       },
       nav: {
         home: "Home",
