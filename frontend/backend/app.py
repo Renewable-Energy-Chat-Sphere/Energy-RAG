@@ -281,24 +281,64 @@ def expand_depts(dept_code):
     expanded.update(get_descendants(dept_code, HIERARCHY))
     return expanded
 
+# =========================
+# 🧠 Query Intent
+# =========================
 
+TOTAL_KEYWORDS = [
+    "能源總量",
+    "總能源",
+    "總用量",
+    "能源用量",
+    "全國能源",
+    "台灣能源",
+    "總供給",
+]
+
+
+def detect_query_type(question):
+
+    # 🔥 total intent
+    for k in TOTAL_KEYWORDS:
+
+        if k in question:
+            return "total"
+
+    # 🔥 預設 department
+    return "department"
 # =========================
-# 🧠 判斷部門
+# 🧠 判斷部門（Prediction 用 strict mode）
 # =========================
-def detect_depts(question):
+def detect_depts(question, strict=True):
+
     matches = []
 
     for name, code in DEPT_NAME_MAP.items():
+
         if name in question:
             matches.append((name, code))
 
     if matches:
+
+        # 🔥 優先最長名稱
         matches.sort(key=lambda x: len(x[0]), reverse=True)
+
         best = matches[0][1]
+
+        # =========================
+        # 🔒 strict mode
+        # 只回傳單一部門
+        # =========================
+        if strict:
+            return set([best])
+
+        # =========================
+        # 🌐 非 strict mode
+        # 展開所有子部門
+        # =========================
         return expand_depts(best)
 
     return None
-
 
 # =========================
 # 📥 讀資料
@@ -757,10 +797,20 @@ def predict_department_energy():
             future_range_n = zh_map.get(raw_num, 1)
 
     # =========================
+    # 🔥 Query Intent
+    # =========================
+    query_type = detect_query_type(question)
+
+    # =========================
     # 🔥 解析年份 / 部門
     # =========================
     target_year = parse_year(question)
-    dept_filters = detect_depts(question)
+
+    dept_filters = None
+
+    # 🔥 只有部門查詢才偵測部門
+    if query_type == "department":
+        dept_filters = detect_depts(question, strict=True)
 
     # =========================
     # 🔥 沒有年份
@@ -923,7 +973,54 @@ def predict_department_energy():
             )
 
         normalized = normalize(raw)
+        # =========================
+        # 🔥 總量模式
+        # =========================
+        if query_type == "total":
 
+            total_energy = {}
+
+            # 🔥 所有部門加總
+            for dept, energies in raw.items():
+
+                for energy, value in energies.items():
+
+                    total_energy.setdefault(energy, 0)
+                    total_energy[energy] += value
+
+            # 🔥 normalize %
+            total_sum = sum(total_energy.values())
+
+            result = {
+                k: (v / total_sum * 100)
+                for k, v in total_energy.items()
+            }
+
+            # 🔥 Top energies
+            top = sorted(
+                result.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:10]
+
+            return jsonify({
+                "mode": "history",
+                "query_type": "total",
+                "year": roc_year,
+
+                "message": f"📘 {roc_year} 年全國能源總量結構。",
+
+                "prediction": {
+                    "TOTAL": result
+                },
+
+                "summary": [
+                    {
+                        "dept": "TOTAL",
+                        "top": top
+                    }
+                ]
+            })
         result = {}
 
         for dept, energies in normalized.items():
@@ -958,7 +1055,54 @@ def predict_department_energy():
     # 🔮 單一年份 AI 預測
     # =========================
     prediction = run_prediction(target_year, dept_filters, mode="full")
+    # =========================
+    # 🔥 Future TOTAL mode
+    # =========================
+    if query_type == "total":
 
+        total_energy = {}
+
+        # 🔥 所有部門加總
+        for dept, energies in prediction.items():
+
+            for energy, value in energies.items():
+
+                total_energy.setdefault(energy, 0)
+                total_energy[energy] += value
+
+        # 🔥 normalize %
+        total_sum = sum(total_energy.values())
+
+        result = {
+            k: (v / total_sum * 100)
+            for k, v in total_energy.items()
+        }
+
+        # 🔥 Top energies
+        top = sorted(
+            result.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:10]
+
+        return jsonify({
+            "mode": "forecast",
+            "query_type": "total",
+            "year": roc_year,
+
+            "message": f"🔮 {roc_year} 年全國能源總量 AI 預測。",
+
+            "prediction": {
+                "TOTAL": result
+            },
+
+            "summary": [
+                {
+                    "dept": "TOTAL",
+                    "top": top
+                }
+            ]
+        })
     if not prediction:
 
         return jsonify(
