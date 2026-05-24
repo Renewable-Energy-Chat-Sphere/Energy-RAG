@@ -127,6 +127,193 @@ def detect_query_mode(text):
 
     return "normal"
 
+# =====================================================
+# 問題來源判斷
+# =====================================================
+def detect_query_source(text):
+
+    realtime_keywords = [
+        "即時",
+        "目前",
+        "現在",
+        "最新",
+        "今日",
+        "發電",
+        "機組",
+        "供電",
+        "備轉",
+        "台電",
+
+        # English
+        "realtime",
+        "real-time",
+        "current",
+        "live",
+        "generation",
+        "power generation",
+        "electricity",
+    ]
+
+    history_keywords = [
+        "能源",
+        "天然氣",
+        "煤",
+        "石油",
+        "核能",
+        "風力",
+        "太陽能",
+        "工業",
+        "住宅",
+        "服務業",
+        "運輸",
+        "農業",
+        "比例",
+        "占比",
+        "趨勢",
+        "最多",
+        "最高",
+        "最低",
+
+        # English
+        "energy",
+        "natural gas",
+        "coal",
+        "oil",
+        "nuclear",
+        "solar",
+        "wind",
+        "industry",
+        "residential",
+        "transport",
+        "ratio",
+        "percentage",
+        "trend",
+        "highest",
+        "lowest",
+    ]
+
+    text_lower = text.lower()
+
+    # 即時資料
+    for k in realtime_keywords:
+        if k.lower() in text_lower:
+            return "realtime"
+
+    # 歷史 JSON
+    for k in history_keywords:
+        if k.lower() in text_lower:
+            return "history"
+
+    # 西元年份
+    if re.search(r"\b(19|20)\d{2}\b", text):
+        return "history"
+
+    # 民國年份
+    if re.search(r"\b1\d{2}\b", text):
+        return "history"
+
+    return "general"
+
+
+# =====================================================
+# 即時資料查詢
+# =====================================================
+def answer_realtime_question(user_text):
+
+    import sqlite3
+
+    conn = sqlite3.connect("energy.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT category, power
+        FROM power_generation_logs
+        ORDER BY id DESC
+        LIMIT 10
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    # 偵測語言
+    lang = detect_language(user_text)
+
+    # 無資料
+    if not rows:
+
+        if lang == "English":
+            return "No real-time data available"
+
+        return "查無即時資料"
+
+    # 總發電量
+    total_power = sum(power for _, power in rows)
+
+    # =====================================================
+    # 英文模式
+    # =====================================================
+    if lang == "English":
+
+        lines = [
+            "⚡ Current Real-Time Power Generation",
+            ""
+        ]
+
+        for category, power in rows:
+
+            ratio = (
+                (power / total_power) * 100
+                if total_power else 0
+            )
+
+            lines.append(
+                f"[{category}]"
+            )
+
+            lines.append(
+                f"Power Generation: {power:,.2f} MW"
+            )
+
+            lines.append(
+                f"Share: {ratio:.2f}%"
+            )
+
+            lines.append("")
+
+    # =====================================================
+    # 中文模式
+    # =====================================================
+    else:
+
+        lines = [
+            "⚡ 即時發電資訊",
+            ""
+        ]
+
+        for category, power in rows:
+
+            ratio = (
+                (power / total_power) * 100
+                if total_power else 0
+            )
+
+            lines.append(
+                f"【{category}】"
+            )
+
+            lines.append(
+                f"發電量：{power:,.2f} MW"
+            )
+
+            lines.append(
+                f"占比：{ratio:.2f}%"
+            )
+
+            lines.append("")
+
+    return "\n".join(lines)
+
 
 # =====================================================
 # 建立對話上下文
@@ -356,8 +543,17 @@ def translate_answer(openai_client, model, user_text, answer):
 # =====================================================
 def finalize_answer(openai_client, model, user_text, assistant_text, sources):
 
-    return append_sources(clean_numbers(assistant_text), sources)
+    assistant_text = translate_answer(
+        openai_client,
+        model,
+        user_text,
+        assistant_text
+    )
 
+    return append_sources(
+        clean_numbers(assistant_text),
+        sources
+    )
 
 # =====================================================
 # CHAT API
@@ -524,7 +720,27 @@ def chat():
     # =====================================================
     # Energy RAG Router
     # =====================================================
-    if should_use_energy_rag(user_text):
+    query_source = detect_query_source(user_text)
+    
+    # =====================================================
+    # 即時資料
+    # =====================================================
+    if query_source == "realtime":
+
+        answer = answer_realtime_question(user_text)
+
+        return jsonify(
+            {
+                "answer": answer,
+                "sources": ["energy.db"],
+                "results": [],
+                "session_id": session_id,
+                "model": "realtime_sql",
+                "uses_openai": False,
+            }
+        )
+
+    if query_source == "history":
 
         try:
 
@@ -703,7 +919,7 @@ def chat():
                 # 允許 GPT 上網搜尋
                 tools=[{"type": "web_search"}],
                 input=messages,
-                temperature=0.2,
+                temperature=0,
                 max_output_tokens=800,
             )
 
