@@ -12,6 +12,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 
 const COLORS = [
   "#60a5fa",
@@ -27,6 +28,16 @@ const COLORS = [
 ];
 
 function DailyReport() {
+  const { t, i18n } = useTranslation();
+  const energyMap = {
+    燃氣: t("energy.gas"),
+    燃煤: t("energy.coal"),
+    太陽能: t("energy.solar"),
+    風力: t("energy.wind"),
+    水力: t("energy.hydro"),
+    核能: t("energy.nuclear"),
+    儲能: t("energy.storage"),
+  };
   const [isDark, setIsDark] = useState(
     document.body.classList.contains("dark"),
   );
@@ -102,11 +113,16 @@ function DailyReport() {
       exportData = allData.filter((item) => item.report_date === selectedDate);
     }
 
-    const headers = ["日期", "類型", "平均發電量(MW)", "占比(%)"];
+    const headers = [
+      t("daily.date"),
+      t("daily.type"),
+      t("daily.avg") + "(MW)",
+      t("daily.ratio") + "(%)"
+    ];
 
     const rows = exportData.map((item) => [
       item.report_date,
-      item.category,
+      energyMap[item.category] || item.category,
       item.avg_power,
       item.ratio,
     ]);
@@ -165,7 +181,7 @@ function DailyReport() {
       >
         <div className="loading-text">
           <i className="fi fi-rr-chart-line-up loading-icon"></i>
-          載入每日能源分析
+          {t("daily.loading")}
           <span className="dot-animation"></span>
         </div>
 
@@ -176,7 +192,7 @@ function DailyReport() {
             color: isDark ? "#cbd5e1" : "#334155",
           }}
         >
-          正在同步最新能源資料...
+          {t("daily.syncing")}
         </div>
       </div>
     );
@@ -212,7 +228,7 @@ function DailyReport() {
               marginBottom: 10,
             }}
           >
-            每日能源分析
+            {t("daily.title")}
           </h1>
 
           <p
@@ -220,7 +236,7 @@ function DailyReport() {
               opacity: 0.7,
             }}
           >
-            Daily Energy Analytics Report
+            {t("daily.subtitle")}
           </p>
         </div>
       </div>
@@ -259,7 +275,7 @@ function DailyReport() {
                 filter: "drop-shadow(0 0 6px #facc15)",
               }}
             ></i>
-            今日平均總發電量
+            {t("daily.total")}
           </h3>
           <h1>{totalPower.toFixed(0)} MW</h1>
         </div>
@@ -286,7 +302,7 @@ function DailyReport() {
                 filter: "drop-shadow(0 0 6px #facc15)",
               }}
             ></i>
-            再生能源占比
+            {t("daily.renewable")}
           </h3>
 
           <h1>
@@ -325,7 +341,7 @@ function DailyReport() {
                 filter: "drop-shadow(0 0 6px #ef4444)",
               }}
             ></i>
-            火力依賴
+            {t("daily.thermal")}
           </h3>
 
           <h1>
@@ -382,7 +398,7 @@ function DailyReport() {
             >
               <div className="loading-text">
                 <i className="fi fi-rr-bolt loading-icon"></i>
-                載入台電即時資訊
+                {t("daily.loading")}
                 <span className="dot-animation"></span>
               </div>
 
@@ -393,7 +409,7 @@ function DailyReport() {
                   color: isDark ? "#cbd5e1" : "#334155",
                 }}
               >
-                正在同步最新台電資料...
+                {t("daily.syncing")}
               </div>
             </div>
           ) : (
@@ -425,7 +441,7 @@ function DailyReport() {
                       filter: "drop-shadow(0 0 8px #facc15)",
                     }}
                   ></i>
-                  台電即時資訊
+                  {t("daily.taipower")}
                 </h2>
               </h2>
 
@@ -438,7 +454,7 @@ function DailyReport() {
                   marginBottom: 16,
                 }}
               >
-                <h3>目前用電量</h3>
+                <h3>{t("daily.load")}</h3>
 
                 <h1
                   style={{
@@ -457,7 +473,7 @@ function DailyReport() {
                     fontWeight: "bold",
                   }}
                 >
-                  使用率：
+                  {t("daily.utilRate")}：
                   {taipower.curr_util_rate}%
                 </p>
               </div>
@@ -471,7 +487,7 @@ function DailyReport() {
                   transition: "background 0.35s ease, color 0.35s ease",
                 }}
               >
-                <h3>預估最高用電</h3>
+                <h3>{t("daily.forecast")}</h3>
 
                 <h1
                   style={{
@@ -489,7 +505,7 @@ function DailyReport() {
                     fontWeight: "bold",
                   }}
                 >
-                  尖峰使用率：
+                  {t("daily.peakRate")}：
                   {(
                     (Number(taipower.fore_peak_dema_load) /
                       Number(taipower.fore_maxi_sply_capacity)) *
@@ -498,7 +514,7 @@ function DailyReport() {
                   %
                 </p>
                 <p>
-                  尖峰時段：
+                  {t("daily.peakTime")}：
                   {taipower.fore_peak_hour_range}
                 </p>
               </div>
@@ -514,7 +530,7 @@ function DailyReport() {
                   transition: "background 0.35s ease, color 0.35s ease",
                 }}
               >
-                <h3>今日最大供電能力</h3>
+                <h3>{t("daily.capacity")}</h3>
 
                 <h1
                   style={{
@@ -526,7 +542,7 @@ function DailyReport() {
                   {taipower.fore_maxi_sply_capacity}
                 </h1>
 
-                <p>萬瓩</p>
+                <p>{t("daily.unit")}</p>
               </div>
 
               {/* 供電狀態 */}
@@ -539,7 +555,7 @@ function DailyReport() {
                   transition: "background 0.35s ease, color 0.35s ease",
                 }}
               >
-                <h3>供電狀態</h3>
+                <h3>{t("daily.status")}</h3>
 
                 <div
                   style={{
@@ -589,8 +605,8 @@ function DailyReport() {
                   />
 
                   {taipower.fore_peak_resv_indicator?.trim() === "G"
-                    ? "供電充裕"
-                    : "供電吃緊"}
+                    ? t("daily.sufficient")
+                    : t("daily.tight")}
                 </div>
 
                 <p
@@ -604,7 +620,7 @@ function DailyReport() {
                     fontWeight: "bold",
                   }}
                 >
-                  備轉率：
+                  {t("daily.reserveRate")}：
                   {taipower.fore_peak_resv_rate}%
                 </p>
 
@@ -614,7 +630,7 @@ function DailyReport() {
                     marginTop: 10,
                   }}
                 >
-                  更新時間：
+                  {t("daily.updateTime")}：
                   {taipower.publish_time}
                 </p>
               </div>
@@ -650,7 +666,7 @@ function DailyReport() {
                     filter: "drop-shadow(0 0 8px #facc15)",
                   }}
                 ></i>
-                備轉容量燈號說明
+                {t("daily.reserveDesc")}
               </h2>
             </h2>
 
@@ -673,19 +689,16 @@ function DailyReport() {
                 fontSize: 14,
               }}
             >
-              • 備轉容量(Operating Reserve)：
-              <br />
-              指當天實際可調度之發電容量裕度，亦即系統每天的供電餘裕。
-              <br />
-              ＝系統運轉淨尖峰能力－系統瞬時尖峰負載(瞬間值)。
-              <br />
-              • 備轉容量率(Percent Operating Reserve)：
-              <br />
-              係用來衡量每日供電可靠度之指標。
-              <br />
-              ＝（系統運轉淨尖峰供電能力－系統瞬時尖峰負載(瞬間值)）÷系統瞬時尖峰負載(瞬間值)×100%。
-              <br />
-              *系統運轉淨尖峰供電能力：扣除歲修(機組大修)、小修(機組檢修)及故障機組容量、火力機組環保限制、輔機故障、氣溫變化、水力考慮水位、水文、灌溉及溢流等。
+              <p>{t("reserveText.p1")}</p>
+              <p>{t("reserveText.p2")}</p>
+              <p>{t("reserveText.p3")}</p>
+
+              <p style={{ marginTop: 10 }}>{t("reserveText.p4")}</p>
+              <p>{t("reserveText.p5")}</p>
+              <p>{t("reserveText.p6")}</p>
+
+              <p style={{ marginTop: 10 }}>{t("reserveText.p7")}</p>
+              <p>{t("reserveText.p8")}</p>
             </div>
           </div>
         </div>
@@ -728,7 +741,7 @@ function DailyReport() {
                     filter: "drop-shadow(0 0 8px #60a5fa)",
                   }}
                 ></i>
-                今日能源結構占比
+                {t("daily.pie")}
               </h2>
             </h2>
 
@@ -739,14 +752,19 @@ function DailyReport() {
                   dataKey="ratio"
                   nameKey="category"
                   outerRadius={160}
-                  label
+                  label={({ name }) => energyMap[name] || name}
                 >
                   {data.map((entry, index) => (
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
 
-                <Tooltip />
+                <Tooltip
+                  formatter={(value, name) => [
+                    value + "%",
+                    energyMap[name] || name
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -786,7 +804,7 @@ function DailyReport() {
                       filter: "drop-shadow(0 0 6px #60a5fa)",
                     }}
                   ></i>
-                  能源報表
+                  {t("daily.table")}
                 </h2>
                 <div
                   style={{
@@ -809,8 +827,8 @@ function DailyReport() {
                       outline: "none",
                     }}
                   >
-                    <option value="month">月報表</option>
-                    <option value="day">單日報表</option>
+                    <option value="month">{t("daily.month")}</option>
+                    <option value="day">{t("daily.day")}</option>
                   </select>
                   <select
                     value={selectedMonth}
@@ -881,7 +899,7 @@ function DailyReport() {
                     color: "#bfdbfe",
                   }}
                 ></i>
-                下載報表
+                {t("daily.download")}
               </button>
             </div>
 
@@ -894,18 +912,20 @@ function DailyReport() {
             >
               <thead>
                 <tr>
-                  <th style={thStyle}>類型</th>
+                  <th style={thStyle}>{t("daily.type")}</th>
 
-                  <th style={thStyle}>平均發電量</th>
+                  <th style={thStyle}>{t("daily.avg")}</th>
 
-                  <th style={thStyle}>占比</th>
+                  <th style={thStyle}>{t("daily.ratio")}</th>
                 </tr>
               </thead>
 
               <tbody>
                 {data.map((item, index) => (
                   <tr key={index}>
-                    <td style={tdStyle}>{item.category}</td>
+                    <td style={tdStyle}>
+                      {energyMap[item.category] || item.category}
+                    </td>
 
                     <td style={tdStyle}>{item.avg_power.toFixed(2)} MW</td>
 
@@ -952,7 +972,7 @@ function DailyReport() {
                 filter: "drop-shadow(0 0 6px #22c55e)",
               }}
             ></i>
-            今日電力走勢
+            {t("daily.trend")}
           </h2>
         </h2>
 
@@ -963,11 +983,17 @@ function DailyReport() {
             <XAxis dataKey="time" />
 
             <YAxis domain={[0, 12000]} tickCount={13} />
-            <Tooltip />
+            <Tooltip
+              formatter={(value, name) => [
+                `${value} MW`,
+                energyMap[name] || name
+              ]}
+            />
 
             <Line
               type="linear"
               dataKey="燃氣"
+              name={energyMap["燃氣"]}
               stroke="#22c55e"
               strokeWidth={3}
               dot={false}
@@ -976,6 +1002,7 @@ function DailyReport() {
             <Line
               type="monotone"
               dataKey="燃煤"
+              name={energyMap["燃煤"]}
               stroke="#f97316"
               strokeWidth={3}
               dot={false}
@@ -984,6 +1011,7 @@ function DailyReport() {
             <Line
               type="monotone"
               dataKey="太陽能"
+              name={energyMap["太陽能"]}
               stroke="#eab308"
               strokeWidth={3}
               dot={false}
@@ -992,6 +1020,7 @@ function DailyReport() {
             <Line
               type="monotone"
               dataKey="風力"
+              name={energyMap["風力"]}
               stroke="#60a5fa"
               strokeWidth={3}
               dot={false}
@@ -1000,6 +1029,7 @@ function DailyReport() {
             <Line
               type="monotone"
               dataKey="水力"
+              name={energyMap["水力"]}
               stroke="#8b5cf6"
               strokeWidth={3}
               dot={false}
@@ -1008,6 +1038,7 @@ function DailyReport() {
             <Line
               type="monotone"
               dataKey="核能"
+              name={energyMap["核能"]}
               stroke="#ef4444"
               strokeWidth={3}
               dot={false}
@@ -1016,6 +1047,7 @@ function DailyReport() {
             <Line
               type="monotone"
               dataKey="儲能"
+              name={energyMap["儲能"]}
               stroke="#14b8a6"
               strokeWidth={3}
               dot={false}

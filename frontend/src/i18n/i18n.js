@@ -449,6 +449,71 @@ const resources = {
         rows: "列",
         cols: "欄"
       },
+      daily: {
+        title: "每日能源分析",
+        subtitle: "Daily Energy Analytics Report",
+
+        total: "今日平均總發電量",
+        renewable: "再生能源占比",
+        thermal: "火力依賴",
+
+        taipower: "台電即時資訊",
+        load: "目前用電量",
+        forecast: "預估最高用電",
+        capacity: "今日最大供電能力",
+        status: "供電狀態",
+
+        sufficient: "供電充裕",
+        tight: "供電吃緊",
+
+        reserveDesc: "備轉容量燈號說明",
+
+        pie: "今日能源結構占比",
+        table: "能源報表",
+        trend: "今日電力走勢",
+
+        download: "下載報表",
+
+        month: "月報表",
+        day: "單日報表",
+
+        type: "類型",
+        avg: "平均發電量",
+        ratio: "占比",
+        date: "日期" / "Date",
+
+        loading: "載入每日能源分析",
+        syncing: "正在同步最新能源資料...",
+        utilRate: "使用率",
+        peakRate: "尖峰使用率",
+        peakTime: "尖峰時段",
+        unit: "萬瓩",
+        reserveRate: "備轉率",
+        updateTime: "更新時間",
+      },
+      energy: {
+        gas: "燃氣",
+        coal: "燃煤",
+        solar: "太陽能",
+        wind: "風力",
+        hydro: "水力",
+        nuclear: "核能",
+        storage: "儲能"
+      },
+      reserveText: {
+        title: "備轉容量燈號說明",
+
+        p1: "• 備轉容量(Operating Reserve)：",
+        p2: "指當天實際可調度之發電容量裕度，亦即系統每天的供電餘裕。",
+        p3: "＝系統運轉淨尖峰能力－系統瞬時尖峰負載(瞬間值)。",
+
+        p4: "• 備轉容量率(Percent Operating Reserve)：",
+        p5: "係用來衡量每日供電可靠度之指標。",
+        p6: "＝（系統運轉淨尖峰供電能力－系統瞬時尖峰負載）÷系統瞬時尖峰負載×100%。",
+
+        p7: "*系統運轉淨尖峰供電能力：",
+        p8: "扣除歲修、檢修、故障機組，以及環保限制、氣溫、水力條件等因素。",
+      },
     }
   },
   en: {
@@ -821,6 +886,29 @@ const resources = {
         "liveGeneration": "Real-Time Power Generation",
         "totalGeneration": "Total",
       },
+      reserveText: {
+        title: "Reserve Margin Indicator",
+
+        p1: "• Operating Reserve:",
+        p2: "Refers to the available generation capacity margin that can be dispatched on a given day, representing the system’s daily power supply surplus.",
+        p3: "= Net peak generating capacity − Instantaneous peak load.",
+
+        p4: "• Percent Operating Reserve:",
+        p5: "An indicator used to measure the reliability of daily power supply.",
+        p6: "= (Net peak generating capacity − Instantaneous peak load) ÷ Instantaneous peak load × 100%.",
+
+        p7: "* Net peak generating capacity:",
+        p8: "Excludes units under maintenance, faulty units, environmental constraints, temperature effects, and hydropower limitations.",
+      },
+      energy: {
+        gas: "Gas",
+        coal: "Coal",
+        solar: "Solar",
+        wind: "Wind",
+        hydro: "Hydro",
+        nuclear: "Nuclear",
+        storage: "Storage"
+      },
       rag: {
         subtitle: "Chat / Web / PDF / Table — Multimodal Energy Retrieval",
 
@@ -897,6 +985,47 @@ const resources = {
         rows: "rows",
         cols: "cols"
       },
+      daily: {
+        title: "Daily Energy Analysis",
+        subtitle: "Daily Energy Analytics Report",
+
+        total: "Total Generation",
+        renewable: "Renewable Ratio",
+        thermal: "Thermal Dependency",
+
+        taipower: "Taipower Live Data",
+        load: "Current Load",
+        forecast: "Forecast Peak Load",
+        capacity: "Max Supply Capacity",
+        status: "Power Status",
+
+        sufficient: "Sufficient Supply",
+        tight: "Tight Supply",
+
+        reserveDesc: "Reserve Margin Description",
+
+        pie: "Energy Distribution",
+        table: "Energy Report",
+        trend: "Power Trend",
+
+        download: "Download Report",
+
+        month: "Monthly Report",
+        day: "Daily Report",
+
+        type: "Type",
+        avg: "Average Generation",
+        ratio: "Ratio",
+
+        loading: "Loading Daily Energy Analysis",
+        syncing: "Syncing latest data...",
+        utilRate: "Utilization",
+        peakRate: "Peak Usage",
+        peakTime: "Peak Time",
+        unit: "MW",
+        reserveRate: "Reserve Rate",
+        updateTime: "Updated",
+      }
     }
   }
 };
