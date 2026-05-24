@@ -251,66 +251,54 @@ def answer_realtime_question(user_text):
     total_power = sum(power for _, power in rows)
 
     # =====================================================
-    # 英文模式
+    # 中英輸出格式
     # =====================================================
-    if lang == "English":
+    is_en = lang == "English"
 
-        lines = [
-            "⚡ Current Real-Time Power Generation",
-            ""
-        ]
+    title = (
+        "⚡ Current Real-Time Power Generation"
+        if is_en
+        else "⚡ 即時發電資訊"
+    )
 
-        for category, power in rows:
+    power_label = (
+        "Power Generation"
+        if is_en
+        else "發電量"
+    )
 
-            ratio = (
-                (power / total_power) * 100
-                if total_power else 0
-            )
+    ratio_label = (
+        "Share"
+        if is_en
+        else "佔比"
+    )
 
-            lines.append(
-                f"[{category}]"
-            )
+    lines = [title, ""]
 
-            lines.append(
-                f"Power Generation: {power:,.2f} MW"
-            )
+    for category, power in rows:
 
-            lines.append(
-                f"Share: {ratio:.2f}%"
-            )
+        ratio = (
+            (power / total_power) * 100
+            if total_power else 0
+        )
 
-            lines.append("")
+        category_text = (
+            f"[{category}]"
+            if is_en
+            else f"【{category}】"
+        )
 
-    # =====================================================
-    # 中文模式
-    # =====================================================
-    else:
+        lines.append(category_text)
 
-        lines = [
-            "⚡ 即時發電資訊",
-            ""
-        ]
+        lines.append(
+            f"{power_label}：{power:,.2f} MW"
+        )
 
-        for category, power in rows:
+        lines.append(
+            f"{ratio_label}：{ratio:.2f}%"
+        )
 
-            ratio = (
-                (power / total_power) * 100
-                if total_power else 0
-            )
-
-            lines.append(
-                f"【{category}】"
-            )
-
-            lines.append(
-                f"發電量：{power:,.2f} MW"
-            )
-
-            lines.append(
-                f"占比：{ratio:.2f}%"
-            )
-
-            lines.append("")
+        lines.append("")
 
     return "\n".join(lines)
 
@@ -522,11 +510,13 @@ def translate_answer(openai_client, model, user_text, answer):
     {answer}
 
     CRITICAL RULES:
-    - The ENTIRE response MUST be in {target_lang}
-    - Translate ALL content into {target_lang}
-    - Never mix languages
-    - Preserve the original meaning
-    - Keep the wording natural and fluent
+    - Output ONLY in {target_lang}
+    - Never use any other language
+    - Translate ALL text completely
+    - Translate titles, bullet points, labels, explanations
+    - Do not leave untranslated Chinese or English
+    - Never answer bilingually
+    - Keep markdown format unchanged
 
     Return ONLY the final translated answer.
     """
@@ -543,6 +533,9 @@ def translate_answer(openai_client, model, user_text, answer):
 # =====================================================
 def finalize_answer(openai_client, model, user_text, assistant_text, sources):
 
+    target_lang = detect_language(user_text)
+
+    # 第一次翻譯
     assistant_text = translate_answer(
         openai_client,
         model,
@@ -550,10 +543,24 @@ def finalize_answer(openai_client, model, user_text, assistant_text, sources):
         assistant_text
     )
 
+    # 翻譯後再次檢查語言
+    final_lang = detect_language(assistant_text)
+
+    # 如果還是不一致，再翻一次
+    if final_lang != target_lang:
+
+        assistant_text = translate_answer(
+            openai_client,
+            model,
+            user_text,
+            assistant_text
+        )
+
     return append_sources(
         clean_numbers(assistant_text),
         sources
     )
+
 
 # =====================================================
 # CHAT API
