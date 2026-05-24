@@ -932,6 +932,20 @@ def predict_department_energy():
     # =========================
     if future_range_n:
 
+        # =========================
+        # 🔥 多年 total mode 暫不支援
+        # =========================
+        if query_type == "total":
+            return jsonify(
+                {
+                    "mode": "guide",
+                    "message":
+                        "⚠️ 多年總能源預測功能開發中。\n\n"
+                        "目前請改用單一年份查詢，例如：\n"
+                        "• 2026能源總量\n"
+                        "• 明年能源總量"
+                }
+            )
         # 🔥 超過10年
         if future_range_n > 10:
 
