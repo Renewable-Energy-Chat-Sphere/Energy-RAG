@@ -297,13 +297,26 @@ TOTAL_KEYWORDS = [
 
 def detect_query_type(question):
 
+    # =========================
+    # 🔥 如果有部門
+    # 優先視為 department
+    # =========================
+    for name in DEPT_NAME_MAP.keys():
+
+        if name in question:
+            return "department"
+
+    # =========================
     # 🔥 total intent
+    # =========================
     for k in TOTAL_KEYWORDS:
 
         if k in question:
             return "total"
 
-    # 🔥 預設 department
+    # =========================
+    # 🔥 預設
+    # =========================
     return "department"
 # =========================
 # 🧠 判斷部門（Prediction 用 strict mode）
@@ -938,16 +951,69 @@ def predict_department_energy():
 
             summary = []
 
-            for dept, energies in pred.items():
+            # =========================
+            # 🔥 TOTAL mode
+            # =========================
+            if query_type == "total":
 
-                top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
+                total_energy = {}
 
-                summary.append({"dept": dept, "top": top})
+                # 🔥 加總所有部門
+                for dept, energies in pred.items():
 
-            forecast_range[forecast_year] = {
-                "prediction": pred,
-                "summary": summary,
-            }
+                    for energy, value in energies.items():
+
+                        total_energy.setdefault(energy, 0)
+                        total_energy[energy] += value
+
+                # 🔥 normalize %
+                total_sum = sum(total_energy.values())
+
+                result = {
+                    k: (v / total_sum * 100)
+                    for k, v in total_energy.items()
+                }
+
+                top = sorted(
+                    result.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:10]
+
+                summary.append({
+                    "dept": "TOTAL",
+                    "top": top
+                })
+
+                forecast_range[forecast_year] = {
+                    "prediction": {
+                        "TOTAL": result
+                    },
+                    "summary": summary,
+                }
+
+            # =========================
+            # 🔥 Department mode
+            # =========================
+            else:
+
+                for dept, energies in pred.items():
+
+                    top = sorted(
+                        energies.items(),
+                        key=lambda x: x[1],
+                        reverse=True
+                    )[:3]
+
+                    summary.append({
+                        "dept": dept,
+                        "top": top
+                    })
+
+                forecast_range[forecast_year] = {
+                    "prediction": pred,
+                    "summary": summary,
+                }
 
         return jsonify(
             {
