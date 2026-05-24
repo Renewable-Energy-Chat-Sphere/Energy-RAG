@@ -17,6 +17,7 @@ ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Legend);
 // JSON
 import hierarchy from "../data/hierarchy.json";
 import supplyCatalog from "../data/supply_catalog.json";
+import consumption from "../data/consumption.json";
 import BackToTopButton from "../components/BackToTopButton";
 export default function Prediction() {
   const [question, setQuestion] = useState("");
@@ -250,6 +251,27 @@ export default function Prediction() {
     });
 
     return chartData;
+  };
+  const getTotalUsage = (year, percent) => {
+
+    if (!year || !percent) return null;
+
+    // 🔥 西元轉民國
+    const rocYear =
+      Number(year) > 1911
+        ? Number(year) - 1911
+        : Number(year);
+
+    // 🔥 AI 預測總量優先
+    const total =
+
+      data?.total_consumption ||
+
+      consumption?.[rocYear]?.value;
+
+    if (!total) return null;
+
+    return total * (percent / 100);
   };
   const getAccuracy = () => {
     if (!data?.accuracy) return null;
@@ -741,15 +763,46 @@ export default function Prediction() {
                           />
                         </div>
 
-                        <span
+                        <div
                           style={{
-                            width: "60px",
+                            width: "140px",
                             textAlign: "right",
-                            fontSize: "14px",
                           }}
                         >
-                          {value.toFixed(2)}%
-                        </span>
+
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {value.toFixed(2)}%
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#94a3b8",
+                              marginTop: "2px",
+                            }}
+                          >
+                            {Math.round(
+
+                              getTotalUsage(
+
+                                data.mode === "forecast_range"
+                                  ? selectedForecastYear
+                                  : data.year,
+
+                                value
+
+                              ) || 0
+
+                            ).toLocaleString()}
+                            {" "}
+                            toe
+                          </div>
+                        </div>
                       </div>
                     ))}
                 </div>

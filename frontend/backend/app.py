@@ -198,7 +198,10 @@ from prophet import Prophet
 # =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "../src/data")
-
+CONSUMPTION_PATH = os.path.join(
+    DATA_DIR,
+    "consumption.json"
+)
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -206,6 +209,7 @@ SERIES_CACHE = {}
 MODEL_CACHE = {}
 ACCURACY_CACHE = {}  # 🔥 新增（完全不影響原本）
 EVALUATION_CACHE = {}
+TOTAL_CONSUMPTION_MODEL = None
 
 # =========================
 # 🧠 hierarchy
@@ -355,6 +359,15 @@ def detect_depts(question, strict=True):
 # =========================
 # 📥 讀資料
 # =========================
+def load_consumption():
+
+    with open(
+        CONSUMPTION_PATH,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        return json.load(f)
 def load_all_years():
     data = {}
 
@@ -398,6 +411,40 @@ def init_data(force_retrain=False):
             ACCURACY_CACHE = pickle.load(open(acc_path, "rb"))
             EVALUATION_CACHE = pickle.load(open(eval_path, "rb"))
             print("✅ 已載入模型 + 準確度")
+
+            # =========================
+            # 🔥 Total Consumption Prophet
+            # =========================
+
+            global TOTAL_CONSUMPTION_MODEL
+
+            consumption = load_consumption()
+
+            years = []
+            values = []
+
+            for y, item in consumption.items():
+
+                if not str(y).isdigit():
+                    continue
+
+                years.append(int(y) + 1911)
+
+                values.append(item["value"])
+
+            df_total = pd.DataFrame({
+                "ds": pd.to_datetime(
+                    [str(y) for y in years]
+                ),
+                "y": values,
+            })
+
+            TOTAL_CONSUMPTION_MODEL = Prophet()
+
+            TOTAL_CONSUMPTION_MODEL.fit(df_total)
+
+            print("✅ Total Consumption Model 完成")
+
             return
         except:
             print("⚠️ 沒模型，開始訓練")
@@ -466,7 +513,39 @@ def init_data(force_retrain=False):
     pickle.dump(SERIES_CACHE, open(series_path, "wb"))
     pickle.dump(ACCURACY_CACHE, open(acc_path, "wb"))
     pickle.dump(EVALUATION_CACHE, open(eval_path, "wb"))
+        # =========================
+    # 🔥 Total Consumption Prophet
+    # =========================
 
+
+
+    consumption = load_consumption()
+
+    years = []
+    values = []
+
+    for y, item in consumption.items():
+
+        # 🔥 跳過 unit / base_year_type
+        if not str(y).isdigit():
+            continue
+
+        years.append(int(y) + 1911)
+
+        values.append(item["value"])
+
+    df_total = pd.DataFrame({
+        "ds": pd.to_datetime(
+            [str(y) for y in years]
+        ),
+        "y": values,
+    })
+
+    TOTAL_CONSUMPTION_MODEL = Prophet()
+
+    TOTAL_CONSUMPTION_MODEL.fit(df_total)
+
+    print("✅ Total Consumption Model 完成")
     print("✅ 訓練完成 + 準確度完成")
 
 
@@ -644,7 +723,43 @@ def run_prediction(target_year, dept_filters=None, mode="full"):
 
     return result
 
+# =========================
+# 🔥 Total Consumption Forecast
+# =========================
+def predict_total_consumption(target_year):
 
+    global TOTAL_CONSUMPTION_MODEL
+
+    if TOTAL_CONSUMPTION_MODEL is None:
+        return None
+
+    # 🔥 Prophet 使用西元
+    target_ad = (
+        target_year
+        if target_year > 1911
+        else target_year + 1911
+    )
+
+    # 🔥 找最後年份
+    latest = 2024
+
+    periods = target_ad - latest
+
+    # 🔥 避免負值
+    periods = max(periods, 1)
+
+    future = TOTAL_CONSUMPTION_MODEL.make_future_dataframe(
+        periods=periods,
+        freq="YE"
+    )
+
+    forecast = TOTAL_CONSUMPTION_MODEL.predict(future)
+
+    pred = float(
+        forecast.iloc[-1]["yhat"]
+    )
+
+    return max(pred, 0)
 # =========================
 # 📊 evaluation
 # =========================
@@ -1166,10 +1281,13 @@ def predict_department_energy():
 
         return jsonify({
             "mode": "forecast",
+
             "query_type": "total",
+
             "year": roc_year,
 
-            "message": f"🔮 {roc_year} 年全國能源總量 AI 預測。",
+            "message":
+                f"🔮 {roc_year} 年全國能源總量 AI 預測。",
 
             "prediction": {
                 "TOTAL": result
@@ -1180,7 +1298,11 @@ def predict_department_energy():
                     "dept": "TOTAL",
                     "top": top
                 }
-            ]
+            ],
+
+            # 🔥 新增這個
+            "total_consumption":
+                predict_total_consumption(target_year),
         })
     if not prediction:
 
@@ -1209,6 +1331,8 @@ def predict_department_energy():
             # 🔥 AI 回驗資料（新增）
             "evaluation": get_evaluation_data(dept_filters),
             "summary": summary,
+            "total_consumption":
+            predict_total_consumption(target_year),
         }
     )
 
