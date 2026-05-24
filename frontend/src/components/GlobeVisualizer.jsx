@@ -701,6 +701,9 @@ function Scene({
   showFlow,
   hovered,
   onLODChange,
+  rotateSpeed,
+  isLocked,
+  controlRef,
 }) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
@@ -758,7 +761,12 @@ function Scene({
         <SupplyFlowLines year={year} selected={selected} lod={lod} />
       )}
 
-      <OrbitControls enablePan={false} />
+      <OrbitControls
+        ref={controlRef}
+        enablePan={false}
+        rotateSpeed={rotateSpeed}
+        enabled={!isLocked}
+      />
     </>
   );
 }
@@ -776,7 +784,9 @@ export default function GlobeVisualizer({
   onLODChange,
 }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
+  const [rotateSpeed, setRotateSpeed] = useState(0.6);
+  const [isLocked, setIsLocked] = useState(false);
+  const controlRef = useRef();
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -809,8 +819,50 @@ export default function GlobeVisualizer({
           showFlow={showFlow}
           hovered={hovered}
           onLODChange={onLODChange}
+          rotateSpeed={rotateSpeed}
+          isLocked={isLocked}
+          controlRef={controlRef}
         />
       </Canvas>
+      <div className="motion-control">
+        <div>{language === "en" ? "Motion Control" : "防暈模式"}</div>
+
+        <input
+          type="range"
+          min="0"
+          max="1.5"
+          step="0.05"
+          value={rotateSpeed}
+          onChange={(e) => setRotateSpeed(Number(e.target.value))}
+        />
+
+        <div style={{ opacity: 0.8 }}>
+          {language === "en"
+            ? `Speed: ${rotateSpeed.toFixed(2)}`
+            : `轉速：${rotateSpeed.toFixed(2)}`}
+        </div>
+
+        <button
+          className="motion-stop"
+          onClick={() => {
+            if (!isLocked) {
+              setIsLocked(true);
+              setRotateSpeed(0);
+            } else {
+              setIsLocked(false);
+              setRotateSpeed(0.6);
+            }
+          }}
+        >
+          {isLocked
+            ? language === "en"
+              ? "Resume"
+              : "恢復旋轉"
+            : language === "en"
+              ? "Stop Rotation"
+              : "停止旋轉"}
+        </button>
+      </div>
 
       <div
         style={{
