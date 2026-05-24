@@ -3,8 +3,31 @@ import { useTranslation } from "react-i18next";
 import BackToTopButton from "../components/BackToTopButton";
 export default function Feedback() {
   const { t } = useTranslation();
+  const sentimentMap = {
+    正面: t("feedback.positive"),
+    中立: t("feedback.neutral"),
+    負面: t("feedback.negative"),
+  };
+  const satisfactionMap = {
+    非常滿意: t("feedback.satVery"),
+    滿意: t("feedback.satGood"),
+    普通: t("feedback.satNormal"),
+    不滿意: t("feedback.satBad"),
+    非常不滿意: t("feedback.satWorst"),
+  };
+  const filterList = [
+    { key: "all", label: t("feedback.all") },
+    { key: "positive", label: t("feedback.positive") },
+    { key: "neutral", label: t("feedback.neutral") },
+    { key: "negative", label: t("feedback.negative") },
+  ];
+  const sentimentMapReverse = {
+    positive: "正面",
+    neutral: "中立",
+    negative: "負面",
+  };
   const [list, setList] = useState([]);
-  const [filter, setFilter] = useState("全部");
+  const [filter, setFilter] = useState("all");
   const [sortMode, setSortMode] = useState("time");
   const [selected, setSelected] = useState(null);
   const API = "http://127.0.0.1:8000";
@@ -38,10 +61,11 @@ export default function Feedback() {
   // 🔥 篩選
   // =========================
   const filteredList =
-    filter === "全部"
+    filter === "all"
       ? sortedList
-      : sortedList.filter((item) => item.sentiment?.trim() === filter.trim());
-
+      : sortedList.filter(
+          (item) => item.sentiment === sentimentMapReverse[filter]
+        );
   return (
     <div className="feedback-page">
       <div className="feedback-container">
@@ -54,35 +78,35 @@ export default function Feedback() {
         <div className="filter-bar">
           {/* 情緒 */}
           <div className="filter-group">
-            <span className="filter-label">情緒篩選：</span>
+            <span className="filter-label">{t("feedback.filterLabel")}：</span>
 
-            {t("feedback.filter", { returnObjects: true }).map((f) => (
+            {filterList.map((f) => (
               <button
-                key={f}
-                className={filter === f ? "active" : ""}
-                onClick={() => setFilter(f)}
+                key={f.key}
+                className={filter === f.key ? "active" : ""}
+                onClick={() => setFilter(f.key)}
               >
-                {f}
+                {f.label}
               </button>
             ))}
           </div>
 
           {/* 排序 */}
           <div className="filter-group">
-            <span className="filter-label">排序方式：</span>
+            <span className="filter-label">{t("feedback.sort")}：</span>
 
             <button
               className={sortMode === "time" ? "active" : ""}
               onClick={() => setSortMode("time")}
             >
-              最新
+              {t("feedback.latest")}
             </button>
 
             <button
               className={sortMode === "priority" ? "active" : ""}
               onClick={() => setSortMode("priority")}
             >
-              重要性
+              {t("feedback.priority")}
             </button>
           </div>
         </div>
@@ -117,7 +141,7 @@ export default function Feedback() {
                 </div>
                 <div className="col tags">
                   <span className={`tag ${item.sentiment}`}>
-                    {item.sentiment}
+                    {sentimentMap[item.sentiment] || item.sentiment}
                   </span>
 
                   {item.priority === "高" && (
@@ -137,7 +161,7 @@ export default function Feedback() {
                           filter: "drop-shadow(0 0 6px #facc15)",
                         }}
                       ></i>
-                      高優先
+                      {t("feedback.priorityHigh")}
                     </span>
                   )}
 
@@ -188,7 +212,7 @@ export default function Feedback() {
             </p>
             <p>
               <strong>{t("feedback.feeling")}：</strong>
-              {selected.feeling}
+              {satisfactionMap[selected.feeling] || selected.feeling}
             </p>
 
             <div className="message-box">
@@ -199,10 +223,12 @@ export default function Feedback() {
 
             <div className="tags">
               <span className={`tag ${selected.sentiment}`}>
-                {selected.sentiment}
+                {sentimentMap[selected.sentiment] || selected.sentiment}
               </span>
 
-              <span className="tag category">{selected.category}</span>
+              <span className="tag category">
+                {t(`feedback.category.${selected.category}`) || selected.category}
+              </span>
 
               {selected.priority === "高" && (
                 <span className="priority-badge">
@@ -283,7 +309,7 @@ export default function Feedback() {
                         status: "closed",
                       });
                     } catch (e) {
-                      alert("標記失敗");
+                      alert(t("feedback.errorResolve"));
                     }
                   }}
                 >
@@ -303,7 +329,7 @@ export default function Feedback() {
                   background: "linear-gradient(135deg, #7f1d1d, #dc2626)",
                 }}
                 onClick={async () => {
-                  const ok = window.confirm("確定要刪除嗎？");
+                  const ok = window.confirm(t("feedback.confirmDelete"));
 
                   if (!ok) return;
 
@@ -326,7 +352,7 @@ export default function Feedback() {
                     // 關閉 modal
                     setSelected(null);
                   } catch (e) {
-                    alert("刪除失敗");
+                    alert(t("feedback.errorDelete"));
                   }
                 }}
               >
@@ -336,7 +362,7 @@ export default function Feedback() {
                     marginRight: "8px",
                   }}
                 ></i>
-                刪除
+                {t("feedback.delete")}
               </button>
 
               {/* 關閉 */}

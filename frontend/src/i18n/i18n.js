@@ -127,8 +127,15 @@ const resources = {
       feedback: {
         title: "回饋分析",
         empty: "目前沒有任何回饋資料",
-
+        positive: "正面",
+        neutral: "中立",
+        negative: "負面",
         filter: ["全部", "正面", "中立", "負面"],
+        satVery: "非常滿意",
+        satGood: "滿意",
+        satNormal: "普通",
+        satBad: "不滿意",
+        satWorst: "非常不滿意",
 
         name: "姓名",
         email: "Email",
@@ -144,7 +151,23 @@ const resources = {
         statusOpen: "處理中",
         statusClosed: "已完成",
 
-        priorityHigh: "高優先"
+        priorityHigh: "高優先",
+        filterLabel: "情緒篩選",
+        sort: "排序方式",
+        latest: "最新",
+        priority: "重要性",
+
+        all: "全部",
+
+        confirmDelete: "確定要刪除嗎？",
+        errorDelete: "刪除失敗",
+        errorResolve: "標記失敗",
+
+        delete: "刪除",
+
+        category: {
+          其他: "其他"
+        }
       },
       prediction: {
         title: "能源預測",
@@ -480,7 +503,7 @@ const resources = {
         type: "類型",
         avg: "平均發電量",
         ratio: "占比",
-        date: "日期" / "Date",
+        date: "日期",
 
         loading: "載入每日能源分析",
         syncing: "正在同步最新能源資料...",
@@ -700,8 +723,16 @@ const resources = {
       feedback: {
         title: "Feedback Analysis",
         empty: "No feedback available",
+        positive: "Positive",
+        neutral: "Neutral",
+        negative: "Negative",
 
         filter: ["All", "Positive", "Neutral", "Negative"],
+        satVery: "Very Satisfied",
+        satGood: "Satisfied",
+        satNormal: "Neutral",
+        satBad: "Unsatisfied",
+        satWorst: "Very Unsatisfied",
 
         name: "Name",
         email: "Email",
@@ -717,7 +748,23 @@ const resources = {
         statusOpen: "Processing",
         statusClosed: "Completed",
 
-        priorityHigh: "High Priority"
+        priorityHigh: "High Priority",
+        filterLabel: "Filter",
+        sort: "Sort",
+        latest: "Latest",
+        priority: "Priority",
+
+        all: "All",
+
+        confirmDelete: "Are you sure you want to delete?",
+        errorDelete: "Delete failed",
+        errorResolve: "Update failed",
+
+        delete: "Delete",
+
+        category: {
+          其他: "Other"
+        }
       },
       prediction: {
         title: "Energy Prediction",
@@ -1016,6 +1063,7 @@ const resources = {
         type: "Type",
         avg: "Average Generation",
         ratio: "Ratio",
+        date: "Date",
 
         loading: "Loading Daily Energy Analysis",
         syncing: "Syncing latest data...",
