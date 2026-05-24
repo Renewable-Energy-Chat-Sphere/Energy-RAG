@@ -1,4 +1,5 @@
 import React from "react";
+import * as THREE from "three";
 import { Bar } from "react-chartjs-2";
 import { useTranslation } from "react-i18next";
 import { BarElement } from "chart.js";
@@ -91,15 +92,20 @@ export default function Global({ isMobile }) {
   };
 
   const onSelect = (data) => {
-    if (!data) return;
+    // 點空白 = 重置
+    if (!data) {
+      setSelected(null);
+      return;
+    }
 
+    // 點同一個節點 = 取消選取
     if (selected?.code === data.code) {
+      setSelected(null);
       return;
     }
 
     setSelected(data);
   };
-
   const handleMouseDown = () => setDragging(true);
 
   const handleMouseMove = (e) => {
@@ -129,7 +135,27 @@ export default function Global({ isMobile }) {
     D50: "#f97316",
     D68: "#ef4444",
   };
+  function generateShade(baseColor, index, total) {
+    const color = new THREE.Color(baseColor);
 
+    const hsl = {};
+    color.getHSL(hsl);
+
+    const factor = index / Math.max(total - 1, 1);
+
+    // 微調色相
+    hsl.h += (factor - 0.5) * 0.08;
+
+    // 微調亮度
+    hsl.l = 0.35 + factor * 0.18;
+
+    // 飽和度固定高一點
+    hsl.s = Math.min(1, hsl.s + 0.15);
+
+    color.setHSL(hsl.h, hsl.s, hsl.l);
+
+    return color.getStyle();
+  }
   function getRootDept(code) {
     function search(tree, root = null) {
       for (const key in tree) {
@@ -264,17 +290,11 @@ export default function Global({ isMobile }) {
 
       return Object.entries(demandData)
         .map(([supplyId, value]) => {
+          const ratio = typeof value === "object" ? value.ratio : value;
 
-          const ratio =
-            typeof value === "object"
-              ? value.ratio
-              : value;
+          const total = totalSupply?.[String(year)]?.value || 0;
 
-          const total =
-            totalSupply?.[String(year)]?.value || 0;
-
-          const actualUsage =
-            total * ratio / 1000;
+          const actualUsage = (total * ratio) / 1000;
           const supply = supplyCatalog[supplyId];
 
           const name = getName(supplyId);
@@ -302,49 +322,39 @@ export default function Global({ isMobile }) {
     // 供給對需求關聯
     const result = [];
 
-    Object.entries(energyData).forEach(
-      ([dCode, supplies]) => {
+    Object.entries(energyData).forEach(([dCode, supplies]) => {
+      if (supplies[node.code]) {
+        const name = getName(dCode);
 
-        if (supplies[node.code]) {
+        const ratio =
+          typeof supplies[node.code] === "object"
+            ? supplies[node.code].ratio
+            : supplies[node.code];
 
-          const name = getName(dCode);
+        const total = totalSupply?.[String(year)]?.value || 0;
 
-          const ratio =
-            typeof supplies[node.code] === "object"
-              ? supplies[node.code].ratio
-              : supplies[node.code];
+        const actualUsage = total * ratio;
 
-          const total =
-            totalSupply?.[
-              String(year)
-            ]?.value || 0;
+        result.push({
+          id: dCode,
 
-          const actualUsage =
-            total * ratio;
+          name,
+          fullName: name,
 
-          result.push({
-            id: dCode,
+          // pie 比例
+          value: ratio,
 
-            name,
-            fullName: name,
+          // 真正使用量
+          actualUsage,
 
-            // pie 比例
-            value: ratio,
+          totalSupply: total,
 
-            // 真正使用量
-            actualUsage,
-
-            totalSupply: total,
-
-            category: "Other",
-          });
-        }
+          category: "Other",
+        });
       }
-    );
+    });
 
-    return result.sort(
-      (a, b) => b.value - a.value
-    );
+    return result.sort((a, b) => b.value - a.value);
   }
 
   function getDepth(code, tree, depth = 0) {
@@ -403,18 +413,16 @@ export default function Global({ isMobile }) {
       }
     }
 
-    const total =
-      filtered.reduce((a, b) => a + b.value, 0) || 1;
+    const total = filtered.reduce((a, b) => a + b.value, 0) || 1;
 
-    return filtered
-      .map((d) => ({
-        ...d,
-        rawValue: d.actualUsage || 0,
+    return filtered.map((d) => ({
+      ...d,
+      rawValue: d.actualUsage || 0,
 
-        ratioValue: d.value,
+      ratioValue: d.value,
 
-        value: d.value / total,
-      }))
+      value: d.value / total,
+    }));
   }
 
   async function handleAsk() {
@@ -946,9 +954,18 @@ export default function Global({ isMobile }) {
                               key={index}
                               fill={
                                 selected?.code?.startsWith("S")
-                                  ? DEPT_COLOR[getRootDept(entry.id)] ||
-                                    "#808080"
-                                  : CATEGORY_COLOR[entry.category] || "#808080"
+                                  ? generateShade(
+                                      DEPT_COLOR[getRootDept(entry.id)] ||
+                                        "#782db9",
+                                      index,
+                                      getPieData().length,
+                                    )
+                                  : generateShade(
+                                      CATEGORY_COLOR[entry.category] ||
+                                        "#808080",
+                                      index,
+                                      getPieData().length,
+                                    )
                               }
                             />
                           ))}
@@ -956,9 +973,7 @@ export default function Global({ isMobile }) {
 
                         <Tooltip
                           formatter={(v, name, props) => {
-
-                            const raw =
-                              props?.payload?.rawValue || 0
+                            const raw = props?.payload?.rawValue || 0;
 
                             return [
                               language === "en"
@@ -973,41 +988,64 @@ export default function Global({ isMobile }) {
                           content={() => (
                             <div
                               style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                justifyContent: "center",
-                                gap: "5px",
-                                fontSize: 12,
-                                margin: "20px 0",
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gap: "6px 12px",
+                                fontSize: 11,
+
+                                maxHeight: "160px",
+                                overflowY: "auto",
+
+                                paddingRight: "6px",
+
+                                marginTop: "-20px",
+
+                                position: "relative",
+                                top: "-10px",
                               }}
                             >
-                              {getPieData()
-                                .slice(0, 5)
-                                .map((item, i) => (
-                                  <div
-                                    key={i}
+                              {getPieData().map((item, i) => (
+                                <div
+                                  key={i}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    minWidth: 0,
+                                  }}
+                                >
+                                  <span
                                     style={{
-                                      display: "flex",
-                                      alignItems: "center",
+                                      width: 8,
+                                      height: 8,
+                                      background: selected?.code?.startsWith(
+                                        "S",
+                                      )
+                                        ? generateShade(
+                                            DEPT_COLOR[getRootDept(item.id)] ||
+                                              "#782db9",
+                                            i,
+                                            getPieData().length,
+                                          )
+                                        : generateShade(
+                                            CATEGORY_COLOR[item.category] ||
+                                              "#808080",
+                                            i,
+                                            getPieData().length,
+                                          ),
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
                                     }}
                                   >
-                                    <span
-                                      style={{
-                                        width: 8,
-                                        height: 8,
-                                        background: selected?.code?.startsWith(
-                                          "S",
-                                        )
-                                          ? DEPT_COLOR[getRootDept(item.id)] ||
-                                            "#808080"
-                                          : CATEGORY_COLOR[item.category] ||
-                                            "#808080",
-                                        marginRight: 4,
-                                      }}
-                                    />
                                     {item.name}
-                                  </div>
-                                ))}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           )}
                         />
