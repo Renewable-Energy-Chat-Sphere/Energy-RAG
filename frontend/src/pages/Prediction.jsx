@@ -224,6 +224,33 @@ export default function Prediction() {
       glow: "0 0 10px #94a3b8",
     };
   };
+  const getForecastTrendData = () => {
+
+    if (data?.mode !== "forecast_range") return null;
+
+    if (!data?.years) return null;
+
+    const chartData = [];
+
+    Object.entries(data.years).forEach(([year, yearData]) => {
+
+      const prediction = yearData.prediction;
+
+      const firstDept = Object.keys(prediction)[0];
+
+      if (!firstDept) return;
+
+      const energies = prediction[firstDept];
+
+      chartData.push({
+        year,
+
+        ...energies
+      });
+    });
+
+    return chartData;
+  };
   const getAccuracy = () => {
     if (!data?.accuracy) return null;
 
@@ -381,6 +408,144 @@ export default function Prediction() {
           </div>
 
           {/* 🔥 多年份切換 */}
+          {/* 🔥 AI 多年趨勢圖 */}
+          {data.mode === "forecast_range" &&
+            getForecastTrendData() && (
+
+              <div
+                style={{
+                  marginBottom: "30px",
+                  padding: "24px",
+                  borderRadius: "18px",
+
+                  background: "var(--card-bg)",
+
+                  border: "1px solid rgba(148,163,184,0.18)",
+
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                }}
+              >
+
+                <h3
+                  style={{
+                    marginBottom: "20px",
+
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <i
+                    className="fi fi-rr-chart-line-up"
+                    style={{
+                      color: "#60a5fa",
+                    }}
+                  ></i>
+
+                  AI 多年能源趨勢分析
+                </h3>
+
+                <div style={{ height: "420px" }}>
+
+                  <Line
+                    data={{
+                      labels: getForecastTrendData().map(
+                        (d) => Number(d.year) + 1911
+                      ),
+
+                      datasets: Object.keys(
+                        getForecastTrendData()[0]
+                      )
+                        .filter((k) => k !== "year")
+                        .slice(0, 5)
+                        .map((energy, idx) => {
+
+                          const colors = [
+                            "#3b82f6",
+                            "#22c55e",
+                            "#f97316",
+                            "#eab308",
+                            "#a855f7",
+                          ];
+
+                          return {
+                            label: energyMap[energy] || energy,
+
+                            data: getForecastTrendData().map(
+                              (d) => d[energy]
+                            ),
+
+                            borderColor: colors[idx],
+
+                            backgroundColor: colors[idx],
+
+                            tension: 0.35,
+
+                            borderWidth: 3,
+
+                            pointRadius: 4,
+                          };
+                        }),
+                    }}
+                    options={{
+                      responsive: true,
+
+                      maintainAspectRatio: false,
+
+                      plugins: {
+                        legend: {
+                          labels: {
+                            color: "#94a3b8",
+                          },
+                        },
+                      },
+
+                      scales: {
+                        x: {
+                          ticks: {
+                            color: "#94a3b8",
+                          },
+
+                          grid: {
+                            color: "rgba(148,163,184,0.08)",
+                          },
+                        },
+
+                       y: {
+
+                        ticks: {
+
+                          color: "#94a3b8",
+
+                          callback: function(value) {
+                            return value + "%";
+                          }
+                        },
+
+                        title: {
+
+                          display: true,
+
+                          text: "占比 (%)",
+
+                          color: "#94a3b8",
+
+                          font: {
+                            size: 14,
+                            weight: "bold",
+                          }
+                        },
+
+                        grid: {
+                          color: "rgba(148,163,184,0.08)",
+                        },
+                      },
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+          )}
           {data.mode === "forecast_range" && (
             <div
               style={{
