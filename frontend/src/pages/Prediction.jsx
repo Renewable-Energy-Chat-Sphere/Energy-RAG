@@ -265,6 +265,10 @@ export default function Prediction() {
     // 🔥 AI 預測總量優先
     const total =
 
+      data?.years?.[
+        selectedForecastYear
+      ]?.total_consumption ||
+
       data?.total_consumption ||
 
       consumption?.[rocYear]?.value;

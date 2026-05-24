@@ -1000,6 +1000,8 @@ def predict_department_energy():
             forecast_range[forecast_year] = {
                 "prediction": pred,
                 "summary": summary,
+                "total_consumption":
+                predict_total_consumption(forecast_year),
             }
 
         return jsonify(
@@ -1119,6 +1121,8 @@ def predict_department_energy():
                         "TOTAL": result
                     },
                     "summary": summary,
+                    "total_consumption":
+                    predict_total_consumption(forecast_year),
                 }
 
             # =========================
@@ -1142,6 +1146,8 @@ def predict_department_energy():
                 forecast_range[forecast_year] = {
                     "prediction": pred,
                     "summary": summary,
+                    "total_consumption":
+                    predict_total_consumption(forecast_year),
                 }
 
         return jsonify(
