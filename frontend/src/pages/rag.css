@@ -753,3 +753,27 @@
     width: 100%;
   }
 }
+
+/* Prediction */
+.prediction-wrapper {
+  margin-top: 20px;
+}
+
+.prediction-header {
+  margin-bottom: 18px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.prediction-card {
+  margin-bottom: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(148,163,184,0.15);
+}
+
+.prediction-title {
+  margin-bottom: 14px;
+}

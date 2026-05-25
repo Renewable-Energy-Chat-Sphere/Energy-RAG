@@ -7,7 +7,6 @@ export default function Rag() {
   const { t } = useTranslation();
   const [structuredData, setStructuredData] = useState(null);
   const [exportFileName, setExportFileName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
 
   const API = "/api";
@@ -102,6 +101,8 @@ export default function Rag() {
       e.preventDefault();
 
       const userText = inputUser.value.trim();
+      const isPrediction =
+        /預測|未來|趨勢|forecast|future/i.test(userText);
       const fileInput = form.querySelector("input[name='file']");
       const file = fileInput?.files?.[0];
 
@@ -169,12 +170,36 @@ export default function Rag() {
         }
 
         // API
-        const res = await fetch(`${API}/chat`, {
-          method: "POST",
-          body: fd,
-        });
+        let res;
+
+        if (isPrediction) {
+
+          res = await fetch(`${API}/predict_department_energy`, {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              question: userText,
+            }),
+          });
+
+        } else {
+
+          res = await fetch(`${API}/chat`, {
+            method: "POST",
+            body: fd,
+          });
+
+        }
 
         const data = await res.json();
+
+        if (isPrediction) {
+          data.type = "prediction";
+        }
 
         thinkingWrap.remove();
 
@@ -191,13 +216,24 @@ export default function Rag() {
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
+
           extraHtml = renderComparisonCards(data.results, t);
+
         } else if (data.card_type === "multi_year") {
+
           extraHtml = renderMultiYearCards(data.results, t);
+
+        } else if (data.type === "prediction") {
+
+          extraHtml = renderPredictionCards(data);
+
         } else if (Array.isArray(data.results) && data.results.length) {
+
           const hasValueCards = data.results.every(
             (r) =>
-              r && (r.supply_name_zh || r.demand_name) && r.value !== undefined,
+              r &&
+              (r.supply_name_zh || r.demand_name) &&
+              r.value !== undefined,
           );
 
           if (hasValueCards) {
@@ -441,20 +477,9 @@ export default function Rag() {
 
         {/* 聊天主區 */}
         <div className="rag-chat-wrapper">
+
           {/* 聊天紀錄 */}
-          <div id="rag-chat-log" className="rag-chat-log">
-            {loading && (
-              <div className="rag-message assistant">
-                <div className="rag-message-inner">
-                  <div className="thinking">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <div id="rag-chat-log" className="rag-chat-log"></div>
 
           {/* 輸入列 */}
           <form
@@ -538,29 +563,12 @@ function renderMultiYearCards(results, t) {
       ${results
         .map(
           (item) => `
-            <div class="energy-compare-panel">
-<h4>${t("rag.yearLabel", { year: item.year })}</h4>
-              ${(item.top || [])
-                .map(
-                  (r, i) => `
-                    <div class="energy-card-item">
-                      <div class="energy-rank">#${i + 1}</div>
-                      <div class="energy-main">
-                        <div class="energy-title">${r.supply_name_zh}</div>
-                        <div class="energy-sub">${r.supply_code}</div>
-                      </div>
-                      <div class="energy-value">
-                        ${
-                          typeof r.value === "number"
-                            ? `${r.value.toFixed(2)}%`
-                            : r.value ?? "-"
-                        }
-                      </div>
-                    </div>
-                  `,
-                )
-                .join("")}
-            </div>
+            ${renderComparePanel(
+              t("rag.yearLabel", {
+                year: item.year,
+              }),
+              item.top || []
+            )}
           `,
         )
         .join("")}
@@ -574,24 +582,7 @@ function renderEnergyTopCards(results) {
   return `
     <div class="energy-cards">
       ${results
-        .map(
-          (r, i) => `
-            <div class="energy-card-item">
-              <div class="energy-rank">#${i + 1}</div>
-              <div class="energy-main">
-                <div class="energy-title">${r.supply_name_zh || r.demand_name || "-"}</div>
-                <div class="energy-sub">${r.supply_code || r.demand_code || ""}</div>
-              </div>
-              <div class="energy-value">
-                ${
-                  typeof r.value === "number"
-                    ? `${r.value.toFixed(2)}%`
-                    : r.value ?? "-"
-                }
-              </div>
-            </div>
-          `,
-        )
+        .map(renderEnergyItem)
         .join("")}
     </div>
   `;
@@ -606,55 +597,23 @@ function renderComparisonCards(results, t) {
 
     return `
     <div class="energy-compare-grid">
-      <div class="energy-compare-panel">
-       <h4>${t("rag.yearLabel", { year: results.year1 })}</h4>
-        ${top1
-          .map(
-            (r, i) => `
-          <div class="energy-card-item">
-            <div class="energy-rank">#${i + 1}</div>
-            <div class="energy-main">
-              <div class="energy-title">${r.supply_name_zh}</div>
-              <div class="energy-sub">${r.supply_code}</div>
-            </div>
-            <div class="energy-value">
-              ${
-                typeof r.value === "number"
-                  ? `${r.value.toFixed(2)}%`
-                  : r.value ?? "-"
-              }
-            </div>
-          </div>
-        `,
-          )
-          .join("")}
-      </div>
-      <div class="energy-compare-panel">
-        <h4>${t("rag.yearLabel", { year: results.year2 })}</h4>
-        ${top2
-          .map(
-            (r, i) => `
-          <div class="energy-card-item">
-            <div class="energy-rank">#${i + 1}</div>
-            <div class="energy-main">
-              <div class="energy-title">${r.supply_name_zh}</div>
-              <div class="energy-sub">${r.supply_code}</div>
-            </div>
-            <div class="energy-value">
-              ${
-                typeof r.value === "number"
-                  ? `${r.value.toFixed(2)}%`
-                  : r.value ?? "-"
-              }
-            </div>
-          </div>
-        `,
-          )
-          .join("")}
-      </div>
+      ${renderComparePanel(
+        t("rag.yearLabel", {
+          year: results.year1,
+        }),
+        top1
+      )}
+
+      ${renderComparePanel(
+        t("rag.yearLabel", {
+          year: results.year2,
+        }),
+        top2
+      )}
     </div>
     <div class="energy-tags-wrap">
-      ${results.common?.length ? `<div class="energy-tag-block"><strong>${t("rag.commonEnergy")}：</strong> ${results.common.join(t("rag.separator"))}</div>` : ""}
+      ${results.common?.length ? `
+        <div class="energy-tag-block"><strong>${t("rag.commonEnergy")}：</strong> ${results.common.join(t("rag.separator"))}</div>` : ""}
      ${
        results.only_year1?.length
          ? `<div class="energy-tag-block">
@@ -686,57 +645,21 @@ ${
 
     return `
       <div class="energy-compare-grid">
-        <div class="energy-compare-panel">
-<h4>
-  ${results.department}｜
-  ${t("rag.yearLabel", { year: results.year1 })}
-</h4>          ${top1
-      .map(
-        (r, i) => `
-                <div class="energy-card-item">
-                  <div class="energy-rank">#${i + 1}</div>
-                  <div class="energy-main">
-                    <div class="energy-title">${r.supply_name_zh}</div>
-                    <div class="energy-sub">${r.supply_code}</div>
-                  </div>
-                  <div class="energy-value">
-                    ${
-                      typeof r.value === "number"
-                        ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
-                    }
-                  </div>
-                </div>
-              `,
-      )
-      .join("")}
-        </div>
-        <div class="energy-compare-panel">
-          <h4>
-  ${results.department}｜
-  ${t("rag.yearLabel", { year: results.year2 })}
-</h4>
-          ${top2
-            .map(
-              (r, i) => `
-                <div class="energy-card-item">
-                  <div class="energy-rank">#${i + 1}</div>
-                  <div class="energy-main">
-                    <div class="energy-title">${r.supply_name_zh}</div>
-                    <div class="energy-sub">${r.supply_code}</div>
-                  </div>
-                  <div class="energy-value">
-                    ${
-                      typeof r.value === "number"
-                        ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
-                    }
-                  </div>
-                </div>
-              `,
-            )
-            .join("")}
-        </div>
+        ${renderComparePanel(
+          `${results.department}｜
+          ${t("rag.yearLabel", {
+            year: results.year1,
+          })}`,
+          top1
+        )}
+
+        ${renderComparePanel(
+          `${results.department}｜
+          ${t("rag.yearLabel", {
+            year: results.year2,
+          })}`,
+          top2
+        )}
       </div>
       <div class="energy-tags-wrap">
        ${
@@ -789,61 +712,27 @@ ${
 
     return `
       <div class="energy-compare-grid">
-        <div class="energy-compare-panel">
-          <h4>${results.department1}${results.year ? `｜${t("rag.yearLabel", { year: results.year })}` : ""}</h4>
-          ${top1
-            .map(
-              (r, i) => `
-                <div class="energy-card-item">
-                  <div class="energy-rank">#${i + 1}</div>
-                  <div class="energy-main">
-                    <div class="energy-title">${r.supply_name_zh}</div>
-                    <div class="energy-sub">${r.supply_code}</div>
-                  </div>
-                  <div class="energy-value">
-                    ${
-                      typeof r.value === "number"
-                        ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
-                    }
-                  </div>
-                </div>
-              `,
-            )
-            .join("")}
-        </div>
-        <div class="energy-compare-panel">
-<h4>
-  ${results.department2}
-  ${
-    results.year
-      ? `｜${t("rag.yearLabel", {
-          year: results.year,
-        })}`
-      : ""
-  }
-</h4>
-          ${top2
-            .map(
-              (r, i) => `
-                <div class="energy-card-item">
-                  <div class="energy-rank">#${i + 1}</div>
-                  <div class="energy-main">
-                    <div class="energy-title">${r.supply_name_zh}</div>
-                    <div class="energy-sub">${r.supply_code}</div>
-                  </div>
-                  <div class="energy-value">
-                    ${
-                      typeof r.value === "number"
-                        ? `${r.value.toFixed(2)}%`
-                        : r.value ?? "-"
-                    }
-                  </div>
-                </div>
-              `,
-            )
-            .join("")}
-        </div>
+        ${renderComparePanel(
+          `${results.department1}${
+            results.year
+              ? `｜${t("rag.yearLabel", {
+                  year: results.year,
+                })}`
+              : ""
+          }`,
+          top1
+        )}
+
+        ${renderComparePanel(
+          `${results.department2}${
+            results.year
+              ? `｜${t("rag.yearLabel", {
+                  year: results.year,
+                })}`
+              : ""
+          }`,
+          top2
+        )}
       </div>
       <div class="energy-tags-wrap">
         ${
@@ -893,15 +782,90 @@ ${
   return "";
 }
 
-function showLoading(element, text = "Loading...") {
-  element.innerHTML = `
-    <div class="ai-card thinking">
-      ${text}
-      <div class="thinking">
-        <span></span>
-        <span></span>
-        <span></span>
+function renderEnergyItem(r, i) {
+  return `
+    <div class="energy-card-item">
+
+      <div class="energy-rank">
+        #${i + 1}
       </div>
+
+      <div class="energy-main">
+
+        <div class="energy-title">
+          ${r.supply_name_zh || r.demand_name || "-"}
+        </div>
+
+        <div class="energy-sub">
+          ${r.supply_code || r.demand_code || ""}
+        </div>
+
+      </div>
+
+      <div class="energy-value">
+        ${
+          typeof r.value === "number"
+            ? `${r.value.toFixed(2)}%`
+            : r.value ?? "-"
+        }
+      </div>
+
+    </div>
+  `;
+}
+
+function renderComparePanel(title, items) {
+  return `
+    <div class="energy-compare-panel">
+      <h4>${title}</h4>
+      ${items.map(renderEnergyItem).join("")}
+    </div>
+  `;
+}
+
+function renderPredictionCards(data) {
+
+  if (!data.summary?.length) return "";
+
+  return `
+    <div class="prediction-wrapper">
+
+      <div class="prediction-header">
+         AI Energy Prediction
+      </div>
+
+      ${data.summary.map(item => `
+
+        <div class="prediction-card">
+
+          <h3 class="prediction-title">
+            ${item.dept}
+          </h3>
+
+          ${(item.top || []).map(t => `
+
+            <div class="energy-card-item">
+
+              <div class="energy-main">
+
+                <div class="energy-title">
+                  ${t[0]}
+                </div>
+
+              </div>
+
+              <div class="energy-value">
+                ${Number(t[1]).toFixed(2)}%
+              </div>
+
+            </div>
+
+          `).join("")}
+
+        </div>
+
+      `).join("")}
+
     </div>
   `;
 }
