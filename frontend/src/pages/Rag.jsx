@@ -8,9 +8,20 @@ export default function Rag() {
   const [structuredData, setStructuredData] = useState(null);
   const [exportFileName, setExportFileName] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
+  const quickQuestions = [
+
+    "民國92年最多的能源是什麼",
+
+    "民國92年前三大的能源是什麼",
+
+    "民國92年和民國93年的能源差異",
+
+    "詳細說明風力發電是什麼",
+
+  ];
 
   const API = "/api";
-  // const API = "http://127.0.0.1:8000";
+   //const API = "http://127.0.0.1:8000";
 
 
   async function downloadFile({
@@ -515,6 +526,45 @@ export default function Rag() {
 
             {/* 文字輸入 */}
             <div className="chat-input-area">
+              {/* 快速問題 bubbles */}
+              <div className="quick-question-wrap">
+
+                {quickQuestions.map((q, i) => (
+
+                  <button
+                    key={i}
+                    type="button"
+                    className="quick-question-bubble"
+
+                    onClick={() => {
+
+                      const textarea =
+                        document.querySelector(
+                          "#rag-form-chat textarea[name='user']"
+                        );
+
+                      if (!textarea) return;
+
+                      // 填入問題
+                      textarea.value = q;
+
+                      // 觸發 input 事件（讓 auto resize 生效）
+                      textarea.dispatchEvent(
+                        new Event("input", { bubbles: true })
+                      );
+
+                      // 自動 submit
+                      document
+                        .getElementById("rag-form-chat")
+                        ?.requestSubmit();
+                    }}
+                  >
+                    💡 {q}
+                  </button>
+
+                ))}
+
+              </div>
               {selectedFileName && (
                 <div className="selected-file-inside">
                   <span className="file-name">🔗 {selectedFileName}</span>
