@@ -127,31 +127,32 @@ def detect_query_mode(text):
 
     return "normal"
 
+
 # =====================================================
 # 問題來源判斷
 # =====================================================
 def detect_query_source(text):
 
     realtime_keywords = [
-        "即時",
-        "目前",
-        "現在",
-        "最新",
-        "今日",
-        "發電",
-        "機組",
-        "供電",
-        "備轉",
-        "台電",
-
+        # 中文
+        "即時發電",
+        "及時發電",
+        "即時供電",
+        "即時電力",
+        "目前發電",
+        "目前供電",
+        "現在發電",
+        "現在供電",
+        "最新發電",
+        "今日供電",
+        "備轉容量",
+        "台電即時",
         # English
-        "realtime",
-        "real-time",
-        "current",
-        "live",
-        "generation",
-        "power generation",
-        "electricity",
+        "real-time power",
+        "real-time generation",
+        "current generation",
+        "current power",
+        "live generation",
     ]
 
     history_keywords = [
@@ -173,7 +174,6 @@ def detect_query_source(text):
         "最多",
         "最高",
         "最低",
-
         # English
         "energy",
         "natural gas",
@@ -193,6 +193,28 @@ def detect_query_source(text):
     ]
 
     text_lower = text.lower()
+    # =====================================================
+    # 知識型問題（優先）
+    # =====================================================
+    knowledge_keywords = [
+        "是什麼",
+        "是甚麼",
+        "什麼是",
+        "是啥",
+        "介紹",
+        "解釋",
+        "原理",
+        "用途",
+        "優點",
+        "缺點",
+        "how",
+        "what is",
+        "explain",
+    ]
+
+    for k in knowledge_keywords:
+        if k.lower() in text_lower:
+            return "general"
 
     # 即時資料
     for k in realtime_keywords:
@@ -226,11 +248,11 @@ def answer_realtime_question(user_text):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT category, power
-        FROM power_generation_logs
-        ORDER BY id DESC
-        LIMIT 10
-    """)
+    SELECT category, power
+    FROM power_generation_logs
+    ORDER BY id DESC
+    LIMIT 12
+""")
 
     rows = cursor.fetchall()
 
@@ -255,48 +277,25 @@ def answer_realtime_question(user_text):
     # =====================================================
     is_en = lang == "English"
 
-    title = (
-        "⚡ Current Real-Time Power Generation"
-        if is_en
-        else "⚡ 即時發電資訊"
-    )
+    title = "⚡ Current Real-Time Power Generation" if is_en else "⚡ 即時發電資訊"
 
-    power_label = (
-        "Power Generation"
-        if is_en
-        else "發電量"
-    )
+    power_label = "Power Generation" if is_en else "發電量"
 
-    ratio_label = (
-        "Share"
-        if is_en
-        else "佔比"
-    )
+    ratio_label = "Share" if is_en else "佔比"
 
     lines = [title, ""]
 
     for category, power in rows:
 
-        ratio = (
-            (power / total_power) * 100
-            if total_power else 0
-        )
+        ratio = (power / total_power) * 100 if total_power else 0
 
-        category_text = (
-            f"[{category}]"
-            if is_en
-            else f"【{category}】"
-        )
+        category_text = f"[{category}]" if is_en else f"【{category}】"
 
         lines.append(category_text)
 
-        lines.append(
-            f"{power_label}：{power:,.2f} MW"
-        )
+        lines.append(f"{power_label}：{power:,.2f} MW")
 
-        lines.append(
-            f"{ratio_label}：{ratio:.2f}%"
-        )
+        lines.append(f"{ratio_label}：{ratio:.2f}%")
 
         lines.append("")
 
@@ -536,12 +535,7 @@ def finalize_answer(openai_client, model, user_text, assistant_text, sources):
     target_lang = detect_language(user_text)
 
     # 第一次翻譯
-    assistant_text = translate_answer(
-        openai_client,
-        model,
-        user_text,
-        assistant_text
-    )
+    assistant_text = translate_answer(openai_client, model, user_text, assistant_text)
 
     # 翻譯後再次檢查語言
     final_lang = detect_language(assistant_text)
@@ -550,16 +544,10 @@ def finalize_answer(openai_client, model, user_text, assistant_text, sources):
     if final_lang != target_lang:
 
         assistant_text = translate_answer(
-            openai_client,
-            model,
-            user_text,
-            assistant_text
+            openai_client, model, user_text, assistant_text
         )
 
-    return append_sources(
-        clean_numbers(assistant_text),
-        sources
-    )
+    return append_sources(clean_numbers(assistant_text), sources)
 
 
 # =====================================================
@@ -728,7 +716,7 @@ def chat():
     # Energy RAG Router
     # =====================================================
     query_source = detect_query_source(user_text)
-    
+
     # =====================================================
     # 即時資料
     # =====================================================
@@ -878,7 +866,12 @@ def chat():
                     {
                         "answer": assistant_text,
                         "sources": result.get("sources", []),
-                        "results": result.get("results", []),
+                        # 只有分析/排名問題才顯示卡片
+                        "results": (
+                            result.get("results", [])
+                            if mode in ["analysis", "precise"]
+                            else []
+                        ),
                         "session_id": session_id,
                         "model": "energy_rag",
                         "uses_openai": False,

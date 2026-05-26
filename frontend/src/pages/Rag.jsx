@@ -8,8 +8,8 @@ export default function Rag() {
   const [structuredData, setStructuredData] = useState(null);
   const [exportFileName, setExportFileName] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const quickQuestions = [
-
     "民國92年最多的能源是什麼",
 
     "民國92年前三大的能源是什麼",
@@ -17,12 +17,10 @@ export default function Rag() {
     "民國92年和民國93年的能源差異",
 
     "詳細說明風力發電是什麼",
-
   ];
 
   const API = "/api";
-   //const API = "http://127.0.0.1:8000";
-
+  //const API = "http://127.0.0.1:8000";
 
   async function downloadFile({
     endpoint,
@@ -78,6 +76,13 @@ export default function Rag() {
     const inputSid = form.querySelector("input[name='session_id']");
     const inputRag = form.querySelector("input[name='rag_auto']");
     const chatLog = document.getElementById("rag-chat-log");
+    const handleScroll = () => {
+      if (!chatLog) return;
+
+      setShowScrollTop(chatLog.scrollTop > 300);
+    };
+
+    chatLog?.addEventListener("scroll", handleScroll);
     const INPUT_MIN_HEIGHT = 44;
 
     /* 自動撐高 */
@@ -112,8 +117,7 @@ export default function Rag() {
       e.preventDefault();
 
       const userText = inputUser.value.trim();
-      const isPrediction =
-        /預測|未來|趨勢|forecast|future/i.test(userText);
+      const isPrediction = /預測|未來|趨勢|forecast|future/i.test(userText);
       const fileInput = form.querySelector("input[name='file']");
       const file = fileInput?.files?.[0];
 
@@ -184,7 +188,6 @@ export default function Rag() {
         let res;
 
         if (isPrediction) {
-
           res = await fetch(`${API}/predict_department_energy`, {
             method: "POST",
 
@@ -196,14 +199,11 @@ export default function Rag() {
               question: userText,
             }),
           });
-
         } else {
-
           res = await fetch(`${API}/chat`, {
             method: "POST",
             body: fd,
           });
-
         }
 
         const data = await res.json();
@@ -227,24 +227,15 @@ export default function Rag() {
         let extraHtml = "";
 
         if (data.card_type === "comparison") {
-
           extraHtml = renderComparisonCards(data.results, t);
-
         } else if (data.card_type === "multi_year") {
-
           extraHtml = renderMultiYearCards(data.results, t);
-
         } else if (data.type === "prediction") {
-
           extraHtml = renderPredictionCards(data);
-
         } else if (Array.isArray(data.results) && data.results.length) {
-
           const hasValueCards = data.results.every(
             (r) =>
-              r &&
-              (r.supply_name_zh || r.demand_name) &&
-              r.value !== undefined,
+              r && (r.supply_name_zh || r.demand_name) && r.value !== undefined,
           );
 
           if (hasValueCards) {
@@ -270,15 +261,12 @@ export default function Rag() {
         cleanAnswer = cleanAnswer.replace(
           /(https?:\/\/[a-zA-Z0-9./?=_-]+|www\.[a-zA-Z0-9./?=_-]+)/g,
           (url) => {
-
-            const href = url.startsWith("http")
-              ? url
-              : `https://${url}`;
+            const href = url.startsWith("http") ? url : `https://${url}`;
 
             return `[${url}](${href})`;
-          }
+          },
         );
-        
+
         // markdown → html
         let answerHtml = marked.parse(cleanAnswer);
 
@@ -339,7 +327,7 @@ export default function Rag() {
         // 直接渲染 HTML（不要逐字動畫）
         answerBox.innerHTML = answerHtml.replace(
           /<a /g,
-          '<a target="_blank" rel="noopener noreferrer" '
+          '<a target="_blank" rel="noopener noreferrer" ',
         );
 
         // 直接加入額外卡片
@@ -437,7 +425,8 @@ export default function Rag() {
           const y =
             aiWrap.getBoundingClientRect().bottom +
             window.scrollY -
-            window.innerHeight + 220;
+            window.innerHeight +
+            220;
 
           window.scrollTo({
             top: y,
@@ -467,6 +456,8 @@ export default function Rag() {
 
     return () => {
       form.removeEventListener("submit", handleSubmit);
+
+      chatLog?.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -488,7 +479,6 @@ export default function Rag() {
 
         {/* 聊天主區 */}
         <div className="rag-chat-wrapper">
-
           {/* 聊天紀錄 */}
           <div id="rag-chat-log" className="rag-chat-log"></div>
 
@@ -528,20 +518,15 @@ export default function Rag() {
             <div className="chat-input-area">
               {/* 快速問題 bubbles */}
               <div className="quick-question-wrap">
-
                 {quickQuestions.map((q, i) => (
-
                   <button
                     key={i}
                     type="button"
                     className="quick-question-bubble"
-
                     onClick={() => {
-
-                      const textarea =
-                        document.querySelector(
-                          "#rag-form-chat textarea[name='user']"
-                        );
+                      const textarea = document.querySelector(
+                        "#rag-form-chat textarea[name='user']",
+                      );
 
                       if (!textarea) return;
 
@@ -550,21 +535,19 @@ export default function Rag() {
 
                       // 觸發 input 事件（讓 auto resize 生效）
                       textarea.dispatchEvent(
-                        new Event("input", { bubbles: true })
+                        new Event("input", { bubbles: true }),
                       );
 
                       // 自動 submit
-                      document
-                        .getElementById("rag-form-chat")
-                        ?.requestSubmit();
+                      document.getElementById("rag-form-chat")?.requestSubmit();
                     }}
                   >
-                    💡 {q}
+                    <i className="fi fi-sr-bulb bubble-icon"></i>
+                    {q}
                   </button>
-
                 ))}
-
               </div>
+
               {selectedFileName && (
                 <div className="selected-file-inside">
                   <span className="file-name">🔗 {selectedFileName}</span>
@@ -593,8 +576,31 @@ export default function Rag() {
               />
             </div>
 
-            {/* 送出 */}
-            <button type="submit">➤</button>
+            <div className="send-btn-group">
+              {/* 回到最頂 */}
+              <button
+                type="button"
+                className={`
+                  scroll-top-floating
+                  ${showScrollTop ? "show" : "hide"}
+                `}
+                onClick={() => {
+                  const chatLog = document.getElementById("rag-chat-log");
+
+                  if (!chatLog) return;
+
+                  chatLog.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                  });
+                }}
+              >
+                ⬆
+              </button>
+
+              {/* 送出 */}
+              <button type="submit">➤</button>
+            </div>
           </form>
         </div>
       </div>
@@ -617,7 +623,7 @@ function renderMultiYearCards(results, t) {
               t("rag.yearLabel", {
                 year: item.year,
               }),
-              item.top || []
+              item.top || [],
             )}
           `,
         )
@@ -631,9 +637,7 @@ function renderEnergyTopCards(results) {
 
   return `
     <div class="energy-cards">
-      ${results
-        .map(renderEnergyItem)
-        .join("")}
+      ${results.map(renderEnergyItem).join("")}
     </div>
   `;
 }
@@ -651,19 +655,23 @@ function renderComparisonCards(results, t) {
         t("rag.yearLabel", {
           year: results.year1,
         }),
-        top1
+        top1,
       )}
 
       ${renderComparePanel(
         t("rag.yearLabel", {
           year: results.year2,
         }),
-        top2
+        top2,
       )}
     </div>
     <div class="energy-tags-wrap">
-      ${results.common?.length ? `
-        <div class="energy-tag-block"><strong>${t("rag.commonEnergy")}：</strong> ${results.common.join(t("rag.separator"))}</div>` : ""}
+      ${
+        results.common?.length
+          ? `
+        <div class="energy-tag-block"><strong>${t("rag.commonEnergy")}：</strong> ${results.common.join(t("rag.separator"))}</div>`
+          : ""
+      }
      ${
        results.only_year1?.length
          ? `<div class="energy-tag-block">
@@ -700,7 +708,7 @@ ${
           ${t("rag.yearLabel", {
             year: results.year1,
           })}`,
-          top1
+          top1,
         )}
 
         ${renderComparePanel(
@@ -708,7 +716,7 @@ ${
           ${t("rag.yearLabel", {
             year: results.year2,
           })}`,
-          top2
+          top2,
         )}
       </div>
       <div class="energy-tags-wrap">
@@ -770,7 +778,7 @@ ${
                 })}`
               : ""
           }`,
-          top1
+          top1,
         )}
 
         ${renderComparePanel(
@@ -781,7 +789,7 @@ ${
                 })}`
               : ""
           }`,
-          top2
+          top2,
         )}
       </div>
       <div class="energy-tags-wrap">
@@ -856,7 +864,7 @@ function renderEnergyItem(r, i) {
         ${
           typeof r.value === "number"
             ? `${r.value.toFixed(2)}%`
-            : r.value ?? "-"
+            : (r.value ?? "-")
         }
       </div>
 
@@ -874,7 +882,6 @@ function renderComparePanel(title, items) {
 }
 
 function renderPredictionCards(data) {
-
   if (!data.summary?.length) return "";
 
   return `
@@ -884,7 +891,9 @@ function renderPredictionCards(data) {
          AI Energy Prediction
       </div>
 
-      ${data.summary.map(item => `
+      ${data.summary
+        .map(
+          (item) => `
 
         <div class="prediction-card">
 
@@ -892,7 +901,9 @@ function renderPredictionCards(data) {
             ${item.dept}
           </h3>
 
-          ${(item.top || []).map(t => `
+          ${(item.top || [])
+            .map(
+              (t) => `
 
             <div class="energy-card-item">
 
@@ -910,11 +921,15 @@ function renderPredictionCards(data) {
 
             </div>
 
-          `).join("")}
+          `,
+            )
+            .join("")}
 
         </div>
 
-      `).join("")}
+      `,
+        )
+        .join("")}
 
     </div>
   `;
