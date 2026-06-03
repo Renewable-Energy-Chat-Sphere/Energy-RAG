@@ -16,6 +16,7 @@ export default function Rag() {
   const [chatList, setChatList] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingChatId, setEditingChatId] = useState(null);
   const deleteChat = (id) => {
     const updated = chatList.filter((chat) => chat.id !== id);
 
@@ -39,20 +40,22 @@ export default function Rag() {
     }
   };
 
-  const renameChat = (id) => {
-    const target = chatList.find((c) => c.id === id);
+  const renameChat = (id, newTitle) => {
+    const target = chatList.find((chat) => chat.id === id);
 
     if (!target) return;
 
-    const newName = prompt("聊天室名稱", target.title);
+    const finalTitle = newTitle.trim();
 
-    if (!newName) return;
+    if (!finalTitle) {
+      return; // 不允許空白名稱
+    }
 
     const updated = chatList.map((chat) =>
       chat.id === id
         ? {
             ...chat,
-            title: newName,
+            title: finalTitle,
           }
         : chat,
     );
@@ -669,8 +672,25 @@ export default function Rag() {
               >
                 <>
                   <div className="chat-row">
-                    <span className="chat-title">{chat.title}</span>
-
+                    {editingChatId === chat.id ? (
+                      <input
+                        className="chat-title-input"
+                        defaultValue={chat.title}
+                        autoFocus
+                        onBlur={(e) => {
+                          renameChat(chat.id, e.target.value);
+                          setEditingChatId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            renameChat(chat.id, e.target.value);
+                            setEditingChatId(null);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span className="chat-title">{chat.title}</span>
+                    )}
                     <i
                       className="fi fi-rr-menu-dots"
                       onClick={(e) => {
@@ -690,7 +710,7 @@ export default function Rag() {
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
-                            renameChat(chat.id);
+                            setEditingChatId(chat.id);
                             setOpenMenuId(null);
                           }}
                         >

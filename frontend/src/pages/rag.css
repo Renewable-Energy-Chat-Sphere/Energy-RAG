@@ -1451,3 +1451,18 @@
 .dark .history-header::after {
   background: rgba(148, 163, 184, 0.2);
 }
+.chat-title-input {
+  width: 100%;
+
+  border: none;
+
+  outline: none;
+
+  background: transparent;
+
+  color: inherit;
+
+  font-size: inherit;
+
+  font-weight: 600;
+}
