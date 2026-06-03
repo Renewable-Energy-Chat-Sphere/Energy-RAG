@@ -12,17 +12,18 @@ export default function Rag() {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const quickQuestions = [
-    "民國92年最多的能源是什麼",
+    "民國92年使用最多的能源是什麼",
 
-    "民國92年前三大的能源是什麼",
+    "民國92年使用前三大的能源是什麼",
 
     "民國92年和民國93年的能源差異",
 
     "詳細說明風力發電是什麼",
   ];
 
-  const API = "/api";
-  //const API = "http://127.0.0.1:8000";
+
+  //const API = "/api";
+  const API = "http://127.0.0.1:8000";
 
   async function downloadFile({
     endpoint,

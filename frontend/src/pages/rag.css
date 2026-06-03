@@ -740,9 +740,9 @@
 .quick-question-wrap {
   display: flex;
 
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 
-  gap: 12px;
+  gap: 3px;
 
   margin-bottom: 14px;
 }
