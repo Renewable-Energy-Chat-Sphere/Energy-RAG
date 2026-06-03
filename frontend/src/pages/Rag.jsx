@@ -11,6 +11,142 @@ export default function Rag() {
   const [exportFileName, setExportFileName] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [predictionQuery, setPredictionQuery] = useState("");
+  const [chatList, setChatList] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const deleteChat = (id) => {
+    const updated = chatList.filter((chat) => chat.id !== id);
+
+    if (!updated.length) {
+      createNewChat();
+
+      return;
+    }
+
+    setChatList(updated);
+
+    localStorage.setItem("rag_chats", JSON.stringify(updated));
+
+    localStorage.setItem("current_chat_id", updated[0].id);
+    setCurrentChatId(updated[0].id);
+
+    const chatLog = document.getElementById("rag-chat-log");
+
+    if (chatLog) {
+      chatLog.innerHTML = updated[0].html || "";
+    }
+  };
+
+  const renameChat = (id) => {
+    const target = chatList.find((c) => c.id === id);
+
+    if (!target) return;
+
+    const newName = prompt("聊天室名稱", target.title);
+
+    if (!newName) return;
+
+    const updated = chatList.map((chat) =>
+      chat.id === id
+        ? {
+            ...chat,
+            title: newName,
+          }
+        : chat,
+    );
+
+    setChatList(updated);
+
+    localStorage.setItem("rag_chats", JSON.stringify(updated));
+  };
+  const createNewChat = () => {
+    if (chatList[0]?.title === "新對話" && chatList[0]?.html === "") {
+      return;
+    }
+    const chatLog = document.getElementById("rag-chat-log");
+
+    if (currentChatId && chatLog) {
+      saveCurrentChat(chatLog.innerHTML);
+    }
+    const newChat = {
+      id: Date.now(),
+      title: "新對話",
+      html: "",
+    };
+
+    const updated = [newChat, ...chatList];
+
+    setChatList(updated);
+    setCurrentChatId(newChat.id);
+
+    localStorage.setItem("rag_chats", JSON.stringify(updated));
+
+    localStorage.setItem("current_chat_id", newChat.id);
+
+    if (chatLog) {
+      chatLog.innerHTML = "";
+    }
+  };
+
+  const switchChat = (id) => {
+    const chatLog = document.getElementById("rag-chat-log");
+
+    if (currentChatId && chatLog) {
+      saveCurrentChat(chatLog.innerHTML);
+    }
+
+    const target = chatList.find((c) => c.id === id);
+
+    if (!target) return;
+
+    setCurrentChatId(id);
+
+    localStorage.setItem("current_chat_id", id);
+
+    if (chatLog) {
+      chatLog.innerHTML = target.html || "";
+    }
+  };
+  const generateChatTitle = (text) => {
+    text = text.trim();
+
+    const removeWords = [
+      "請問",
+      "請幫我",
+      "可以幫我",
+      "詳細說明",
+      "告訴我",
+      "請解釋",
+    ];
+
+    removeWords.forEach((word) => {
+      text = text.replace(word, "");
+    });
+
+    if (text.length <= 2) {
+      return "新對話";
+    }
+
+    return text.length > 15 ? text.substring(0, 15) + "..." : text;
+  };
+  const saveCurrentChat = (html) => {
+    const chats = JSON.parse(localStorage.getItem("rag_chats")) || [];
+
+    const updated = chats.map((chat) =>
+      chat.id === currentChatId
+        ? {
+            ...chat,
+            html,
+          }
+        : chat,
+    );
+
+    localStorage.setItem("rag_chats", JSON.stringify(updated));
+
+    setChatList(updated);
+  };
   const quickQuestions = [
     "民國92年最多的能源是什麼",
 
@@ -21,7 +157,7 @@ export default function Rag() {
     "詳細說明風力發電是什麼",
   ];
 
-  const API = "/api";
+  const API = "http://127.0.0.1:8000";
   //const API = "http://127.0.0.1:8000";
 
   async function downloadFile({
@@ -70,6 +206,39 @@ export default function Rag() {
 
   /* CHAT */
   useEffect(() => {
+    // 載入聊天紀錄
+    const savedChats = JSON.parse(localStorage.getItem("rag_chats")) || [];
+    const lastChatId = Number(localStorage.getItem("current_chat_id"));
+    if (!savedChats.length) {
+      const firstChat = {
+        id: Date.now(),
+        title: "新對話",
+        html: "",
+      };
+
+      setChatList([firstChat]);
+
+      setCurrentChatId(firstChat.id);
+
+      localStorage.setItem("rag_chats", JSON.stringify([firstChat]));
+    }
+    if (savedChats.length) {
+      setChatList(savedChats);
+
+      const activeChat =
+        savedChats.find((c) => c.id === lastChatId) || savedChats[0];
+
+      setCurrentChatId(activeChat.id);
+
+      setTimeout(() => {
+        const chatLog = document.getElementById("rag-chat-log");
+
+        if (chatLog) {
+          chatLog.innerHTML = activeChat.html || "";
+        }
+      }, 100);
+    }
+
     const form = document.getElementById("rag-form-chat");
     if (!form) return;
 
@@ -119,13 +288,37 @@ export default function Rag() {
       e.preventDefault();
 
       const userText = inputUser.value.trim();
+      const chats = JSON.parse(localStorage.getItem("rag_chats")) || [];
+
+      const activeChatId = Number(localStorage.getItem("current_chat_id"));
+
+      const currentChat = chats.find((c) => c.id === activeChatId);
+
+      if (
+        currentChat &&
+        (currentChat.title === "New Chat" || currentChat.title === "新對話")
+      ) {
+        const updated = chats.map((chat) =>
+          chat.id === activeChatId
+            ? {
+                ...chat,
+                title: generateChatTitle(userText),
+              }
+            : chat,
+        );
+
+        setChatList(updated);
+
+        localStorage.setItem("rag_chats", JSON.stringify(updated));
+      }
       const isPrediction =
         /(預測)|(明年)|(後年)|(未來\s*\d+\s*年)|(203\d)|(204\d)/i.test(
           userText,
         );
-      if (isPrediction) {
-        navigate(`/prediction?q=${encodeURIComponent(userText)}`);
 
+      if (isPrediction) {
+        setPredictionQuery(userText);
+        setShowPredictionModal(true);
         return;
       }
       const fileInput = form.querySelector("input[name='file']");
@@ -161,6 +354,7 @@ export default function Rag() {
       userWrap.appendChild(userInner);
       chatLog.appendChild(userWrap);
       chatLog.scrollTop = chatLog.scrollHeight;
+      saveCurrentChat(chatLog.innerHTML);
 
       try {
         // Thinking UI
@@ -408,7 +602,7 @@ export default function Rag() {
         inner.appendChild(card);
         aiWrap.appendChild(inner);
         chatLog.appendChild(aiWrap);
-
+        saveCurrentChat(chatLog.innerHTML);
         setTimeout(() => {
           const y =
             aiWrap.getBoundingClientRect().bottom +
@@ -453,37 +647,110 @@ export default function Rag() {
     <div className="rag-page">
       <div className="rag-container">
         {/* HERO */}
-        <div className="rag-hero">
-          <h1>Energy RAG Assistant</h1>
 
-          <p>{t("rag.subtitle")}</p>
+        <div className="chat-layout">
+          <div className="chat-sidebar">
+            <button className="new-chat-btn" onClick={createNewChat}>
+              ＋ {t("rag.newChat")}
+            </button>
 
-          <div className="rag-badges">
-            <span className="rag-badge">{t("rag.badge1")}</span>
-            <span className="rag-badge alt">{t("rag.badge2")}</span>
-            <span className="rag-badge">{t("rag.badge3")}</span>
+            <div className="history-header">
+              <i className="fi fi-rr-time-past"></i>
+              <span>{t("rag.history")}</span>
+            </div>
+
+            {chatList.map((chat) => (
+              <div
+                key={chat.id}
+                className={`chat-item ${
+                  currentChatId === chat.id ? "active" : ""
+                }`}
+                onClick={() => switchChat(chat.id)}
+              >
+                <>
+                  <div className="chat-row">
+                    <span className="chat-title">{chat.title}</span>
+
+                    <i
+                      className="fi fi-rr-menu-dots"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        setOpenMenuId(openMenuId === chat.id ? null : chat.id);
+                        document.addEventListener(
+                          "click",
+                          () => setOpenMenuId(null),
+                          { once: true },
+                        );
+                      }}
+                    />
+
+                    {openMenuId === chat.id && (
+                      <div className="chat-menu">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            renameChat(chat.id);
+                            setOpenMenuId(null);
+                          }}
+                        >
+                          <i className="fi fi-rr-edit"></i>
+                          {t("rag.renameChat")}
+                        </div>
+
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteChat(chat.id);
+                            setOpenMenuId(null);
+                          }}
+                        >
+                          <i className="fi fi-rr-trash"></i>
+                          {t("rag.deleteChat")}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              </div>
+            ))}
           </div>
-        </div>
 
-        {/* 聊天主區 */}
-        <div className="rag-chat-wrapper">
-          {/* 聊天紀錄 */}
-          <div id="rag-chat-log" className="rag-chat-log"></div>
+          <div className="chat-main">
+            <div className="rag-hero">
+              <h1>Energy RAG Assistant</h1>
 
-          {/* 輸入列 */}
-          <form
-            id="rag-form-chat"
-            className="rag-unified-form"
-            encType="multipart/form-data"
-          >
-            {/* 上傳按鈕 */}
-            <label className="upload-btn">
-              +
-              <input
-                type="file"
-                name="file"
-                hidden
-                accept="
+              <p>{t("rag.subtitle")}</p>
+
+              <div className="rag-badges">
+                <span className="rag-badge">{t("rag.badge1")}</span>
+                <span className="rag-badge alt">{t("rag.badge2")}</span>
+                <span className="rag-badge">{t("rag.badge3")}</span>
+              </div>
+            </div>
+            {/* 聊天主區 */}
+            <div className="rag-chat-wrapper">
+              {/* 聊天紀錄 */}
+              <div id="rag-chat-log" className="rag-chat-log"></div>
+
+              {/* 輸入列 */}
+              <form
+                id="rag-form-chat"
+                className="rag-unified-form"
+                encType="multipart/form-data"
+              >
+                {" "}
+                {/* 上傳按鈕 */}
+                <label
+                  className="upload-btn"
+                  data-tooltip={t("rag.uploadFile")}
+                >
+                  +
+                  <input
+                    type="file"
+                    name="file"
+                    hidden
+                    accept="
                   .pdf,
                   .xlsx,
                   .xls,
@@ -492,107 +759,140 @@ export default function Rag() {
                   audio/*,
                   video/*
                 "
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
 
-                  if (file) {
-                    setSelectedFileName(file.name);
-                  }
-                }}
-              />
-            </label>
-
-            {/* 文字輸入 */}
-            <div className="chat-input-area">
-              {/* 快速問題 bubbles */}
-              <div className="quick-question-wrap">
-                {quickQuestions.map((q, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className="quick-question-bubble"
-                    onClick={() => {
-                      const textarea = document.querySelector(
-                        "#rag-form-chat textarea[name='user']",
-                      );
-
-                      if (!textarea) return;
-
-                      // 填入問題
-                      textarea.value = q;
-
-                      // 觸發 input 事件（讓 auto resize 生效）
-                      textarea.dispatchEvent(
-                        new Event("input", { bubbles: true }),
-                      );
-
-                      // 自動 submit
-                      document.getElementById("rag-form-chat")?.requestSubmit();
-                    }}
-                  >
-                    <i className="fi fi-sr-bulb bubble-icon"></i>
-                    {q}
-                  </button>
-                ))}
-              </div>
-
-              {selectedFileName && (
-                <div className="selected-file-inside">
-                  <span className="file-name">🔗 {selectedFileName}</span>
-
-                  <span
-                    className="remove-file-btn"
-                    onClick={() => {
-                      const fileInput = document.getElementsByName("file")[0];
-
-                      if (fileInput) {
-                        fileInput.value = "";
+                      if (file) {
+                        setSelectedFileName(file.name);
                       }
-
-                      setSelectedFileName("");
                     }}
-                  >
-                    ✕
-                  </span>
+                  />
+                </label>
+                {/* 文字輸入 */}
+                <div className="chat-input-area">
+                  {/* 快速問題 bubbles */}
+                  <div className="quick-question-wrap">
+                    {quickQuestions.map((q, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="quick-question-bubble"
+                        onClick={() => {
+                          const textarea = document.querySelector(
+                            "#rag-form-chat textarea[name='user']",
+                          );
+
+                          if (!textarea) return;
+
+                          // 填入問題
+                          textarea.value = q;
+
+                          // 觸發 input 事件（讓 auto resize 生效）
+                          textarea.dispatchEvent(
+                            new Event("input", { bubbles: true }),
+                          );
+
+                          // 自動 submit
+                          document
+                            .getElementById("rag-form-chat")
+                            ?.requestSubmit();
+                        }}
+                      >
+                        <i className="fi fi-sr-bulb bubble-icon"></i>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedFileName && (
+                    <div className="selected-file-inside">
+                      <span className="file-name">🔗 {selectedFileName}</span>
+
+                      <span
+                        className="remove-file-btn"
+                        onClick={() => {
+                          const fileInput =
+                            document.getElementsByName("file")[0];
+
+                          if (fileInput) {
+                            fileInput.value = "";
+                          }
+
+                          setSelectedFileName("");
+                        }}
+                      >
+                        ✕
+                      </span>
+                    </div>
+                  )}
+
+                  <textarea
+                    name="user"
+                    rows="1"
+                    placeholder={t("rag.chatPlaceholder")}
+                  />
                 </div>
-              )}
-
-              <textarea
-                name="user"
-                rows="1"
-                placeholder={t("rag.chatPlaceholder")}
-              />
-            </div>
-
-            <div className="send-btn-group">
-              {/* 回到最頂 */}
-              <button
-                type="button"
-                className={`
+                <div className="send-btn-group">
+                  {/* 回到最頂 */}
+                  <button
+                    type="button"
+                    className={`
                   scroll-top-floating
                   ${showScrollTop ? "show" : "hide"}
                 `}
-                onClick={() => {
-                  const chatLog = document.getElementById("rag-chat-log");
+                    onClick={() => {
+                      const chatLog = document.getElementById("rag-chat-log");
 
-                  if (!chatLog) return;
+                      if (!chatLog) return;
 
-                  chatLog.scrollTo({
-                    top: 0,
-                    behavior: "smooth",
-                  });
-                }}
-              >
-                ⬆
-              </button>
+                      chatLog.scrollTo({
+                        top: 0,
+                        behavior: "smooth",
+                      });
+                    }}
+                  >
+                    ⬆
+                  </button>
 
-              {/* 送出 */}
-              <button type="submit">➤</button>
+                  {/* 送出 */}
+                  <button type="submit">➤</button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       </div>
+      {showPredictionModal && (
+        <div className="prediction-modal-overlay">
+          <div className="prediction-modal">
+            <h3 className="prediction-title">
+              <i className="fi fi-sr-sparkles"></i>
+              {t("rag.predictionTitle")}
+            </h3>
+            <p>{t("rag.predictionRedirect")}</p>
 
+            <div className="prediction-modal-actions">
+              <button
+                className="prediction-cancel"
+                onClick={() => setShowPredictionModal(false)}
+              >
+                {t("rag.cancel")}
+              </button>
+
+              <button
+                className="prediction-confirm"
+                onClick={() => {
+                  navigate(
+                    `/prediction?q=${encodeURIComponent(predictionQuery)}`,
+                  );
+                }}
+              >
+                {t("rag.goPrediction")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BackToTopButton />
     </div>
   );

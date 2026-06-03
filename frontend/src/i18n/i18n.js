@@ -82,6 +82,7 @@ const resources = {
         todayPower: "今日電力資訊",
         dailyReport: "每日能源分析",
         rag: "智慧查詢",
+
         electricityAnalysis: "供電成本分析中心",
         prediction: "能源預測",
         contact: "聯絡我們",
@@ -429,10 +430,20 @@ const resources = {
 
         chatMessage: "訊息",
         chat: "對話",
-
+        uploadFile: "上傳檔案",
         submit: "送出",
-        answer: "回答",
+        predictionTitle: "能源預測",
 
+        predictionRedirect:
+          "偵測到您正在查詢能源預測相關問題，是否前往能源預測分析頁面？",
+
+        goPrediction: "前往預測",
+
+        cancel: "留在此頁", er: "回答",
+        newChat: "新增對話",
+        renameChat: "重新命名",
+        deleteChat: "刪除",
+        history: "歷史紀錄",
         chatTab: "Chat",
         webTab: "Web",
         pdfTab: "PDF",
@@ -445,7 +456,7 @@ const resources = {
         tableTitle: "表格分析",
 
         url: "網址",
-
+        clearChat: "清除聊天紀錄",
         chatPlaceholder: "請輸入您的問題。",
         webPlaceholder: "想問什麼？例如：這個網站的功能是甚麼？",
         pdfPlaceholder: "想問任何PDF文件中的什麼內容？",
@@ -1012,13 +1023,24 @@ const resources = {
         badge1: "Multimodal Analysis",
         badge2: "Energy Decision Assistant",
         badge3: "Question Answering",
+        uploadFile: "Upload File",
+        predictionTitle: "Energy Prediction",
 
+        predictionRedirect:
+          "An energy forecasting query was detected. Would you like to open the prediction page?",
+
+        goPrediction: "Go to Prediction",
+
+        cancel: "Stay Here",
+        renameChat: "Rename",
+        deleteChat: "Delete",
         chatMessage: "Message",
+        history: "History",
         chat: "Conversation",
 
         submit: "Submit",
         answer: "Answer",
-
+        newChat: "New Chat",
         chatTab: "Chat",
         webTab: "Web",
         pdfTab: "PDF",
@@ -1030,7 +1052,7 @@ const resources = {
         tableTitle: "Table Analysis",
 
         url: "URL",
-
+        clearChat: "Clear Chat History",
         chatPlaceholder: "Enter your question.",
         webPlaceholder: "What do you want to ask? Example: What is this website about?",
         pdfPlaceholder: "Ask anything about the PDF document.",
