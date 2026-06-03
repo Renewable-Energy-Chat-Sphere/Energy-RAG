@@ -744,7 +744,7 @@
 
   justify-content: center;
 
-  gap: 10px;
+  gap: 3px;
 
   margin-bottom: 14px;
 }
@@ -768,7 +768,7 @@
 
   cursor: pointer;
 
-  font-size: 13px;
+  font-size: 12px;
 
   font-weight: 500;
 
