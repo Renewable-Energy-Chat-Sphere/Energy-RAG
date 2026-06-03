@@ -11,8 +11,6 @@ export default function Rag() {
   const [exportFileName, setExportFileName] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [showPredictionModal, setShowPredictionModal] = useState(false);
-  const [predictionQuery, setPredictionQuery] = useState("");
   const quickQuestions = [
     "民國92年使用最多的能源是什麼",
 
@@ -73,19 +71,6 @@ export default function Rag() {
 
   /* CHAT */
   useEffect(() => {
-    // 載入聊天紀錄
-    const savedChat = localStorage.getItem("rag_chat_html");
-
-    setTimeout(() => {
-      const chatLog = document.getElementById("rag-chat-log");
-
-      if (savedChat && chatLog) {
-        chatLog.innerHTML = savedChat;
-
-        chatLog.classList.add("active");
-        document.querySelector(".rag-chat-wrapper")?.classList.add("active");
-      }
-    }, 100);
     const form = document.getElementById("rag-form-chat");
     if (!form) return;
 
@@ -139,10 +124,9 @@ export default function Rag() {
         /(預測)|(明年)|(後年)|(未來\s*\d+\s*年)|(203\d)|(204\d)/i.test(
           userText,
         );
-
       if (isPrediction) {
-        setPredictionQuery(userText);
-        setShowPredictionModal(true);
+        navigate(`/prediction?q=${encodeURIComponent(userText)}`);
+
         return;
       }
       const fileInput = form.querySelector("input[name='file']");
@@ -178,7 +162,6 @@ export default function Rag() {
       userWrap.appendChild(userInner);
       chatLog.appendChild(userWrap);
       chatLog.scrollTop = chatLog.scrollHeight;
-      localStorage.setItem("rag_chat_html", chatLog.innerHTML);
 
       try {
         // Thinking UI
@@ -426,7 +409,7 @@ export default function Rag() {
         inner.appendChild(card);
         aiWrap.appendChild(inner);
         chatLog.appendChild(aiWrap);
-        localStorage.setItem("rag_chat_html", chatLog.innerHTML);
+
         setTimeout(() => {
           const y =
             aiWrap.getBoundingClientRect().bottom +
@@ -494,25 +477,8 @@ export default function Rag() {
             className="rag-unified-form"
             encType="multipart/form-data"
           >
-            {" "}
-            <button
-              type="button"
-              className="clear-chat-btn"
-              data-tooltip={t("rag.clearChat")}
-              onClick={() => {
-                localStorage.removeItem("rag_chat_html");
-
-                const chatLog = document.getElementById("rag-chat-log");
-
-                if (chatLog) {
-                  chatLog.innerHTML = "";
-                }
-              }}
-            >
-              <i className="fi fi-rr-trash"></i>
-            </button>
             {/* 上傳按鈕 */}
-            <label className="upload-btn" data-tooltip={t("rag.uploadFile")}>
+            <label className="upload-btn">
               +
               <input
                 type="file"
@@ -536,6 +502,7 @@ export default function Rag() {
                 }}
               />
             </label>
+
             {/* 文字輸入 */}
             <div className="chat-input-area">
               {/* 快速問題 bubbles */}
@@ -597,6 +564,7 @@ export default function Rag() {
                 placeholder={t("rag.chatPlaceholder")}
               />
             </div>
+
             <div className="send-btn-group">
               {/* 回到最頂 */}
               <button
@@ -625,37 +593,7 @@ export default function Rag() {
           </form>
         </div>
       </div>
-      {showPredictionModal && (
-        <div className="prediction-modal-overlay">
-          <div className="prediction-modal">
-            <h3 className="prediction-title">
-              <i className="fi fi-sr-sparkles"></i>
-              {t("rag.predictionTitle")}
-            </h3>
-            <p>{t("rag.predictionRedirect")}</p>
 
-            <div className="prediction-modal-actions">
-              <button
-                className="prediction-cancel"
-                onClick={() => setShowPredictionModal(false)}
-              >
-                {t("rag.cancel")}
-              </button>
-
-              <button
-                className="prediction-confirm"
-                onClick={() => {
-                  navigate(
-                    `/prediction?q=${encodeURIComponent(predictionQuery)}`,
-                  );
-                }}
-              >
-                {t("rag.goPrediction")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <BackToTopButton />
     </div>
   );
