@@ -13,7 +13,7 @@ INDEX_PATH = PROCESSED_DIR / "energy_rag_all_years.index"
 
 records = json.loads(META_PATH.read_text(encoding="utf-8"))
 index = faiss.read_index(str(INDEX_PATH))
-model = SentenceTransformer("BAAI/bge-m3")
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 # =====================================================

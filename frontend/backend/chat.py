@@ -784,11 +784,11 @@ def chat():
                 return jsonify(
                     {
                         "answer": assistant_text,
-                        "sources": result.get("sources", []),
+                        "sources": sources,
                         "results": [],
                         "session_id": session_id,
-                        "model": "energy_rag",
-                        "uses_openai": False,
+                        "model": "web_fallback",
+                        "uses_openai": True,
                     }
                 )
 
@@ -797,16 +797,12 @@ def chat():
                 and "無相關資料" not in assistant_text
             ):
 
-                #assistant_text = humanize_answer(assistant_text)
+                assistant_text = humanize_answer(assistant_text)
 
                 # =====================================================
                 # 分析模式 LLM
                 # =====================================================
-                if (
-                    mode == "analysis"
-                    and openai_client
-                    and result.get("card_type") is None
-                ):
+                if mode == "analysis" and openai_client:
 
                     analysis_prompt = f"""
                         你是一個能源分析專家，以下是資料：
@@ -857,9 +853,11 @@ def chat():
                 # 才加 Energy RAG sources
                 if "### 🔗 資料來源" not in assistant_text:
 
-                    assistant_text = append_sources(
-                        assistant_text,
-                        result.get("sources", [])
+                    # =====================================
+                    # 輸出語種統一
+                    # =====================================
+                    assistant_text = finalize_answer(
+                        openai_client, model, user_text, assistant_text, sources
                     )
 
                 _store_turn(session_id, user_text, assistant_text)
