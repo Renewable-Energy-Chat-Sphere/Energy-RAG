@@ -3,8 +3,10 @@ import { marked } from "marked";
 import "./rag.css";
 import BackToTopButton from "../components/BackToTopButton";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 export default function Rag() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [structuredData, setStructuredData] = useState(null);
   const [exportFileName, setExportFileName] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -117,7 +119,15 @@ export default function Rag() {
       e.preventDefault();
 
       const userText = inputUser.value.trim();
-      const isPrediction = /預測|未來|趨勢|forecast|future/i.test(userText);
+      const isPrediction =
+        /(預測)|(明年)|(後年)|(未來\s*\d+\s*年)|(203\d)|(204\d)/i.test(
+          userText,
+        );
+      if (isPrediction) {
+        navigate(`/prediction?q=${encodeURIComponent(userText)}`);
+
+        return;
+      }
       const fileInput = form.querySelector("input[name='file']");
       const file = fileInput?.files?.[0];
 
@@ -185,32 +195,12 @@ export default function Rag() {
         }
 
         // API
-        let res;
-
-        if (isPrediction) {
-          res = await fetch(`${API}/predict_department_energy`, {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-              question: userText,
-            }),
-          });
-        } else {
-          res = await fetch(`${API}/chat`, {
-            method: "POST",
-            body: fd,
-          });
-        }
+        const res = await fetch(`${API}/chat`, {
+          method: "POST",
+          body: fd,
+        });
 
         const data = await res.json();
-
-        if (isPrediction) {
-          data.type = "prediction";
-        }
 
         thinkingWrap.remove();
 
@@ -230,8 +220,6 @@ export default function Rag() {
           extraHtml = renderComparisonCards(data.results, t);
         } else if (data.card_type === "multi_year") {
           extraHtml = renderMultiYearCards(data.results, t);
-        } else if (data.type === "prediction") {
-          extraHtml = renderPredictionCards(data);
         } else if (Array.isArray(data.results) && data.results.length) {
           const hasValueCards = data.results.every(
             (r) =>
@@ -243,7 +231,7 @@ export default function Rag() {
           }
         }
 
-        let cleanAnswer = data.answer || t("rag.noResponse");
+        let cleanAnswer = data.answer || data.message || "";
 
         // 移除 structured_data 區塊
         cleanAnswer = cleanAnswer.replace(
@@ -877,60 +865,6 @@ function renderComparePanel(title, items) {
     <div class="energy-compare-panel">
       <h4>${title}</h4>
       ${items.map(renderEnergyItem).join("")}
-    </div>
-  `;
-}
-
-function renderPredictionCards(data) {
-  if (!data.summary?.length) return "";
-
-  return `
-    <div class="prediction-wrapper">
-
-      <div class="prediction-header">
-         AI Energy Prediction
-      </div>
-
-      ${data.summary
-        .map(
-          (item) => `
-
-        <div class="prediction-card">
-
-          <h3 class="prediction-title">
-            ${item.dept}
-          </h3>
-
-          ${(item.top || [])
-            .map(
-              (t) => `
-
-            <div class="energy-card-item">
-
-              <div class="energy-main">
-
-                <div class="energy-title">
-                  ${t[0]}
-                </div>
-
-              </div>
-
-              <div class="energy-value">
-                ${Number(t[1]).toFixed(2)}%
-              </div>
-
-            </div>
-
-          `,
-            )
-            .join("")}
-
-        </div>
-
-      `,
-        )
-        .join("")}
-
     </div>
   `;
 }

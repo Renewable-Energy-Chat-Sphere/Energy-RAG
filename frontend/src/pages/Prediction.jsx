@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 // 🔥 Chart.js
@@ -20,6 +21,7 @@ import supplyCatalog from "../data/supply_catalog.json";
 import consumption from "../data/consumption.json";
 import BackToTopButton from "../components/BackToTopButton";
 export default function Prediction() {
+  const location = useLocation();
   const [question, setQuestion] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -50,12 +52,23 @@ export default function Prediction() {
     });
     setEnergyMap(energy);
   }, []);
+  useEffect(() => {
+    const q = new URLSearchParams(location.search).get("q");
+
+    if (!q) return;
+
+    setQuestion(q);
+
+    runPredict(q);
+  }, []);
 
   // =========================
   // 🔮 API
   // =========================
-  const runPredict = async () => {
-    if (!question) {
+  const runPredict = async (customQuestion = null) => {
+    const finalQuestion = customQuestion || question;
+
+    if (!finalQuestion) {
       setData({
         mode: "guide",
         message:
@@ -78,7 +91,7 @@ export default function Prediction() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            question,
+            question: finalQuestion,
           }),
         },
       );
@@ -226,7 +239,6 @@ export default function Prediction() {
     };
   };
   const getForecastTrendData = () => {
-
     if (data?.mode !== "forecast_range") return null;
 
     if (!data?.years) return null;
@@ -234,7 +246,6 @@ export default function Prediction() {
     const chartData = [];
 
     Object.entries(data.years).forEach(([year, yearData]) => {
-
       const prediction = yearData.prediction;
 
       const firstDept = Object.keys(prediction)[0];
@@ -246,31 +257,22 @@ export default function Prediction() {
       chartData.push({
         year,
 
-        ...energies
+        ...energies,
       });
     });
 
     return chartData;
   };
   const getTotalUsage = (year, percent) => {
-
     if (!year || !percent) return null;
 
     // 🔥 西元轉民國
-    const rocYear =
-      Number(year) > 1911
-        ? Number(year) - 1911
-        : Number(year);
+    const rocYear = Number(year) > 1911 ? Number(year) - 1911 : Number(year);
 
     // 🔥 AI 預測總量優先
     const total =
-
-      data?.years?.[
-        selectedForecastYear
-      ]?.total_consumption ||
-
+      data?.years?.[selectedForecastYear]?.total_consumption ||
       data?.total_consumption ||
-
       consumption?.[rocYear]?.value;
 
     if (!total) return null;
@@ -435,121 +437,108 @@ export default function Prediction() {
 
           {/* 🔥 多年份切換 */}
           {/* 🔥 AI 多年趨勢圖 */}
-          {data.mode === "forecast_range" &&
-            getForecastTrendData() && (
+          {data.mode === "forecast_range" && getForecastTrendData() && (
+            <div
+              style={{
+                marginBottom: "30px",
+                padding: "24px",
+                borderRadius: "18px",
 
-              <div
+                background: "var(--card-bg)",
+
+                border: "1px solid rgba(148,163,184,0.18)",
+
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+              }}
+            >
+              <h3
                 style={{
-                  marginBottom: "30px",
-                  padding: "24px",
-                  borderRadius: "18px",
+                  marginBottom: "20px",
 
-                  background: "var(--card-bg)",
-
-                  border: "1px solid rgba(148,163,184,0.18)",
-
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
                 }}
               >
-
-                <h3
+                <i
+                  className="fi fi-rr-chart-line-up"
                   style={{
-                    marginBottom: "20px",
-
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
+                    color: "#60a5fa",
                   }}
-                >
-                  <i
-                    className="fi fi-rr-chart-line-up"
-                    style={{
-                      color: "#60a5fa",
-                    }}
-                  ></i>
+                ></i>
+                AI 多年能源趨勢分析
+              </h3>
 
-                  AI 多年能源趨勢分析
-                </h3>
+              <div style={{ height: "420px" }}>
+                <Line
+                  data={{
+                    labels: getForecastTrendData().map(
+                      (d) => Number(d.year) + 1911,
+                    ),
 
-                <div style={{ height: "420px" }}>
+                    datasets: Object.keys(getForecastTrendData()[0])
+                      .filter((k) => k !== "year")
+                      .slice(0, 5)
+                      .map((energy, idx) => {
+                        const colors = [
+                          "#3b82f6",
+                          "#22c55e",
+                          "#f97316",
+                          "#eab308",
+                          "#a855f7",
+                        ];
 
-                  <Line
-                    data={{
-                      labels: getForecastTrendData().map(
-                        (d) => Number(d.year) + 1911
-                      ),
+                        return {
+                          label: energyMap[energy] || energy,
 
-                      datasets: Object.keys(
-                        getForecastTrendData()[0]
-                      )
-                        .filter((k) => k !== "year")
-                        .slice(0, 5)
-                        .map((energy, idx) => {
+                          data: getForecastTrendData().map((d) => d[energy]),
 
-                          const colors = [
-                            "#3b82f6",
-                            "#22c55e",
-                            "#f97316",
-                            "#eab308",
-                            "#a855f7",
-                          ];
+                          borderColor: colors[idx],
 
-                          return {
-                            label: energyMap[energy] || energy,
+                          backgroundColor: colors[idx],
 
-                            data: getForecastTrendData().map(
-                              (d) => d[energy]
-                            ),
+                          tension: 0.35,
 
-                            borderColor: colors[idx],
+                          borderWidth: 3,
 
-                            backgroundColor: colors[idx],
+                          pointRadius: 4,
+                        };
+                      }),
+                  }}
+                  options={{
+                    responsive: true,
 
-                            tension: 0.35,
+                    maintainAspectRatio: false,
 
-                            borderWidth: 3,
+                    plugins: {
+                      legend: {
+                        labels: {
+                          color: "#94a3b8",
+                        },
+                      },
+                    },
 
-                            pointRadius: 4,
-                          };
-                        }),
-                    }}
-                    options={{
-                      responsive: true,
+                    scales: {
+                      x: {
+                        ticks: {
+                          color: "#94a3b8",
+                        },
 
-                      maintainAspectRatio: false,
-
-                      plugins: {
-                        legend: {
-                          labels: {
-                            color: "#94a3b8",
-                          },
+                        grid: {
+                          color: "rgba(148,163,184,0.08)",
                         },
                       },
 
-                      scales: {
-                        x: {
-                          ticks: {
-                            color: "#94a3b8",
-                          },
-
-                          grid: {
-                            color: "rgba(148,163,184,0.08)",
-                          },
-                        },
-
-                       y: {
-
+                      y: {
                         ticks: {
-
                           color: "#94a3b8",
 
-                          callback: function(value) {
+                          callback: function (value) {
                             return value + "%";
-                          }
+                          },
                         },
 
                         title: {
-
                           display: true,
 
                           text: "占比 (%)",
@@ -559,18 +548,18 @@ export default function Prediction() {
                           font: {
                             size: 14,
                             weight: "bold",
-                          }
+                          },
                         },
 
                         grid: {
                           color: "rgba(148,163,184,0.08)",
                         },
                       },
-                      },
-                    }}
-                  />
-                </div>
+                    },
+                  }}
+                />
               </div>
+            </div>
           )}
           {data.mode === "forecast_range" && (
             <div
@@ -773,7 +762,6 @@ export default function Prediction() {
                             textAlign: "right",
                           }}
                         >
-
                           <div
                             style={{
                               fontSize: "14px",
@@ -791,19 +779,14 @@ export default function Prediction() {
                             }}
                           >
                             {Math.round(
-
                               getTotalUsage(
-
                                 data.mode === "forecast_range"
                                   ? selectedForecastYear
                                   : data.year,
 
-                                value
-
-                              ) || 0
-
-                            ).toLocaleString()}
-                            {" "}
+                                value,
+                              ) || 0,
+                            ).toLocaleString()}{" "}
                             toe
                           </div>
                         </div>
