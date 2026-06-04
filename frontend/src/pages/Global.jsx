@@ -429,7 +429,11 @@ export default function Global({ isMobile }) {
 
     return filtered.map((d) => ({
       ...d,
-      rawValue: d.actualUsage || 0,
+
+      rawValue:
+        d.rawValue ??
+        d.actualUsage ??
+        0,
 
       ratioValue: d.value,
 
