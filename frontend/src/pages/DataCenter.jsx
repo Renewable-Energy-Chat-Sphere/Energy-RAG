@@ -1,5 +1,58 @@
 import React, { useState } from "react";
+const demandLayouts = import.meta.glob(
+  "../data/demand_layout_*.json",
+  { eager: true }
+);
 
+const supplyLayouts = import.meta.glob(
+  "../data/supply_layout_*.json",
+  { eager: true }
+);
+
+function getLatestYear() {
+  const demandYears =
+    Object.keys(demandLayouts).map(
+      (path) => {
+        const match =
+          path.match(
+            /demand_layout_(\d+)/
+          );
+
+        return match
+          ? Number(match[1])
+          : 0;
+      }
+    );
+
+  const supplyYears =
+    Object.keys(supplyLayouts).map(
+      (path) => {
+        const match =
+          path.match(
+            /supply_layout_(\d+)/
+          );
+
+        return match
+          ? Number(match[1])
+          : 0;
+      }
+    );
+
+  const latestDemand =
+    demandYears.length
+      ? Math.max(...demandYears)
+      : 0;
+
+  const latestSupply =
+    supplyYears.length
+      ? Math.max(...supplyYears)
+      : 0;
+
+  return Math.min(
+    latestDemand,
+    latestSupply
+  );
+}
 export default function DataCenter() {
   const [message, setMessage] = useState("");
   const [selectedYear, setSelectedYear] = useState(null);
@@ -8,7 +61,8 @@ export default function DataCenter() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
-  const CURRENT_YEAR = 113;
+  const CURRENT_YEAR =
+    getLatestYear();
 
   const CURRENT_ROC_YEAR =
     new Date().getFullYear() - 1911;
@@ -124,14 +178,10 @@ export default function DataCenter() {
         {/* 統計卡片 */}
         <div style={statsGrid}>
           <InfoCard
-            title="最新年份"
+            title="目前資料版本"
             value={CURRENT_YEAR}
           />
 
-          <InfoCard
-            title="能源資料"
-            value={`80 ~ ${CURRENT_YEAR}`}
-          />
         </div>
 
         {/* 上傳 */}
