@@ -443,14 +443,6 @@ export default function Rag() {
         );
 
         cleanAnswer = cleanAnswer.replace(/接下來，我將生成[\s\S]*/gi, "");
-        cleanAnswer = cleanAnswer.replace(
-          /(https?:\/\/[a-zA-Z0-9./?=_-]+|www\.[a-zA-Z0-9./?=_-]+)/g,
-          (url) => {
-            const href = url.startsWith("http") ? url : `https://${url}`;
-
-            return `[${url}](${href})`;
-          },
-        );
 
         // markdown → html
         let answerHtml = marked.parse(cleanAnswer);

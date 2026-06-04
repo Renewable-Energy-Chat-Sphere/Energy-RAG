@@ -1,5 +1,6 @@
 from energy_chat_router import should_use_energy_rag, answer_energy_question
 import re
+import traceback
 from collections import defaultdict, deque
 from flask import Blueprint, request, jsonify, current_app
 
@@ -83,6 +84,13 @@ BASE_ASSISTANT_PROMPT = """
     - 如果本地資料不足，可使用網路搜尋補充資訊
     - 如果使用網路資料，請在回答最後附上來源網址
     - 如果使用網路查詢無果，才顯示「目前沒有足夠資訊」
+
+    【地區規則（最高優先）】
+    - 本平台為台灣能源平台
+    - 未指定國家、城市或地區時，一律以台灣作為預設回答地區
+    - 天氣、政策、法規、能源、市場、新聞、股市、電力、產業等問題皆優先以台灣資訊回答
+    - 若查詢網路資料，優先搜尋台灣官方或台灣相關來源
+    - 除非明確指定其他國家或地區，否則不得自行假設台灣以外的其他地區
 """
 
 
@@ -147,6 +155,7 @@ def detect_query_source(text):
         "今日供電",
         "備轉容量",
         "台電即時",
+
         # English
         "real-time power",
         "real-time generation",
@@ -174,6 +183,7 @@ def detect_query_source(text):
         "最多",
         "最高",
         "最低",
+        
         # English
         "energy",
         "natural gas",
@@ -288,13 +298,10 @@ def answer_realtime_question(user_text):
     for category, power in rows:
 
         ratio = (power / total_power) * 100 if total_power else 0
-
         category_text = f"[{category}]" if is_en else f"【{category}】"
-
         lines.append(category_text)
 
         lines.append(f"{power_label}：{power:,.2f} MW")
-
         lines.append(f"{ratio_label}：{ratio:.2f}%")
 
         lines.append("")
@@ -410,7 +417,9 @@ def append_sources(answer, sources):
 
                 title = s.get("title", "網頁資料")
 
-                source_lines.append(f"- [{title}]({s['url']})")
+                source_lines.append(
+                    f"- [{title}]({s['url']})"
+                )
 
             # Excel
             elif s.get("sheet"):
@@ -418,17 +427,23 @@ def append_sources(answer, sources):
                 sheet = s.get("sheet")
                 rows = s.get("rows", "?")
 
-                source_lines.append(f"- 工作表：{sheet}（{rows} rows）")
+                source_lines.append(
+                    f"- 工作表：{sheet}（{rows} rows）"
+                )
 
             # Energy RAG
             elif s.get("year"):
+
                 year = s.get("year")
 
                 if s.get("sheet"):
-                    source_lines.append(f"- 民國{year}年｜{s['sheet']}")
-
+                    source_lines.append(
+                        f"- 民國{year}年｜{s['sheet']}"
+                    )
                 else:
-                    source_lines.append(f"- 民國{year}年能源資料")
+                    source_lines.append(
+                        f"- 民國{year}年能源資料"
+                    )
 
     # 去重複
     source_lines = list(dict.fromkeys(source_lines))
@@ -436,8 +451,12 @@ def append_sources(answer, sources):
     if not source_lines:
         return answer
 
-    return answer + "\n\n---\n" + "### 🔗 資料來源\n" + "\n".join(source_lines)
-
+    return (
+        answer
+        + "\n\n---\n"
+        + "### 🔗 資料來源\n"
+        + "\n".join(source_lines)
+    )
 
 # =====================================================
 # 網路資料來源格式化
@@ -458,6 +477,9 @@ def extract_sources(resp):
                                 if getattr(ann, "type", "") == "url_citation":
                                     url = getattr(ann, "url", "")
                                     title = getattr(ann, "title", "")
+
+                                    print("URL =", url)
+                                    print("TITLE =", title)
 
                                     if not title:
                                         title = url
@@ -716,10 +738,17 @@ def chat():
     # ====================================
     # Energy RAG 優先
     # ====================================
-    if should_use_energy_rag(user_text):
+    if (
+        should_use_energy_rag(user_text)
+        and "是什麼" not in user_text
+        and "什麼是" not in user_text
+    ):
         query_source = "history"
+        
     else:
         query_source = detect_query_source(user_text)
+
+    print("QUERY_SOURCE =", query_source)
 
     # =====================================================
     # 即時資料
@@ -778,6 +807,7 @@ def chat():
 
                 assistant_text = get_output_text(resp)
                 sources = extract_sources(resp)
+                print("SOURCES =", sources)
 
                 assistant_text = finalize_answer(
                     openai_client, model, user_text, assistant_text, sources
@@ -838,7 +868,8 @@ def chat():
 
                     assistant_text = get_output_text(resp)
                     sources = extract_sources(resp)
-
+                    print("SOURCES =", sources)
+                    
                     # =====================================
                     # 輸出語種統一
                     # =====================================
@@ -878,6 +909,11 @@ def chat():
                 )
 
         except Exception as e:
+
+            print("\n" + "=" * 80)
+            print("ENERGY RAG ERROR")
+            traceback.print_exc()
+            print("=" * 80 + "\n")
 
             return (
                 jsonify(
@@ -924,15 +960,24 @@ def chat():
 
             assistant_text = get_output_text(resp)
 
+            print("\n" + "=" * 80)
+            print("MODEL:", model)
+            print("QUESTION:")
+            print(user_text)
+
+            print("\nRAW GPT ANSWER:")
+            print(assistant_text)
+            print("=" * 80 + "\n")
+
             sources = extract_sources(resp)
+            print("SOURCES =", sources)
+    
             final_sources.extend(sources)
 
             # =====================================
             # 輸出語種統一
             # =====================================
-            assistant_text = finalize_answer(
-                openai_client, model, user_text, assistant_text, sources
-            )
+            assistant_text = clean_numbers(assistant_text)
 
         except Exception as e:
             assistant_text = f"⚠️ 模型錯誤：{e}"
