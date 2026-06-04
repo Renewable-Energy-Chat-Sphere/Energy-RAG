@@ -17,6 +17,7 @@ import PowerPlantController from "./pages/PowerPlantController";
 import DailyReport from "./pages/DailyReport";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DataCenter from "./pages/DataCenter";
 
 const router = createBrowserRouter(
   [
@@ -59,7 +60,15 @@ const router = createBrowserRouter(
             </ProtectedRoute>
           ),
         },
+        {
+          path: "/data-center",
 
+          element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DataCenter />
+            </ProtectedRoute>
+          ),
+        },
         {
           path: "/electricity-analysis",
 

@@ -11,6 +11,7 @@ import Rag from "./pages/Rag";
 import PowerPlantController from "./pages/PowerPlantController";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
+import DataCenter from "./pages/DataCenter";
 
 /* 🔥 自動判斷裝置 */
 function AutoGlobal() {
@@ -48,10 +49,12 @@ export default function App() {
           <Route path="/powerplant" element={<PowerPlantController />} />{" "}
           <Route path="/contact" element={<Contact />} />
           <Route path="/Feedback" element={<Feedback />} />
+          <Route path="/data-center" element={<DataCenter />} />
           <Route
             path="*"
             element={<div style={{ padding: 40 }}>404 Not Found</div>}
           />
+          
         </Routes>
       </main>
 
