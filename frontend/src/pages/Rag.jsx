@@ -160,8 +160,8 @@ export default function Rag() {
     "詳細說明風力發電是什麼",
   ];
 
-  const API = "/api";
-  //const API = "http://127.0.0.1:8000";
+  //const API = "/api";
+  const API = "http://127.0.0.1:8000";
 
   async function downloadFile({
     endpoint,
@@ -1149,6 +1149,12 @@ ${
 }
 
 function renderEnergyItem(r, i) {
+
+  const usage =
+    r.total_supply && r.value
+      ? ((r.total_supply * r.value) / 1000).toLocaleString()
+      : null;
+
   return `
     <div class="energy-card-item">
 
@@ -1169,11 +1175,23 @@ function renderEnergyItem(r, i) {
       </div>
 
       <div class="energy-value">
+
+        <div>
+          ${
+            typeof r.value === "number"
+              ? `${r.value.toFixed(2)}%`
+              : "-"
+          }
+        </div>
+
         ${
-          typeof r.value === "number"
-            ? `${r.value.toFixed(2)}%`
-            : (r.value ?? "-")
+          usage
+            ? `<div class="energy-usage">
+                 ${usage} toe
+               </div>`
+            : ""
         }
+
       </div>
 
     </div>

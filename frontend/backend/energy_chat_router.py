@@ -655,6 +655,7 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
         "answer": answer,
         "sources": ["energy_rag_all_years_meta.json"],
         "results": top,
+        "card_type": "energy_cards",
     }
 
 

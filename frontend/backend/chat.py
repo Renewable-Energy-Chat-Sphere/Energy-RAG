@@ -712,10 +712,14 @@ def chat():
             except Exception as e:
                 user_text = f"(網址處理失敗) {e}\n\n{user_text}"
 
-    # =====================================================
-    # Energy RAG Router
-    # =====================================================
-    query_source = detect_query_source(user_text)
+
+    # ====================================
+    # Energy RAG 優先
+    # ====================================
+    if should_use_energy_rag(user_text):
+        query_source = "history"
+    else:
+        query_source = detect_query_source(user_text)
 
     # =====================================================
     # 即時資料
@@ -866,12 +870,7 @@ def chat():
                     {
                         "answer": assistant_text,
                         "sources": result.get("sources", []),
-                        # 只有分析/排名問題才顯示卡片
-                        "results": (
-                            result.get("results", [])
-                            if mode in ["analysis", "precise"]
-                            else []
-                        ),
+                        "results": result.get("results", []),
                         "session_id": session_id,
                         "model": "energy_rag",
                         "uses_openai": False,

@@ -1466,3 +1466,14 @@
 
   font-weight: 600;
 }
+.energy-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.energy-usage {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
