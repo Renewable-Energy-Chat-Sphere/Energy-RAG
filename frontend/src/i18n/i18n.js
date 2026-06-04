@@ -403,15 +403,15 @@ const resources = {
         subtitle: "未登入時預設為普通使用者，登入後才會解鎖高層或管理者功能。",
 
         login: "登入",
-        register: "成為付費使用者",
+        register: "成為註冊使用者",
 
         username: "帳號",
         password: "密碼",
 
-        roleHint: "註冊後角色固定為：付費使用者",
+        roleHint: "註冊後角色固定為：註冊使用者",
 
         loading: "處理中...",
-        createAccount: "建立付費帳號",
+        createAccount: "建立註冊帳號",
 
         guest: "以普通使用者進入",
 
