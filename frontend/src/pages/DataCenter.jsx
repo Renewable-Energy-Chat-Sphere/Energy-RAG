@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+const API =
+  `${window.location.protocol}//${window.location.hostname}:8000`;
 const demandLayouts = import.meta.glob(
   "../data/demand_layout_*.json",
   { eager: true }
@@ -136,13 +138,47 @@ export default function DataCenter() {
   const handleUpdate = async () => {
     if (!selectedYear) return;
 
-    setUpdateSuccess(false);
-    setIsUpdating(true);
+    try {
 
-    setTimeout(() => {
-      setIsUpdating(false);
+      setUpdateSuccess(false);
+      setIsUpdating(true);
+
+      const response = await fetch(
+        `${API}/generate-layout`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(
+          data.error || "更新失敗"
+        );
+      }
+
       setUpdateSuccess(true);
-    }, 5000);
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      setMessage(
+        `✅ ${selectedYear} 年能源球體更新完成`
+      );
+
+    } catch (err) {
+
+      alert(
+        `更新失敗：${err.message}`
+      );
+
+    } finally {
+
+      setIsUpdating(false);
+
+    }
   };
 
   return (

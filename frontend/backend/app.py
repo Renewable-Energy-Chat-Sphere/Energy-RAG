@@ -60,7 +60,44 @@ app.config.update(
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
 
+# =========================
+# 🌍 更新能源球體
+# =========================
+@app.route("/generate-layout", methods=["POST"])
+def generate_layout():
 
+    import subprocess
+    import os
+
+    try:
+
+        script_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "..",
+                "tools",
+                "generate_114_layout.py"
+            )
+        )
+
+        result = subprocess.run(
+            ["python", script_path],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        return jsonify({
+            "success": True,
+            "output": result.stdout
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 # =========================
 # 🔐 Register
 # =========================
