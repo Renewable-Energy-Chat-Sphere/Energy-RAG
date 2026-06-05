@@ -382,37 +382,34 @@ export default function Global({ isMobile }) {
       filtered = list;
     } else {
       if (level === 0) {
+        const deptMap = {};
 
-      const deptMap = {};
+        list.forEach((item) => {
+          const root = getRootDept(item.id);
 
-      list.forEach((item) => {
+          if (!root) return;
 
-        const root = getRootDept(item.id);
+          if (!deptMap[root]) {
+            deptMap[root] = {
+              name: getName(root),
 
-        if (!root) return;
+              value: 0,
 
-        if (!deptMap[root]) {
+              rawValue: 0,
 
-          deptMap[root] = {
-            name: getName(root),
+              id: root,
+            };
+          }
 
-            value: 0,
+          // 比例
+          deptMap[root].value += item.value;
 
-            rawValue: 0,
+          // 🔥 使用量
+          deptMap[root].rawValue += item.actualUsage || 0;
+        });
 
-            id: root,
-          };
-        }
-
-        // 比例
-        deptMap[root].value += item.value;
-
-        // 🔥 使用量
-        deptMap[root].rawValue += item.actualUsage || 0;
-      });
-
-      filtered = Object.values(deptMap);
-    } else if (level === 1) {
+        filtered = Object.values(deptMap);
+      } else if (level === 1) {
         filtered = list.filter((item) => {
           const depth = getDepth(item.id, hierarchy);
           return depth === 1;
@@ -430,10 +427,7 @@ export default function Global({ isMobile }) {
     return filtered.map((d) => ({
       ...d,
 
-      rawValue:
-        d.rawValue ??
-        d.actualUsage ??
-        0,
+      rawValue: d.rawValue ?? d.actualUsage ?? 0,
 
       ratioValue: d.value,
 
@@ -678,7 +672,7 @@ export default function Global({ isMobile }) {
       labels: e.years,
       datasets: [
         {
-          label: "實際值",
+          label: language === "en" ? "Actual" : "實際值",
           pointRadius: 4,
           pointHoverRadius: 6,
           data: e.actual,
@@ -686,7 +680,7 @@ export default function Global({ isMobile }) {
           tension: 0.3,
         },
         {
-          label: "預測值",
+          label: language === "en" ? "Predicted" : "預測值",
           pointRadius: 4,
           pointHoverRadius: 6,
           data: e.predicted,
@@ -1242,7 +1236,9 @@ export default function Global({ isMobile }) {
                         </>
                       ) : (
                         <div className="permission-lock">
-                          🔒 AI 預測分析僅限有登入的使用者查看
+                          {language === "en"
+                            ? "🔒 AI prediction analysis is available for logged-in users only."
+                            : "🔒 AI 預測分析僅限有登入的使用者查看"}
                         </div>
                       )}
                     </>
