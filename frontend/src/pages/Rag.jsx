@@ -21,7 +21,24 @@ export default function Rag() {
     const updated = chatList.filter((chat) => chat.id !== id);
 
     if (!updated.length) {
-      createNewChat();
+      const newChat = {
+        id: Date.now(),
+        title: "新對話",
+        html: "",
+      };
+
+      setChatList([newChat]);
+      setCurrentChatId(newChat.id);
+
+      localStorage.setItem("rag_chats", JSON.stringify([newChat]));
+
+      localStorage.setItem("current_chat_id", newChat.id);
+
+      const chatLog = document.getElementById("rag-chat-log");
+
+      if (chatLog) {
+        chatLog.innerHTML = "";
+      }
 
       return;
     }
@@ -134,11 +151,16 @@ export default function Rag() {
 
     return text.length > 15 ? text.substring(0, 15) + "..." : text;
   };
-  const saveCurrentChat = (html) => {
+  const saveCurrentChat = (html, chatId = null) => {
+    const targetId =
+      chatId ||
+      currentChatId ||
+      Number(localStorage.getItem("current_chat_id"));
+
     const chats = JSON.parse(localStorage.getItem("rag_chats")) || [];
 
     const updated = chats.map((chat) =>
-      chat.id === currentChatId
+      chat.id === targetId
         ? {
             ...chat,
             html,
@@ -224,6 +246,7 @@ export default function Rag() {
       setCurrentChatId(firstChat.id);
 
       localStorage.setItem("rag_chats", JSON.stringify([firstChat]));
+      localStorage.setItem("current_chat_id", firstChat.id);
     }
     if (savedChats.length) {
       setChatList(savedChats);
@@ -320,8 +343,62 @@ export default function Rag() {
         );
 
       if (isPrediction) {
-        setPredictionQuery(userText);
-        setShowPredictionModal(true);
+        const userWrap = document.createElement("div");
+        userWrap.className = "rag-message user";
+
+        userWrap.innerHTML = `
+    <div class="rag-message-inner">
+      <div class="user-bubble">
+        ${userText}
+      </div>
+    </div>
+  `;
+
+        chatLog.appendChild(userWrap);
+
+        const aiWrap = document.createElement("div");
+        aiWrap.className = "rag-message assistant";
+
+        aiWrap.innerHTML = `
+    <div class="rag-message-inner">
+      <div class="ai-card prediction-redirect-card">
+
+        <h4
+          style="
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin-bottom:10px;
+          "
+        >
+          <i
+            class="fi fi-rr-sparkles"
+            style="
+              color:#a855f7;
+              filter:drop-shadow(0 0 6px #a855f7);
+            "
+          ></i>
+
+          已連接至 AI 預測分析模組
+        </h4>
+
+        <p>
+          系統偵測到此問題屬於未來能源預測分析，
+          即將前往預測頁面進行計算。
+        </p>
+
+      </div>
+    </div>
+  `;
+
+        chatLog.appendChild(aiWrap);
+
+        saveCurrentChat(chatLog.innerHTML, activeChatId);
+
+        sessionStorage.setItem("prediction_return_chat", activeChatId);
+
+        navigate(`/prediction?q=${encodeURIComponent(userText)}`);
+
         return;
       }
       const fileInput = form.querySelector("input[name='file']");
@@ -357,8 +434,7 @@ export default function Rag() {
       userWrap.appendChild(userInner);
       chatLog.appendChild(userWrap);
       chatLog.scrollTop = chatLog.scrollHeight;
-      saveCurrentChat(chatLog.innerHTML);
-
+      saveCurrentChat(chatLog.innerHTML, currentChatId);
       try {
         // Thinking UI
         const thinkingWrap = document.createElement("div");
@@ -597,7 +673,7 @@ export default function Rag() {
         inner.appendChild(card);
         aiWrap.appendChild(inner);
         chatLog.appendChild(aiWrap);
-        saveCurrentChat(chatLog.innerHTML);
+        saveCurrentChat(chatLog.innerHTML, activeChatId);
         setTimeout(() => {
           const y =
             aiWrap.getBoundingClientRect().bottom +
@@ -1141,7 +1217,6 @@ ${
 }
 
 function renderEnergyItem(r, i) {
-
   const usage =
     r.total_supply && r.value
       ? ((r.total_supply * r.value) / 1000).toLocaleString()
@@ -1169,11 +1244,7 @@ function renderEnergyItem(r, i) {
       <div class="energy-value">
 
         <div>
-          ${
-            typeof r.value === "number"
-              ? `${r.value.toFixed(2)}%`
-              : "-"
-          }
+          ${typeof r.value === "number" ? `${r.value.toFixed(2)}%` : "-"}
         </div>
 
         ${

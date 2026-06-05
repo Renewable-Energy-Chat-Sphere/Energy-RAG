@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 // 🔥 Chart.js
@@ -20,9 +20,30 @@ import hierarchy from "../data/hierarchy.json";
 import supplyCatalog from "../data/supply_catalog.json";
 import consumption from "../data/consumption.json";
 import BackToTopButton from "../components/BackToTopButton";
+
 export default function Prediction() {
   const location = useLocation();
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem("prediction_return_chat");
+    };
+  }, []);
   const [question, setQuestion] = useState("");
+  useEffect(() => {
+    const clearReturn = () => {
+      sessionStorage.removeItem("prediction_return_chat");
+    };
+
+    window.addEventListener("beforeunload", clearReturn);
+
+    return () => {
+      window.removeEventListener("beforeunload", clearReturn);
+
+      sessionStorage.removeItem("prediction_return_chat");
+    };
+  }, []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -290,6 +311,41 @@ export default function Prediction() {
 
   return (
     <div style={container}>
+      {sessionStorage.getItem("prediction_return_chat") && (
+        <div
+          onClick={() => {
+            const chatId = sessionStorage.getItem("prediction_return_chat");
+
+            if (chatId) {
+              localStorage.setItem("current_chat_id", chatId);
+            }
+
+            sessionStorage.removeItem("prediction_return_chat");
+
+            navigate("/rag");
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+
+            color: "#60a5fa",
+
+            cursor: "pointer",
+
+            marginBottom: "16px",
+
+            fontSize: "14px",
+
+            fontWeight: "600",
+
+            transition: "0.2s",
+          }}
+        >
+          <i className="fi fi-rr-arrow-left"></i>
+          返回智慧查詢
+        </div>
+      )}
       {/* 🔹 Header */}
       <div style={headerRow}>
         <h2
@@ -330,7 +386,7 @@ export default function Prediction() {
       />
 
       <button
-        onClick={runPredict}
+        onClick={() => runPredict()}
         style={btnStyle}
         onMouseEnter={(e) => {
           e.target.style.transform = "translateY(-2px) scale(1.02)";
