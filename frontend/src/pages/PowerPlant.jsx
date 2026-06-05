@@ -3,6 +3,7 @@ console.log("🔥 POWER LIVE PAGE");
 import data from "../data/power_full.json";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import BackToTopButton from "../components/BackToTopButton";
 import "./power.css";
 
 /* ========================
@@ -207,6 +208,8 @@ export default function PowerPlant() {
           <PlantCard key={i} unit={u} />
         ))}
       </div>
+
+      <BackToTopButton />
     </div>
   );
 }

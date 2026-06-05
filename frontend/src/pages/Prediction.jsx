@@ -93,7 +93,7 @@ export default function Prediction() {
       setData({
         mode: "guide",
         message:
-          "💡 請輸入預測問題，例如：114工業部門能源結構、未來5年農業能源。",
+          t("prediction.guide"),
       });
 
       return;
@@ -159,7 +159,7 @@ export default function Prediction() {
       // 🔥 真正 API 壞掉才顯示這個
       setData({
         mode: "guide",
-        message: "系統目前無法連接 AI 預測服務。",
+        message: t("prediction.apiError"),
       });
     }
 
@@ -343,7 +343,7 @@ export default function Prediction() {
           }}
         >
           <i className="fi fi-rr-arrow-left"></i>
-          返回智慧查詢
+          {t("prediction.backToSearch")}
         </div>
       )}
       {/* 🔹 Header */}
@@ -487,8 +487,8 @@ export default function Prediction() {
             />
 
             {data.mode === "history"
-              ? "此年份已有真實能源資料，以下為實際能源結構結果。"
-              : "此結果為 AI 未來能源預測，僅供趨勢分析與研究參考。"}
+              ? t("prediction.historyMode")
+              : t("prediction.forecastMode")}
           </div>
 
           {/* 🔥 多年份切換 */}
@@ -522,7 +522,7 @@ export default function Prediction() {
                     color: "#60a5fa",
                   }}
                 ></i>
-                AI 多年能源趨勢分析
+                {t("prediction.multiYearTrend")}
               </h3>
 
               <div style={{ height: "420px" }}>
@@ -597,7 +597,7 @@ export default function Prediction() {
                         title: {
                           display: true,
 
-                          text: "占比 (%)",
+                          text: t("prediction.ratio"),
 
                           color: "#94a3b8",
 
@@ -634,7 +634,7 @@ export default function Prediction() {
                     color: "#60a5fa",
                   }}
                 ></i>
-                選擇年份
+                {t("prediction.selectYear")}
               </span>
 
               <select
@@ -653,7 +653,7 @@ export default function Prediction() {
                       color: "#111827",
                     }}
                   >
-                    {y} 年
+                    {y} {t("prediction.year")}
                   </option>
                 ))}
               </select>
@@ -843,7 +843,7 @@ export default function Prediction() {
                                 value,
                               ) || 0,
                             ).toLocaleString()}{" "}
-                            toe
+                            {t("prediction.toe")}
                           </div>
                         </div>
                       </div>

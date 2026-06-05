@@ -59,6 +59,10 @@ function DailyReport() {
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [taipower, setTaipower] = useState(null);
+  const trendKeys =
+    trendData.length > 0
+      ? Object.keys(trendData[0]).filter((k) => k !== "time")
+      : [];
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDark(document.body.classList.contains("dark"));
@@ -117,7 +121,7 @@ function DailyReport() {
       t("daily.date"),
       t("daily.type"),
       t("daily.avg") + "(MW)",
-      t("daily.ratio") + "(%)"
+      t("daily.ratio") + "(%)",
     ];
 
     const rows = exportData.map((item) => [
@@ -473,8 +477,7 @@ function DailyReport() {
                     fontWeight: "bold",
                   }}
                 >
-                  {t("daily.utilRate")}：
-                  {taipower.curr_util_rate}%
+                  {t("daily.utilRate")}：{taipower.curr_util_rate}%
                 </p>
               </div>
 
@@ -514,8 +517,7 @@ function DailyReport() {
                   %
                 </p>
                 <p>
-                  {t("daily.peakTime")}：
-                  {taipower.fore_peak_hour_range}
+                  {t("daily.peakTime")}：{taipower.fore_peak_hour_range}
                 </p>
               </div>
 
@@ -620,8 +622,7 @@ function DailyReport() {
                     fontWeight: "bold",
                   }}
                 >
-                  {t("daily.reserveRate")}：
-                  {taipower.fore_peak_resv_rate}%
+                  {t("daily.reserveRate")}：{taipower.fore_peak_resv_rate}%
                 </p>
 
                 <p
@@ -630,8 +631,7 @@ function DailyReport() {
                     marginTop: 10,
                   }}
                 >
-                  {t("daily.updateTime")}：
-                  {taipower.publish_time}
+                  {t("daily.updateTime")}：{taipower.publish_time}
                 </p>
               </div>
             </div>
@@ -761,8 +761,8 @@ function DailyReport() {
 
                 <Tooltip
                   formatter={(value, name) => [
-                    value + "%",
-                    energyMap[name] || name
+                    `${Number(value).toFixed(2)} MW`,
+                    name,
                   ]}
                 />
               </PieChart>
@@ -986,72 +986,21 @@ function DailyReport() {
             <Tooltip
               formatter={(value, name) => [
                 `${value} MW`,
-                energyMap[name] || name
+                energyMap[name] || name,
               ]}
             />
 
-            <Line
-              type="linear"
-              dataKey="燃氣"
-              name={energyMap["燃氣"]}
-              stroke="#22c55e"
-              strokeWidth={3}
-              dot={false}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="燃煤"
-              name={energyMap["燃煤"]}
-              stroke="#f97316"
-              strokeWidth={3}
-              dot={false}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="太陽能"
-              name={energyMap["太陽能"]}
-              stroke="#eab308"
-              strokeWidth={3}
-              dot={false}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="風力"
-              name={energyMap["風力"]}
-              stroke="#60a5fa"
-              strokeWidth={3}
-              dot={false}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="水力"
-              name={energyMap["水力"]}
-              stroke="#8b5cf6"
-              strokeWidth={3}
-              dot={false}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="核能"
-              name={energyMap["核能"]}
-              stroke="#ef4444"
-              strokeWidth={3}
-              dot={false}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="儲能"
-              name={energyMap["儲能"]}
-              stroke="#14b8a6"
-              strokeWidth={3}
-              dot={false}
-            />
+            {trendKeys.map((key, index) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                name={key}
+                stroke={COLORS[index % COLORS.length]}
+                strokeWidth={3}
+                dot={false}
+              />
+            ))}
           </LineChart>
         </ResponsiveContainer>
       </div>

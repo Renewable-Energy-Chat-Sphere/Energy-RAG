@@ -60,6 +60,7 @@ app.config.update(
 app.register_blueprint(chat_bp)
 app.register_blueprint(tables_bp)
 
+
 # =========================
 # 🌍 更新能源球體
 # =========================
@@ -73,31 +74,21 @@ def generate_layout():
 
         script_path = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "tools",
-                "generate_114_layout.py"
+                os.path.dirname(__file__), "..", "tools", "generate_114_layout.py"
             )
         )
 
         result = subprocess.run(
-            ["python", script_path],
-            capture_output=True,
-            text=True,
-            check=True
+            ["python", script_path], capture_output=True, text=True, check=True
         )
 
-        return jsonify({
-            "success": True,
-            "output": result.stdout
-        })
+        return jsonify({"success": True, "output": result.stdout})
 
     except Exception as e:
 
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # =========================
 # 🔐 Register
 # =========================
@@ -235,10 +226,7 @@ from prophet import Prophet
 # =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "../src/data")
-CONSUMPTION_PATH = os.path.join(
-    DATA_DIR,
-    "consumption.json"
-)
+CONSUMPTION_PATH = os.path.join(DATA_DIR, "consumption.json")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -322,6 +310,7 @@ def expand_depts(dept_code):
     expanded.update(get_descendants(dept_code, HIERARCHY))
     return expanded
 
+
 # =========================
 # 🧠 Query Intent
 # =========================
@@ -359,6 +348,8 @@ def detect_query_type(question):
     # 🔥 預設
     # =========================
     return "department"
+
+
 # =========================
 # 🧠 判斷部門（Prediction 用 strict mode）
 # =========================
@@ -393,18 +384,17 @@ def detect_depts(question, strict=True):
 
     return None
 
+
 # =========================
 # 📥 讀資料
 # =========================
 def load_consumption():
 
-    with open(
-        CONSUMPTION_PATH,
-        "r",
-        encoding="utf-8"
-    ) as f:
+    with open(CONSUMPTION_PATH, "r", encoding="utf-8") as f:
 
         return json.load(f)
+
+
 def load_all_years():
     data = {}
 
@@ -469,12 +459,12 @@ def init_data(force_retrain=False):
 
                 values.append(item["value"])
 
-            df_total = pd.DataFrame({
-                "ds": pd.to_datetime(
-                    [str(y) for y in years]
-                ),
-                "y": values,
-            })
+            df_total = pd.DataFrame(
+                {
+                    "ds": pd.to_datetime([str(y) for y in years]),
+                    "y": values,
+                }
+            )
 
             TOTAL_CONSUMPTION_MODEL = Prophet()
 
@@ -550,11 +540,9 @@ def init_data(force_retrain=False):
     pickle.dump(SERIES_CACHE, open(series_path, "wb"))
     pickle.dump(ACCURACY_CACHE, open(acc_path, "wb"))
     pickle.dump(EVALUATION_CACHE, open(eval_path, "wb"))
-        # =========================
+    # =========================
     # 🔥 Total Consumption Prophet
     # =========================
-
-
 
     consumption = load_consumption()
 
@@ -571,12 +559,12 @@ def init_data(force_retrain=False):
 
         values.append(item["value"])
 
-    df_total = pd.DataFrame({
-        "ds": pd.to_datetime(
-            [str(y) for y in years]
-        ),
-        "y": values,
-    })
+    df_total = pd.DataFrame(
+        {
+            "ds": pd.to_datetime([str(y) for y in years]),
+            "y": values,
+        }
+    )
 
     TOTAL_CONSUMPTION_MODEL = Prophet()
 
@@ -760,6 +748,7 @@ def run_prediction(target_year, dept_filters=None, mode="full"):
 
     return result
 
+
 # =========================
 # 🔥 Total Consumption Forecast
 # =========================
@@ -771,11 +760,7 @@ def predict_total_consumption(target_year):
         return None
 
     # 🔥 Prophet 使用西元
-    target_ad = (
-        target_year
-        if target_year > 1911
-        else target_year + 1911
-    )
+    target_ad = target_year if target_year > 1911 else target_year + 1911
 
     # 🔥 找最後年份
     latest = 2024
@@ -785,18 +770,15 @@ def predict_total_consumption(target_year):
     # 🔥 避免負值
     periods = max(periods, 1)
 
-    future = TOTAL_CONSUMPTION_MODEL.make_future_dataframe(
-        periods=periods,
-        freq="YE"
-    )
+    future = TOTAL_CONSUMPTION_MODEL.make_future_dataframe(periods=periods, freq="YE")
 
     forecast = TOTAL_CONSUMPTION_MODEL.predict(future)
 
-    pred = float(
-        forecast.iloc[-1]["yhat"]
-    )
+    pred = float(forecast.iloc[-1]["yhat"])
 
     return max(pred, 0)
+
+
 # =========================
 # 📊 evaluation
 # =========================
@@ -1037,8 +1019,7 @@ def predict_department_energy():
             forecast_range[forecast_year] = {
                 "prediction": pred,
                 "summary": summary,
-                "total_consumption":
-                predict_total_consumption(forecast_year),
+                "total_consumption": predict_total_consumption(forecast_year),
             }
 
         return jsonify(
@@ -1093,11 +1074,10 @@ def predict_department_energy():
             return jsonify(
                 {
                     "mode": "guide",
-                    "message":
-                        "⚠️ 多年總能源預測功能開發中。\n\n"
-                        "目前請改用單一年份查詢，例如：\n"
-                        "• 2026能源總量\n"
-                        "• 明年能源總量"
+                    "message": "⚠️ 多年總能源預測功能開發中。\n\n"
+                    "目前請改用單一年份查詢，例如：\n"
+                    "• 2026能源總量\n"
+                    "• 明年能源總量",
                 }
             )
         # 🔥 超過10年
@@ -1137,29 +1117,16 @@ def predict_department_energy():
                 # 🔥 normalize %
                 total_sum = sum(total_energy.values())
 
-                result = {
-                    k: (v / total_sum * 100)
-                    for k, v in total_energy.items()
-                }
+                result = {k: (v / total_sum * 100) for k, v in total_energy.items()}
 
-                top = sorted(
-                    result.items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )[:10]
+                top = sorted(result.items(), key=lambda x: x[1], reverse=True)[:10]
 
-                summary.append({
-                    "dept": "TOTAL",
-                    "top": top
-                })
+                summary.append({"dept": "TOTAL", "top": top})
 
                 forecast_range[forecast_year] = {
-                    "prediction": {
-                        "TOTAL": result
-                    },
+                    "prediction": {"TOTAL": result},
                     "summary": summary,
-                    "total_consumption":
-                    predict_total_consumption(forecast_year),
+                    "total_consumption": predict_total_consumption(forecast_year),
                 }
 
             # =========================
@@ -1169,22 +1136,14 @@ def predict_department_energy():
 
                 for dept, energies in pred.items():
 
-                    top = sorted(
-                        energies.items(),
-                        key=lambda x: x[1],
-                        reverse=True
-                    )[:3]
+                    top = sorted(energies.items(), key=lambda x: x[1], reverse=True)[:3]
 
-                    summary.append({
-                        "dept": dept,
-                        "top": top
-                    })
+                    summary.append({"dept": dept, "top": top})
 
                 forecast_range[forecast_year] = {
                     "prediction": pred,
                     "summary": summary,
-                    "total_consumption":
-                    predict_total_consumption(forecast_year),
+                    "total_consumption": predict_total_consumption(forecast_year),
                 }
 
         return jsonify(
@@ -1228,36 +1187,21 @@ def predict_department_energy():
             # 🔥 normalize %
             total_sum = sum(total_energy.values())
 
-            result = {
-                k: (v / total_sum * 100)
-                for k, v in total_energy.items()
-            }
+            result = {k: (v / total_sum * 100) for k, v in total_energy.items()}
 
             # 🔥 Top energies
-            top = sorted(
-                result.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )[:10]
+            top = sorted(result.items(), key=lambda x: x[1], reverse=True)[:10]
 
-            return jsonify({
-                "mode": "history",
-                "query_type": "total",
-                "year": roc_year,
-
-                "message": f"📘 {roc_year} 年全國能源總量結構。",
-
-                "prediction": {
-                    "TOTAL": result
-                },
-
-                "summary": [
-                    {
-                        "dept": "TOTAL",
-                        "top": top
-                    }
-                ]
-            })
+            return jsonify(
+                {
+                    "mode": "history",
+                    "query_type": "total",
+                    "year": roc_year,
+                    "message": f"📘 {roc_year} 年全國能源總量結構。",
+                    "prediction": {"TOTAL": result},
+                    "summary": [{"dept": "TOTAL", "top": top}],
+                }
+            )
         result = {}
 
         for dept, energies in normalized.items():
@@ -1310,43 +1254,23 @@ def predict_department_energy():
         # 🔥 normalize %
         total_sum = sum(total_energy.values())
 
-        result = {
-            k: (v / total_sum * 100)
-            for k, v in total_energy.items()
-        }
+        result = {k: (v / total_sum * 100) for k, v in total_energy.items()}
 
         # 🔥 Top energies
-        top = sorted(
-            result.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:10]
+        top = sorted(result.items(), key=lambda x: x[1], reverse=True)[:10]
 
-        return jsonify({
-            "mode": "forecast",
-
-            "query_type": "total",
-
-            "year": roc_year,
-
-            "message":
-                f"🔮 {roc_year} 年全國能源總量 AI 預測。",
-
-            "prediction": {
-                "TOTAL": result
-            },
-
-            "summary": [
-                {
-                    "dept": "TOTAL",
-                    "top": top
-                }
-            ],
-
-            # 🔥 新增這個
-            "total_consumption":
-                predict_total_consumption(target_year),
-        })
+        return jsonify(
+            {
+                "mode": "forecast",
+                "query_type": "total",
+                "year": roc_year,
+                "message": f"🔮 {roc_year} 年全國能源總量 AI 預測。",
+                "prediction": {"TOTAL": result},
+                "summary": [{"dept": "TOTAL", "top": top}],
+                # 🔥 新增這個
+                "total_consumption": predict_total_consumption(target_year),
+            }
+        )
     if not prediction:
 
         return jsonify(
@@ -1374,8 +1298,7 @@ def predict_department_energy():
             # 🔥 AI 回驗資料（新增）
             "evaluation": get_evaluation_data(dept_filters),
             "summary": summary,
-            "total_consumption":
-            predict_total_consumption(target_year),
+            "total_consumption": predict_total_consumption(target_year),
         }
     )
 
@@ -2601,28 +2524,6 @@ def daily_trend():
         category = row["category"]
 
         power = row["power"]
-
-        # 🔥 分類簡化
-        if "燃氣" in category:
-            category = "燃氣"
-
-        elif "燃煤" in category:
-            category = "燃煤"
-
-        elif "太陽能" in category:
-            category = "太陽能"
-
-        elif "風力" in category:
-            category = "風力"
-
-        elif "水力" in category:
-            category = "水力"
-
-        elif "核能" in category:
-            category = "核能"
-
-        elif "儲能" in category:
-            category = "儲能"
 
         if time not in result:
 
