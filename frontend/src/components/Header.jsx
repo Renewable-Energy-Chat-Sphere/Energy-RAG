@@ -159,23 +159,30 @@ export default function Header() {
 
                 <div className="dropdown-menu">
                   <Link to="/powerplant">{t("nav.powerplant")}</Link>
-
                   <Link to="/daily-report">{t("nav.dailyReport")}</Link>
+                  <Link to="/electricity-analysis">{t("nav.electricityAnalysis")}</Link>
                 </div>
               </div>
             )}
 
-            <Link to="/rag">{t("nav.rag")}</Link>
+            {(isManager || isAdmin) ? (
+              <div className="dropdown">
+                <span className="dropdown-title">分析工具 ▾</span>
 
-            {/* manager / admin 才顯示 */}
-            {(isManager || isAdmin) && (
-              <>
-                <Link to="/electricity-analysis">
-                  {t("nav.electricityAnalysis")}
-                </Link>
+                <div className="dropdown-menu">
+                  <Link to="/rag">
+                    {t("nav.rag")}
+                  </Link>
 
-                <Link to="/Prediction">{t("nav.prediction")}</Link>
-              </>
+                  <Link to="/Prediction">
+                    {t("nav.prediction")}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <Link to="/rag">
+                {t("nav.rag")}
+              </Link>
             )}
 
             {/* admin 專屬 */}

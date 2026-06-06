@@ -78,16 +78,16 @@ const resources = {
       nav: {
         home: "首頁",
         global: "能源視覺化",
-        powerplant: "機組資訊",
-        todayPower: "今日電力資訊",
+        powerplant: "即時電網監控",
+        todayPower: "電力資訊",
         dailyReport: "每日能源分析",
-        rag: "智慧查詢",
+        rag: "AI 問答",
 
-        electricityAnalysis: "供電成本分析中心",
+        electricityAnalysis: "供電成本分析",
         prediction: "能源預測",
 
         adminCenter: "管理中心",
-        energySphereUpdate: "能源球體更新",
+        energySphereUpdate: "能源資料中心",
 
         contact: "聯絡我們",
         feedback: "回饋分析",
@@ -176,7 +176,7 @@ const resources = {
         }
       },
       prediction: {
-        backToSearch: "返回智慧查詢",
+        backToSearch: "返回 AI 問答",
         guide: "💡 請輸入預測問題，例如：114工業部門能源結構、未來5年農業能源。",
         apiError: "系統目前無法連接 AI 預測服務。",
         historyMode: "此年份已有真實能源資料，以下為實際能源結構結果。",
@@ -186,7 +186,7 @@ const resources = {
         year: "年",
         ratio: "占比 (%)",
         title: "能源預測",
-        backToSearch: "返回智慧查詢",
+        backToSearch: "返回 AI 問答",
         inputPlaceholder: "輸入：預測2025工業能源 或 明年工業用電",
         start: "開始預測",
         loading: "預測中...",
@@ -359,7 +359,7 @@ const resources = {
         subtitle: "即時供電、能源結構、成本壓力與未來趨勢分析",
 
         updateTime: "即時資料更新時間：",
-        loading: "載入供電成本分析中心中",
+        loading: "載入供電成本分析",
         loadingSub:
           "即時抓取台電機組數據 · 計算能源結構 · 建立成本壓力模型",
 
