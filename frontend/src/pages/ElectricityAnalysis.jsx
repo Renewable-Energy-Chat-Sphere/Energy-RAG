@@ -1951,13 +1951,22 @@ ${renewablePercent}% ，
                 marginTop: "30px",
               }}
             >
+              <div
+                style={{
+                  marginTop: "10px",
+                  color: "#94a3b8",
+                  fontSize: "14px",
+                }}
+              >
+                1991–2024 歷史資料 ｜ 2026–2030 Prophet 預測
+              </div>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
 
                   <XAxis dataKey="year" />
 
-                  <YAxis />
+                  <YAxis/>
 
                   <Tooltip
                     content={<CustomTooltip />}
@@ -1979,20 +1988,25 @@ ${renewablePercent}% ，
                     type="monotone"
                     dataKey="interval"
                     stroke="transparent"
-                    fill="rgba(59,130,246,0.14)"
+                    fill="rgba(59,130,246,0.22)"
                     baseLine={(d) => d.lower}
                     activeDot={false}
                   />
                   {/* 🔥 歷史 */}
+                  <Area
+                    type="monotone"
+                    dataKey="historical"
+                    stroke="none"
+                    fill="rgba(34,197,94,0.08)"
+                  />
                   <Line
                     type="monotone"
                     dataKey="historical"
                     stroke="#22c55e"
-                    strokeWidth={3}
-                    dot={{ r: 3 }}
-                    name={
-                      i18n.language === "en" ? "Historical" : "歷史成本壓力"
-                    }
+                    strokeWidth={5}
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="歷史成本壓力"
                   />
 
                   {/* 🔥 預測 */}
@@ -2000,9 +2014,9 @@ ${renewablePercent}% ，
                     type="monotone"
                     dataKey="predicted"
                     stroke="#3b82f6"
-                    strokeWidth={3}
+                    strokeWidth={5}
                     strokeDasharray="6 6"
-                    dot={{ r: 4 }}
+                    dot={{ r: 5 }}
                     name={i18n.language === "en" ? "Prediction" : "未來預測"}
                   />
                 </LineChart>
