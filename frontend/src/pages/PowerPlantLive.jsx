@@ -527,17 +527,11 @@ export function getCategory(name, value) {
 function PlantCard({ unit, isDark }) {
   const { t } = useTranslation();
   const max = parseFloat(unit.max);
-
   const value = parseFloat(unit.value);
-
   const safeMax = isNaN(max) ? 0 : max;
-
   const safeValue = isNaN(value) ? 0 : value;
-
   const percent = safeMax <= 0 ? 0 : ((safeValue / safeMax) * 100).toFixed(1);
-
   const isOffline = safeValue === 0 && safeMax > 0;
-
   const color = isOffline ? "#ef4444" : getColor(Number(percent));
 
   return (
@@ -546,6 +540,7 @@ function PlantCard({ unit, isDark }) {
         <CircularProgressbar
           value={isNaN(Number(percent)) ? 0 : Number(percent)}
           text={`${percent}%`}
+          strokeWidth={12}
           styles={buildStyles({
             pathColor: color,
             textColor: isDark ? "#e2e8f0" : "#111",
@@ -562,7 +557,7 @@ function PlantCard({ unit, isDark }) {
         style={{
           marginTop: "10px",
           width: "100%",
-          fontSize: "13px",
+          fontSize: "14px",
           lineHeight: "1.8",
         }}
       >
@@ -603,8 +598,9 @@ function PlantCard({ unit, isDark }) {
       {unit.status && unit.status !== " " && (
         <div
           style={{
-            marginTop: "10px",
-            fontSize: "12px",
+            marginTop: "12px",
+            fontSize: "16px",
+            fontWeight: "bold",
             color: "#f59e0b",
             minHeight: "20px",
           }}
@@ -807,11 +803,8 @@ export default function PowerPlantLive() {
 
   liveUnits.forEach((u) => {
     const value = parseFloat(u.value) || 0;
-
     const category = getCategory(u.name, value);
-
     const main = categoryMap[category.main] || category.main;
-
     const sub = categoryMap[category.sub] || category.sub;
 
     if (!grouped[main]) {
@@ -828,29 +821,7 @@ export default function PowerPlantLive() {
   return (
     <>
       <div className="power-container">
-        {/* 🔥 標題 */}
-        <h1
-          style={{
-            marginBottom: "10px",
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-            fontSize: "42px",
-            fontWeight: 900,
-          }}
-        >
-          <i
-            className="fi fi-rr-bolt"
-            style={{
-              color: "#facc15",
-              fontSize: "38px",
-              display: "flex",
-              filter: "drop-shadow(0 0 10px rgba(250,204,21,0.7))",
-            }}
-          />
-          {t("power.title")}
-        </h1>
-
+        
         <p
           style={{
             opacity: 0.7,
@@ -862,16 +833,16 @@ export default function PowerPlantLive() {
         <div
           style={{
             marginBottom: "40px",
-            padding: "30px",
-            borderRadius: "28px",
+            padding: "40px 60px",
+            borderRadius: "40px",
             background: isDark
-              ? "linear-gradient(135deg, rgba(30,41,59,0.88), rgba(30,41,59,0.88))"
-              : "linear-gradient(135deg, rgba(219,234,254,0.95), rgba(219,234,254,0.95))",
+              ? "linear-gradient(135deg, rgba(30, 41, 59, 0.88), rgba(30, 41, 59, 0.88))"
+              : "linear-gradient(135deg, rgba(219, 234, 254, 0.95), rgba(219, 234, 254, 0.95))",
             backdropFilter: "blur(18px)",
             border: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid rgba(15,23,42,0.08)",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
+              ? "2px solid rgba(255, 255, 255, 0.08)"
+              : "2px solid rgba(15, 23, 42, 0.08)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
             color: isDark ? "#f8fafc" : "#0f172a",
           }}
         >
@@ -917,11 +888,11 @@ export default function PowerPlantLive() {
                 gap: "10px",
                 padding: "10px 18px",
                 borderRadius: "999px",
-                background: "rgba(34,197,94,0.15)",
-                border: "1px solid rgba(34,197,94,0.35)",
+                background: "rgba(34, 197, 94, 0.15)",
+                border: "1px solid rgba(34, 197, 94, 0.35)",
                 color: "#4ade80",
                 fontWeight: 700,
-                fontSize: "14px",
+                fontSize: "16px",
               }}
             >
               <div
@@ -948,18 +919,20 @@ export default function PowerPlantLive() {
             {/* 🔥 即時發電量 */}
             <div
               style={{
-                padding: "22px",
-                borderRadius: "22px",
+                padding: "30px 40px",
+                borderRadius: "30px",
                 background: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(255,255,255,0.72)",
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(255, 255, 255, 0.72)",
                 border: isDark
-                  ? "1px solid rgba(255,255,255,0.06)"
-                  : "1px solid rgba(15,23,42,0.08)",
+                  ? "1px solid rgba(255, 255, 255,0.06)"
+                  : "1px solid rgba(15, 23, 42, 0.08)",
               }}
             >
               <div
                 style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
@@ -975,41 +948,45 @@ export default function PowerPlantLive() {
                 {t("power.currentGeneration")}
               </div>
 
-              <div
-                style={{
-                  fontSize: "34px",
-                  fontWeight: 800,
-                  color: "#38bdf8",
-                }}
-              >
-                {totalValue.toFixed(1)}
-              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 800,
+                    color: "#38bdf8",
+                  }}
+                >
+                  {totalValue.toFixed(1)}
+                </div>
 
-              <div
-                style={{
-                  marginTop: "5px",
-                  opacity: 0.7,
-                }}
-              >
-                MW
+                <span
+                  style={{
+                    fontWeight: "bold",
+                    opacity: 0.7,
+                  }}
+                >
+                  MW
+                </span>
               </div>
             </div>
 
             {/* 🔥 裝置容量 */}
             <div
               style={{
-                padding: "22px",
-                borderRadius: "22px",
+                padding: "30px 40px",
+                borderRadius: "30px",
                 background: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(255,255,255,0.72)",
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(255, 255, 255, 0.72)",
                 border: isDark
-                  ? "1px solid rgba(255,255,255,0.06)"
-                  : "1px solid rgba(15,23,42,0.08)",
+                  ? "1px solid rgba(255, 255, 255, 0.06)"
+                  : "1px solid rgba(15, 23, 42, 0.08)",
               }}
             >
               <div
                 style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
@@ -1025,41 +1002,45 @@ export default function PowerPlantLive() {
                 {t("power.capacity")}
               </div>
 
-              <div
-                style={{
-                  fontSize: "34px",
-                  fontWeight: 800,
-                  color: "#facc15",
-                }}
-              >
-                {totalMax.toFixed(1)}
-              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 800,
+                    color: "#facc15",
+                  }}
+                >
+                  {totalMax.toFixed(1)}
+                </div>
 
-              <div
-                style={{
-                  marginTop: "5px",
-                  opacity: 0.7,
-                }}
-              >
-                MW
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    opacity: 0.7,
+                  }}
+                >
+                  MW
+                </div>
               </div>
             </div>
 
             {/* 🔥 維修 */}
             <div
               style={{
-                padding: "22px",
-                borderRadius: "22px",
+                padding: "30px 40px",
+                borderRadius: "30px",
                 background: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(255,255,255,0.72)",
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(255, 255, 255, 0.72)",
                 border: isDark
-                  ? "1px solid rgba(255,255,255,0.06)"
-                  : "1px solid rgba(15,23,42,0.08)",
+                  ? "1px solid rgba(255, 255, 255, 0.06)"
+                  : "1px solid rgba(15, 23, 42, 0.08)",
               }}
             >
               <div
                 style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
@@ -1075,41 +1056,45 @@ export default function PowerPlantLive() {
                 {t("power.maintenance")}
               </div>
 
-              <div
-                style={{
-                  fontSize: "34px",
-                  fontWeight: 800,
-                  color: "#fb7185",
-                }}
-              >
-                {offlineCount}
-              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 800,
+                    color: "#fb7185",
+                  }}
+                >
+                  {offlineCount}
+                </div>
 
-              <div
-                style={{
-                  marginTop: "5px",
-                  opacity: 0.7,
-                }}
-              >
-                {t("power.unit")}
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    opacity: 0.7,
+                  }}
+                >
+                  {t("power.unit")}
+                </div>
               </div>
             </div>
 
             {/* 🔥 更新時間 */}
             <div
               style={{
-                padding: "22px",
-                borderRadius: "22px",
+                padding: "30px 40px",
+                borderRadius: "30px",
                 background: isDark
-                  ? "rgba(255,255,255,0.05)"
-                  : "rgba(255,255,255,0.72)",
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(255, 255, 255, 0.72)",
                 border: isDark
-                  ? "1px solid rgba(255,255,255,0.06)"
-                  : "1px solid rgba(15,23,42,0.08)",
+                  ? "1px solid rgba(255, 255, 255, 0.06)"
+                  : "1px solid rgba(15, 23, 42, 0.08)",
               }}
             >
               <div
                 style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
@@ -1118,7 +1103,7 @@ export default function PowerPlantLive() {
                 <i
                   className="fi fi-rr-clock-three"
                   style={{
-                    color: "#4ade80",
+                    color: "#06b6d4",
                     display: "flex",
                   }}
                 />
@@ -1127,10 +1112,10 @@ export default function PowerPlantLive() {
 
               <div
                 style={{
-                  fontSize: "18px",
-                  fontWeight: 700,
-                  lineHeight: "1.6",
-                  color: isDark ? "#e2e8f0" : "#0f172a",
+                  marginTop: "10px",
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "#06b6d4",
                 }}
               >
                 {updateTime}
@@ -1138,8 +1123,8 @@ export default function PowerPlantLive() {
 
               <div
                 style={{
-                  marginTop: "10px",
-                  fontSize: "13px",
+                  fontSize: "14px",
+                  fontWeight: "bold",
                   opacity: 0.6,
                 }}
               >
@@ -1152,16 +1137,16 @@ export default function PowerPlantLive() {
         <div
           style={{
             marginBottom: "60px",
-            padding: "30px",
-            borderRadius: "28px",
+            padding: "30px 40px",
+            borderRadius: "40px",
             background: isDark
-              ? "rgba(30,41,59,0.88)"
-              : "rgba(255,255,255,0.88)",
+              ? "rgba(30, 41, 59, 0.88)"
+              : "rgba(255, 255, 255)",
             backdropFilter: "blur(18px)",
             border: isDark
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid rgba(15,23,42,0.08)",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
+              ? "2px solid rgba(255, 255, 255, 0.08)"
+              : "2px solid rgba(15, 23, 42, 0.08)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
           }}
         >
           <h2
@@ -1222,9 +1207,9 @@ export default function PowerPlantLive() {
                   <div
                     style={{
                       width: "100%",
-                      height: "18px",
-                      borderRadius: "999px",
-                      background: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
+                      height: "20px",
+                      borderRadius: "10px",
+                      background: isDark ? "rgba(255, 255, 255, 0.08)" : "#e5e7eb",
                       overflow: "hidden",
                       position: "relative",
                     }}
@@ -1233,7 +1218,7 @@ export default function PowerPlantLive() {
                       style={{
                         width: `${percent}%`,
                         height: "100%",
-                        borderRadius: "999px",
+                        borderRadius: "10px",
                         background:
                           percent >= 30
                             ? "#16a34a"
@@ -1348,13 +1333,9 @@ export default function PowerPlantLive() {
                     <div
                       style={{
                         marginTop: "20px",
-
                         padding: "15px 20px",
-
                         borderRadius: "15px",
-
                         fontWeight: 700,
-
                         fontSize: "18px",
                       }}
                     >
@@ -1418,15 +1399,14 @@ export default function PowerPlantLive() {
         {/* 🔥 台電官方註解 */}
         <div
           style={{
-            marginTop: "90px",
-            padding: "35px",
-            borderRadius: "30px",
+            marginTop: "40px",
+            padding: "40px 60px",
+            borderRadius: "40px",
             background: isDark
-              ? "rgba(30,41,59,0.88)"
-              : "rgba(218,234,255,0.82)",
+              ? "rgba(30, 41, 59, 0.88)"
+              : "rgba(218, 234, 255, 0.25)",
             backdropFilter: "blur(18px)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            border: "2px solid rgba(200, 200, 200, 1)",
           }}
         >
           <h2

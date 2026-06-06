@@ -205,45 +205,13 @@ function DailyReport() {
   return (
     <div
       style={{
-        padding: 30,
-
+        padding: "80px",
         minHeight: "100vh",
         color: textColor,
         background: pageBg,
         transition: "background 0.35s ease, color 0.35s ease",
       }}
     >
-      {/* ========================= */}
-      {/* 標題 */}
-      {/* ========================= */}
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 30,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: 38,
-              marginBottom: 10,
-            }}
-          >
-            {t("daily.title")}
-          </h1>
-
-          <p
-            style={{
-              opacity: 0.7,
-            }}
-          >
-            {t("daily.subtitle")}
-          </p>
-        </div>
-      </div>
 
       {/* ========================= */}
       {/* 總覽卡片 */}
@@ -260,8 +228,8 @@ function DailyReport() {
         <div
           style={{
             background: cardBg,
-            padding: 24,
-            borderRadius: 20,
+            padding: "30px 40px",
+            borderRadius: 30,
             transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
@@ -287,8 +255,8 @@ function DailyReport() {
         <div
           style={{
             background: cardBg,
-            padding: 24,
-            borderRadius: 20,
+            padding: "30px 40px",
+            borderRadius: 30,
             transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
@@ -326,8 +294,8 @@ function DailyReport() {
         <div
           style={{
             background: cardBg,
-            padding: 24,
-            borderRadius: 20,
+            padding: "30px 40px",
+            borderRadius: 30,
             transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
@@ -381,7 +349,7 @@ function DailyReport() {
             gap: 30,
           }}
         >
-          {/* 台電即時資訊 */}
+
 
           {/* 台電即時資訊 */}
 
@@ -389,7 +357,7 @@ function DailyReport() {
             <div
               style={{
                 background: cardBg,
-                borderRadius: 20,
+                borderRadius: 30,
                 padding: 40,
                 minHeight: 420,
                 display: "flex",
@@ -420,17 +388,17 @@ function DailyReport() {
             <div
               style={{
                 background: cardBg,
-                borderRadius: 20,
-                padding: 24,
+                borderRadius: 30,
+                padding: "30px 40px",
                 transition: "background 0.35s ease, color 0.35s ease",
               }}
             >
-              <h2
+              <h3
                 style={{
                   marginBottom: 20,
                 }}
               >
-                <h2
+                <h3
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -446,15 +414,15 @@ function DailyReport() {
                     }}
                   ></i>
                   {t("daily.taipower")}
-                </h2>
-              </h2>
+                </h3>
+              </h3>
 
               <div
                 style={{
                   background: innerCardBg,
                   transition: "background 0.35s ease, color 0.35s ease",
                   borderRadius: 16,
-                  padding: 20,
+                  padding: "30px 40px",
                   marginBottom: 16,
                 }}
               >
@@ -485,7 +453,7 @@ function DailyReport() {
                 style={{
                   background: innerCardBg,
                   borderRadius: 16,
-                  padding: 20,
+                  padding: "30px 40px",
                   marginBottom: 16,
                   transition: "background 0.35s ease, color 0.35s ease",
                 }}
@@ -527,7 +495,7 @@ function DailyReport() {
                 style={{
                   background: innerCardBg,
                   borderRadius: 16,
-                  padding: 20,
+                  padding: "30px 40px",
                   marginBottom: 16,
                   transition: "background 0.35s ease, color 0.35s ease",
                 }}
@@ -553,7 +521,7 @@ function DailyReport() {
                 style={{
                   background: innerCardBg,
                   borderRadius: 16,
-                  padding: 20,
+                  padding: "30px 40px",
                   transition: "background 0.35s ease, color 0.35s ease",
                 }}
               >
@@ -636,13 +604,14 @@ function DailyReport() {
               </div>
             </div>
           )}
+
           {/* 備轉容量說明 */}
 
           <div
             style={{
               background: cardBg,
-              borderRadius: 20,
-              padding: 24,
+              borderRadius: 30,
+              padding: "30px 40px",
               transition: "background 0.35s ease",
             }}
           >
@@ -709,13 +678,14 @@ function DailyReport() {
             gap: 30,
           }}
         >
+          
           {/* 圓餅圖 */}
 
           <div
             style={{
               background: cardBg,
-              borderRadius: 20,
-              padding: 20,
+              borderRadius: 30,
+              padding: "30px 40px",
               height: 560,
               marginBottom: 30,
               transition: "background 0.35s ease, color 0.35s ease",
@@ -768,14 +738,15 @@ function DailyReport() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+
           {/* ========================= */}
           {/* 右側表格 */}
           {/* ========================= */}
           <div
             style={{
               background: cardBg,
-              borderRadius: 20,
-              padding: 20,
+              borderRadius: 30,
+              padding: "30px 40px",
               minHeight: 1030,
               overflow: "auto",
               transition: "background 0.35s ease, color 0.35s ease",
@@ -946,8 +917,8 @@ function DailyReport() {
         style={{
           background: isDark ? "#1e293b" : "white",
           transition: "background 0.35s ease, color 0.35s ease",
-          borderRadius: 20,
-          padding: 24,
+          borderRadius: 30,
+          padding: "30px 40px",
           marginTop: 30,
           height: 520,
         }}

@@ -8,6 +8,7 @@ const resources = {
         title: "專為能源資訊探索與互動分析設計",
         subtitle: "結合 3D 視覺能源球與 AI 智慧代理的新一代能源決策平台"
       },
+
       energyNews: {
         title: "能源署最新公告新聞",
         subtitle: "同步能源署官方網站新聞資訊",
@@ -16,6 +17,7 @@ const resources = {
         source: "新聞資料來源：經濟部能源署",
         more: "查看全部新聞 ➡"
       },
+
       energy: {
         nuclear: "核能發電",
         coal: "燃煤發電",
@@ -24,6 +26,7 @@ const resources = {
         hydro: "水力發電",
         oil: "燃油發電"
       },
+
       dashboard: {
         status_live: "目前使用即時資料",
         status_empty: "目前台電資料為空（使用備援）",
@@ -50,9 +53,11 @@ const resources = {
         orange_desc: "備轉容量率 < 6%",
         red_desc: "限電警戒"
       },
+
       unit: {
         power: "萬瓩"
       },
+      
       features: [
         {
           title: "3D 能源視覺球",
@@ -70,11 +75,13 @@ const resources = {
           detail: "結合能源預測模型與智慧分析能力，依據歷史資料與使用者查詢，自動生成未來能源趨勢，並提供視覺化決策支援。"
         }
       ],
+
       features_more: "更多細節說明",
       section: {
         activity: "活動專區",
         external: "外網連結"
       },
+
       nav: {
         home: "首頁",
         global: "能源視覺化",
@@ -95,12 +102,14 @@ const resources = {
         login: "登入",
         logout: "登出"
       },
+
       footer: {
         desc: "多模態視覺能源球系統，提供能源資料查詢、 三維視覺化與智慧代理決策輔助。",
         links: "快速連結",
         contact: "聯絡資訊",
         address: "地址：新北市新莊區中正路 510 號 天主教輔仁大學",
       },
+
       contact: {
         title: "聯絡我們",
         subtitle:
@@ -130,6 +139,7 @@ const resources = {
 
         feelings: ["非常滿意", "滿意", "一般", "不滿意", "非常不滿意"]
       },
+
       feedback: {
         title: "回饋分析",
         empty: "目前沒有任何回饋資料",
@@ -175,6 +185,7 @@ const resources = {
           其他: "其他"
         }
       },
+      
       prediction: {
         backToSearch: "返回 AI 問答",
         guide: "💡 請輸入預測問題，例如：114工業部門能源結構、未來5年農業能源。",
@@ -205,6 +216,7 @@ const resources = {
         allEnergy: "全部能源",
         toe: "噸油當量"
       },
+
       power: {
         live: "🟢 即時模式（台電API）",
         offline: "🟡 離線模式（本地資料）",
@@ -236,7 +248,6 @@ const resources = {
         loading: "載入即時機組資料中",
         syncing: "正在同步台電即時發電資料",
 
-        title: "即時電網監控",
         subtitle: "台電 LIVE 機組資料監控系統",
 
         currentGeneration: "即時發電量",
@@ -411,6 +422,7 @@ const resources = {
         impactIndex: "成本影響指數：",
         futureChart: "未來趨勢圖"
       },
+
       login: {
         titleLogin: "登入",
         titleRegister: "註冊",
@@ -436,6 +448,7 @@ const resources = {
         error: "操作失敗",
         backendError: "無法連接後端，請確認 Flask 是否有啟動"
       },
+
       rag: {
         subtitle: "Chat / Web / PDF / Table — 多模態能源資料檢索",
 
@@ -523,10 +536,8 @@ const resources = {
         rows: "列",
         cols: "欄"
       },
-      daily: {
-        title: "每日能源分析",
-        subtitle: "Daily Energy Analytics Report",
 
+      daily: {
         total: "今日平均總發電量",
         renewable: "再生能源占比",
         thermal: "火力依賴",
@@ -565,6 +576,7 @@ const resources = {
         reserveRate: "備轉率",
         updateTime: "更新時間",
       },
+
       energy: {
         gas: "燃氣",
         coal: "燃煤",
@@ -574,6 +586,7 @@ const resources = {
         nuclear: "核能",
         storage: "儲能"
       },
+
       reserveText: {
         title: "備轉容量燈號說明",
 
@@ -590,12 +603,14 @@ const resources = {
       },
     }
   },
+
   en: {
     translation: {
       hero: {
         title: "Designed for Energy Information Exploration and Interactive Analysis",
         subtitle: "A next-generation energy decision platform combining 3D energy globe and AI agents"
       },
+
       energyNews: {
         title: "Latest News from Energy Administration",
         subtitle: "Synchronized with official Energy Administration website",
@@ -604,6 +619,7 @@ const resources = {
         source: "Source: Bureau of Energy, MOEA",
         more: "View All News ➡"
       },
+
       energy: {
         nuclear: "Nuclear",
         coal: "Coal",
@@ -612,6 +628,7 @@ const resources = {
         hydro: "Hydropower",
         oil: "Oil"
       },
+
       electricity: {
         title: "AI Electricity Cost Analysis",
         subtitle:
@@ -671,6 +688,7 @@ const resources = {
         impactIndex: "Cost Impact Index:",
         futureChart: "Future Trend Chart"
       },
+
       dashboard: {
         status_live: "Using real-time data",
         status_empty: "No data from Taipower (fallback used)",
@@ -697,9 +715,11 @@ const resources = {
         orange_desc: "Reserve < 6%",
         red_desc: "Power Alert"
       },
+
       unit: {
         power: "MW"
       },
+
       features: [
         {
           title: "3D Energy Globe",
@@ -717,11 +737,13 @@ const resources = {
           detail: "By combining energy forecasting models with intelligent analytics capabilities, and based on historical data and user queries, it automatically generates future energy trends and provides visual decision support."
         }
       ],
+
       features_more: "More Details",
       section: {
         activity: "Activities",
         external: "External Links",
       },
+
       login: {
         titleLogin: "Login",
         titleRegister: "Register",
@@ -747,12 +769,13 @@ const resources = {
         error: "Operation failed",
         backendError: "Cannot connect to backend. Please check if Flask is running."
       },
+
       nav: {
         home: "Home",
         global: "Energy Globe",
         powerplant: "Power Plant",
         todayPower: "Today's Power Info",
-        dailyReport: "Daily Energy Analysis ",
+        dailyReport: "Daily Energy Analysis",
         rag: "AI Query",
 
         electricityAnalysis: "Electricity Cost Analysis Center",
@@ -767,12 +790,14 @@ const resources = {
         login: "Login",
         logout: "Logout"
       },
+
       footer: {
         desc: "The Multi-modal energy visualization system provides energy data retrieval, 3D visualization, and intelligent agent decision support.",
         links: "Quick Links",
         contact: "Contact Info",
         address: "Address: No. 510, Zhongzheng Rd., Xinzhuang Dist., New Taipei City, Taiwan (R.O.C.)"
       },
+
       contact: {
         title: "Contact Us",
         subtitle:
@@ -802,6 +827,7 @@ const resources = {
 
         feelings: ["Very Satisfied", "Satisfied", "Neutral", "Unsatisfied", "Very Unsatisfied"]
       },
+
       feedback: {
         title: "Feedback Analysis",
         empty: "No feedback available",
@@ -848,6 +874,7 @@ const resources = {
           其他: "Other"
         }
       },
+
       prediction: {
         backToSearch: "Back to Smart Search",
         guide: "💡 Please enter a prediction query.",
@@ -878,6 +905,7 @@ const resources = {
         allEnergy: "All Energy",
         toe: "toe"
       },
+
       power: {
         live: "🟢 Real-time Mode (Taipower API)",
         offline: "🟡 Offline Mode (Local Data)",
@@ -909,7 +937,6 @@ const resources = {
         loading: "Loading live power unit data",
         syncing: "Synchronizing Taipower live generation data",
 
-        title: "Live Grid Monitoring",
         subtitle: "Taipower LIVE Unit Monitoring System",
 
         currentGeneration: "Current Generation",
@@ -1025,6 +1052,7 @@ const resources = {
         "liveGeneration": "Real-Time Power Generation",
         "totalGeneration": "Total",
       },
+
       reserveText: {
         title: "Reserve Margin Indicator",
 
@@ -1039,6 +1067,7 @@ const resources = {
         p7: "* Net peak generating capacity:",
         p8: "Excludes units under maintenance, faulty units, environmental constraints, temperature effects, and hydropower limitations.",
       },
+
       energy: {
         gas: "Gas",
         coal: "Coal",
@@ -1048,6 +1077,7 @@ const resources = {
         nuclear: "Nuclear",
         storage: "Storage"
       },
+
       rag: {
         subtitle: "Chat / Web / PDF / Table — Multimodal Energy Retrieval",
 
@@ -1135,10 +1165,8 @@ const resources = {
         rows: "rows",
         cols: "cols"
       },
-      daily: {
-        title: "Daily Energy Analysis",
-        subtitle: "Daily Energy Analytics Report",
 
+      daily: {
         total: "Total Generation",
         renewable: "Renewable Ratio",
         thermal: "Thermal Dependency",
