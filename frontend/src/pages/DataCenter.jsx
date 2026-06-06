@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 const API =
   `${window.location.protocol}//${window.location.hostname}:8000`;
 const demandLayouts = import.meta.glob(
@@ -55,6 +56,7 @@ function getLatestYear() {
     latestSupply
   );
 }
+
 export default function DataCenter() {
   const [message, setMessage] = useState("");
   const [selectedYear, setSelectedYear] = useState(null);
@@ -185,6 +187,25 @@ export default function DataCenter() {
     <>
       <style>
         {`
+          input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,.2);
+            background: rgba(255,255,255,.03);
+            color: inherit;
+            margin-top: 10px;
+          }
+
+          .spinner-icon {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+          }
+
+          button:hover:not(:disabled) {
+            transform: translateY(-2px);
+          }
+          
           .dc-spinner {
             width: 50px;
             height: 50px;
@@ -207,9 +228,6 @@ export default function DataCenter() {
       </style>
 
       <div style={container}>
-        <h1 style={titleStyle}>
-          能源資料中心
-        </h1>
 
         {/* 統計卡片 */}
         <div style={statsGrid}>
@@ -222,7 +240,21 @@ export default function DataCenter() {
 
         {/* 上傳 */}
         <div style={cardStyle}>
-          <h2 style={sectionTitle}>
+          <h2
+            style={{
+              ...sectionTitle,
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <i
+              className="fi fi-rr-upload"
+              style={{
+                color: "#f97316",
+                fontSize: "20px",
+              }}
+            ></i>
             上傳能源平衡表
           </h2>
 
@@ -238,8 +270,21 @@ export default function DataCenter() {
           />
 
           {selectedFile && (
-            <div style={fileBox}>
-              📄 {selectedFile.name}
+            <div
+              style={{
+                ...fileBox,
+                gap: "10px",
+              }}
+            >
+              <i
+                className="fi fi-rr-file-excel"
+                style={{
+                  color: "#22c55e",
+                  fontSize: "18px",
+                }}
+              ></i>
+
+              {selectedFile.name}
             </div>
           )}
 
@@ -252,33 +297,101 @@ export default function DataCenter() {
 
         {/* 系統狀態 */}
         <div style={cardStyle}>
-          <h2 style={sectionTitle}>
+          <h2
+            style={{
+              ...sectionTitle,
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <i
+              className="fi fi-rr-settings"
+              style={{
+                color: "#f97316",
+                fontSize: "20px",
+              }}
+            ></i>
             系統狀態
           </h2>
 
           <div style={statusArea}>
-            <div>
-              📅 目前系統年份：
-              {CURRENT_YEAR}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <i
+                className="fi fi-rr-calendar"
+                style={{
+                  color: "#3b82f6",
+                  fontSize: "18px",
+                  marginRight: "10px",
+                }}
+              ></i>
+              目前系統年份：
+              <strong
+                style={{
+                  marginLeft: "6px",
+                }}
+              >
+                {CURRENT_YEAR}
+              </strong>
             </div>
 
-            <div>
-              📈 可接受最新年份：
-              {MAX_ALLOWED_YEAR}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <i
+                className="fi fi-rr-chart-line-up"
+                style={{
+                  color: "#f59e0b",
+                  fontSize: "18px",
+                  marginRight: "10px",
+                }}
+              ></i>
+              可接受最新年份：
+              <strong
+                style={{
+                  marginLeft: "6px",
+                }}
+              >
+                {MAX_ALLOWED_YEAR}
+              </strong>
             </div>
 
             {selectedYear && (
               <div
                 style={{
+                  display: "flex",
+                  alignItems: "center",
                   color: "#22c55e",
                   fontWeight: 700,
                 }}
               >
-                ✅ 準備更新：
-                {selectedYear} 年
+                <i
+                  className="fi fi-rr-check"
+                  style={{
+                    fontSize: "18px",
+                    marginRight: "10px",
+                  }}
+                ></i>
+                準備更新：
+                <strong
+                  style={{
+                    marginLeft: "6px",
+                  }}
+                >
+                  {selectedYear} 年
+                </strong>
               </div>
             )}
           </div>
+        </div>
 
           {isUpdating && (
             <div
@@ -296,14 +409,36 @@ export default function DataCenter() {
                   fontWeight: 600,
                 }}
               >
-                正在更新能源球體...
+                <>
+                  <i
+                    className="fi fi-rr-spinner spinner-icon"
+                    style={{
+                      marginRight: "8px",
+                    }}
+                  ></i>
+                  正在更新能源球體...
+                </>
               </div>
             </div>
           )}
 
           {updateSuccess && (
-            <div style={successBox}>
-              ✅ 能源球體更新完成
+            <div
+              style={{
+                ...successBox,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+              }}
+            >
+              <i
+                className="fi fi-rr-check"
+                style={{
+                  marginRight: "10px",
+                }}
+              ></i>
+              能源球體更新完成
             </div>
           )}
 
@@ -324,7 +459,6 @@ export default function DataCenter() {
               ? "更新中..."
               : "更新能源球體"}
           </button>
-        </div>
       </div>
     </>
   );
@@ -333,11 +467,11 @@ export default function DataCenter() {
 function InfoCard({ title, value }) {
   return (
     <div style={infoCard}>
+
       <div
         style={{
-          fontSize: "14px",
+          fontSize: "16px",
           opacity: 0.8,
-          marginBottom: "10px",
         }}
       >
         {title}
@@ -345,8 +479,8 @@ function InfoCard({ title, value }) {
 
       <div
         style={{
-          fontSize: "32px",
-          fontWeight: 700,
+          fontSize: "40px",
+          fontWeight: 800,
           color: "#f97316",
         }}
       >
@@ -358,47 +492,55 @@ function InfoCard({ title, value }) {
 
 const container = {
   minHeight: "calc(100vh - 220px)",
-  padding: "80px 20px",
-  maxWidth: "1000px",
+  padding: "60px 30px",
+  maxWidth: "1200px",
   margin: "0 auto",
   color: "var(--text-color)",
 };
 
 const titleStyle = {
-  fontSize: "36px",
-  fontWeight: "700",
+  fontSize: "42px",
+  fontWeight: "800",
   color: "#f97316",
-  marginBottom: "30px",
+  marginBottom: "40px",
+  textAlign: "center",
 };
 
 const statsGrid = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(auto-fit,minmax(220px,1fr))",
+    "repeat(auto-fit, minmax(220px, 1fr))",
   gap: "20px",
   marginBottom: "25px",
 };
 
 const infoCard = {
   background: "var(--card-bg)",
-  borderRadius: "16px",
-  padding: "24px",
+  backdropFilter: "blur(12px)",
+  borderRadius: "40px",
+  padding: "30px",
   textAlign: "center",
-  border:
-    "1px solid rgba(148,163,184,.15)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  boxShadow:
+    "0 10px 30px rgba(0, 0, 0, 0.15)",
+  transition: "0.3s",
 };
 
 const cardStyle = {
   background: "var(--card-bg)",
-  borderRadius: "16px",
-  padding: "24px",
+  borderRadius: "40px",
+  padding: "40px 60px",
   marginBottom: "25px",
-  border:
-    "1px solid rgba(148,163,184,.15)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  boxShadow:
+    "0 10px 30px rgba(0, 0, 0, 0.12)",
 };
 
 const sectionTitle = {
-  marginBottom: "15px",
+  fontSize: "24px",
+  fontWeight: "700",
+  marginBottom: "20px",
+  color: "#f97316",
 };
 
 const description = {
@@ -408,45 +550,59 @@ const description = {
 
 const fileBox = {
   marginTop: "15px",
-  padding: "12px",
-  borderRadius: "10px",
-  background:
-    "rgba(249,115,22,.08)",
+  padding: "12px 20px",
+  borderRadius: "30px",
+  background: "rgba(249, 115, 22, 0.08)",
+  display: "flex",
+  alignItems: "center",
 };
 
 const messageBox = {
   marginTop: "15px",
-  padding: "12px",
-  borderRadius: "10px",
+  padding: "15px",
+  borderRadius: "20px",
   background:
     "rgba(249,115,22,.08)",
   border:
-    "1px solid rgba(249,115,22,.2)",
+    "1px solid rgba(249, 115, 22, 0.2)",
+  fontWeight: "600",
 };
 
 const statusArea = {
-  lineHeight: "2",
+  lineHeight: "2.2",
+  fontSize: "16px",
+  padding: "15px",
+  borderRadius: "12px",
+  background:
+    "rgba(255, 255, 255, 0.03)",
 };
 
 const successBox = {
   marginTop: "20px",
-  padding: "15px",
-  borderRadius: "12px",
+  padding: "18px",
+  borderRadius: "20px",
   background:
-    "rgba(34,197,94,.15)",
+    "rgba(34, 197, 94, 0.15)",
+  border:
+    "1px solid rgba(34, 197, 94, 0.3)",
   color: "#22c55e",
-  fontWeight: 700,
+  fontWeight: "700",
+  textAlign: "center",
 };
 
 const buttonStyle = {
   width: "100%",
   marginTop: "25px",
-  background: "#f97316",
+  background:
+    "linear-gradient(135deg, #f97316, #fb923c)",
   color: "#fff",
   border: "none",
-  borderRadius: "12px",
-  padding: "14px",
+  borderRadius: "30px",
+  padding: "16px",
   cursor: "pointer",
-  fontWeight: "600",
-  fontSize: "15px",
+  fontWeight: "700",
+  fontSize: "16px",
+  transition: "0.3s",
+  boxShadow:
+    "0 8px 20px rgba(249, 115, 22, 0.35)",
 };
