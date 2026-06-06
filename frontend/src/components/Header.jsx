@@ -182,12 +182,12 @@ export default function Header() {
             {isAdmin && (
               <div className="dropdown">
                 <span className="dropdown-title">
-                  管理中心 ▾
+                  {t("nav.adminCenter")} ▾
                 </span>
 
                 <div className="dropdown-menu">
                   <Link to="/data-center">
-                    能源球體更新
+                    {t("nav.energySphereUpdate")}
                   </Link>
 
                   <Link to="/Feedback">

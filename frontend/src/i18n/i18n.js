@@ -85,8 +85,13 @@ const resources = {
 
         electricityAnalysis: "供電成本分析中心",
         prediction: "能源預測",
+
+        adminCenter: "管理中心",
+        energySphereUpdate: "能源球體更新",
+
         contact: "聯絡我們",
         feedback: "回饋分析",
+
         login: "登入",
         logout: "登出"
       },
@@ -749,10 +754,16 @@ const resources = {
         todayPower: "Today's Power Info",
         dailyReport: "Daily Energy Analysis ",
         rag: "AI Query",
+
         electricityAnalysis: "Electricity Cost Analysis Center",
         prediction: "Prediction",
+
+        adminCenter: "Admin Center",
+        energySphereUpdate: "Energy Sphere Update",
+
         contact: "Contact",
         feedback: "Feedback",
+
         login: "Login",
         logout: "Logout"
       },
