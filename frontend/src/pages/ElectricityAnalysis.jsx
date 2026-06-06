@@ -41,6 +41,7 @@ export default function ElectricityAnalysis() {
   const [forecastMAPE, setForecastMAPE] = useState(0);
   const [aiSwitching, setAiSwitching] = useState(false);
   const [updateTime, setUpdateTime] = useState("");
+  const [currentYearIndex, setCurrentYearIndex] = useState(0);
   // =========================
   // ⚡ 電費試算
   // =========================
@@ -87,6 +88,15 @@ export default function ElectricityAnalysis() {
     }
   }
   useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentYearIndex((prev) =>
+        (prev + 1) % yearlyData.length
+      );
+    }, 1500); // 1.5秒換一次
+
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
     fetchPowerData();
 
     const interval = setInterval(
@@ -122,7 +132,6 @@ export default function ElectricityAnalysis() {
   // =========================
   // 🔥 長期能源結構資料
   // =========================
-
   const supplyTotals = {};
 
   yearlyData.forEach((yearData) => {
@@ -138,19 +147,35 @@ export default function ElectricityAnalysis() {
       });
     });
   });
+  const currentYearData =
+    yearlyData[currentYearIndex];
 
-  const historyPieData = Object.entries(supplyTotals)
+  const yearSupplyTotals = {};
 
+  Object.values(currentYearData).forEach((demand) => {
+    Object.entries(demand).forEach(
+      ([supplyCode, value]) => {
+        if (!supplyCode.startsWith("S")) return;
+
+        if (!yearSupplyTotals[supplyCode]) {
+          yearSupplyTotals[supplyCode] = 0;
+        }
+
+        yearSupplyTotals[supplyCode] += Number(value);
+      }
+    );
+  });
+
+  const historyPieData = Object.entries(
+    yearSupplyTotals
+  )
     .sort((a, b) => b[1] - a[1])
-
     .slice(0, 7)
-
     .map(([code, value]) => ({
       name:
         i18n.language === "en"
           ? supplyCatalog?.[code]?.name_en || code
           : supplyCatalog?.[code]?.name_zh || code,
-
       value,
     }));
   // 🔥 成本影響分析
@@ -1540,6 +1565,16 @@ ${renewablePercent}% ，
                   </div>
                 </div>
               </h2>
+              <div
+                style={{
+                  marginTop: "10px",
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: "#60a5fa",
+                }}
+              >
+                {104 + currentYearIndex} 年
+              </div>
 
               <p
                 style={{
@@ -1559,6 +1594,9 @@ ${renewablePercent}% ，
                   <PieChart>
                     <Pie
                       data={historyPieData}
+                      isAnimationActive={true}
+                      animationDuration={1200}
+                      animationEasing="ease-out"
                       dataKey="value"
                       nameKey="name"
                       cx="36%"
