@@ -17,46 +17,6 @@ const resources = {
         source: "新聞資料來源：經濟部能源署",
         more: "查看全部新聞 ➡"
       },
-
-      energy: {
-        nuclear: "核能發電",
-        coal: "燃煤發電",
-        gas: "燃氣發電",
-        renewable: "再生能源",
-        hydro: "水力發電",
-        oil: "燃油發電"
-      },
-
-      dashboard: {
-        status_live: "目前使用即時資料",
-        status_empty: "目前台電資料為空（使用備援）",
-        status_timeout: "無法連線台電（使用備援）",
-        status_backup: "目前使用備援資料",
-
-        peak: "尖峰負載",
-        reserve: "備轉容量率",
-        power: "目前用電量",
-        update: "更新時間",
-
-        energy_title: "發電來源分布",
-        trend_title: "即時用電趨勢圖",
-
-        reserve_label: "備轉容量率",
-
-        green: "綠燈",
-        yellow: "黃燈",
-        orange: "橘燈",
-        red: "紅燈",
-
-        green_desc: "備轉容量率 ≥ 10%",
-        yellow_desc: "6% ≤ 備轉容量率 < 10%",
-        orange_desc: "備轉容量率 < 6%",
-        red_desc: "限電警戒"
-      },
-
-      unit: {
-        power: "萬瓩"
-      },
       
       features: [
         {
@@ -195,7 +155,7 @@ const resources = {
         multiYearTrend: "AI 多年能源趨勢分析",
         selectYear: "選擇年份",
         year: "年",
-        ratio: "占比 (%)",
+        ratio: "佔比 (%)",
         title: "能源預測",
         backToSearch: "返回 AI 問答",
         inputPlaceholder: "輸入：預測2025工業能源 或 明年工業用電",
@@ -403,7 +363,7 @@ const resources = {
           "本指數根據即時發電結構、不同能源平均發電成本、燃料價格敏感度、碳排特性進行估算。",
 
         highCost:
-          "目前火力發電占比偏高，供電成本壓力較大。",
+          "目前火力發電佔比偏高，供電成本壓力較大。",
 
         mediumCost:
           "目前供電成本壓力中等，需持續觀察能源結構變化。",
@@ -539,7 +499,7 @@ const resources = {
 
       daily: {
         total: "今日平均總發電量",
-        renewable: "再生能源占比",
+        renewable: "再生能源佔比",
         thermal: "火力依賴",
 
         taipower: "台電即時資訊",
@@ -553,7 +513,7 @@ const resources = {
 
         reserveDesc: "備轉容量燈號說明",
 
-        pie: "今日能源結構占比",
+        energyRanking: "發電佔比排名",
         table: "能源報表",
         trend: "今日電力走勢",
 
@@ -564,7 +524,7 @@ const resources = {
 
         type: "類型",
         avg: "平均發電量",
-        ratio: "占比",
+        ratio: "佔比",
         date: "日期",
 
         loading: "載入每日能源分析",
@@ -590,11 +550,11 @@ const resources = {
       reserveText: {
         title: "備轉容量燈號說明",
 
-        p1: "• 備轉容量(Operating Reserve)：",
+        p1: "• 備轉容量 (Operating Reserve)：",
         p2: "指當天實際可調度之發電容量裕度，亦即系統每天的供電餘裕。",
-        p3: "＝系統運轉淨尖峰能力－系統瞬時尖峰負載(瞬間值)。",
+        p3: "＝系統運轉淨尖峰能力－系統瞬時尖峰負載 (瞬間值)。",
 
-        p4: "• 備轉容量率(Percent Operating Reserve)：",
+        p4: "• 備轉容量率 (Percent Operating Reserve)：",
         p5: "係用來衡量每日供電可靠度之指標。",
         p6: "＝（系統運轉淨尖峰供電能力－系統瞬時尖峰負載）÷系統瞬時尖峰負載×100%。",
 
@@ -1175,14 +1135,13 @@ const resources = {
         load: "Current Load",
         forecast: "Forecast Peak Load",
         capacity: "Max Supply Capacity",
-        status: "Power Status",
 
         sufficient: "Sufficient Supply",
         tight: "Tight Supply",
 
         reserveDesc: "Reserve Margin Description",
 
-        pie: "Energy Distribution",
+        energyRanking: "Energy Ranking",
         table: "Energy Report",
         trend: "Power Trend",
 

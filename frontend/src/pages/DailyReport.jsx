@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./power.css";
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   ResponsiveContainer,
   LineChart,
@@ -38,31 +35,31 @@ function DailyReport() {
     核能: t("energy.nuclear"),
     儲能: t("energy.storage"),
   };
+
   const [isDark, setIsDark] = useState(
     document.body.classList.contains("dark"),
   );
+
   const pageBg = isDark ? "#0f172a" : "#f1f5f9";
-
   const cardBg = isDark ? "#1e293b" : "white";
-
   const innerCardBg = isDark ? "#0f172a" : "#f8fafc";
-
   const textColor = isDark ? "white" : "#0f172a";
-
   const borderColor = isDark ? "#334155" : "#e2e8f0";
+
   const [data, setData] = useState([]);
   const [allData, setAllData] = useState([]);
-
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [downloadMode, setDownloadMode] = useState("month");
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [taipower, setTaipower] = useState(null);
+
   const trendKeys =
     trendData.length > 0
       ? Object.keys(trendData[0]).filter((k) => k !== "time")
       : [];
+
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDark(document.body.classList.contains("dark"));
@@ -75,6 +72,7 @@ function DailyReport() {
 
     return () => observer.disconnect();
   }, []);
+
   useEffect(() => {
     fetch("http://127.0.0.1:8000/daily-report")
       .then((res) => res.json())
@@ -91,11 +89,32 @@ function DailyReport() {
         setData(filtered);
         setLoading(false);
       });
+      
     fetch("http://127.0.0.1:8000/daily-trend")
       .then((res) => res.json())
       .then((res) => {
-        setTrendData(res);
+
+        const cleaned = res.map((row) => {
+          const newRow = { ...row };
+
+          Object.keys(newRow).forEach((key) => {
+
+            if (
+              key !== "time" &&
+              typeof newRow[key] === "number" &&
+              newRow[key] < 0
+            ) {
+              newRow[key] = 0;
+            }
+
+          });
+
+          return newRow;
+        });
+
+        setTrendData(cleaned);
       });
+
     fetch("http://127.0.0.1:8000/taipower-status")
       .then((res) => res.json())
       .then((res) => {
@@ -141,7 +160,6 @@ function DailyReport() {
     });
 
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
 
     a.href = url;
@@ -162,6 +180,7 @@ function DailyReport() {
 
     setData(filtered);
   };
+  
   // =========================
   // 🔥 總發電量
   // =========================
@@ -191,7 +210,7 @@ function DailyReport() {
 
         <div
           style={{
-            opacity: 0.65,
+            opacity: 0.7,
             fontSize: "14px",
             color: isDark ? "#cbd5e1" : "#334155",
           }}
@@ -213,10 +232,6 @@ function DailyReport() {
       }}
     >
 
-      {/* ========================= */}
-      {/* 總覽卡片 */}
-      {/* ========================= */}
-
       <div
         style={{
           display: "grid",
@@ -227,57 +242,46 @@ function DailyReport() {
       >
         <div
           style={{
-            background: cardBg,
+            ...cardStyle(cardBg),
             padding: "30px 40px",
-            borderRadius: 30,
-            transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
-          <h3
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
+          <div style={sectionTitleStyle}>
             <i
-              className="fi fi-rr-bolt"
+              className="fi fi-rr-battery-bolt"
               style={{
+                ...iconStyle,
                 color: "#facc15",
                 filter: "drop-shadow(0 0 6px #facc15)",
               }}
             ></i>
             {t("daily.total")}
-          </h3>
-          <h1>{totalPower.toFixed(0)} MW</h1>
+          </div>
+
+          <div style={statValueStyle}>
+            {totalPower.toFixed(0)} MW
+          </div>
         </div>
 
         <div
           style={{
-            background: cardBg,
+            ...cardStyle(cardBg),
             padding: "30px 40px",
-            borderRadius: 30,
-            transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
-          <h3
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
+          <div style={sectionTitleStyle}>
             <i
-              className="fi fi-rr-sun"
+              className="fi fi-rr-solar-panel"
               style={{
+                ...iconStyle,
                 color: "#facc15",
                 filter: "drop-shadow(0 0 6px #facc15)",
               }}
             ></i>
             {t("daily.renewable")}
-          </h3>
+          </div>
 
-          <h1>
+          <div style={statValueStyle}>
             {data
               .filter(
                 (d) =>
@@ -288,47 +292,36 @@ function DailyReport() {
               .reduce((sum, d) => sum + d.ratio, 0)
               .toFixed(2)}
             %
-          </h1>
+          </div>
         </div>
 
         <div
           style={{
-            background: cardBg,
+            ...cardStyle(cardBg),
             padding: "30px 40px",
-            borderRadius: 30,
-            transition: "background 0.35s ease, color 0.35s ease",
           }}
         >
-          <h3
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
+          <div style={sectionTitleStyle}>
             <i
               className="fi fi-rr-fire-flame-curved"
               style={{
+                ...iconStyle,
                 color: "#ef4444",
                 filter: "drop-shadow(0 0 6px #ef4444)",
               }}
             ></i>
             {t("daily.thermal")}
-          </h3>
+          </div>
 
-          <h1>
+          <div style={statValueStyle}>
             {data
               .filter((d) => d.category.includes("燃"))
               .reduce((sum, d) => sum + d.ratio, 0)
               .toFixed(2)}
             %
-          </h1>
+          </div>
         </div>
       </div>
-
-      {/* ========================= */}
-      {/* 圖表 */}
-      {/* ========================= */}
 
       <div
         style={{
@@ -339,7 +332,7 @@ function DailyReport() {
         }}
       >
         {/* ========================= */}
-        {/* 左側 */}
+        {/* 左側資訊卡片 */}
         {/* ========================= */}
 
         <div
@@ -350,9 +343,7 @@ function DailyReport() {
           }}
         >
 
-
           {/* 台電即時資訊 */}
-
           {!taipower ? (
             <div
               style={{
@@ -376,7 +367,7 @@ function DailyReport() {
 
               <div
                 style={{
-                  opacity: 0.65,
+                  opacity: 0.7,
                   fontSize: "14px",
                   color: isDark ? "#cbd5e1" : "#334155",
                 }}
@@ -387,93 +378,79 @@ function DailyReport() {
           ) : (
             <div
               style={{
-                background: cardBg,
-                borderRadius: 30,
-                padding: "30px 40px",
-                transition: "background 0.35s ease, color 0.35s ease",
+                ...cardStyle(cardBg),
+                padding: "40px 50px",
               }}
             >
-              <h3
+              
+              {/* 目前用電量 */}
+              <div
                 style={{
+                  ...sectionTitleStyle,
                   marginBottom: 20,
                 }}
               >
-                <h3
+                <i
+                  className="fi fi-rr-bolt"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginBottom: 20,
+                    ...iconStyle,
+                    color: "#facc15",
+                    filter: "drop-shadow(0 0 8px #facc15)",
                   }}
-                >
-                  <i
-                    className="fi fi-rr-bolt"
-                    style={{
-                      color: "#facc15",
-                      filter: "drop-shadow(0 0 8px #facc15)",
-                    }}
-                  ></i>
-                  {t("daily.taipower")}
-                </h3>
-              </h3>
+                ></i>
 
-              <div
-                style={{
-                  background: innerCardBg,
-                  transition: "background 0.35s ease, color 0.35s ease",
-                  borderRadius: 16,
-                  padding: "30px 40px",
-                  marginBottom: 16,
-                }}
-              >
-                <h3>{t("daily.load")}</h3>
+                {t("daily.taipower")}
+              </div>
 
-                <h1
+              <div style={innerCardStyle(innerCardBg)}>
+                
+                <div style={cardTitleStyle}>
+                  {t("daily.load")}
+                </div>
+
+                <div
                   style={{
-                    fontSize: 48,
+                    ...statValueStyle,
                     color: "#2e79d4",
                   }}
                 >
-                  {taipower.curr_load}
-                </h1>
+                  {taipower.curr_load} MW
+                </div>
 
                 <p
                   style={{
                     marginTop: 10,
                     fontSize: 18,
-                    color: "#95c5ff",
                     fontWeight: "bold",
+                    color: "#a783e7",
                   }}
                 >
                   {t("daily.utilRate")}：{taipower.curr_util_rate}%
                 </p>
               </div>
 
-              <div
-                style={{
-                  background: innerCardBg,
-                  borderRadius: 16,
-                  padding: "30px 40px",
-                  marginBottom: 16,
-                  transition: "background 0.35s ease, color 0.35s ease",
-                }}
-              >
-                <h3>{t("daily.forecast")}</h3>
+              {/* 預估最高用電 */}
+              <div style={innerCardStyle(innerCardBg)}>
 
-                <h1
+                <div style={cardTitleStyle}>
+                  {t("daily.forecast")}
+                </div>
+
+                <div
                   style={{
-                    fontSize: 42,
+                    ...statValueStyle,
                     color: "#f55d0b",
                   }}
                 >
-                  {taipower.fore_peak_dema_load}
-                </h1>
+                  {taipower.fore_peak_dema_load} MW
+                </div>
+
                 <p
                   style={{
                     marginTop: 10,
                     fontSize: 18,
-                    color: "#fa9315",
                     fontWeight: "bold",
+                    color: "#a783e7",
                   }}
                 >
                   {t("daily.peakRate")}：
@@ -481,72 +458,40 @@ function DailyReport() {
                     (Number(taipower.fore_peak_dema_load) /
                       Number(taipower.fore_maxi_sply_capacity)) *
                     100
-                  ).toFixed(0)}{" "}
-                  %
-                </p>
-                <p>
-                  {t("daily.peakTime")}：{taipower.fore_peak_hour_range}
+                  ).toFixed(0)}%
+                （{t("daily.peakTime")}：{taipower.fore_peak_hour_range}）
                 </p>
               </div>
 
               {/* 今日最大供電能力 */}
-
-              <div
-                style={{
-                  background: innerCardBg,
-                  borderRadius: 16,
-                  padding: "30px 40px",
-                  marginBottom: 16,
-                  transition: "background 0.35s ease, color 0.35s ease",
-                }}
-              >
-                <h3>{t("daily.capacity")}</h3>
-
-                <h1
-                  style={{
-                    fontSize: 42,
-                    color: "#8838f8",
-                    marginBottom: 10,
-                  }}
-                >
-                  {taipower.fore_maxi_sply_capacity}
-                </h1>
-
-                <p>{t("daily.unit")}</p>
-              </div>
-
-              {/* 供電狀態 */}
-
-              <div
-                style={{
-                  background: innerCardBg,
-                  borderRadius: 16,
-                  padding: "30px 40px",
-                  transition: "background 0.35s ease, color 0.35s ease",
-                }}
-              >
-                <h3>{t("daily.status")}</h3>
+              <div style={innerCardStyle(innerCardBg)}>
+                <div style={cardTitleStyle}>
+                  {t("daily.capacity")}
+                </div>
 
                 <div
                   style={{
-                    marginTop: "10px",
+                    ...statValueStyle,
+                    color: "#32d61f",
+                    marginBottom: 10,
+                  }}
+                >
+                  {taipower.fore_maxi_sply_capacity} MW
+                </div>
 
+                <div
+                  style={{
+                    marginBottom: 10,
                     display: "inline-flex",
-
                     alignItems: "center",
-
-                    gap: "10px",
-
-                    padding: "10px 18px",
-
+                    gap: "12px",
+                    padding: "10px 30px",
                     borderRadius: "999px",
-
                     fontWeight: 700,
-
                     background:
                       taipower.fore_peak_resv_indicator?.trim() === "G"
-                        ? "rgba(34,197,94,0.18)"
-                        : "rgba(239,68,68,0.18)",
+                        ? "rgba(34, 197, 94, 0.18)"
+                        : "rgba(239, 68, 68, 0.18)",
 
                     color:
                       taipower.fore_peak_resv_indicator?.trim() === "G"
@@ -556,17 +501,13 @@ function DailyReport() {
                 >
                   <div
                     style={{
-                      width: "10px",
-
-                      height: "10px",
-
+                      width: 16,
+                      height: 16,
                       borderRadius: "50%",
-
                       background:
                         taipower.fore_peak_resv_indicator?.trim() === "G"
                           ? "#22c55e"
                           : "#ef4444",
-
                       boxShadow:
                         taipower.fore_peak_resv_indicator?.trim() === "G"
                           ? "0 0 12px #22c55e"
@@ -579,82 +520,128 @@ function DailyReport() {
                     : t("daily.tight")}
                 </div>
 
-                <p
+                <div
                   style={{
                     marginTop: 10,
-                    fontSize: 18,
-                    color:
-                      taipower.fore_peak_resv_indicator?.trim() === "G"
-                        ? "#088132"
-                        : "#ff6666",
-                    fontWeight: "bold",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  {t("daily.reserveRate")}：{taipower.fore_peak_resv_rate}%
-                </p>
+                  <span
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      color: "#a783e7",
+                    }}
+                  >
+                    {t("daily.reserveRate")}：
+                    {taipower.fore_peak_resv_rate} %
+                  </span>
 
-                <p
-                  style={{
-                    opacity: 0.7,
-                    marginTop: 10,
-                  }}
-                >
-                  {t("daily.updateTime")}：{taipower.publish_time}
-                </p>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      opacity: 0.5,
+                    }}
+                  >
+                    {t("daily.updateTime")}： {taipower.publish_time}
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
           {/* 備轉容量說明 */}
-
           <div
             style={{
               background: cardBg,
               borderRadius: 30,
-              padding: "30px 40px",
+              padding: "40px 50px",
               transition: "background 0.35s ease",
             }}
           >
-            <h2
+            <div
               style={{
+                ...sectionTitleStyle,
                 marginBottom: 24,
               }}
             >
-              <h2
+              <i
+                className="fi fi-rr-lightbulb-on"
                 style={{
-                  marginBottom: 24,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
+                  ...iconStyle,
+                  color: "#facc15",
+                  filter: "drop-shadow(0 0 8px #facc15)",
                 }}
-              >
-                <i
-                  className="fi fi-rr-lightbulb-on"
-                  style={{
-                    color: "#facc15",
-                    filter: "drop-shadow(0 0 8px #facc15)",
-                  }}
-                ></i>
-                {t("daily.reserveDesc")}
-              </h2>
-            </h2>
+              ></i>
 
-            <img
-              src={import.meta.env.BASE_URL + "images/reserve-light.png"}
-              alt="備轉容量燈號"
+              {t("daily.reserveDesc")}
+            </div>
+
+            {/* 燈號說明 */}
+            <div
               style={{
-                width: "85%",
-                maxWidth: 420,
-                display: "block",
+                display: "grid",
+                gridTemplateColumns: "repeat(5, 1fr)",
+                gap: 12,
                 marginBottom: 24,
-                borderRadius: 18,
               }}
-            />
+            >
+              {[
+                { color: "#22c55e", title: "綠色", desc: "備轉量 > 10%" },
+                { color: "#facc15", title: "黃燈", desc: "備轉量 > 6%" },
+                { color: "#f97316", title: "橙燈", desc: "備轉量 ≤ 6%" },
+                { color: "#ef4444", title: "紅燈", desc: "備轉量 < 90MW" },
+                { color: "#374151", title: "黑燈", desc: "備轉量 < 50MW" },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  style={{
+                    background: innerCardBg,
+                    borderRadius: 20,
+                    padding: "24px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: item.color,
+                      margin: "0 auto 8px",
+                      boxShadow: `0 0 12px ${item.color}`,
+                    }}
+                  />
+
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {item.title}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      opacity: 0.7,
+                    }}
+                  >
+                    {item.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <div
               style={{
                 lineHeight: 2,
-                opacity: 0.82,
+                opacity: 0.7,
                 fontSize: 14,
               }}
             >
@@ -671,6 +658,10 @@ function DailyReport() {
             </div>
           </div>
         </div>
+
+        {/* ========================= */}
+        {/* 右側佔比列表 */}
+        {/* ========================= */}
         <div
           style={{
             display: "flex",
@@ -679,69 +670,95 @@ function DailyReport() {
           }}
         >
           
-          {/* 圓餅圖 */}
-
+          {/* 發電佔比排名 */}
           <div
             style={{
               background: cardBg,
               borderRadius: 30,
-              padding: "30px 40px",
-              height: 560,
-              marginBottom: 30,
+              padding: "40px 50px",
+              height: "100%",
               transition: "background 0.35s ease, color 0.35s ease",
             }}
           >
-            <h2
+            <div
               style={{
+                ...sectionTitleStyle,
                 marginBottom: 20,
               }}
             >
-              <h2
+              <i
+                className="fi fi-rr-ranking-star"
                 style={{
-                  marginBottom: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
+                  ...iconStyle,
+                  color: "#60a5fa",
+                  filter: "drop-shadow(0 0 8px #60a5fa)",
                 }}
-              >
-                <i
-                  className="fi fi-rr-chart-pie"
-                  style={{
-                    color: "#60a5fa",
-                    filter: "drop-shadow(0 0 8px #60a5fa)",
-                  }}
-                ></i>
-                {t("daily.pie")}
-              </h2>
-            </h2>
+              ></i>
 
-            <ResponsiveContainer width="100%" height={420}>
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="ratio"
-                  nameKey="category"
-                  outerRadius={160}
-                  label={({ name }) => energyMap[name] || name}
-                >
-                  {data.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+              {t("daily.energyRanking")}
+            </div>
 
-                <Tooltip
-                  formatter={(value, name) => [
-                    `${Number(value).toFixed(2)} MW`,
-                    name,
-                  ]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div
+              style={{
+                marginTop: 20,
+              }}
+            >
+              {[...data]
+                .sort((a, b) => b.ratio - a.ratio)
+                .slice(0, 5)
+                .map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom: 28,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                        fontSize: 18,
+                        fontWeight: 700,
+                      }}
+                    >
+                      <span>
+                        {index === 0 && "🥇 "}
+                        {index === 1 && "🥈 "}
+                        {index === 2 && "🥉 "}
+                        {energyMap[item.category] || item.category}
+                      </span>
+
+                      <span>{Number(item.ratio).toFixed(2)}%</span>
+                    </div>
+
+                    <div
+                      style={{
+                        width: "100%",
+                        height: 18,
+                        background: isDark ? "#0f172a" : "#e2e8f0",
+                        borderRadius: 999,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${item.ratio}%`,
+                          height: "100%",
+                          background:
+                            COLORS[index % COLORS.length],
+                          borderRadius: 999,
+                          transition: "width 0.4s ease",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
 
-          {/* ========================= */}
-          {/* 右側表格 */}
-          {/* ========================= */}
+         {/* 每日能源報表 */}
           <div
             style={{
               background: cardBg,
@@ -761,22 +778,23 @@ function DailyReport() {
               }}
             >
               <div>
-                <h2
+                <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
+                    ...sectionTitleStyle,
                   }}
                 >
                   <i
                     className="fi fi-rr-document"
                     style={{
+                      ...iconStyle,
                       color: "#60a5fa",
                       filter: "drop-shadow(0 0 6px #60a5fa)",
                     }}
                   ></i>
+
                   {t("daily.table")}
-                </h2>
+                </div>
+
                 <div
                   style={{
                     display: "flex",
@@ -848,8 +866,8 @@ function DailyReport() {
               <button
                 onClick={downloadReport}
                 style={{
-                  background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
-                  border: "1px solid rgba(96,165,250,0.25)",
+                  background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                  border: "1px solid rgba(96, 165, 250, 0.25)",
                   padding: "10px 18px",
                   borderRadius: 14,
                   color: "#fff",
@@ -861,12 +879,13 @@ function DailyReport() {
                   alignItems: "center",
                   gap: 10,
 
-                  boxShadow: "0 8px 24px rgba(37,99,235,0.35)",
+                  boxShadow: "0 8px 24px rgba(37, 99, 235, 0.35)",
                 }}
               >
                 <i
                   className="fi fi-rr-download"
                   style={{
+                    ...iconStyle,
                     color: "#bfdbfe",
                   }}
                 ></i>
@@ -884,9 +903,7 @@ function DailyReport() {
               <thead>
                 <tr>
                   <th style={thStyle}>{t("daily.type")}</th>
-
                   <th style={thStyle}>{t("daily.avg")}</th>
-
                   <th style={thStyle}>{t("daily.ratio")}</th>
                 </tr>
               </thead>
@@ -899,7 +916,6 @@ function DailyReport() {
                     </td>
 
                     <td style={tdStyle}>{item.avg_power.toFixed(2)} MW</td>
-
                     <td style={tdStyle}>{item.ratio}%</td>
                   </tr>
                 ))}
@@ -917,59 +933,182 @@ function DailyReport() {
         style={{
           background: isDark ? "#1e293b" : "white",
           transition: "background 0.35s ease, color 0.35s ease",
-          borderRadius: 30,
+          borderRadius: 40,
           padding: "30px 40px",
-          marginTop: 30,
-          height: 520,
+          marginTop: 40,
+          minHeight: 760,
         }}
       >
-        <h2
+        <div
           style={{
-            marginBottom: 20,
+            ...sectionTitleStyle,
+            margin: "20px 40px 40px",
           }}
         >
-          <h2
+          <i
+            className="fi fi-rr-chart-line-up"
             style={{
-              marginBottom: 20,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
+              ...iconStyle,
+              color: "#22c55e",
+              filter: "drop-shadow(0 0 6px #22c55e)",
+            }}
+          ></i>
+
+          {t("daily.trend")}
+        </div>
+
+        <ResponsiveContainer width="100%" height={600}>
+          <LineChart
+            data={trendData}
+            margin={{
+              top: 20,
+              right: 40,
+              left: 20,
+              bottom: 20,
             }}
           >
-            <i
-              className="fi fi-rr-chart-line-up"
-              style={{
-                color: "#22c55e",
-                filter: "drop-shadow(0 0 6px #22c55e)",
+            <CartesianGrid
+              strokeDasharray="4 4"
+              stroke={isDark ? "#64748b" : "#94a3b8"}
+              strokeWidth={1}
+              vertical={true}
+            />
+
+            <XAxis
+              dataKey="time"
+              minTickGap={50}
+              tickMargin={15}
+              tickFormatter={(value, index) =>
+                index === 0 ? "" : value
+              }
+              tickLine={false}
+              axisLine={{
+                stroke: isDark ? "#64748b" : "#94a3b8",
+                strokeWidth: 1.5,
               }}
-            ></i>
-            {t("daily.trend")}
-          </h2>
-        </h2>
+              tick={{
+                fontSize: 16,
+                fontWeight: 800,
+                fill: isDark ? "#cbd5e1" : "#64748b",
+              }}
+            />
 
-        <ResponsiveContainer width="100%" height={430}>
-          <LineChart data={trendData}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <YAxis
+              width={150}
+              tickMargin={15}
+              domain={[0, 'dataMax']}
+                ticks={Array.from(
+                  { length: 11 },
+                  (_, i) => i * 2000
+                )}
+              tickFormatter={(value) =>
+                `${Number(value).toLocaleString()} MW`
+              }
+              tickLine={false}
+              axisLine={{
+                stroke: isDark ? "#64748b" : "#94a3b8",
+                strokeWidth: 1.5,
+              }}
+              tick={{
+                fontSize: 18,
+                fontWeight: 800,
+                fill: isDark ? "#cbd5e1" : "#64748b",
+              }}
+            />
 
-            <XAxis dataKey="time" />
-
-            <YAxis domain={[0, 12000]} tickCount={13} />
             <Tooltip
-              formatter={(value, name) => [
-                `${value} MW`,
-                energyMap[name] || name,
-              ]}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+
+                const sortedPayload = [...payload].sort(
+                  (a, b) => b.value - a.value
+                );
+
+                return (
+                  <div
+                    style={{
+                      background: isDark ? "#1e293b" : "#ffffff",
+                      border: `2px solid ${
+                        isDark ? "#475569" : "#cbd5e1"
+                      }`,
+                      borderRadius: 30,
+                      boxShadow:
+                        "0 8px 24px rgba(0, 0, 0, 0.15)",
+                      padding: "20px 24px",
+                      minWidth: 220,
+                    }}
+                  >
+                    <div
+                      style={{
+                        marginBottom: 14,
+                        paddingBottom: 10,
+                        fontSize: 14,
+                        fontWeight: 800,
+                        color: isDark ? "#f8fafc" : "#0f172a",
+                        borderBottom: `1px solid ${
+                          isDark ? "#475569" : "#e2e8f0"
+                        }`,
+                      }}
+                    >
+                      {label}
+                    </div>
+
+                    {sortedPayload.map((item) => (
+                      <div
+                        key={item.name}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 16,
+                          marginBottom: 8,
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: "50%",
+                              background: item.color,
+                            }}
+                          />
+
+                          <span>
+                            {energyMap[item.name] || item.name}
+                          </span>
+                        </div>
+
+                        <span>
+                          {Number(item.value).toLocaleString()} MW
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }}
             />
 
             {trendKeys.map((key, index) => (
               <Line
                 key={key}
-                type="monotone"
+                type="natural"
                 dataKey={key}
-                name={key}
+                name={energyMap[key] || key}
                 stroke={COLORS[index % COLORS.length]}
                 strokeWidth={3}
                 dot={false}
+                activeDot={{
+                  r: 7,
+                }}
               />
             ))}
           </LineChart>
@@ -978,6 +1117,44 @@ function DailyReport() {
     </div>
   );
 }
+
+const statValueStyle = {
+  fontSize: 32,
+  fontWeight: 800,
+};
+
+const sectionTitleStyle = {
+  margin: "10px 0px 30px",
+  fontSize: 24,
+  fontWeight: 700,
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  lineHeight: 1,
+};
+
+const iconStyle = {
+  fontSize: 28,
+};
+
+const cardTitleStyle = {
+  fontSize: 20,
+  fontWeight: 700,
+};
+
+const cardStyle = (cardBg) => ({
+  background: cardBg,
+  borderRadius: 30,
+  transition: "background 0.35s ease, color 0.35s ease",
+});
+
+const innerCardStyle = (innerCardBg) => ({
+  background: innerCardBg,
+  borderRadius: 30,
+  padding: "30px 40px",
+  marginBottom: 20,
+  transition: "background 0.35s ease, color 0.35s ease",
+});
 
 const thStyle = {
   textAlign: "left",
