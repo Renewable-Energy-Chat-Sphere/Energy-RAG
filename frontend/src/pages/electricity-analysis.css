@@ -1,34 +1,24 @@
 :root {
   --bg-color: #f5f7fb;
-
   --text-color: #111827;
-
   --card-bg: #ffffff;
-
   --secondary-text: #6b7280;
-
   --placeholder-bg: #edf2f7;
 }
 
 .dark {
   --bg-color: #0f172a;
-
   --text-color: #f3f4f6;
-
   --card-bg: #102038;
-
   --secondary-text: #94a3b8;
-
   --placeholder-bg: #1a2b45;
 }
 
 .electricity-page {
   padding: 40px;
-
   min-height: 100vh;
   background: var(--bg-color);
   color: var(--text-color);
-
   transition: 0.3s;
 }
 
@@ -55,13 +45,10 @@
 
 .electricity-card {
   background: var(--card-bg);
-
   border-radius: 25px;
   padding: 25px;
   margin-bottom: 20px;
-
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-
   transition: 0.3s;
 }
 
@@ -83,7 +70,6 @@
 
 .cost-label {
   color: var(--secondary-text);
-
   margin-bottom: 20px;
 }
 
@@ -103,21 +89,13 @@
 
 .trend-placeholder {
   margin-top: 20px;
-
   height: 250px;
-
   border-radius: 20px;
-
   background: var(--placeholder-bg);
-
   display: flex;
-
   justify-content: center;
-
   align-items: center;
-
   color: var(--secondary-text);
-
   transition: 0.3s;
 }
 
@@ -127,57 +105,44 @@
 }
 .chart-wrapper {
   width: 100%;
-
   max-width: 700px;
-
   height: 350px;
-
   margin: 20px auto 0;
 }
+
 .impact-list {
   margin-top: 20px;
 }
 
 .impact-item {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   padding: 15px 20px;
-
   border-radius: 16px;
-
   margin-bottom: 12px;
-
   background: rgba(255, 255, 255, 0.04);
-
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
 .impact-card {
   padding: 18px;
-
   border-radius: 20px;
-
   margin-bottom: 18px;
-
   background: rgba(255, 255, 255, 0.04);
-
   border: 1px solid rgba(255, 255, 255, 0.08);
-
   transition: 0.3s;
 }
 
 .impact-card:hover {
   transform: translateY(-3px);
 }
+
 .electricity-loading {
   min-height: calc(100vh - 320px);
   display: flex;
   justify-content: center;
   align-items: center;
-
   background: var(--bg-color);
 }
 
@@ -185,11 +150,8 @@
 .loading-text {
   font-size: 24px;
   font-weight: 800;
-
   color: #ff7b00;
-
   letter-spacing: 1px;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,20 +161,15 @@
 .loading-icon {
   display: inline-flex;
   align-items: center;
-
   color: #ffce2d;
-
   font-size: 22px;
-
   margin-right: 10px;
-
   filter: drop-shadow(0 0 10px rgba(248, 216, 56, 0.7));
 }
 
 /* 🔥 點點動畫 */
 .dot-animation::after {
   content: "";
-
   animation: dots 1.4s steps(4, end) infinite;
 }
 
@@ -237,6 +194,7 @@
     content: "";
   }
 }
+
 /* 🌙 Dark Mode Loading */
 .dark .loading-text {
   color: #f97316;
@@ -244,31 +202,26 @@
 
 .dark .loading-icon {
   color: #facc15;
-
   filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.75));
 }
+
 .loading-page {
   display: flex;
   justify-content: center;
   align-items: center;
-
   min-height: calc(100vh - 320px);
-
   background: var(--bg-color);
 }
+
 .loading-subtext {
   margin-top: 10px;
-
   font-size: 13px;
-
   color: var(--secondary-text);
-
   opacity: 0.8;
-
   letter-spacing: 0.5px;
-
   text-align: center;
 }
+
 .ai-switching {
   opacity: 0.7;
   transition: all 0.35s ease;
@@ -278,11 +231,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-
   color: #60a5fa;
-
   font-weight: 600;
-
   animation: pulseAI 1.2s infinite;
 }
 
@@ -302,43 +252,32 @@
     transform: translateY(0px);
   }
 }
+
 .live-bar-row {
   margin-bottom: 26px;
 }
 
 .live-bar-top {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   margin-bottom: 10px;
-
   font-size: 16px;
-
   font-weight: 700;
 }
 
 .live-bar-bg {
   width: 100%;
-
   height: 20px;
-
   border-radius: 999px;
-
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.12),
     rgba(255, 255, 255, 0.06)
   );
-
   border: 1px solid rgba(255, 255, 255, 0.08);
-
   overflow: hidden;
-
   position: relative;
-
   box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.25),
     inset 0 -1px 2px rgba(255, 255, 255, 0.05);
@@ -346,9 +285,7 @@
 
 .live-bar-fill {
   height: 100%;
-
   border-radius: 999px;
-
   transition:
     width 0.7s ease,
     opacity 0.3s ease;
@@ -382,27 +319,19 @@
 .live-bar-fill.hydro {
   background: linear-gradient(90deg, #60a5fa, #2563eb);
 }
-/* =========================
-   💰 成本影響分析 Progress
-========================= */
 
+/* 成本影響分析 Progress */
 .impact-progress-bg {
   height: 14px;
-
   border-radius: 999px;
-
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.12),
     rgba(255, 255, 255, 0.05)
   );
-
   border: 1px solid rgba(255, 255, 255, 0.08);
-
   overflow: hidden;
-
   position: relative;
-
   box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.25),
     inset 0 -1px 2px rgba(255, 255, 255, 0.05);
@@ -410,35 +339,24 @@
 
 .impact-progress-fill {
   height: 100%;
-
   border-radius: 999px;
-
   position: relative;
-
   overflow: hidden;
-
   transition: width 0.7s ease;
 }
 
 .impact-progress-fill::after {
   content: "";
-
   position: absolute;
-
   inset: 0;
-
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.28),
     rgba(255, 255, 255, 0)
   );
-
   opacity: 0.6;
 }
-/* =========================
-   🔥 Forecast Tooltip
-========================= */
-
+/* Forecast Tooltip */
 .forecast-badge {
   position: relative;
   overflow: visible;
@@ -446,48 +364,30 @@
 
 .forecast-tooltip {
   position: absolute;
-
   top: 120%;
   left: 0;
-
   width: 260px;
-
   padding: 12px 14px;
-
   border-radius: 16px;
-
   background: rgba(15, 23, 42, 0.96);
-
   border: 1px solid rgba(255, 255, 255, 0.08);
-
   color: white;
-
   font-size: 13px;
-
   line-height: 1.7;
-
   opacity: 0;
-
   transform: translateY(8px);
-
   pointer-events: none;
-
   transition: all 0.25s ease;
-
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-
   z-index: 999;
 }
 
 .forecast-badge:hover .forecast-tooltip {
   opacity: 1;
-
   transform: translateY(0);
 }
-/* =========================
-   ⚡ AI 電費試算
-========================= */
 
+/* AI 電費試算 */
 .calculator-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -509,21 +409,13 @@
 .calculator-input-group input,
 .calculator-input-group select {
   padding: 14px 16px;
-
   border-radius: 16px;
-
   border: 1px solid rgba(148, 163, 184, 0.28);
-
   background: var(--card-bg);
-
   color: var(--text-color);
-
   font-size: 15px;
-
   outline: none;
-
   transition: all 0.25s ease;
-
   box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.04);
 }
 
@@ -550,6 +442,7 @@
   line-height: 1.9;
   opacity: 0.85;
 }
+
 @keyframes tooltipFade {
   from {
     opacity: 0;
@@ -561,45 +454,32 @@
     transform: translateY(0) scale(1);
   }
 }
+
 .energy-info-tooltip {
   position: relative;
 }
 
 .energy-info-box {
   position: absolute;
-
   top: 42px;
   left: 0;
-
   width: 300px;
-
   padding: 16px 18px;
-
   border-radius: 18px;
-
   background: #0f172a;
-
   border: 1px solid rgba(255, 255, 255, 0.08);
-
   color: white;
-
   font-size: 13px;
-
   opacity: 0;
   visibility: hidden;
-
   transform: translateY(8px);
-
   transition: all 0.25s ease;
-
   z-index: 999;
-
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .energy-info-tooltip:hover .energy-info-box {
   opacity: 1;
   visibility: visible;
-
   transform: translateY(0);
 }
