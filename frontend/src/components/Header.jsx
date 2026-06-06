@@ -179,7 +179,23 @@ export default function Header() {
             )}
 
             {/* admin 專屬 */}
-            {isAdmin && <Link to="/Feedback">{t("nav.feedback")}</Link>}
+            {isAdmin && (
+              <div className="dropdown">
+                <span className="dropdown-title">
+                  管理中心 ▾
+                </span>
+
+                <div className="dropdown-menu">
+                  <Link to="/data-center">
+                    能源球體更新
+                  </Link>
+
+                  <Link to="/Feedback">
+                    {t("nav.feedback")}
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* admin 不顯示聯絡我們；訪客與 manager 顯示 */}
             {!isAdmin && <Link to="/contact">{t("nav.contact")}</Link>}
