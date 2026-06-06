@@ -4,7 +4,8 @@ import os
 import re
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "src", "data")
+INPUT_DIR = os.path.join(BASE_DIR, "src", "data", "future")
+OUTPUT_DIR = os.path.join(BASE_DIR, "src", "data")
 
 # =========================================================
 # Parameters
@@ -90,7 +91,7 @@ for filename in ["114_energy_euclidean_distance.json"]:
     # =====================================================
 
     with open(
-        os.path.join(DATA_DIR, filename),
+        os.path.join(INPUT_DIR, filename),
         "r",
         encoding="utf-8"
     ) as f:
@@ -345,8 +346,7 @@ for filename in ["114_energy_euclidean_distance.json"]:
         }
 
     supply_path = os.path.join(
-        DATA_DIR,
-        f"supply_layout_{year}.json"
+        OUTPUT_DIR, f"supply_layout_{year}.json"
     )
 
     with open(
@@ -363,19 +363,14 @@ for filename in ["114_energy_euclidean_distance.json"]:
 
     print("Saved:", supply_path)
 
-    # =====================================================
-    # Demand Layout
-    # =====================================================
+    # =====================
+    # Demand INPUT（改這裡）
+    # =====================
 
     demand_file = os.path.join(
-        DATA_DIR,
+        INPUT_DIR,
         f"{year}_energy_demand_supply.json"
     )
-
-    if not os.path.exists(demand_file):
-
-        print("❌ Demand file not found")
-        continue
 
     with open(
         demand_file,
@@ -574,7 +569,7 @@ for filename in ["114_energy_euclidean_distance.json"]:
         }
 
     demand_path = os.path.join(
-        DATA_DIR,
+        OUTPUT_DIR,
         f"demand_layout_{year}.json"
     )
 
@@ -591,7 +586,27 @@ for filename in ["114_energy_euclidean_distance.json"]:
         )
 
     print("Saved:", demand_path)
+    import shutil
 
+    # =========================
+    # Move raw energy files to data
+    # =========================
+
+    src_files = [
+        os.path.join(INPUT_DIR, f"{year}_energy_demand_supply.json"),
+        os.path.join(INPUT_DIR, f"{year}_energy_euclidean_distance.json"),
+    ]
+
+    for src in src_files:
+
+        if os.path.exists(src):
+
+            dst = os.path.join(OUTPUT_DIR, os.path.basename(src))
+
+            shutil.copy2(src, dst)   # ← 建議用 copy（比較安全）
+            # shutil.move(src, dst)  # ← 如果你想搬走才用這個
+
+            print("Copied to data:", dst)
     # =====================================================
     # Next Year Seed
     # =====================================================
