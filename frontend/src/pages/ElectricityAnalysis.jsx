@@ -33,6 +33,7 @@ import costMap from "../data/energy_cost_mapping.json";
 import historicalCost from "../data/historical_cost_pressure.json";
 import predictedCost from "../data/predicted_cost_pressure.json";
 import { getCategory } from "./PowerPlantLive";
+
 export default function ElectricityAnalysis() {
   const { t, i18n } = useTranslation();
   const [liveUnits, setLiveUnits] = useState([]);
@@ -57,7 +58,6 @@ export default function ElectricityAnalysis() {
 
     try {
       const metricRes = await fetch("http://localhost:8000/forecast-metrics");
-
       const metricData = await metricRes.json();
 
       setForecastMAPE(metricData.mape || 0);
@@ -87,6 +87,7 @@ export default function ElectricityAnalysis() {
       setLoading(false);
     }
   }
+  
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentYearIndex((prev) =>
@@ -96,6 +97,7 @@ export default function ElectricityAnalysis() {
 
     return () => clearInterval(timer);
   }, []);
+
   useEffect(() => {
     fetchPowerData();
 
@@ -108,8 +110,10 @@ export default function ElectricityAnalysis() {
 
     return () => clearInterval(interval);
   }, []);
+
   useEffect(() => {
     if (liveUnits.length > 0) {
+
       if (aiAnalysis) {
         setAiSwitching(true);
       }
@@ -117,6 +121,7 @@ export default function ElectricityAnalysis() {
       fetchAIAnalysis();
     }
   }, [liveUnits, i18n.language]);
+  
   const yearlyData = [
     data104,
     data105,
@@ -129,6 +134,7 @@ export default function ElectricityAnalysis() {
     data112,
     data113,
   ];
+
   // =========================
   // 🔥 長期能源結構資料
   // =========================
@@ -147,6 +153,7 @@ export default function ElectricityAnalysis() {
       });
     });
   });
+  
   const currentYearData =
     yearlyData[currentYearIndex];
 
@@ -178,42 +185,36 @@ export default function ElectricityAnalysis() {
           : supplyCatalog?.[code]?.name_zh || code,
       value,
     }));
+
   // 🔥 成本影響分析
   const costImpactData = Object.entries(supplyTotals)
 
     .map(([code, value]) => {
       const mapping = costMap?.[code];
-
       const lcoe = mapping?.lcoe || 1;
 
       return {
         code,
-
         name:
           i18n.language === "en"
             ? supplyCatalog?.[code]?.name_en || code
             : supplyCatalog?.[code]?.name_zh || code,
-
         value,
-
         impact: Number((value * lcoe).toFixed(2)),
       };
     })
 
     .sort((a, b) => b.impact - a.impact)
-
     .slice(0, 6);
+
   const maxImpact = Math.max(...costImpactData.map((d) => d.impact));
+  
   // 🔥 即時能源統計
   const liveEnergy = {
     solar: 0,
-
     wind: 0,
-
     hydro: 0,
-
     nuclear: 0,
-
     thermal: 0,
   };
   let liveCostPressure = 0;
@@ -233,35 +234,67 @@ export default function ElectricityAnalysis() {
       liveEnergy.nuclear += value;
       return;
     }
+    
     // ☀️ 太陽能
     if (main.includes("太陽能")) {
       liveEnergy.solar += value;
-
       liveCostPressure += scaledValue * 0.7;
     }
 
     // 🌬️ 風力
     else if (main.includes("風力")) {
       liveEnergy.wind += value;
-
       liveCostPressure += scaledValue * 0.8;
     }
 
     // 💧 水力
     else if (main.includes("水力")) {
       liveEnergy.hydro += value;
-
       liveCostPressure += scaledValue * 0.6;
     }
 
     // 🔥 火力
     else {
       liveEnergy.thermal += value;
-
       liveCostPressure += scaledValue * 1.8;
     }
   });
   liveCostPressure = Number(liveCostPressure.toFixed(2));
+
+  const compareLineData = yearlyData.map(
+    (yearData, index) => {
+
+      const yearSupply = {};
+
+      Object.values(yearData).forEach((demand) => {
+        Object.entries(demand).forEach(
+          ([code, value]) => {
+
+            if (!code.startsWith("S")) return;
+
+            yearSupply[code] =
+              (yearSupply[code] || 0) +
+              Number(value);
+          }
+        );
+      });
+
+      const total = Object.entries(yearSupply)
+        .filter(([code]) => Number(code.slice(1)) <= 53)
+        .reduce((sum, [, value]) => sum + value, 0);
+
+      return {
+        year: 104 + index,
+
+        s1: ((yearSupply["S1"] || 0) / total * 100).toFixed(1),
+        s13: ((yearSupply["S13"] || 0) / total * 100).toFixed(1),
+        s37: ((yearSupply["S37"] || 0) / total * 100).toFixed(1),
+        s40: ((yearSupply["S40"] || 0) / total * 100).toFixed(1),
+        s51: ((yearSupply["S51"] || 0) / total * 100).toFixed(1),
+      };
+    }
+  );
+
   // =========================
   // 🔥 即時供電結構 PieChart
   // =========================
@@ -502,6 +535,7 @@ export default function ElectricityAnalysis() {
       </div>
     );
   };
+
   // 🔥 PieChart 顏色
   const COLORS = [
     "#ef4444", // 火力
@@ -519,9 +553,7 @@ export default function ElectricityAnalysis() {
     try {
       // 🔥 直接使用頁面已經算好的資料
       const thermal = liveEnergy.thermal;
-
       const renewable = liveEnergy.solar + liveEnergy.wind + liveEnergy.hydro;
-
       const nuclear = liveEnergy.nuclear;
 
       const costPressure = liveCostPressure;
@@ -550,13 +582,9 @@ export default function ElectricityAnalysis() {
 
         body: JSON.stringify({
           thermal,
-
           renewable,
-
           nuclear,
-
           nuclearNote,
-
           costPressure: Number(costPressure.toFixed(2)),
 
           historicalAnalysis,
@@ -575,20 +603,19 @@ export default function ElectricityAnalysis() {
       setLoading(false);
     }
   }
+
   function getAnalysisText() {
     const thermal = liveEnergy.thermal || 0;
-
     const solar = liveEnergy.solar || 0;
-
     const wind = liveEnergy.wind || 0;
-
     const hydro = liveEnergy.hydro || 0;
-
     const nuclear = liveEnergy.nuclear || 0;
-
     const renewable = solar + wind + hydro;
 
-    const total = thermal + renewable + nuclear;
+    const total =
+      thermal +
+      renewable +
+      nuclear;
 
     const thermalPercent =
       total <= 0 ? 0 : ((thermal / total) * 100).toFixed(1);
@@ -599,45 +626,45 @@ export default function ElectricityAnalysis() {
     // 🔥 高火力
     if (thermalPercent >= 80) {
       return `
-目前供電高度依賴火力發電，
-火力占比約 ${thermalPercent}% 。
+        目前供電高度依賴火力發電，
+        火力占比約 ${thermalPercent}% 。
 
-代表系統對天然氣、
-燃煤與國際燃料價格波動較敏感，
-未來可能增加供電成本壓力。
+        代表系統對天然氣、
+        燃煤與國際燃料價格波動較敏感，
+        未來可能增加供電成本壓力。
 
-目前再生能源占比約
-${renewablePercent}% ，
-夜間太陽能發電為零，
-因此整體供電結構仍以火力為主。
-`;
+        目前再生能源占比約
+        ${renewablePercent}% ，
+        夜間太陽能發電為零，
+        因此整體供電結構仍以火力為主。
+        `;
     }
 
     // 🔥 中度火力
     if (thermalPercent >= 60) {
       return `
-目前供電仍以火力發電為主，
-但再生能源已開始提供部分支撐。
+        目前供電仍以火力發電為主，
+        但再生能源已開始提供部分支撐。
 
-目前再生能源占比約
-${renewablePercent}% ，
-顯示能源轉型正在進行中。
+        目前再生能源占比約
+        ${renewablePercent}% ，
+        顯示能源轉型正在進行中。
 
-若未來風力、
-儲能與綠能占比持續提升，
-有機會降低供電成本壓力。
-`;
+        若未來風力、
+        儲能與綠能占比持續提升，
+        有機會降低供電成本壓力。
+        `;
     }
 
     // 🔥 綠能高
     return `
-目前再生能源比例較高，
-供電結構相對多元。
+      目前再生能源比例較高，
+      供電結構相對多元。
 
-系統對化石燃料依賴較低，
-有助於降低長期供電成本波動風險，
-整體能源結構較穩定。
-`;
+      系統對化石燃料依賴較低，
+      有助於降低長期供電成本波動風險，
+      整體能源結構較穩定。
+      `;
   }
 
   return (
@@ -677,310 +704,108 @@ ${renewablePercent}% ，
           </div>
 
           {/* ========================= */}
-          {/* 🔥 即時資訊 */}
+          {/* 電力健康度儀錶板 */}
           {/* ========================= */}
 
-          <div className="electricity-grid">
-            <div className="electricity-card">
-              <h2>
-                <i
-                  className="fi fi-rr-bolt"
-                  style={{
-                    marginRight: "10px",
-                    color: "#facc15",
-                  }}
-                ></i>
-
-                {t("electricity.realtime")}
-              </h2>
-
-              {/* 🔥 火力 */}
-              <div className="live-bar-row">
-                <div className="live-bar-top">
-                  <span>
-                    <i
-                      className="fi fi-rr-fire-flame-curved"
-                      style={{ marginRight: "8px", color: "#ef4444" }}
-                    ></i>
-
-                    {t("electricity.thermal")}
-                  </span>
-
-                  <span>{liveEnergy.thermal.toFixed(0)} MW</span>
-                </div>
-
-                <div className="live-bar-bg">
-                  <div
-                    className="live-bar-fill thermal"
-                    style={{
-                      width: `${Math.min(
-                        (liveEnergy.thermal /
-                          (liveEnergy.thermal +
-                            liveEnergy.solar +
-                            liveEnergy.wind +
-                            liveEnergy.hydro +
-                            liveEnergy.nuclear)) *
-                          100,
-                        100,
-                      )}%`,
-                    }}
-                  />
-                </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(5,1fr)",
+              gap: "20px",
+              marginTop: "24px",
+            }}
+          >
+            <div
+              className="dashboard-item"
+              style={{
+                color: "#ef4444",
+              }}
+            >
+              <div className="dashboard-title">
+                <i className="fi fi-rr-fire-flame-curved"/>火力
               </div>
-
-              {/* ☀️ 太陽能 */}
-              <div className="live-bar-row">
-                <div className="live-bar-top">
-                  <span>
-                    <i
-                      className="fi fi-rr-sun"
-                      style={{ marginRight: "8px", color: "#facc15" }}
-                    ></i>
-
-                    {t("electricity.solar")}
-                  </span>
-
-                  <span>{liveEnergy.solar.toFixed(0)} MW</span>
-                </div>
-
-                <div className="live-bar-bg">
-                  <div
-                    className="live-bar-fill solar"
-                    style={{
-                      width: `${Math.min(
-                        (liveEnergy.solar /
-                          (liveEnergy.thermal +
-                            liveEnergy.solar +
-                            liveEnergy.wind +
-                            liveEnergy.hydro +
-                            liveEnergy.nuclear)) *
-                          100,
-                        100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* ⚛️ 核能 */}
-              <div className="live-bar-row">
-                <div className="live-bar-top">
-                  <span>
-                    <i
-                      className="fi fi-rr-radiation"
-                      style={{
-                        marginRight: "8px",
-                        color: "#8b5cf6",
-                      }}
-                    ></i>
-
-                    {t("electricity.nuclear")}
-                  </span>
-
-                  <span>{liveEnergy.nuclear.toFixed(0)} MW</span>
-                </div>
-
-                <div className="live-bar-bg">
-                  <div
-                    className="live-bar-fill nuclear"
-                    style={{
-                      width: `${Math.min(
-                        (liveEnergy.nuclear /
-                          (liveEnergy.thermal +
-                            liveEnergy.solar +
-                            liveEnergy.wind +
-                            liveEnergy.hydro +
-                            liveEnergy.nuclear)) *
-                          100,
-                        100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* 🌬️ 風力 */}
-              <div className="live-bar-row">
-                <div className="live-bar-top">
-                  <span>
-                    <i
-                      className="fi fi-rr-wind"
-                      style={{ marginRight: "8px", color: "#06b6d4" }}
-                    ></i>
-
-                    {t("electricity.wind")}
-                  </span>
-
-                  <span>{liveEnergy.wind.toFixed(0)} MW</span>
-                </div>
-
-                <div className="live-bar-bg">
-                  <div
-                    className="live-bar-fill wind"
-                    style={{
-                      width: `${Math.min(
-                        (liveEnergy.wind /
-                          (liveEnergy.thermal +
-                            liveEnergy.solar +
-                            liveEnergy.wind +
-                            liveEnergy.hydro +
-                            liveEnergy.nuclear)) *
-                          100,
-                        100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* 💧 水力 */}
-              <div className="live-bar-row">
-                <div className="live-bar-top">
-                  <span>
-                    <i
-                      className="fi fi-rr-raindrops"
-                      style={{ marginRight: "8px", color: "#3b82f6" }}
-                    ></i>
-
-                    {t("electricity.hydro")}
-                  </span>
-
-                  <span>{liveEnergy.hydro.toFixed(0)} MW</span>
-                </div>
-
-                <div className="live-bar-bg">
-                  <div
-                    className="live-bar-fill hydro"
-                    style={{
-                      width: `${Math.min(
-                        (liveEnergy.hydro /
-                          (liveEnergy.thermal +
-                            liveEnergy.solar +
-                            liveEnergy.wind +
-                            liveEnergy.hydro +
-                            liveEnergy.nuclear)) *
-                          100,
-                        100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
+              <span>{liveEnergy.thermal.toFixed(0)} MW</span>
             </div>
 
-            {/* ========================= */}
-            {/* 🔥 成本壓力 */}
-            {/* ========================= */}
+            <div
+              className="dashboard-item"
+              style={{
+                color: "#22c55e",
+              }}
+            >
+              <div className="dashboard-title">
+                <i className="fi fi-rr-leaf"/>綠能
+              </div>
 
-            <div className="electricity-card">
-              <h2>
+              <span>
+                {(
+                  liveEnergy.solar +
+                  liveEnergy.wind +
+                  liveEnergy.hydro
+                ).toFixed(0)} MW
+              </span>
+            </div>
+
+            <div
+              className="dashboard-item"
+              style={{
+                color: "#8b5cf6",
+              }}
+            >
+              <div className="dashboard-title">
+                <i className="fi fi-rr-radiation"/>核能
+              </div>
+
+              <span>{liveEnergy.nuclear.toFixed(0)} MW</span>
+            </div>
+
+            <div
+              className="dashboard-item"
+              style={{
+                color: "#60a5fa",
+              }}
+            >
+              <div className="dashboard-title">
+                <i className="fi fi-rr-chart-line-up"/>成本壓力
+              </div>
+
+              <span>{liveCostPressure}</span>
+            </div>
+
+            <div
+              className="dashboard-item"
+              style={{
+                color:
+                  liveCostPressure >= 40
+                    ? "#ef4444"
+                    : liveCostPressure >= 25
+                      ? "#f97316"
+                      : "#22c55e",
+              }}
+            >
+              <div className="dashboard-title">
                 <i
-                  className="fi fi-rr-chart-line-up"
-                  style={{
-                    marginRight: "10px",
-                    color: "#60a5fa",
-                  }}
-                ></i>
-
-                {t("electricity.costTitle")}
-              </h2>
-              <div
-                style={{
-                  opacity: 0.7,
-                  marginTop: "8px",
-                  lineHeight: 1.7,
-                  fontSize: "14px",
-                }}
-              >
-                {t("electricity.costDescription")}
-
-                <p
-                  style={{
-                    marginTop: "12px",
-                    opacity: 0.55,
-                    fontSize: "12px",
-                    lineHeight: 1.7,
-                  }}
-                >
-                  {i18n.language === "en"
-                    ? "Based on weighted energy structure analysis and LCOE (Levelized Cost of Energy) reference models."
-                    : "依據能源結構加權分析與 LCOE（均化能源成本）概念進行估算。"}
-                </p>
-              </div>
-              <div className="cost-value">{liveCostPressure}</div>
-
-              <div className="cost-label">{t("electricity.costIndex")}</div>
-
-              <p className="analysis-text">
-                {liveCostPressure >= 40
-                  ? t("electricity.highCost")
-                  : liveCostPressure >= 25
-                    ? t("electricity.mediumCost")
-                    : t("electricity.stableCost")}
-              </p>
-              <div
-                style={{
-                  marginTop: "10px",
-
-                  display: "inline-flex",
-
-                  alignItems: "center",
-
-                  gap: "10px",
-
-                  padding: "10px 18px",
-
-                  borderRadius: "999px",
-
-                  fontWeight: 700,
-
-                  background:
+                  className={
                     liveCostPressure >= 40
-                      ? "rgba(239,68,68,0.18)"
+                      ? "fi fi-rr-exclamation"
                       : liveCostPressure >= 25
-                        ? "rgba(249,115,22,0.18)"
-                        : "rgba(34,197,94,0.18)",
-
-                  color:
-                    liveCostPressure >= 40
-                      ? "#ef4444"
-                      : liveCostPressure >= 25
-                        ? "#f97316"
-                        : "#22c55e",
-                }}
-              >
-                <div
-                  style={{
-                    width: "10px",
-
-                    height: "10px",
-
-                    borderRadius: "50%",
-
-                    background:
-                      liveCostPressure >= 40
-                        ? "#ef4444"
-                        : liveCostPressure >= 25
-                          ? "#f97316"
-                          : "#22c55e",
-
-                    boxShadow:
-                      liveCostPressure >= 40
-                        ? "0 0 12px #ef4444"
-                        : liveCostPressure >= 25
-                          ? "0 0 12px #f97316"
-                          : "0 0 12px #22c55e",
-                  }}
+                        ? "fi fi-rr-warning"
+                        : "fi fi-rr-shield-check"
+                  }
                 />
-
-                {liveCostPressure >= 40
-                  ? t("electricity.highRisk")
-                  : liveCostPressure >= 25
-                    ? t("electricity.mediumRisk")
-                    : t("electricity.lowRisk")}
+                風險等級
               </div>
+
+              <span>
+                {liveCostPressure >= 40
+                  ? "高"
+                  : liveCostPressure >= 25
+                    ? "中"
+                    : "低"}
+              </span>
             </div>
           </div>
+
           {/* ========================= */}
           {/* ⚡ AI 電費試算 */}
           {/* ========================= */}
@@ -1269,505 +1094,102 @@ ${renewablePercent}% ，
               </div>
             </div>
           </div>
+
           {/* ========================= */}
           {/* 🔥 能源結構 */}
           {/* ========================= */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "24px",
-              marginTop: "24px",
-            }}
-          >
-            <div className="electricity-card big-card">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <h2 style={{ margin: 0 }}>
-                  <i
-                    className="fi fi-rr-globe"
-                    style={{
-                      marginRight: "10px",
-                      color: "#22c55e",
-                    }}
-                  ></i>
-                  {i18n.language === "en"
-                    ? " Real-time Power Structure"
-                    : " 即時供電結構"}
-                </h2>
-
-                <div
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "999px",
-
-                    background:
-                      liveEnergy.thermal /
-                        (liveEnergy.thermal +
-                          liveEnergy.solar +
-                          liveEnergy.wind +
-                          liveEnergy.hydro +
-                          liveEnergy.nuclear) >
-                      0.7
-                        ? "rgba(239,68,68,0.12)"
-                        : liveEnergy.thermal /
-                              (liveEnergy.thermal +
-                                liveEnergy.solar +
-                                liveEnergy.wind +
-                                liveEnergy.hydro +
-                                liveEnergy.nuclear) >
-                            0.4
-                          ? "rgba(249,115,22,0.12)"
-                          : "rgba(34,197,94,0.12)",
-
-                    color:
-                      liveEnergy.thermal /
-                        (liveEnergy.thermal +
-                          liveEnergy.solar +
-                          liveEnergy.wind +
-                          liveEnergy.hydro +
-                          liveEnergy.nuclear) >
-                      0.7
-                        ? "#ef4444"
-                        : liveEnergy.thermal /
-                              (liveEnergy.thermal +
-                                liveEnergy.solar +
-                                liveEnergy.wind +
-                                liveEnergy.hydro +
-                                liveEnergy.nuclear) >
-                            0.4
-                          ? "#f97316"
-                          : "#22c55e",
-
-                    border:
-                      liveEnergy.thermal /
-                        (liveEnergy.thermal +
-                          liveEnergy.solar +
-                          liveEnergy.wind +
-                          liveEnergy.hydro +
-                          liveEnergy.nuclear) >
-                      0.7
-                        ? "1px solid rgba(239,68,68,0.22)"
-                        : liveEnergy.thermal /
-                              (liveEnergy.thermal +
-                                liveEnergy.solar +
-                                liveEnergy.wind +
-                                liveEnergy.hydro +
-                                liveEnergy.nuclear) >
-                            0.4
-                          ? "1px solid rgba(249,115,22,0.22)"
-                          : "1px solid rgba(34,197,94,0.22)",
-
-                    fontSize: "13px",
-                    fontWeight: "700",
-
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  {liveEnergy.thermal /
-                    (liveEnergy.thermal +
-                      liveEnergy.solar +
-                      liveEnergy.wind +
-                      liveEnergy.hydro +
-                      liveEnergy.nuclear) >
-                  0.7 ? (
-                    <>
-                      <div
-                        style={{
-                          width: "10px",
-                          height: "10px",
-                          borderRadius: "50%",
-                          background: "#ef4444",
-                          boxShadow: "0 0 12px #ef4444",
-                        }}
-                      />
-                      火力主導中
-                    </>
-                  ) : liveEnergy.thermal /
-                      (liveEnergy.thermal +
-                        liveEnergy.solar +
-                        liveEnergy.wind +
-                        liveEnergy.hydro +
-                        liveEnergy.nuclear) >
-                    0.4 ? (
-                    <>
-                      <div
-                        style={{
-                          width: "10px",
-                          height: "10px",
-                          borderRadius: "50%",
-                          background: "#f97316",
-                          boxShadow: "0 0 12px #f97316",
-                        }}
-                      />
-                      混合供電中
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        style={{
-                          width: "10px",
-                          height: "10px",
-                          borderRadius: "50%",
-                          background: "#22c55e",
-                          boxShadow: "0 0 12px #22c55e",
-                        }}
-                      />
-                      綠能占比提升
-                    </>
-                  )}
-                </div>
-              </div>
-              <p
-                style={{
-                  opacity: 0.72,
-                  marginTop: "10px",
-                  lineHeight: 1.8,
-                  fontSize: "14px",
-                }}
-              >
-                {i18n.language === "en"
-                  ? "Based on real-time Taiwan power generation data."
-                  : "根據台電即時機組發電資料統計目前供電占比。"}
-              </p>
-              <div className="chart-wrapper">
-                <ResponsiveContainer width="100%" height={420}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="36%"
-                      cy="50%"
-                      innerRadius={70}
-                      outerRadius={120}
-                      paddingAngle={3}
-                      label={({ percent }) =>
-                        percent > 0.02 ? `${(percent * 100).toFixed(1)}%` : ""
-                      }
-                      labelLine={false}
-                    >
-                      {pieData.map((entry, index) => (
-                        <Cell
-                          key={index}
-                          fill={COLORS[index % COLORS.length]}
-                          stroke="rgba(255,255,255,0.08)"
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-
-                    <Tooltip
-                      content={<CustomTooltip />}
-                      cursor={false}
-                      wrapperStyle={{
-                        pointerEvents: "none",
-                      }}
-                    />
-                    <Legend
-                      layout="vertical"
-                      verticalAlign="middle"
-                      align="right"
-                      iconType="circle"
-                      formatter={(value) => (
-                        <span
-                          style={{
-                            color: "var(--text-color)",
-                            fontWeight: 600,
-                            fontSize: "14px",
-                          }}
-                        >
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div className="electricity-card big-card">
-              <h2>
-                <i
-                  className="fi fi-rr-globe"
-                  style={{
-                    marginRight: "10px",
-                    color: "#3b82f6",
-                  }}
-                ></i>
-                {i18n.language === "en"
-                  ? " Long-term Energy Structure"
-                  : " 長期能源結構"}
-                <div
-                  className="energy-info-tooltip"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginLeft: "12px",
-                    position: "relative",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "999px",
-                      background: "rgba(168,85,247,0.12)",
-                      border: "1px solid rgba(168,85,247,0.25)",
-                      color: "#a855f7",
-                      fontSize: "12px",
-                      fontWeight: "700",
-                      cursor: "help",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <>
-                      <div
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: "#a855f7",
-                          boxShadow: "0 0 10px #a855f7",
-                        }}
-                      />
-                      資料分析
-                    </>
-                  </div>
-
-                  <div className="energy-info-box">
-                    <strong>長期能源結構分析</strong>
-
-                    <div
-                      style={{
-                        marginTop: "10px",
-                        lineHeight: 1.8,
-                      }}
-                    >
-                      • 使用台灣近十年能源統計資料
-                      <br />
-                      • 根據能源平衡表進行比例統計
-                      <br />
-                      • 非 AI 預測模型
-                      <br />
-                      • 用於分析長期能源使用結構
-                      <br />• 資料來源：能源署歷史能源資料
-                    </div>
-                  </div>
-                </div>
-              </h2>
-              <div
-                style={{
-                  marginTop: "10px",
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  color: "#60a5fa",
-                }}
-              >
-                {104 + currentYearIndex} 年
-              </div>
-
-              <p
-                style={{
-                  opacity: 0.72,
-                  marginTop: "10px",
-                  lineHeight: 1.8,
-                  fontSize: "14px",
-                }}
-              >
-                {i18n.language === "en"
-                  ? "The long-term energy structure chart is generated through statistical analysis of Taiwan’s energy consumption data over the past decade."
-                  : "長期能源結構圖根據台灣近十年能源統計資料進行能源比例分析與視覺化呈現。"}
-              </p>
-
-              <div className="chart-wrapper">
-                <ResponsiveContainer width="100%" height={420}>
-                  <PieChart>
-                    <Pie
-                      data={historyPieData}
-                      isAnimationActive={true}
-                      animationDuration={1200}
-                      animationEasing="ease-out"
-                      dataKey="value"
-                      nameKey="name"
-                      cx="36%"
-                      cy="50%"
-                      innerRadius={70}
-                      outerRadius={120}
-                      paddingAngle={3}
-                      label={({ percent }) =>
-                        percent > 0.05 ? `${(percent * 100).toFixed(1)}%` : ""
-                      }
-                      labelLine={false}
-                    >
-                      {historyPieData.map((entry, index) => (
-                        <Cell
-                          key={index}
-                          fill={COLORS[index % COLORS.length]}
-                          stroke="rgba(255,255,255,0.08)"
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-
-                    <Tooltip
-                      content={<CustomTooltip />}
-                      cursor={false}
-                      wrapperStyle={{
-                        pointerEvents: "none",
-                      }}
-                    />
-
-                    <Legend
-                      layout="vertical"
-                      verticalAlign="middle"
-                      align="right"
-                      iconType="circle"
-                      formatter={(value) => (
-                        <span
-                          style={{
-                            color: "var(--text-color)",
-                            fontWeight: 600,
-                            fontSize: "14px",
-                          }}
-                        >
-                          {value}
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
 
           <div className="electricity-card big-card">
             <h2>
               <i
-                className="fi fi-rr-coins"
+                className="fi fi-rr-chart-line-up"
                 style={{
                   marginRight: "10px",
                   color: "#22c55e",
                 }}
-              ></i>
-
-              {t("electricity.impact")}
+              />
+              台灣能源轉型趨勢分析
             </h2>
+
             <p
               style={{
                 opacity: 0.75,
-                lineHeight: 1.8,
                 marginTop: "10px",
-                marginBottom: "25px",
-                fontSize: "15px",
+                lineHeight: 1.8,
               }}
             >
-              {t("electricity.impactDescription")}
+              長期供電能源結構比較
             </p>
-            <div className="impact-list">
-              {costImpactData.map((item) => {
-                const percent = (item.impact / maxImpact) * 100;
 
-                return (
-                  <div className="impact-card" key={item.code}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      <strong>{item.name}</strong>
+            <div
+              style={{
+                width: "100%",
+                height: "500px",
+                marginTop: "30px",
+              }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compareLineData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 20,
+                  }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="4 4"
+                    opacity={0.8}
+                  />
 
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "10px",
-                            height: "10px",
-                            borderRadius: "50%",
+                  <XAxis
+                    dataKey="year"
+                    tick={{
+                      fill: "#94a3b8",
+                      fontSize: 16,
+                      fontWeight: 800,
+                    }}
+                    axisLine={{
+                      stroke: "#475569",
+                      strokeWidth: 2,
+                    }}
+                    tickLine={false}
+                  />
 
-                            background:
-                              item.impact >= maxImpact * 0.75
-                                ? "#ef4444"
-                                : item.impact >= maxImpact * 0.45
-                                  ? "#f97316"
-                                  : item.impact >= maxImpact * 0.2
-                                    ? "#facc15"
-                                    : "#22c55e",
+                  <YAxis
+                    domain={[0, 50]}
+                    ticks={[0, 10, 20, 30, 40, 50]}
+                    tickFormatter={(value) => (value === 0 ? "" : `${value}%`)}
+                    tick={{
+                      fill: "#94a3b8",
+                      fontSize: 18,
+                      fontWeight: 800,
+                    }}
+                    axisLine={{
+                      stroke: "#475569",
+                      strokeWidth: 2,
+                    }}
+                    tickLine={false}
+                  />
 
-                            boxShadow:
-                              item.impact >= maxImpact * 0.75
-                                ? "0 0 12px #ef4444"
-                                : item.impact >= maxImpact * 0.45
-                                  ? "0 0 12px #f97316"
-                                  : item.impact >= maxImpact * 0.2
-                                    ? "0 0 12px #facc15"
-                                    : "0 0 12px #22c55e",
-                          }}
-                        />
+                  <Tooltip
+                    content={<CustomTooltip />}
+                    cursor={false}
+                  />
 
-                        {item.impact >= maxImpact * 0.75
-                          ? t("electricity.impactVeryHigh")
-                          : item.impact >= maxImpact * 0.45
-                            ? t("electricity.impactHigh")
-                            : item.impact >= maxImpact * 0.2
-                              ? t("electricity.impactMedium")
-                              : t("electricity.impactLow")}
-                      </span>
-                    </div>
+                  <Legend />
 
-                    <div className="impact-progress-bg">
-                      <div
-                        className="impact-progress-fill"
-                        style={{
-                          width: `${percent}%`,
-
-                          height: "100%",
-
-                          borderRadius: "999px",
-
-                          background:
-                            item.impact >= maxImpact * 0.75
-                              ? "#ef4444"
-                              : item.impact >= maxImpact * 0.45
-                                ? "#f97316"
-                                : item.impact >= maxImpact * 0.2
-                                  ? "#facc15"
-                                  : "#22c55e",
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        opacity: 0.7,
-                        fontSize: "14px",
-                      }}
-                    >
-                      {t("electricity.impactIndex")}：{item.impact}
-                    </div>
-                  </div>
-                );
-              })}
+                  <Line dataKey="s1" name="煤及煤產品" stroke="#64748b" strokeWidth={4} dot={{ r: 5 }} />
+                  <Line dataKey="s13" name="原油及石油產品" stroke="#f97316" strokeWidth={4} dot={{ r: 5 }} />
+                  <Line dataKey="s37" name="天然氣" stroke="#3b82f6" strokeWidth={4} dot={{ r: 5 }} />
+                  <Line dataKey="s40" name="生質能及廢棄物" stroke="#22c55e" strokeWidth={4} dot={{ r: 5 }} />
+                  <Line dataKey="s51" name="電力" stroke="#8b5cf6" strokeWidth={4} dot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
+
           {/* ========================= */}
           {/* 🔥 未來趨勢 */}
           {/* ========================= */}
@@ -1965,7 +1387,6 @@ ${renewablePercent}% ，
                   <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
 
                   <XAxis dataKey="year" />
-
                   <YAxis/>
 
                   <Tooltip
@@ -1976,6 +1397,7 @@ ${renewablePercent}% ，
                     }}
                   />
                   <Legend />
+
                   <ReferenceLine
                     x={2026}
                     stroke="#ef4444"
@@ -1992,6 +1414,7 @@ ${renewablePercent}% ，
                     baseLine={(d) => d.lower}
                     activeDot={false}
                   />
+
                   {/* 🔥 歷史 */}
                   <Area
                     type="monotone"
@@ -1999,6 +1422,7 @@ ${renewablePercent}% ，
                     stroke="none"
                     fill="rgba(34,197,94,0.08)"
                   />
+                  
                   <Line
                     type="monotone"
                     dataKey="historical"

@@ -15,7 +15,7 @@
 }
 
 .electricity-page {
-  padding: 40px;
+  padding: 40px 100px;
   min-height: 100vh;
   background: var(--bg-color);
   color: var(--text-color);
@@ -27,14 +27,40 @@
 }
 
 .electricity-hero h1 {
-  font-size: 42px;
-  margin-bottom: 10px;
+  font-size: 36px;
+  font-weight: 800;
 }
 
 .electricity-hero p {
   color: var(--secondary-text);
+  font-size: 16px;
+  font-weight: 600;
+}
 
-  font-size: 18px;
+.dashboard-item {
+  background: var(--card-bg);
+  border-radius: 30px;
+  padding: 25px 50px;
+  transition: 0.3s;
+}
+
+.dashboard-item:hover {
+  transform: translateY(-3px);
+}
+
+.dashboard-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.dashboard-item span {
+  font-size: 24px;
+  font-weight: 800;
 }
 
 .electricity-grid {
@@ -45,8 +71,8 @@
 
 .electricity-card {
   background: var(--card-bg);
-  border-radius: 25px;
-  padding: 25px;
+  border-radius: 40px;
+  padding: 40px 60px;
   margin-bottom: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   transition: 0.3s;
