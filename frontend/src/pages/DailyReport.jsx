@@ -235,8 +235,8 @@ function DailyReport() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
-          gap: 20,
+          gridTemplateColumns: "repeat(auto-fit,minmax(300px, 1fr))",
+          gap: 30,
           marginBottom: 40,
         }}
       >
@@ -246,13 +246,12 @@ function DailyReport() {
             padding: "30px 40px",
           }}
         >
-          <div style={sectionTitleStyle}>
+          <div style={gridTitleStyle}>
             <i
               className="fi fi-rr-battery-bolt"
               style={{
                 ...iconStyle,
                 color: "#facc15",
-                filter: "drop-shadow(0 0 6px #facc15)",
               }}
             ></i>
             {t("daily.total")}
@@ -269,13 +268,12 @@ function DailyReport() {
             padding: "30px 40px",
           }}
         >
-          <div style={sectionTitleStyle}>
+          <div style={gridTitleStyle}>
             <i
               className="fi fi-rr-solar-panel"
               style={{
                 ...iconStyle,
                 color: "#facc15",
-                filter: "drop-shadow(0 0 6px #facc15)",
               }}
             ></i>
             {t("daily.renewable")}
@@ -301,13 +299,12 @@ function DailyReport() {
             padding: "30px 40px",
           }}
         >
-          <div style={sectionTitleStyle}>
+          <div style={gridTitleStyle}>
             <i
               className="fi fi-rr-fire-flame-curved"
               style={{
                 ...iconStyle,
                 color: "#ef4444",
-                filter: "drop-shadow(0 0 6px #ef4444)",
               }}
             ></i>
             {t("daily.thermal")}
@@ -395,7 +392,6 @@ function DailyReport() {
                   style={{
                     ...iconStyle,
                     color: "#facc15",
-                    filter: "drop-shadow(0 0 8px #facc15)",
                   }}
                 ></i>
 
@@ -573,7 +569,6 @@ function DailyReport() {
                 style={{
                   ...iconStyle,
                   color: "#facc15",
-                  filter: "drop-shadow(0 0 8px #facc15)",
                 }}
               ></i>
 
@@ -691,7 +686,6 @@ function DailyReport() {
                 style={{
                   ...iconStyle,
                   color: "#60a5fa",
-                  filter: "drop-shadow(0 0 8px #60a5fa)",
                 }}
               ></i>
 
@@ -788,7 +782,6 @@ function DailyReport() {
                     style={{
                       ...iconStyle,
                       color: "#60a5fa",
-                      filter: "drop-shadow(0 0 6px #60a5fa)",
                     }}
                   ></i>
 
@@ -885,7 +878,7 @@ function DailyReport() {
                 <i
                   className="fi fi-rr-download"
                   style={{
-                    ...iconStyle,
+                    fontSize: 14,
                     color: "#bfdbfe",
                   }}
                 ></i>
@@ -950,7 +943,6 @@ function DailyReport() {
             style={{
               ...iconStyle,
               color: "#22c55e",
-              filter: "drop-shadow(0 0 6px #22c55e)",
             }}
           ></i>
 
@@ -976,18 +968,15 @@ function DailyReport() {
 
             <XAxis
               dataKey="time"
-              minTickGap={50}
+              interval={5}
               tickMargin={15}
-              tickFormatter={(value, index) =>
-                index === 0 ? "" : value
-              }
               tickLine={false}
               axisLine={{
                 stroke: isDark ? "#64748b" : "#94a3b8",
                 strokeWidth: 1.5,
               }}
               tick={{
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: 800,
                 fill: isDark ? "#cbd5e1" : "#64748b",
               }}
@@ -996,7 +985,7 @@ function DailyReport() {
             <YAxis
               width={150}
               tickMargin={15}
-              domain={[0, 'dataMax']}
+              domain={[0, 20000]}
                 ticks={Array.from(
                   { length: 11 },
                   (_, i) => i * 2000
@@ -1010,7 +999,7 @@ function DailyReport() {
                 strokeWidth: 1.5,
               }}
               tick={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: 800,
                 fill: isDark ? "#cbd5e1" : "#64748b",
               }}
@@ -1105,9 +1094,11 @@ function DailyReport() {
                 name={energyMap[key] || key}
                 stroke={COLORS[index % COLORS.length]}
                 strokeWidth={3}
-                dot={false}
+                dot={{
+                  r: 5,
+                }}
                 activeDot={{
-                  r: 7,
+                  r: 8,
                 }}
               />
             ))}
@@ -1121,6 +1112,16 @@ function DailyReport() {
 const statValueStyle = {
   fontSize: 32,
   fontWeight: 800,
+};
+
+const gridTitleStyle = {
+  margin: "10px 0px",
+  fontSize: 24,
+  fontWeight: 700,
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  lineHeight: 1,
 };
 
 const sectionTitleStyle = {

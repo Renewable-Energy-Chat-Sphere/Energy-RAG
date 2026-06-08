@@ -2228,7 +2228,6 @@ def get_energy_news():
 def power_units():
 
     data = get_power_units()
-
     print("🔥 POWER DATA =", data[:3])
 
     # save_power_snapshot(data)
@@ -2239,11 +2238,17 @@ def power_units():
 def save_power_snapshot(data):
 
     conn = sqlite3.connect("energy.db")
-
     cursor = conn.cursor()
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_dt = datetime.now()
+    minute = (now_dt.minute // 10) * 10
+    now_dt = now_dt.replace(
+        minute=minute,
+        second=0,
+        microsecond=0
+    )
 
+    now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
     totals = {}
 
     for unit in data:
@@ -2318,13 +2323,9 @@ def forecast_metrics():
 def electricity_ai_analysis():
 
     try:
-
         data = request.json or {}
-
         thermal = data.get("thermal", 0)
-
         renewable = data.get("renewable", 0)
-
         nuclear = data.get("nuclear", 0)
         nuclearNote = data.get("nuclearNote", "")
         cost_pressure = data.get("costPressure", 0)

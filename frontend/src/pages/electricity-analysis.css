@@ -14,6 +14,12 @@
   --placeholder-bg: #1a2b45;
 }
 
+/* icon */
+.fi {
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .electricity-page {
   padding: 40px 100px;
   min-height: 100vh;
@@ -38,14 +44,10 @@
 }
 
 .dashboard-item {
+  margin-bottom: 20px;
   background: var(--card-bg);
   border-radius: 30px;
-  padding: 25px 50px;
-  transition: 0.3s;
-}
-
-.dashboard-item:hover {
-  transform: translateY(-3px);
+  padding: 30px 50px;
 }
 
 .dashboard-title {
@@ -61,6 +63,36 @@
 .dashboard-item span {
   font-size: 24px;
   font-weight: 800;
+}
+
+.info-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-tooltip {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  width: 300px;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.7);;
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 9999;
+}
+
+.info-wrapper:hover .info-tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .electricity-grid {
@@ -82,86 +114,84 @@
   margin-top: 20px;
 }
 
-.info-row {
+/* Analysis Tabs */
+.analysis-header {
   display: flex;
   justify-content: space-between;
-  margin-top: 15px;
-}
-
-.cost-value {
-  font-size: 70px;
-  font-weight: bold;
-  margin-top: 20px;
-}
-
-.cost-label {
-  color: var(--secondary-text);
-  margin-bottom: 20px;
-}
-
-.analysis-text {
-  line-height: 1.8;
-}
-
-.energy-list {
-  margin-top: 20px;
-}
-
-.energy-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-}
-
-.trend-placeholder {
-  margin-top: 20px;
-  height: 250px;
-  border-radius: 20px;
-  background: var(--placeholder-bg);
-  display: flex;
-  justify-content: center;
   align-items: center;
-  color: var(--secondary-text);
-  transition: 0.3s;
+  margin-bottom: 24px;
+}
+
+.analysis-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.analysis-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+  padding: 6px;
+}
+
+.analysis-tab {
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.analysis-tab:hover {
+  transform: translateY(-1px);
+}
+
+.analysis-tab.active-structure {
+  background: linear-gradient(
+    135deg,
+    #22c55e,
+    #16a34a
+  );
+  color: white;
+  box-shadow:
+    0 4px 18px rgba(34, 197, 94, 0.35);
+}
+
+.analysis-tab.active-forecast {
+  background: linear-gradient(
+    135deg,
+    #3b82f6,
+    #2563eb
+  );
+  color: white;
+  box-shadow:
+    0 4px 18px rgba(59, 130, 246, 0.35);
+}
+
+.analysis-tab i {
+  font-size: 14px;
+}
+
+.dark .analysis-tabs {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .ai-box {
   line-height: 2;
   font-size: 16px;
-}
-.chart-wrapper {
-  width: 100%;
-  max-width: 700px;
-  height: 350px;
-  margin: 20px auto 0;
-}
-
-.impact-list {
-  margin-top: 20px;
-}
-
-.impact-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.impact-card {
-  padding: 18px;
-  border-radius: 20px;
-  margin-bottom: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: 0.3s;
-}
-
-.impact-card:hover {
-  transform: translateY(-3px);
 }
 
 .electricity-loading {
@@ -172,7 +202,7 @@
   background: var(--bg-color);
 }
 
-/* 🔥 loading文字 */
+/* loading 文字 */
 .loading-text {
   font-size: 24px;
   font-weight: 800;
@@ -183,7 +213,7 @@
   justify-content: center;
 }
 
-/* ⚡ icon */
+/* loading-icon */
 .loading-icon {
   display: inline-flex;
   align-items: center;

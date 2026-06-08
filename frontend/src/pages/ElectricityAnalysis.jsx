@@ -15,9 +15,6 @@ import supplyCatalog from "../data/supply_catalog.json";
 import { useTranslation } from "react-i18next";
 import "@flaticon/flaticon-uicons/css/all/all.css";
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   ResponsiveContainer,
   LineChart,
@@ -43,6 +40,8 @@ export default function ElectricityAnalysis() {
   const [aiSwitching, setAiSwitching] = useState(false);
   const [updateTime, setUpdateTime] = useState("");
   const [currentYearIndex, setCurrentYearIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("structure");
+
   // =========================
   // ⚡ 電費試算
   // =========================
@@ -136,7 +135,7 @@ export default function ElectricityAnalysis() {
   ];
 
   // =========================
-  // 🔥 長期能源結構資料
+  // 長期能源結構資料
   // =========================
   const supplyTotals = {};
 
@@ -173,20 +172,7 @@ export default function ElectricityAnalysis() {
     );
   });
 
-  const historyPieData = Object.entries(
-    yearSupplyTotals
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 7)
-    .map(([code, value]) => ({
-      name:
-        i18n.language === "en"
-          ? supplyCatalog?.[code]?.name_en || code
-          : supplyCatalog?.[code]?.name_zh || code,
-      value,
-    }));
-
-  // 🔥 成本影響分析
+  // 成本影響分析
   const costImpactData = Object.entries(supplyTotals)
 
     .map(([code, value]) => {
@@ -209,7 +195,7 @@ export default function ElectricityAnalysis() {
 
   const maxImpact = Math.max(...costImpactData.map((d) => d.impact));
   
-  // 🔥 即時能源統計
+  // 即時能源統計
   const liveEnergy = {
     solar: 0,
     wind: 0,
@@ -219,7 +205,7 @@ export default function ElectricityAnalysis() {
   };
   let liveCostPressure = 0;
 
-  // 🔥 即時 API 統計
+  // 即時 API 統計
   liveUnits.forEach((u) => {
     const value = parseFloat(u.value) || 0;
 
@@ -264,73 +250,74 @@ export default function ElectricityAnalysis() {
   const compareLineData = yearlyData.map(
     (yearData, index) => {
 
-      const yearSupply = {};
+      const categoryTotals = {
+        Coal: 0,
+        Oil: 0,
+        Gas: 0,
+        Renewable: 0,
+        Nuclear: 0,
+      };
 
       Object.values(yearData).forEach((demand) => {
-        Object.entries(demand).forEach(
-          ([code, value]) => {
+        Object.entries(demand).forEach(([code, value]) => {
 
-            if (!code.startsWith("S")) return;
+          if (!code.startsWith("S")) return;
+          if (code === "S51") return; // 排除電力
 
-            yearSupply[code] =
-              (yearSupply[code] || 0) +
-              Number(value);
+          const category =
+            supplyCatalog?.[code]?.category;
+
+          if (category === "Coal") {
+            categoryTotals.Coal += Number(value);
           }
-        );
+
+          else if (category === "Oil") {
+            categoryTotals.Oil += Number(value);
+          }
+
+          else if (category === "Gas") {
+            categoryTotals.Gas += Number(value);
+          }
+
+          else if (category === "Renewable") {
+            categoryTotals.Renewable += Number(value);
+          }
+
+          else if (code === "S46") {
+            categoryTotals.Nuclear += Number(value);
+          }
+        });
       });
 
-      const total = Object.entries(yearSupply)
-        .filter(([code]) => Number(code.slice(1)) <= 53)
-        .reduce((sum, [, value]) => sum + value, 0);
+      const total =
+        categoryTotals.Coal +
+        categoryTotals.Oil +
+        categoryTotals.Gas +
+        categoryTotals.Renewable +
+        categoryTotals.Nuclear;
 
       return {
         year: 104 + index,
 
-        s1: ((yearSupply["S1"] || 0) / total * 100).toFixed(1),
-        s13: ((yearSupply["S13"] || 0) / total * 100).toFixed(1),
-        s37: ((yearSupply["S37"] || 0) / total * 100).toFixed(1),
-        s40: ((yearSupply["S40"] || 0) / total * 100).toFixed(1),
-        s51: ((yearSupply["S51"] || 0) / total * 100).toFixed(1),
+        coal:
+          ((categoryTotals.Coal / total) * 100).toFixed(1),
+
+        oil:
+          ((categoryTotals.Oil / total) * 100).toFixed(1),
+
+        gas:
+          ((categoryTotals.Gas / total) * 100).toFixed(1),
+
+        renewable:
+          ((categoryTotals.Renewable / total) * 100).toFixed(1),
+
+        nuclear:
+          ((categoryTotals.Nuclear / total) * 100).toFixed(1),
       };
     }
   );
 
-  // =========================
-  // 🔥 即時供電結構 PieChart
-  // =========================
-
-  const pieData = [
-    {
-      name: i18n.language === "en" ? "Thermal" : "火力發電",
-
-      value: liveEnergy.thermal,
-    },
-
-    {
-      name: i18n.language === "en" ? "Solar" : "太陽能",
-
-      value: liveEnergy.solar,
-    },
-
-    {
-      name: i18n.language === "en" ? "Wind" : "風力發電",
-
-      value: liveEnergy.wind,
-    },
-
-    {
-      name: i18n.language === "en" ? "Hydro" : "水力發電",
-
-      value: liveEnergy.hydro,
-    },
-
-    {
-      name: i18n.language === "en" ? "Nuclear" : "核能發電",
-
-      value: liveEnergy.nuclear,
-    },
-  ].filter((item) => item.value > 0);
-  // 🔥 計算天數
+  // 計算天數
   function getDaysBetween(start, end) {
     const s = new Date(start);
     const e = new Date(end);
@@ -339,6 +326,7 @@ export default function ElectricityAnalysis() {
 
     return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
   }
+  
   function calculateElectricityBill(usage, type) {
     const homeRates = [
       {
@@ -367,7 +355,7 @@ export default function ElectricityAnalysis() {
       },
     ];
 
-    // 🔥 商業（簡化版）
+    // 商業（簡化版）
     const businessRates = [
       {
         limit: 330 * 2,
@@ -419,13 +407,14 @@ export default function ElectricityAnalysis() {
 
   const originalBill = billResult.total;
 
-  // 🔥 官方台電試算
+  // 官方台電試算
   const estimatedBill = Math.round(originalBill);
 
-  // 🔥 AI 分析用（非官方）
+  // AI 分析用（非官方）
   const aiEstimatedBill = Math.round(
     originalBill * (1 + liveCostPressure / 500),
   );
+
   const trendData = historicalCost.map((item) => {
     const predicted = predictedCost.find((p) => p.year === item.year + 1911);
 
@@ -442,7 +431,7 @@ export default function ElectricityAnalysis() {
     };
   });
 
-  // 🔥 加入未來年份
+  // 加入未來年份
   predictedCost.forEach((item) => {
     if (item.year <= 2025) return;
 
@@ -459,10 +448,8 @@ export default function ElectricityAnalysis() {
         item.predictedCostPressure + 4 - (item.predictedCostPressure - 4),
     });
   });
-  // =========================
-  // 🔥 自訂 Tooltip
-  // =========================
 
+  // 自訂 Tooltip
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload || !payload.length) {
       return null;
@@ -536,22 +523,11 @@ export default function ElectricityAnalysis() {
     );
   };
 
-  // 🔥 PieChart 顏色
-  const COLORS = [
-    "#ef4444", // 火力
-    "#f97316", // 石油
-    "#facc15", // 天然氣
-    "#22c55e", // 綠能
-    "#06b6d4", // 水力
-    "#3b82f6", // 電力
-    "#8b5cf6", // 核能
-    "#64748b", // 其他
-  ];
   async function fetchAIAnalysis() {
     if (liveUnits.length <= 0) return;
 
     try {
-      // 🔥 直接使用頁面已經算好的資料
+      // 直接使用頁面已經算好的資料
       const thermal = liveEnergy.thermal;
       const renewable = liveEnergy.solar + liveEnergy.wind + liveEnergy.hydro;
       const nuclear = liveEnergy.nuclear;
@@ -565,6 +541,7 @@ export default function ElectricityAnalysis() {
           : i18n.language === "en"
             ? `Current nuclear generation is ${nuclear} MW`
             : `核能發電量為 ${nuclear} MW`;
+            
       const historicalAnalysis = {
         trend: "近10年台灣供電仍以火力發電為主，但燃氣與再生能源占比持續增加。",
 
@@ -604,69 +581,6 @@ export default function ElectricityAnalysis() {
     }
   }
 
-  function getAnalysisText() {
-    const thermal = liveEnergy.thermal || 0;
-    const solar = liveEnergy.solar || 0;
-    const wind = liveEnergy.wind || 0;
-    const hydro = liveEnergy.hydro || 0;
-    const nuclear = liveEnergy.nuclear || 0;
-    const renewable = solar + wind + hydro;
-
-    const total =
-      thermal +
-      renewable +
-      nuclear;
-
-    const thermalPercent =
-      total <= 0 ? 0 : ((thermal / total) * 100).toFixed(1);
-
-    const renewablePercent =
-      total <= 0 ? 0 : ((renewable / total) * 100).toFixed(1);
-
-    // 🔥 高火力
-    if (thermalPercent >= 80) {
-      return `
-        目前供電高度依賴火力發電，
-        火力占比約 ${thermalPercent}% 。
-
-        代表系統對天然氣、
-        燃煤與國際燃料價格波動較敏感，
-        未來可能增加供電成本壓力。
-
-        目前再生能源占比約
-        ${renewablePercent}% ，
-        夜間太陽能發電為零，
-        因此整體供電結構仍以火力為主。
-        `;
-    }
-
-    // 🔥 中度火力
-    if (thermalPercent >= 60) {
-      return `
-        目前供電仍以火力發電為主，
-        但再生能源已開始提供部分支撐。
-
-        目前再生能源占比約
-        ${renewablePercent}% ，
-        顯示能源轉型正在進行中。
-
-        若未來風力、
-        儲能與綠能占比持續提升，
-        有機會降低供電成本壓力。
-        `;
-    }
-
-    // 🔥 綠能高
-    return `
-      目前再生能源比例較高，
-      供電結構相對多元。
-
-      系統對化石燃料依賴較低，
-      有助於降低長期供電成本波動風險，
-      整體能源結構較穩定。
-      `;
-  }
-
   return (
     <>
       {loading ? (
@@ -684,7 +598,7 @@ export default function ElectricityAnalysis() {
       ) : (
         <div className="electricity-page">
           {/* ========================= */}
-          {/* 🔥 Title */}
+          {/* Title */}
           {/* ========================= */}
 
           <div className="electricity-hero">
@@ -767,6 +681,23 @@ export default function ElectricityAnalysis() {
             >
               <div className="dashboard-title">
                 <i className="fi fi-rr-chart-line-up"/>成本壓力
+
+                <div className="info-wrapper">
+                  <i
+                    className="fi fi-rr-lightbulb-on"
+                    style={{
+                      color: "#facc15",
+                      marginLeft: 4,
+                      cursor: "help",
+                      fontSize: 16,
+                    }}
+                  />
+
+                  <div className="info-tooltip">
+                    成本壓力依據目前發電結構估算，
+                    火力發電占比越高，成本壓力通常越高。
+                  </div>
+                </div>
               </div>
 
               <span>{liveCostPressure}</span>
@@ -794,6 +725,23 @@ export default function ElectricityAnalysis() {
                   }
                 />
                 風險等級
+
+                <div className="info-wrapper">
+                  <i
+                    className="fi fi-rr-lightbulb-on"
+                    style={{
+                      color: "#facc15",
+                      marginLeft: 4,
+                      cursor: "help",
+                      fontSize: 16,
+                    }}
+                  />
+
+                  <div className="info-tooltip">
+                    根據即時供電結構與成本壓力推估，
+                    分為高、中、低三種風險等級。
+                  </div>
+                </div>
               </div>
 
               <span>
@@ -916,7 +864,7 @@ export default function ElectricityAnalysis() {
                 marginTop: "30px",
               }}
             >
-              {/* 🔥 官方台電 */}
+              {/* 官方台電 */}
               <div
                 style={{
                   padding: "28px",
@@ -1095,361 +1043,351 @@ export default function ElectricityAnalysis() {
             </div>
           </div>
 
-          {/* ========================= */}
-          {/* 🔥 能源結構 */}
-          {/* ========================= */}
+          {/* 能源結構 */}
+          {activeTab === "structure" && (
+            <div className="electricity-card big-card">
+              <div className="analysis-header">
+                <h2>
+                  <i
+                    className="fi fi-rr-chart-line-up section-icon"
+                    style={{
+                      color: "#22c55e",
+                    }}
+                  />
+                  台灣供電能源結構分析
+                </h2>
 
-          <div className="electricity-card big-card">
-            <h2>
-              <i
-                className="fi fi-rr-chart-line-up"
+                <div className="analysis-tabs">
+                  <button
+                    className={`analysis-tab ${
+                      activeTab === "structure"
+                        ? "active-structure"
+                        : ""
+                    }`}
+                    onClick={() => setActiveTab("structure")}
+                  >
+                    能源結構
+                  </button>
+
+                  <button
+                    className={`analysis-tab ${
+                      activeTab === "forecast"
+                        ? "active-forecast"
+                        : ""
+                    }`}
+                    onClick={() => setActiveTab("forecast")}
+                  >
+                    未來趨勢
+                  </button>
+                </div>
+              </div>
+
+              <p
                 style={{
-                  marginRight: "10px",
-                  color: "#22c55e",
+                  opacity: 0.75,
+                  marginTop: "10px",
+                  lineHeight: 1.8,
                 }}
-              />
-              台灣能源轉型趨勢分析
-            </h2>
+              >
+                觀察近十年主要供電能源來源占比變化
+              </p>
 
-            <p
-              style={{
-                opacity: 0.75,
-                marginTop: "10px",
-                lineHeight: 1.8,
-              }}
-            >
-              長期供電能源結構比較
-            </p>
+              <div
+                style={{
+                  width: "100%",
+                  height: "500px",
+                  marginTop: "30px",
+                }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={compareLineData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 20,
+                    }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="4 4"
+                      opacity={0.8}
+                    />
 
-            <div
-              style={{
-                width: "100%",
-                height: "500px",
-                marginTop: "30px",
-              }}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={compareLineData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 20,
+                    <XAxis
+                      dataKey="year"
+                      tickMargin={15}
+                      tick={{
+                        fill: "#94a3b8",
+                        fontSize: 16,
+                        fontWeight: 800,
+                      }}
+                      axisLine={{
+                        stroke: "#475569",
+                        strokeWidth: 2,
+                      }}
+                      tickLine={false}
+                    />
+
+                    <YAxis
+                      tickMargin={15}
+                      tickFormatter={(value) =>
+                        value === 0 ? "" : `${value}%`
+                      }
+                      tick={{
+                        fill: "#94a3b8",
+                        fontSize: 18,
+                        fontWeight: 800,
+                      }}
+                      axisLine={{
+                        stroke: "#475569",
+                        strokeWidth: 2,
+                      }}
+                      tickLine={false}
+                    />
+
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={false}
+                    />
+
+                    <Legend
+                      wrapperStyle={{
+                        paddingTop: 40,
+                      }}
+                    />
+
+                    <Line
+                      dataKey="coal"
+                      name="煤炭"
+                      stroke="#64748b"
+                      strokeWidth={4}
+                      dot={{ r: 5 }}
+                    />
+
+                    <Line
+                      dataKey="gas"
+                      name="天然氣"
+                      stroke="#3b82f6"
+                      strokeWidth={4}
+                      dot={{ r: 5 }}
+                    />
+
+                    <Line
+                      dataKey="nuclear"
+                      name="核能"
+                      stroke="#8b5cf6"
+                      strokeWidth={4}
+                      dot={{ r: 5 }}
+                    />
+
+                    <Line
+                      dataKey="renewable"
+                      name="再生能源"
+                      stroke="#22c55e"
+                      strokeWidth={4}
+                      dot={{ r: 5 }}
+                    />
+
+                    <Line
+                      dataKey="oil"
+                      name="石油"
+                      stroke="#f97316"
+                      strokeWidth={4}
+                      dot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* 未來趨勢 */}
+          {activeTab === "forecast" && (
+            <div className="electricity-card big-card">
+              <div className="analysis-header">
+                <h2 style={{ margin: 0 }}>
+                  <i
+                    className="fi fi-rr-chart-histogram"
+                    style={{
+                      marginRight: "10px",
+                      color: "#60a5fa",
+                    }}
+                  ></i>
+
+                  {t("electricity.future")}
+                </h2>
+
+                <div className="analysis-tabs">
+                  <button
+                    className={`analysis-tab ${
+                      activeTab === "structure"
+                        ? "active-structure"
+                        : ""
+                    }`}
+                    onClick={() => setActiveTab("structure")}
+                  >
+                    能源結構
+                  </button>
+
+                  <button
+                    className={`analysis-tab ${
+                      activeTab === "forecast"
+                        ? "active-forecast"
+                        : ""
+                    }`}
+                    onClick={() => setActiveTab("forecast")}
+                  >
+                    未來趨勢
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                  marginTop: "12px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  className="forecast-badge"
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    background: "rgba(59,130,246,0.12)",
+                    border: "1px solid rgba(59,130,246,0.25)",
+                    color: "#60a5fa",
+                    fontSize: "13px",
+                    fontWeight: 600,
                   }}
                 >
-                  <CartesianGrid
-                    strokeDasharray="4 4"
-                    opacity={0.8}
-                  />
+                  <i className="fi fi-rr-chart-line-up"></i>
+                  {i18n.language === "en"
+                    ? " Trend Forecast"
+                    : " 趨勢預測模型"}
+                </div>
 
-                  <XAxis
-                    dataKey="year"
-                    tick={{
-                      fill: "#94a3b8",
-                      fontSize: 16,
-                      fontWeight: 800,
-                    }}
-                    axisLine={{
-                      stroke: "#475569",
-                      strokeWidth: 2,
-                    }}
-                    tickLine={false}
-                  />
-
-                  <YAxis
-                    domain={[0, 50]}
-                    ticks={[0, 10, 20, 30, 40, 50]}
-                    tickFormatter={(value) => (value === 0 ? "" : `${value}%`)}
-                    tick={{
-                      fill: "#94a3b8",
-                      fontSize: 18,
-                      fontWeight: 800,
-                    }}
-                    axisLine={{
-                      stroke: "#475569",
-                      strokeWidth: 2,
-                    }}
-                    tickLine={false}
-                  />
-
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={false}
-                  />
-
-                  <Legend />
-
-                  <Line dataKey="s1" name="煤及煤產品" stroke="#64748b" strokeWidth={4} dot={{ r: 5 }} />
-                  <Line dataKey="s13" name="原油及石油產品" stroke="#f97316" strokeWidth={4} dot={{ r: 5 }} />
-                  <Line dataKey="s37" name="天然氣" stroke="#3b82f6" strokeWidth={4} dot={{ r: 5 }} />
-                  <Line dataKey="s40" name="生質能及廢棄物" stroke="#22c55e" strokeWidth={4} dot={{ r: 5 }} />
-                  <Line dataKey="s51" name="電力" stroke="#8b5cf6" strokeWidth={4} dot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* ========================= */}
-          {/* 🔥 未來趨勢 */}
-          {/* ========================= */}
-
-          <div className="electricity-card big-card">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                flexWrap: "wrap",
-              }}
-            >
-              <h2 style={{ margin: 0 }}>
-                <i
-                  className="fi fi-rr-chart-histogram"
+                <div
                   style={{
-                    marginRight: "10px",
-                    color: "#60a5fa",
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    background: "rgba(34,197,94,0.12)",
+                    border: "1px solid rgba(34,197,94,0.22)",
+                    color: "#4ade80",
+                    fontSize: "13px",
+                    fontWeight: 700,
                   }}
-                ></i>
-
-                {t("electricity.future")}
-              </h2>
-
-              <div
-                className="forecast-badge"
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "999px",
-                  background: "rgba(59,130,246,0.12)",
-                  border: "1px solid rgba(59,130,246,0.25)",
-                  color: "#60a5fa",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "help",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <i className="fi fi-rr-chart-line-up"></i>
-
-                {i18n.language === "en" ? "Trend Forecast" : "趨勢預測模型"}
-                <div className="forecast-tooltip">
-                  {i18n.language === "en" ? (
-                    <>
-                      <strong>Model Methodology</strong>
-
-                      <div style={{ marginTop: "10px", lineHeight: 1.8 }}>
-                        • Historical Taiwan energy data over the past 30
-                        years(Data Source: Taiwan Energy Balance Sheets
-                        published by the Energy Administration)
-                        <br />
-                        • Prophet time-series forecasting
-                        <br />
-                        • Energy-type weighted cost estimation
-                        <br />• For research and reference purposes only
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <strong>模型依據</strong>
-
-                      <div style={{ marginTop: "10px", lineHeight: 1.8 }}>
-                        • 使用台灣 80~113
-                        年能源統計資料(資料來源：能源署能源平衡表)
-                        <br />
-                        • Prophet 時間序列模型
-                        <br />
-                        • 能源類型權重成本估算
-                        <br />• 僅供研究與參考
-                      </div>
-                    </>
-                  )}
+                >
+                  {i18n.language === "en"
+                    ? "Reference Value"
+                    : "具參考性"}
                 </div>
-              </div>
 
-              <div
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "999px",
-                  background: "rgba(34,197,94,0.12)",
-                  border: "1px solid rgba(34,197,94,0.22)",
-                  color: "#4ade80",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <>
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: "#22c55e",
-                      boxShadow: "0 0 10px #22c55e",
-                    }}
-                  />
-
-                  {i18n.language === "en" ? "Reference Value" : "具參考性"}
-                </>
-              </div>
-              <div
-                className="forecast-badge"
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "999px",
-                  background: "rgba(168,85,247,0.12)",
-                  border: "1px solid rgba(168,85,247,0.25)",
-                  color: "#c084fc",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  position: "relative",
-                  cursor: "help",
-                }}
-              >
-                <>
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: "#c084fc",
-                      boxShadow: "0 0 10px #c084fc",
-                    }}
-                  />
+                <div
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    background: "rgba(168,85,247,0.12)",
+                    border: "1px solid rgba(168,85,247,0.25)",
+                    color: "#c084fc",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                  }}
+                >
                   MAPE {forecastMAPE.toFixed(1)}%
-                </>
-                <div className="forecast-tooltip">
-                  {i18n.language === "en" ? (
-                    <>
-                      <strong>MAPE Explanation</strong>
-
-                      <div
-                        style={{
-                          marginTop: "10px",
-                          lineHeight: 1.8,
-                        }}
-                      >
-                        • MAPE represents the average forecasting error rate.
-                        <br />
-                        • Current model provides trend-level reference value.
-                        <br />• Lower MAPE indicates better prediction
-                        stability.
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <strong>MAPE 指標說明</strong>
-
-                      <div
-                        style={{
-                          marginTop: "10px",
-                          lineHeight: 1.8,
-                        }}
-                      >
-                        • MAPE 代表模型平均預測誤差率
-                        <br />
-                        • 目前模型主要提供趨勢參考
-                        <br />• MAPE 越低代表模型穩定性越高
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
-            </div>
 
-            <p>{t("electricity.futureDesc")}</p>
+              <p>{t("electricity.futureDesc")}</p>
 
-            <div
-              style={{
-                width: "100%",
-                height: "420px",
-                marginTop: "30px",
-              }}
-            >
               <div
                 style={{
-                  marginTop: "10px",
-                  color: "#94a3b8",
-                  fontSize: "14px",
+                  width: "100%",
+                  height: "420px",
+                  marginTop: "30px",
                 }}
               >
-                1991–2024 歷史資料 ｜ 2026–2030 Prophet 預測
+                <div
+                  style={{
+                    marginTop: "10px",
+                    color: "#94a3b8",
+                    fontSize: "14px",
+                  }}
+                >
+                  1991–2024 歷史資料 ｜ 2026–2030 Prophet 預測
+                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+
+                    <XAxis dataKey="year" />
+                    <YAxis/>
+
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={false}
+                      wrapperStyle={{
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <Legend />
+
+                    <ReferenceLine
+                      x={2026}
+                      stroke="#ef4444"
+                      strokeDasharray="5 5"
+                      label={i18n.language === "en" ? "Current" : "目前"}
+                    />
+
+                    {/* 預測區間 */}
+                    <Area
+                      type="monotone"
+                      dataKey="interval"
+                      stroke="transparent"
+                      fill="rgba(59,130,246,0.22)"
+                      baseLine={(d) => d.lower}
+                      activeDot={false}
+                    />
+
+                    {/* 歷史 */}
+                    <Area
+                      type="monotone"
+                      dataKey="historical"
+                      stroke="none"
+                      fill="rgba(34,197,94,0.08)"
+                    />
+                    
+                    <Line
+                      type="monotone"
+                      dataKey="historical"
+                      stroke="#22c55e"
+                      strokeWidth={5}
+                      dot={{ r: 5 }}
+                      activeDot={{ r: 7 }}
+                      name="歷史成本壓力"
+                    />
+
+                    {/* 預測 */}
+                    <Line
+                      type="monotone"
+                      dataKey="predicted"
+                      stroke="#3b82f6"
+                      strokeWidth={5}
+                      strokeDasharray="6 6"
+                      dot={{ r: 5 }}
+                      name={i18n.language === "en" ? "Prediction" : "未來預測"}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-
-                  <XAxis dataKey="year" />
-                  <YAxis/>
-
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={false}
-                    wrapperStyle={{
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <Legend />
-
-                  <ReferenceLine
-                    x={2026}
-                    stroke="#ef4444"
-                    strokeDasharray="5 5"
-                    label={i18n.language === "en" ? "Current" : "目前"}
-                  />
-
-                  {/* 🔥 預測區間 */}
-                  <Area
-                    type="monotone"
-                    dataKey="interval"
-                    stroke="transparent"
-                    fill="rgba(59,130,246,0.22)"
-                    baseLine={(d) => d.lower}
-                    activeDot={false}
-                  />
-
-                  {/* 🔥 歷史 */}
-                  <Area
-                    type="monotone"
-                    dataKey="historical"
-                    stroke="none"
-                    fill="rgba(34,197,94,0.08)"
-                  />
-                  
-                  <Line
-                    type="monotone"
-                    dataKey="historical"
-                    stroke="#22c55e"
-                    strokeWidth={5}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 7 }}
-                    name="歷史成本壓力"
-                  />
-
-                  {/* 🔥 預測 */}
-                  <Line
-                    type="monotone"
-                    dataKey="predicted"
-                    stroke="#3b82f6"
-                    strokeWidth={5}
-                    strokeDasharray="6 6"
-                    dot={{ r: 5 }}
-                    name={i18n.language === "en" ? "Prediction" : "未來預測"}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
             </div>
-          </div>
+          )}
 
           {/* ========================= */}
-          {/* 🔥 AI 建議 */}
+          {/* AI 建議 */}
           {/* ========================= */}
 
           <div className="electricity-card big-card">
