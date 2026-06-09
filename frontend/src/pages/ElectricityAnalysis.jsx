@@ -677,7 +677,7 @@ export default function ElectricityAnalysis() {
               }}
             >
               <div className="dashboard-title">
-                <i className="fi fi-rr-chart-line-up"/>
+                <i className="fi fi-rr-dashboard"/>
                 {t("electricity.costTitle")}
 
                 <div className="info-wrapper">
@@ -690,7 +690,6 @@ export default function ElectricityAnalysis() {
                       fontSize: 16,
                     }}
                   />
-
                   <div className="info-tooltip">
                     {t("electricity.costPressureTip")}
                   </div>
@@ -1031,9 +1030,22 @@ export default function ElectricityAnalysis() {
           {activeTab === "structure" && (
             <div className="electricity-card">
               <div className="analysis-header">
-                <h2>
+                <div
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: "#22c55e",
+                  }}
+                >
+                  <i
+                    className="fi fi-rr-chart-pie-alt"
+                    style={{
+                      marginRight: "16px",
+                      fieldSize: 32,
+                    }}
+                  ></i>
                   {t("electricity.structureTitle")}
-                </h2>
+                </div>
 
                 <div className="analysis-tabs">
                   <button
@@ -1182,9 +1194,22 @@ export default function ElectricityAnalysis() {
           {activeTab === "forecast" && (
             <div className="electricity-card">
               <div className="analysis-header">
-                <h2>
+                <div
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: "#3b82f6",
+                  }}
+                >
+                  <i
+                    className="fi fi-rr-chart-line-up"
+                    style={{
+                      marginRight: "16px",
+                      fieldSize: 32,
+                    }}
+                  ></i>
                   {t("electricity.future")}
-                </h2>
+                </div>
 
                 <div className="analysis-tabs">
                   <button
@@ -1232,7 +1257,6 @@ export default function ElectricityAnalysis() {
                     fontWeight: 600,
                   }}
                 >
-                  <i className="fi fi-rr-chart-line-up"></i>
                   {i18n.language === "en"
                     ? " Trend Forecast"
                     : " 趨勢預測模型"}
@@ -1416,7 +1440,6 @@ export default function ElectricityAnalysis() {
                   color: "#a855f7",
                 }}
               ></i>
-
               {t("electricity.ai")}
             </h2>
 

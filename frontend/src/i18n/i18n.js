@@ -48,7 +48,7 @@ const resources = {
 
         todayPower: "電力資訊",
         powerplant: "即時電網監控",
-        dailyReport: "今日能源分析",
+        dailyReport: "今日能源數據",
         electricityAnalysis: "電力成本分析",
 
         analysisTools: "分析工具",
@@ -511,7 +511,7 @@ const resources = {
         ratio: "佔比",
         date: "日期",
 
-        loading: "載入今日能源分析",
+        loading: "載入今日能源數據",
         syncing: "正在同步最新能源資料...",
         utilRate: "使用率",
         peakRate: "尖峰使用率",
@@ -560,6 +560,33 @@ const resources = {
 
         p7: "✦　系統運轉淨尖峰供電能力：",
         p8: "扣除歲修、檢修、故障機組，以及環保限制、氣溫、水力條件等因素。",
+      },
+
+      dataCenter: {
+        currentVersion: "目前資料版本",
+        uploadTitle: "上傳能源平衡表",
+        uploadDesc:
+          "請上傳最新版能源平衡表 Excel 檔案，系統將自動驗證年份與檔案格式。",
+
+        systemStatus: "系統狀態",
+        currentYear: "目前系統年份",
+        maxYear: "可接受最新年份",
+        chooseFile: "選擇檔案",
+        noFile: "尚未選擇檔案",
+        readyUpdate: "準備更新",
+        updating: "正在更新能源球體...",
+        updateSuccess: "能源球體更新完成",
+        updateButton: "更新能源球體",
+        updatingButton: "更新中...",
+
+        invalidFile: "❌ 請上傳能源平衡表 Excel 檔案",
+        invalidYear: "❌ 無法從檔名判斷年份",
+        yearExists: "⚠️ 系統已存在 {{year}} 年資料",
+        yearNotReleased: "❌ {{year}} 年資料尚未公布",
+        yearDetected: "✅ 偵測到新增年份：{{year}}",
+        updateFailed: "更新失敗",
+        updateFinished: "✅ {{year}} 年能源球體更新完成",
+        updateFailedWithReason: "更新失敗：{{reason}}"
       }
     }
   },
@@ -625,7 +652,7 @@ const resources = {
         structureDesc:
           "Observing the changes in the proportion of Taiwan's main power supply sources over the past decade",
         
-          future: "Future Cost Pressure Forecast",
+        future: "Future Cost Pressure Forecast",
         futureDesc:
           "Predicting future trends in the power supply cost pressure index using the Prophet model",
         historyForecast:
@@ -722,7 +749,7 @@ const resources = {
         
         todayPower: "Power Info",
         powerplant: "Power Plant",
-        dailyReport: "Daily Energy Analysis",
+        dailyReport: "Daily Energy Data",
         electricityAnalysis: "Electricity Cost Analysis",
 
         analysisTools: "Analysis Tools",
@@ -1154,6 +1181,33 @@ const resources = {
         unit: "MW",
         reserveRate: "Reserve Rate",
         updateTime: "Updated",
+      },
+
+      dataCenter: {
+        currentVersion: "Current Data Version",
+        uploadTitle: "Upload Energy Balance Table",
+        uploadDesc:
+          "Upload the latest Energy Balance Excel file. The system will automatically validate the year and file format.",
+
+        systemStatus: "System Status",
+        currentYear: "Current System Year",
+        chooseFile: "Choose File",
+        noFile: "No File Selected",
+        maxYear: "Latest Available Year",
+        readyUpdate: "Ready to Update",
+        updating: "Updating Energy Sphere...",
+        updateSuccess: "Energy Sphere Updated Successfully",
+        updateButton: "Update Energy Sphere",
+        updatingButton: "Updating...",
+        
+        invalidFile: "❌ Please upload an Energy Balance Excel file",
+        invalidYear: "❌ Unable to determine the year from the filename",
+        yearExists: "⚠️ Data for year {{year}} already exists",
+        yearNotReleased: "❌ Data for year {{year}} has not been released",
+        yearDetected: "✅ New year detected: {{year}}",
+        updateFailed: "Update Failed",
+        updateFinished: "✅ Energy Sphere updated for year {{year}}",
+        updateFailedWithReason: "Update failed: {{reason}}"
       }
     }
   }

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const API =
   `${window.location.protocol}//${window.location.hostname}:8000`;
+
 const demandLayouts = import.meta.glob(
   "../data/demand_layout_*.json",
   { eager: true }
@@ -12,48 +14,23 @@ const supplyLayouts = import.meta.glob(
   { eager: true }
 );
 
+function getYears(layouts, regex) {
+  return Object.keys(layouts).map(
+    (p) => Number(p.match(regex)?.[1] || 0)
+  );
+}
+
 function getLatestYear() {
-  const demandYears =
-    Object.keys(demandLayouts).map(
-      (path) => {
-        const match =
-          path.match(
-            /demand_layout_(\d+)/
-          );
-
-        return match
-          ? Number(match[1])
-          : 0;
-      }
-    );
-
-  const supplyYears =
-    Object.keys(supplyLayouts).map(
-      (path) => {
-        const match =
-          path.match(
-            /supply_layout_(\d+)/
-          );
-
-        return match
-          ? Number(match[1])
-          : 0;
-      }
-    );
-
-  const latestDemand =
-    demandYears.length
-      ? Math.max(...demandYears)
-      : 0;
-
-  const latestSupply =
-    supplyYears.length
-      ? Math.max(...supplyYears)
-      : 0;
-
   return Math.min(
-    latestDemand,
-    latestSupply
+    Math.max(...getYears(
+      demandLayouts,
+      /demand_layout_(\d+)/
+    )),
+    
+    Math.max(...getYears(
+      supplyLayouts,
+      /supply_layout_(\d+)/
+    ))
   );
 }
 
@@ -64,15 +41,13 @@ export default function DataCenter() {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const { t } = useTranslation();
 
   const CURRENT_YEAR =
     getLatestYear();
 
-  const CURRENT_ROC_YEAR =
-    new Date().getFullYear() - 1911;
-
   const MAX_ALLOWED_YEAR =
-    CURRENT_ROC_YEAR - 1;
+    new Date().getFullYear() - 1912;
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -88,7 +63,7 @@ export default function DataCenter() {
       setSelectedYear(null);
 
       setMessage(
-        "❌ 請上傳能源平衡表 Excel 檔案"
+        t("dataCenter.invalidFile")
       );
 
       return;
@@ -100,7 +75,7 @@ export default function DataCenter() {
       setSelectedYear(null);
 
       setMessage(
-        "❌ 無法從檔名判斷年份"
+        t("dataCenter.invalidYear")
       );
 
       return;
@@ -114,7 +89,9 @@ export default function DataCenter() {
       setSelectedYear(null);
 
       setMessage(
-        `⚠️ 系統已存在 ${year} 年資料`
+        t("dataCenter.yearExists", {
+          year
+        })
       );
 
       return;
@@ -124,7 +101,9 @@ export default function DataCenter() {
       setSelectedYear(null);
 
       setMessage(
-        `❌ ${year} 年資料尚未公布`
+        t("dataCenter.yearNotReleased", {
+          year
+        })
       );
 
       return;
@@ -133,7 +112,9 @@ export default function DataCenter() {
     setSelectedYear(year);
 
     setMessage(
-      `✅ 偵測到新增年份：${year}`
+      t("dataCenter.yearDetected", {
+        year
+      })
     );
   };
 
@@ -157,7 +138,8 @@ export default function DataCenter() {
 
       if (!data.success) {
         throw new Error(
-          data.error || "更新失敗"
+          data.error ||
+          t("dataCenter.updateFailed")
         );
       }
 
@@ -166,14 +148,19 @@ export default function DataCenter() {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
+      
       setMessage(
-        `✅ ${selectedYear} 年能源球體更新完成`
+        t("dataCenter.updateFinished", {
+          year: selectedYear
+        })
       );
 
     } catch (err) {
 
       alert(
-        `更新失敗：${err.message}`
+        t("dataCenter.updateFailedWithReason", {
+          reason: err.message
+        })
       );
 
     } finally {
@@ -187,16 +174,6 @@ export default function DataCenter() {
     <>
       <style>
         {`
-          input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(148,163,184,.2);
-            background: rgba(255,255,255,.03);
-            color: inherit;
-            margin-top: 10px;
-          }
-
           .spinner-icon {
             animation: spin 1s linear infinite;
             display: inline-block;
@@ -229,10 +206,9 @@ export default function DataCenter() {
 
       <div style={container}>
 
-        {/* 統計卡片 */}
         <div style={statsGrid}>
           <InfoCard
-            title="目前資料版本"
+            title={t("dataCenter.currentVersion")}
             value={CURRENT_YEAR}
           />
 
@@ -240,14 +216,7 @@ export default function DataCenter() {
 
         {/* 上傳 */}
         <div style={cardStyle}>
-          <h2
-            style={{
-              ...sectionTitle,
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
+          <h2 style={titleRow}>
             <i
               className="fi fi-rr-upload"
               style={{
@@ -255,18 +224,64 @@ export default function DataCenter() {
                 fontSize: "20px",
               }}
             ></i>
-            上傳能源平衡表
+            {t("dataCenter.uploadTitle")}
           </h2>
 
           <p style={description}>
-            請上傳最新版能源平衡表 Excel 檔案，
-            系統將自動驗證年份與檔案格式。
+            {t("dataCenter.uploadDesc")}
           </p>
 
+          <label
+            htmlFor="excel-upload"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "180px",
+              border: "2px dashed rgba(249, 115, 22, 0.4)",
+              borderRadius: "24px",
+              background: "rgba(249, 115, 22, 0.04)",
+              cursor: "pointer",
+            }}
+          >
+            <i
+              className="fi fi-rr-cloud-upload"
+              style={{
+                fontSize: "48px",
+                color: "#f97316",
+                marginBottom: "16px",
+              }}
+            />
+
+            <div
+              style={{
+                fontSize: "18px",
+                fontWeight: 700,
+              }}
+            >
+              {t("dataCenter.chooseFile")}
+            </div>
+
+            <div
+              style={{
+                marginTop: "8px",
+                opacity: 0.7,
+                fontSize: "14px",
+              }}
+            >
+              XLSX / XLS
+            </div>
+          </label>
+
           <input
+            id="excel-upload"
             type="file"
             accept=".xlsx,.xls"
             onChange={handleFileChange}
+            style={{
+              display: "none",
+            }}
           />
 
           {selectedFile && (
@@ -274,20 +289,55 @@ export default function DataCenter() {
               style={{
                 ...fileBox,
                 gap: "10px",
+                justifyContent: "space-between",
               }}
             >
-              <i
-                className="fi fi-rr-file-excel"
+              <div
                 style={{
-                  color: "#22c55e",
-                  fontSize: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
                 }}
-              ></i>
+              >
+                <i
+                  className="fi fi-rr-file-excel"
+                  style={{
+                    color: "#22c55e",
+                    fontSize: "18px",
+                  }}
+                />
+                {selectedFile.name}
+              </div>
 
-              {selectedFile.name}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFile(null);
+                  setSelectedYear(null);
+                  setMessage("");
+
+                  const input =
+                    document.getElementById(
+                      "excel-upload"
+                    );
+
+                  if (input) {
+                    input.value = "";
+                  }
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#ef4444",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  padding: "0 6px",
+                }}
+              >
+                ✕
+              </button>
             </div>
           )}
-
           {message && (
             <div style={messageBox}>
               {message}
@@ -297,14 +347,7 @@ export default function DataCenter() {
 
         {/* 系統狀態 */}
         <div style={cardStyle}>
-          <h2
-            style={{
-              ...sectionTitle,
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
+          <h2 style={titleRow}>
             <i
               className="fi fi-rr-settings"
               style={{
@@ -312,16 +355,11 @@ export default function DataCenter() {
                 fontSize: "20px",
               }}
             ></i>
-            系統狀態
+            {t("dataCenter.systemStatus")}
           </h2>
 
           <div style={statusArea}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
+            <div style={rowStyle}>
               <i
                 className="fi fi-rr-calendar"
                 style={{
@@ -330,7 +368,7 @@ export default function DataCenter() {
                   marginRight: "10px",
                 }}
               ></i>
-              目前系統年份：
+              {t("dataCenter.currentYear")}：
               <strong
                 style={{
                   marginLeft: "6px",
@@ -340,12 +378,7 @@ export default function DataCenter() {
               </strong>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
+            <div style={rowStyle}>
               <i
                 className="fi fi-rr-chart-line-up"
                 style={{
@@ -354,7 +387,7 @@ export default function DataCenter() {
                   marginRight: "10px",
                 }}
               ></i>
-              可接受最新年份：
+              {t("dataCenter.maxYear")}：
               <strong
                 style={{
                   marginLeft: "6px",
@@ -380,7 +413,7 @@ export default function DataCenter() {
                     marginRight: "10px",
                   }}
                 ></i>
-                準備更新：
+                {t("dataCenter.readyUpdate")}：
                 <strong
                   style={{
                     marginLeft: "6px",
@@ -416,7 +449,7 @@ export default function DataCenter() {
                       marginRight: "8px",
                     }}
                   ></i>
-                  正在更新能源球體...
+                  {t("dataCenter.updating")}
                 </>
               </div>
             </div>
@@ -438,7 +471,7 @@ export default function DataCenter() {
                   marginRight: "10px",
                 }}
               ></i>
-              能源球體更新完成
+              {t("dataCenter.updateSuccess")}
             </div>
           )}
 
@@ -456,8 +489,8 @@ export default function DataCenter() {
             }}
           >
             {isUpdating
-              ? "更新中..."
-              : "更新能源球體"}
+              ? t("dataCenter.updatingButton")
+              : t("dataCenter.updateButton")}
           </button>
       </div>
     </>
@@ -498,14 +531,6 @@ const container = {
   color: "var(--text-color)",
 };
 
-const titleStyle = {
-  fontSize: "42px",
-  fontWeight: "800",
-  color: "#f97316",
-  marginBottom: "40px",
-  textAlign: "center",
-};
-
 const statsGrid = {
   display: "grid",
   gridTemplateColumns:
@@ -523,7 +548,6 @@ const infoCard = {
   border: "1px solid rgba(255, 255, 255, 0.08)",
   boxShadow:
     "0 10px 30px rgba(0, 0, 0, 0.15)",
-  transition: "0.3s",
 };
 
 const cardStyle = {
@@ -541,6 +565,13 @@ const sectionTitle = {
   fontWeight: "700",
   marginBottom: "20px",
   color: "#f97316",
+};
+
+const titleRow = {
+  ...sectionTitle,
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
 };
 
 const description = {
@@ -588,6 +619,11 @@ const successBox = {
   color: "#22c55e",
   fontWeight: "700",
   textAlign: "center",
+};
+
+const rowStyle = {
+  display: "flex",
+  alignItems: "center",
 };
 
 const buttonStyle = {
