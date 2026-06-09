@@ -945,7 +945,7 @@ export default function PowerPlantLive() {
                     display: "flex",
                   }}
                 />
-                {t("power.currentGeneration")}
+                {t("power.current")}
               </div>
 
               <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>

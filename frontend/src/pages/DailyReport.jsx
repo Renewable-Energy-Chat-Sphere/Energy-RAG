@@ -270,10 +270,10 @@ function DailyReport() {
         >
           <div style={gridTitleStyle}>
             <i
-              className="fi fi-rr-solar-panel"
+              className="fi fi-rr-leaf"
               style={{
                 ...iconStyle,
-                color: "#facc15",
+                color: "#22c55e",
               }}
             ></i>
             {t("daily.renewable")}
@@ -585,11 +585,31 @@ function DailyReport() {
               }}
             >
               {[
-                { color: "#22c55e", title: "綠色", desc: "備轉量 > 10%" },
-                { color: "#facc15", title: "黃燈", desc: "備轉量 > 6%" },
-                { color: "#f97316", title: "橙燈", desc: "備轉量 ≤ 6%" },
-                { color: "#ef4444", title: "紅燈", desc: "備轉量 < 90MW" },
-                { color: "#374151", title: "黑燈", desc: "備轉量 < 50MW" },
+                {
+                  color: "#22c55e",
+                  title: t("reserveLight.green"),
+                  desc: t("reserveLight.greenDesc"),
+                },
+                {
+                  color: "#facc15",
+                  title: t("reserveLight.yellow"),
+                  desc: t("reserveLight.yellowDesc"),
+                },
+                {
+                  color: "#f97316",
+                  title: t("reserveLight.orange"),
+                  desc: t("reserveLight.orangeDesc"),
+                },
+                {
+                  color: "#ef4444",
+                  title: t("reserveLight.red"),
+                  desc: t("reserveLight.redDesc"),
+                },
+                {
+                  color: "#374151",
+                  title: t("reserveLight.black"),
+                  desc: t("reserveLight.blackDesc"),
+                },
               ].map((item) => (
                 <div
                   key={item.title}
@@ -699,7 +719,7 @@ function DailyReport() {
             >
               {[...data]
                 .sort((a, b) => b.ratio - a.ratio)
-                .slice(0, 5)
+                .slice(0, 3)
                 .map((item, index) => (
                   <div
                     key={index}

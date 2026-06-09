@@ -167,7 +167,7 @@ export default function Header() {
 
             {(isManager || isAdmin) ? (
               <div className="dropdown">
-                <span className="dropdown-title">分析工具 ▾</span>
+                <span className="dropdown-title">{t("nav.analysisTools")} ▾</span>
 
                 <div className="dropdown-menu">
                   <Link to="/rag">

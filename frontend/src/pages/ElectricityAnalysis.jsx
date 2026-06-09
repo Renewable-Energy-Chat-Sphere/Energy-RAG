@@ -420,13 +420,9 @@ export default function ElectricityAnalysis() {
 
     return {
       year: item.year + 1911,
-
       historical: item.costPressure,
-
       predicted: predicted?.predictedCostPressure || null,
-
       lower: predicted?.lower || null,
-
       upper: predicted?.upper || null,
     };
   });
@@ -437,9 +433,7 @@ export default function ElectricityAnalysis() {
 
     trendData.push({
       year: item.year,
-
       historical: null,
-
       predicted: item.predictedCostPressure,
 
       lower: item.predictedCostPressure - 4,
@@ -636,7 +630,8 @@ export default function ElectricityAnalysis() {
               }}
             >
               <div className="dashboard-title">
-                <i className="fi fi-rr-fire-flame-curved"/>火力
+                <i className="fi fi-rr-fire-flame-curved"/>
+                {t("electricity.thermal")}
               </div>
               <span>{liveEnergy.thermal.toFixed(0)} MW</span>
             </div>
@@ -648,7 +643,8 @@ export default function ElectricityAnalysis() {
               }}
             >
               <div className="dashboard-title">
-                <i className="fi fi-rr-leaf"/>綠能
+                <i className="fi fi-rr-leaf"/>
+                {t("electricity.renewable")}
               </div>
 
               <span>
@@ -667,7 +663,8 @@ export default function ElectricityAnalysis() {
               }}
             >
               <div className="dashboard-title">
-                <i className="fi fi-rr-radiation"/>核能
+                <i className="fi fi-rr-radiation"/>
+                {t("electricity.nuclear")}
               </div>
 
               <span>{liveEnergy.nuclear.toFixed(0)} MW</span>
@@ -680,7 +677,8 @@ export default function ElectricityAnalysis() {
               }}
             >
               <div className="dashboard-title">
-                <i className="fi fi-rr-chart-line-up"/>成本壓力
+                <i className="fi fi-rr-chart-line-up"/>
+                {t("electricity.costTitle")}
 
                 <div className="info-wrapper">
                   <i
@@ -694,8 +692,7 @@ export default function ElectricityAnalysis() {
                   />
 
                   <div className="info-tooltip">
-                    成本壓力依據目前發電結構估算，
-                    火力發電占比越高，成本壓力通常越高。
+                    {t("electricity.costPressureTip")}
                   </div>
                 </div>
               </div>
@@ -724,7 +721,7 @@ export default function ElectricityAnalysis() {
                         : "fi fi-rr-shield-check"
                   }
                 />
-                風險等級
+                {t("electricity.riskLevel")}
 
                 <div className="info-wrapper">
                   <i
@@ -738,18 +735,17 @@ export default function ElectricityAnalysis() {
                   />
 
                   <div className="info-tooltip">
-                    根據即時供電結構與成本壓力推估，
-                    分為高、中、低三種風險等級。
+                    {t("electricity.riskLevelTip")}
                   </div>
                 </div>
               </div>
 
               <span>
                 {liveCostPressure >= 40
-                  ? "高"
+                  ? t("electricity.riskHigh")
                   : liveCostPressure >= 25
-                    ? "中"
-                    : "低"}
+                    ? t("electricity.riskMedium")
+                    : t("electricity.riskLow")}
               </span>
             </div>
           </div>
@@ -758,20 +754,7 @@ export default function ElectricityAnalysis() {
           {/* ⚡ AI 電費試算 */}
           {/* ========================= */}
 
-          <div className="electricity-card big-card">
-            <h2>
-              <i
-                className="fi fi-rr-chart-pie"
-                style={{
-                  marginRight: "10px",
-                  color: "#a855f7",
-                }}
-              ></i>
-              {i18n.language === "en"
-                ? "AI Electricity Cost Analysis"
-                : "AI 電價風險分析"}
-            </h2>
-
+          <div className="electricity-card">
             <p
               style={{
                 opacity: 0.7,
@@ -811,6 +794,7 @@ export default function ElectricityAnalysis() {
                   />
                 </div>
               </div>
+
               {/* 用電度數 */}
               <div className="calculator-input-group">
                 <label>
@@ -864,68 +848,69 @@ export default function ElectricityAnalysis() {
                 marginTop: "30px",
               }}
             >
-              {/* 官方台電 */}
+              {/* 台電官方計價 */}
               <div
                 style={{
-                  padding: "28px",
-                  borderRadius: "24px",
+                  padding: "40px",
+                  borderRadius: "30px",
                   background:
-                    "linear-gradient(135deg, rgba(59,130,246,0.16), rgba(37,99,235,0.05))",
-
-                  border: "1px solid rgba(96,165,250,0.22)",
+                    "linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(37, 99, 235, 0.05))",
+                  border: "1px solid rgba(96, 165, 250, 0.2)",
                 }}
               >
                 <div
                   style={{
                     opacity: 0.7,
                     marginBottom: "12px",
-                    fontSize: "14px",
-                    fontWeight: 600,
+                    fontSize: 24,
+                    fontWeight: "bold",
                   }}
                 >
                   <i
-                    className="fi fi-rr-bolt"
+                    className="fi fi-rr-file-invoice-dollar"
                     style={{
                       marginRight: "8px",
+                      fontSize: 28,
                       color: "#60a5fa",
                     }}
                   ></i>
 
                   {i18n.language === "en"
-                    ? " Official Taipower Estimate"
-                    : " 官方台電試算"}
+                    ? " Taipower's Official Pricing Calculation"
+                    : " 台電官方計價試算"}
                 </div>
 
                 <div className="bill-price">NT$ {estimatedBill}</div>
                 <div
                   style={{
                     marginTop: "20px",
-                    opacity: 0.78,
+                    opacity: 0.7,
                     fontSize: "14px",
-                    lineHeight: 1.9,
+                    lineHeight: 1.8,
                   }}
                 >
                   <div
                     style={{
                       marginBottom: "8px",
+                      fontSize: 14,
                       fontWeight: 700,
                     }}
                   >
                     {i18n.language === "en"
                       ? "Calculation Formula"
-                      : "電費試算公式"}
+                      : "電費計算公式"}
                   </div>
 
                   {billResult.formulas.map((f, idx) => (
-                    <div key={idx}>• {f}</div>
+                    <div key={idx}>✦　{f}</div>
                   ))}
                 </div>
 
                 <div
                   style={{
                     marginTop: "12px",
-                    opacity: 0.65,
-                    lineHeight: 1.7,
+                    opacity: 0.7,
+                    lineHeight: 1.8,
                     fontSize: "14px",
                   }}
                 >
@@ -938,29 +923,27 @@ export default function ElectricityAnalysis() {
               {/* 🤖 AI 分析 */}
               <div
                 style={{
-                  padding: "28px",
-                  borderRadius: "24px",
-
+                  padding: "40px",
+                  borderRadius: "30px",
                   background:
                     liveCostPressure >= 40
-                      ? "linear-gradient(135deg, rgba(239,68,68,0.16), rgba(127,29,29,0.05))"
+                      ? "linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(127, 29, 29, 0.05))"
                       : liveCostPressure >= 25
-                        ? "linear-gradient(135deg, rgba(249,115,22,0.16), rgba(154,52,18,0.05))"
-                        : "linear-gradient(135deg, rgba(34,197,94,0.16), rgba(20,83,45,0.05))",
-
+                        ? "linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(154, 52, 18, 0.05))"
+                        : "linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(20, 83, 45, 0.05))",
                   border:
                     liveCostPressure >= 40
-                      ? "1px solid rgba(239,68,68,0.25)"
+                      ? "1px solid rgba(239, 68, 68, 0.25)"
                       : liveCostPressure >= 25
-                        ? "1px solid rgba(249,115,22,0.25)"
-                        : "1px solid rgba(34,197,94,0.25)",
+                        ? "1px solid rgba(249, 115, 22, 0.25)"
+                        : "1px solid rgba(34, 197, 94, 0.25)",
                 }}
               >
                 <div
                   style={{
-                    opacity: 0.8,
+                    opacity: 0.7,
                     marginBottom: "12px",
-                    fontSize: "14px",
+                    fontSize: 24,
                     fontWeight: 600,
                   }}
                 >
@@ -968,6 +951,7 @@ export default function ElectricityAnalysis() {
                     className="fi fi-rr-robot"
                     style={{
                       marginRight: "8px",
+                      fontSize: 28,
                       color:
                         liveCostPressure >= 40
                           ? "#ef4444"
@@ -1045,16 +1029,10 @@ export default function ElectricityAnalysis() {
 
           {/* 能源結構 */}
           {activeTab === "structure" && (
-            <div className="electricity-card big-card">
+            <div className="electricity-card">
               <div className="analysis-header">
                 <h2>
-                  <i
-                    className="fi fi-rr-chart-line-up section-icon"
-                    style={{
-                      color: "#22c55e",
-                    }}
-                  />
-                  台灣供電能源結構分析
+                  {t("electricity.structureTitle")}
                 </h2>
 
                 <div className="analysis-tabs">
@@ -1066,7 +1044,7 @@ export default function ElectricityAnalysis() {
                     }`}
                     onClick={() => setActiveTab("structure")}
                   >
-                    能源結構
+                    {t("electricity.structure")}
                   </button>
 
                   <button
@@ -1077,7 +1055,7 @@ export default function ElectricityAnalysis() {
                     }`}
                     onClick={() => setActiveTab("forecast")}
                   >
-                    未來趨勢
+                    {t("electricity.forecast")}
                   </button>
                 </div>
               </div>
@@ -1089,13 +1067,13 @@ export default function ElectricityAnalysis() {
                   lineHeight: 1.8,
                 }}
               >
-                觀察近十年主要供電能源來源占比變化
+                {t("electricity.structureDesc")}
               </p>
 
               <div
                 style={{
                   width: "100%",
-                  height: "500px",
+                  height: "600px",
                   marginTop: "30px",
                 }}
               >
@@ -1131,9 +1109,7 @@ export default function ElectricityAnalysis() {
 
                     <YAxis
                       tickMargin={15}
-                      tickFormatter={(value) =>
-                        value === 0 ? "" : `${value}%`
-                      }
+                      tickFormatter={(value) => `${value}%`}
                       tick={{
                         fill: "#94a3b8",
                         fontSize: 18,
@@ -1159,7 +1135,7 @@ export default function ElectricityAnalysis() {
 
                     <Line
                       dataKey="coal"
-                      name="煤炭"
+                      name={t("energy.coal")}
                       stroke="#64748b"
                       strokeWidth={4}
                       dot={{ r: 5 }}
@@ -1167,7 +1143,7 @@ export default function ElectricityAnalysis() {
 
                     <Line
                       dataKey="gas"
-                      name="天然氣"
+                      name={t("energy.gas")}
                       stroke="#3b82f6"
                       strokeWidth={4}
                       dot={{ r: 5 }}
@@ -1175,7 +1151,7 @@ export default function ElectricityAnalysis() {
 
                     <Line
                       dataKey="nuclear"
-                      name="核能"
+                      name={t("energy.nuclear")}
                       stroke="#8b5cf6"
                       strokeWidth={4}
                       dot={{ r: 5 }}
@@ -1183,7 +1159,7 @@ export default function ElectricityAnalysis() {
 
                     <Line
                       dataKey="renewable"
-                      name="再生能源"
+                      name={t("energy.renewable")}
                       stroke="#22c55e"
                       strokeWidth={4}
                       dot={{ r: 5 }}
@@ -1191,7 +1167,7 @@ export default function ElectricityAnalysis() {
 
                     <Line
                       dataKey="oil"
-                      name="石油"
+                      name={t("energy.oil")}
                       stroke="#f97316"
                       strokeWidth={4}
                       dot={{ r: 5 }}
@@ -1204,17 +1180,9 @@ export default function ElectricityAnalysis() {
 
           {/* 未來趨勢 */}
           {activeTab === "forecast" && (
-            <div className="electricity-card big-card">
+            <div className="electricity-card">
               <div className="analysis-header">
-                <h2 style={{ margin: 0 }}>
-                  <i
-                    className="fi fi-rr-chart-histogram"
-                    style={{
-                      marginRight: "10px",
-                      color: "#60a5fa",
-                    }}
-                  ></i>
-
+                <h2>
                   {t("electricity.future")}
                 </h2>
 
@@ -1227,7 +1195,7 @@ export default function ElectricityAnalysis() {
                     }`}
                     onClick={() => setActiveTab("structure")}
                   >
-                    能源結構
+                    {t("electricity.structure")}
                   </button>
 
                   <button
@@ -1238,7 +1206,7 @@ export default function ElectricityAnalysis() {
                     }`}
                     onClick={() => setActiveTab("forecast")}
                   >
-                    未來趨勢
+                    {t("electricity.forecast")}
                   </button>
                 </div>
               </div>
@@ -1255,12 +1223,12 @@ export default function ElectricityAnalysis() {
                 <div
                   className="forecast-badge"
                   style={{
-                    padding: "6px 12px",
+                    padding: "4px 30px",
                     borderRadius: "999px",
-                    background: "rgba(59,130,246,0.12)",
-                    border: "1px solid rgba(59,130,246,0.25)",
+                    background: "rgba(59, 130, 246, 0.12)",
+                    border: "1px solid rgba(59, 130, 246, 0.25)",
                     color: "#60a5fa",
-                    fontSize: "13px",
+                    fontSize: "16px",
                     fontWeight: 600,
                   }}
                 >
@@ -1272,13 +1240,13 @@ export default function ElectricityAnalysis() {
 
                 <div
                   style={{
-                    padding: "6px 12px",
+                    padding: "4px 30px",
                     borderRadius: "999px",
-                    background: "rgba(34,197,94,0.12)",
-                    border: "1px solid rgba(34,197,94,0.22)",
+                    background: "rgba(34, 197, 94, 0.12)",
+                    border: "1px solid rgba(34, 197, 94, 0.2)",
                     color: "#4ade80",
-                    fontSize: "13px",
-                    fontWeight: 700,
+                    fontSize: "16px",
+                    fontWeight: 600,
                   }}
                 >
                   {i18n.language === "en"
@@ -1288,13 +1256,13 @@ export default function ElectricityAnalysis() {
 
                 <div
                   style={{
-                    padding: "6px 12px",
+                    padding: "4px 30px",
                     borderRadius: "999px",
-                    background: "rgba(168,85,247,0.12)",
-                    border: "1px solid rgba(168,85,247,0.25)",
+                    background: "rgba(168, 85, 247, 0.12)",
+                    border: "1px solid rgba(168, 85, 247, 0.25)",
                     color: "#c084fc",
-                    fontSize: "13px",
-                    fontWeight: 700,
+                    fontSize: "16px",
+                    fontWeight: 600,
                   }}
                 >
                   MAPE {forecastMAPE.toFixed(1)}%
@@ -1306,25 +1274,66 @@ export default function ElectricityAnalysis() {
               <div
                 style={{
                   width: "100%",
-                  height: "420px",
+                  height: "600px",
                   marginTop: "30px",
                 }}
               >
                 <div
                   style={{
-                    marginTop: "10px",
+                    margin: "10px 0",
                     color: "#94a3b8",
-                    fontSize: "14px",
+                    fontSize: "16px",
+                    fontWeight: "bold",
                   }}
                 >
-                  1991–2024 歷史資料 ｜ 2026–2030 Prophet 預測
+                  {t("electricity.historyForecast")}
                 </div>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                  <LineChart
+                    data={trendData}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 40,
+                    }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#475569"
+                      opacity={0.5}
+                    />
 
-                    <XAxis dataKey="year" />
-                    <YAxis/>
+                    <XAxis
+                      dataKey="year"
+                      tickMargin={15}
+                      tick={{
+                        fill: "#94a3b8",
+                        fontSize: 16,
+                        fontWeight: 800,
+                      }}
+                      axisLine={{
+                        stroke: "#475569",
+                        strokeWidth: 2,
+                      }}
+                      tickLine={false}
+                    />
+                    
+                    <YAxis
+                      domain={[0, 100]}
+                      ticks={[0, 20, 40, 60, 80, 100]}
+                      tickMargin={15}
+                      tick={{
+                        fill: "#94a3b8",
+                        fontSize: 18,
+                        fontWeight: 800,
+                      }}
+                      axisLine={{
+                        stroke: "#475569",
+                        strokeWidth: 2,
+                      }}
+                      tickLine={false}
+                    />
 
                     <Tooltip
                       content={<CustomTooltip />}
@@ -1333,7 +1342,12 @@ export default function ElectricityAnalysis() {
                         pointerEvents: "none",
                       }}
                     />
-                    <Legend />
+
+                    <Legend
+                      wrapperStyle={{
+                        paddingTop: 40,
+                      }}
+                    />
 
                     <ReferenceLine
                       x={2026}
@@ -1342,40 +1356,42 @@ export default function ElectricityAnalysis() {
                       label={i18n.language === "en" ? "Current" : "目前"}
                     />
 
-                    {/* 預測區間 */}
-                    <Area
-                      type="monotone"
-                      dataKey="interval"
-                      stroke="transparent"
-                      fill="rgba(59,130,246,0.22)"
-                      baseLine={(d) => d.lower}
-                      activeDot={false}
-                    />
-
                     {/* 歷史 */}
                     <Area
                       type="monotone"
                       dataKey="historical"
+                      hide
+                      legendType="none"
                       stroke="none"
-                      fill="rgba(34,197,94,0.08)"
+                      fill="rgba(34, 197, 94, 0.08)"
                     />
                     
                     <Line
                       type="monotone"
                       dataKey="historical"
                       stroke="#22c55e"
-                      strokeWidth={5}
+                      strokeWidth={4}
                       dot={{ r: 5 }}
                       activeDot={{ r: 7 }}
-                      name="歷史成本壓力"
+                      name={i18n.language === "en" ? "Historical Cost Pressure" : "歷史成本壓力"}
                     />
 
                     {/* 預測 */}
+                    <Area
+                      type="monotone"
+                      dataKey="interval"
+                      legendType="none"
+                      stroke="transparent"
+                      fill="rgba(59, 130, 246, 0.2)"
+                      baseLine={(d) => d.lower}
+                      activeDot={false}
+                    />
+
                     <Line
                       type="monotone"
                       dataKey="predicted"
                       stroke="#3b82f6"
-                      strokeWidth={5}
+                      strokeWidth={4}
                       strokeDasharray="6 6"
                       dot={{ r: 5 }}
                       name={i18n.language === "en" ? "Prediction" : "未來預測"}
@@ -1390,12 +1406,13 @@ export default function ElectricityAnalysis() {
           {/* AI 建議 */}
           {/* ========================= */}
 
-          <div className="electricity-card big-card">
+          <div className="electricity-card">
             <h2>
               <i
                 className="fi fi-rr-robot"
                 style={{
-                  marginRight: "10px",
+                  marginRight: "12px",
+                  fieldSize: 28,
                   color: "#a855f7",
                 }}
               ></i>

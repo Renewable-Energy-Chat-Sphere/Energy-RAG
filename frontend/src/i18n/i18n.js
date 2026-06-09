@@ -45,20 +45,21 @@ const resources = {
       nav: {
         home: "首頁",
         global: "能源視覺化",
-        powerplant: "即時電網監控",
-        todayPower: "電力資訊",
-        dailyReport: "每日能源分析",
-        rag: "AI 問答",
 
-        electricityAnalysis: "供電成本分析",
+        todayPower: "電力資訊",
+        powerplant: "即時電網監控",
+        dailyReport: "今日能源分析",
+        electricityAnalysis: "電力成本分析",
+
+        analysisTools: "分析工具",
+        rag: "AI 問答",
         prediction: "能源預測",
 
         adminCenter: "管理中心",
         energySphereUpdate: "能源資料中心",
-
-        contact: "聯絡我們",
         feedback: "回饋分析",
 
+        contact: "聯絡我們",
         login: "登入",
         logout: "登出"
       },
@@ -210,7 +211,7 @@ const resources = {
 
         subtitle: "台電 LIVE 機組資料監控系統",
 
-        currentGeneration: "即時發電量",
+        current: "即時發電量",
         capacity: "裝置容量",
         lastUpdate: "最後更新時間",
 
@@ -325,62 +326,45 @@ const resources = {
         "updatedEvery10Min": "各能源即時發電量小計（每10分鐘更新）",
         "liveGeneration": "各能源即時發電量",
         "totalGeneration": "總計",
-      }, electricity: {
-        title: "AI 供電成本分析",
+      },
+
+      electricity: {
+        title: "AI 電力成本分析",
         subtitle: "即時供電、能源結構、成本壓力與未來趨勢分析",
-
         updateTime: "即時資料更新時間：",
-        loading: "載入供電成本分析",
+        loading: "載入電力成本分析",
         loadingSub:
-          "即時抓取台電機組數據 · 計算能源結構 · 建立成本壓力模型",
-
-        realtime: "即時供電資訊",
+          "即時抓取台電機組數據．計算能源結構．建立成本壓力模型",
 
         thermal: "火力發電",
-        solar: "太陽能",
-        nuclear: "核能",
-        wind: "風力",
-        hydro: "水力",
+        renewable: "綠能發電",
+        nuclear: "核能發電",
+        costTitle: "成本壓力",
+        costPressureTip:
+          "成本壓力依據目前發電結構估算，火力發電占比越高，成本壓力通常越高。",
 
-        costTitle: "供電成本壓力",
-        costIndex: "供電成本壓力指數",
+        riskLevel: "風險等級",
+        riskLevelTip:
+          "根據即時供電結構與成本壓力推估，分為高、中、低三種風險等級。",
 
-        structure: "能源結構分析",
-        impact: "成本影響分析",
+        riskHigh: "高",
+        riskMedium: "中",
+        riskLow: "低",
 
-        future: "未來成本趨勢",
+        structure: "結構變化",
+        forecast: "指數預測",
 
+        structureTitle: "歷史能源結構變化",
+        structureDesc: "觀察台灣近十年內主要供電能源來源比例變化",
+
+        future: "未來成本壓力預測",
         futureDesc:
-          "結合 Prophet 預測未來供電成本壓力變化趨勢。",
+          "結合 Prophet 模型預測未來供電成本壓力指數的變化趨勢",
+        historyForecast:
+          "歷史資料 (1991-2024) ｜ Prophet 預測 (2026-2030)",
 
         ai: "AI 智慧建議",
-
-        aiLoading: "AI 分析生成中...",
-
-        highRisk: "高供電成本風險",
-        mediumRisk: "中度供電成本風險",
-        lowRisk: "低供電成本風險", costDescription:
-          "本指數根據即時發電結構、不同能源平均發電成本、燃料價格敏感度、碳排特性進行估算。",
-
-        highCost:
-          "目前火力發電佔比偏高，供電成本壓力較大。",
-
-        mediumCost:
-          "目前供電成本壓力中等，需持續觀察能源結構變化。",
-
-        stableCost:
-          "目前供電結構相對穩定。",
-
-        impactDescription:
-          "本分析根據能源使用比例、平均發電成本（LCOE）、燃料價格敏感度、供電依賴程度進行估算。系統會評估不同能源對整體供電成本與電價風險的影響程度。本系統屬於 AI 能源風險分析模型，並非台電實際電價計算公式。",
-
-        impactVeryHigh: "極高",
-        impactHigh: "高",
-        impactMedium: "中",
-        impactLow: "低",
-
-        impactIndex: "成本影響指數：",
-        futureChart: "未來趨勢圖"
+        aiLoading: "AI 分析生成中..."
       },
 
       login: {
@@ -527,7 +511,7 @@ const resources = {
         ratio: "佔比",
         date: "日期",
 
-        loading: "載入每日能源分析",
+        loading: "載入今日能源分析",
         syncing: "正在同步最新能源資料...",
         utilRate: "使用率",
         peakRate: "尖峰使用率",
@@ -538,8 +522,10 @@ const resources = {
       },
 
       energy: {
-        gas: "燃氣",
         coal: "燃煤",
+        gas: "天然氣",
+        oil: "石油",
+        renewable: "再生能源",
         solar: "太陽能",
         wind: "風力",
         hydro: "水力",
@@ -547,20 +533,34 @@ const resources = {
         storage: "儲能"
       },
 
+      reserveLight: {
+        green: "綠燈",
+        yellow: "黃燈",
+        orange: "橙燈",
+        red: "紅燈",
+        black: "黑燈",
+
+        greenDesc: "備轉量 > 10%",
+        yellowDesc: "備轉量 > 6%",
+        orangeDesc: "備轉量 ≤ 6%",
+        redDesc: "備轉量 < 90MW",
+        blackDesc: "備轉量 < 50MW"
+      },
+
       reserveText: {
         title: "備轉容量燈號說明",
 
-        p1: "• 備轉容量 (Operating Reserve)：",
+        p1: "✦　備轉容量 (Operating Reserve)：",
         p2: "指當天實際可調度之發電容量裕度，亦即系統每天的供電餘裕。",
-        p3: "＝系統運轉淨尖峰能力－系統瞬時尖峰負載 (瞬間值)。",
+        p3: "＝ 系統運轉淨尖峰能力－系統瞬時尖峰負載 (瞬間值)。",
 
-        p4: "• 備轉容量率 (Percent Operating Reserve)：",
+        p4: "✦　備轉容量率 (Percent Operating Reserve)：",
         p5: "係用來衡量每日供電可靠度之指標。",
-        p6: "＝（系統運轉淨尖峰供電能力－系統瞬時尖峰負載）÷系統瞬時尖峰負載×100%。",
+        p6: "＝ (系統運轉淨尖峰供電能力－系統瞬時尖峰負載) ÷ 系統瞬時尖峰負載 * 100%。",
 
-        p7: "*系統運轉淨尖峰供電能力：",
+        p7: "✦　系統運轉淨尖峰供電能力：",
         p8: "扣除歲修、檢修、故障機組，以及環保限制、氣溫、水力條件等因素。",
-      },
+      }
     }
   },
 
@@ -581,72 +581,58 @@ const resources = {
       },
 
       energy: {
-        nuclear: "Nuclear",
         coal: "Coal",
         gas: "Natural Gas",
+        oil: "Oil",
         renewable: "Renewables",
-        hydro: "Hydropower",
-        oil: "Oil"
+        solar: "Solar",
+        wind: "Wind",
+        hydro: "Hydro",
+        nuclear: "Nuclear",
+        storage: "Storage"
       },
 
       electricity: {
         title: "AI Electricity Cost Analysis",
         subtitle:
-          "Real-time power supply, energy structure, cost pressure, and future trend analysis",
+          "Real-time Power Supply, Energy Structure, Cost Pressure and Future Trend Analysis",
 
-        updateTime: "Last Update:",
-        loading: "Loading Electricity Cost Analysis Center",
+        updateTime: "Last Update: ",
+        loading: "Loading Electricity Cost Analysis",
         loadingSub:
           "Fetching Taipower live data · Calculating energy structure · Building cost pressure model",
 
-        realtime: "Real-time Power Information",
-
-        thermal: "Thermal Power",
-        solar: "Solar",
+        thermal: "Thermal",
+        renewable: "Renewable",
         nuclear: "Nuclear",
-        wind: "Wind",
-        hydro: "Hydropower",
 
-        costTitle: "Electricity Cost Pressure",
-        costIndex: "Energy Cost Pressure Index",
+        costTitle: "Pressure",
+        costPressureTip:
+          "Estimated from the current generation structure. Higher thermal generation generally means higher cost pressure.",
 
-        structure: "Energy Structure Analysis",
-        impact: "Cost Impact Analysis",
+        riskLevel: "Level",
+        riskLevelTip:
+          "Estimated from the current power structure and cost pressure.",
 
-        future: "Future Cost Trend",
+        riskHigh: "High",
+        riskMedium: "Medium",
+        riskLow: "Low",
 
+        structure: "Structure",
+        forecast: "Forecast",
+
+        structureTitle: "Historical Changes of Energy Structure",
+        structureDesc:
+          "Observing the changes in the proportion of Taiwan's main power supply sources over the past decade",
+        
+          future: "Future Cost Pressure Forecast",
         futureDesc:
-          "Using the Prophet time-series model to analyze future electricity cost pressure trends.",
+          "Predicting future trends in the power supply cost pressure index using the Prophet model",
+        historyForecast:
+          "Historical Data (1991-2024) | Prophet Forecast (2026-2030)",
 
         ai: "AI Smart Suggestions",
-
-        aiLoading: "Generating AI analysis...",
-
-        highRisk: "High Electricity Cost Risk",
-        mediumRisk: "Medium Electricity Cost Risk",
-        lowRisk: "Low Electricity Cost Risk",
-        costDescription:
-          "This index is estimated based on real-time generation structure, average generation cost, fuel sensitivity, and carbon emission characteristics.",
-
-        highCost:
-          "Thermal power generation is currently dominant, leading to higher electricity cost pressure.",
-
-        mediumCost:
-          "Electricity cost pressure is currently moderate, and energy structure changes should continue to be monitored.",
-
-        stableCost:
-          "The current power supply structure is relatively stable.",
-
-        impactDescription:
-          "This analysis is estimated based on energy usage ratio, average generation cost (LCOE), fuel price sensitivity, and power dependency. The system evaluates the impact of different energy sources on overall electricity cost and pricing risks. This system is an AI energy risk analysis model and not Taipower's official pricing formula.",
-
-        impactVeryHigh: "Very High",
-        impactHigh: "High",
-        impactMedium: "Medium",
-        impactLow: "Low",
-
-        impactIndex: "Cost Impact Index:",
-        futureChart: "Future Trend Chart"
+        aiLoading: "Generating AI analysis..."
       },
 
       dashboard: {
@@ -733,20 +719,21 @@ const resources = {
       nav: {
         home: "Home",
         global: "Energy Globe",
+        
+        todayPower: "Power Info",
         powerplant: "Power Plant",
-        todayPower: "Today's Power Info",
         dailyReport: "Daily Energy Analysis",
-        rag: "AI Query",
+        electricityAnalysis: "Electricity Cost Analysis",
 
-        electricityAnalysis: "Electricity Cost Analysis Center",
+        analysisTools: "Analysis Tools",
+        rag: "AI Query",
         prediction: "Prediction",
 
         adminCenter: "Admin Center",
         energySphereUpdate: "Energy Sphere Update",
-
-        contact: "Contact",
         feedback: "Feedback",
 
+        contact: "Contact",
         login: "Login",
         logout: "Logout"
       },
@@ -878,7 +865,7 @@ const resources = {
         output: "Power Output",
         local: "(Using Local Data)",
 
-        maintenance: "Units Under Maintenance",
+        maintenance: "Maintenance",
         repair: "Under Repair",
 
         region_north: "North",
@@ -899,7 +886,7 @@ const resources = {
 
         subtitle: "Taipower LIVE Unit Monitoring System",
 
-        currentGeneration: "Current Generation",
+        current: "Current Power",
         capacity: "Installed Capacity",
         lastUpdate: "Last Update",
 
@@ -1013,29 +1000,33 @@ const resources = {
         "totalGeneration": "Total",
       },
 
+      reserveLight: {
+        green: "Green",
+        yellow: "Yellow",
+        orange: "Orange",
+        red: "Red",
+        black: "Black",
+
+        greenDesc: "Reserve > 10%",
+        yellowDesc: "Reserve > 6%",
+        orangeDesc: "Reserve ≤ 6%",
+        redDesc: "< 90 MW",
+        blackDesc: "< 50 MW"
+      },
+
       reserveText: {
         title: "Reserve Margin Indicator",
 
-        p1: "• Operating Reserve:",
-        p2: "Refers to the available generation capacity margin that can be dispatched on a given day, representing the system’s daily power supply surplus.",
-        p3: "= Net peak generating capacity − Instantaneous peak load.",
+        p1: "✦　Operating Reserve:",
+        p2: "Refers to the available generation capacity margin that can be dispatched on a given day, representing the system’s daily power supply surplus",
+        p3: "= Net peak generating capacity − Instantaneous peak load",
 
-        p4: "• Percent Operating Reserve:",
-        p5: "An indicator used to measure the reliability of daily power supply.",
-        p6: "= (Net peak generating capacity − Instantaneous peak load) ÷ Instantaneous peak load × 100%.",
+        p4: "✦　Percent Operating Reserve:",
+        p5: "An indicator used to measure the reliability of daily power supply",
+        p6: "= (Net peak generating capacity − Instantaneous peak load) ÷ Instantaneous peak load * 100%",
 
-        p7: "* Net peak generating capacity:",
+        p7: "✦　Net peak generating capacity:",
         p8: "Excludes units under maintenance, faulty units, environmental constraints, temperature effects, and hydropower limitations.",
-      },
-
-      energy: {
-        gas: "Gas",
-        coal: "Coal",
-        solar: "Solar",
-        wind: "Wind",
-        hydro: "Hydro",
-        nuclear: "Nuclear",
-        storage: "Storage"
       },
 
       rag: {
