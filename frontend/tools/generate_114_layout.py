@@ -585,7 +585,6 @@ for filename in ["114_energy_euclidean_distance.json"]:
             indent=2
         )
 
-    print("Saved:", demand_path)
     import shutil
 
     # =========================
@@ -605,10 +604,3 @@ for filename in ["114_energy_euclidean_distance.json"]:
 
             shutil.copy2(src, dst)   # ← 建議用 copy（比較安全）
             # shutil.move(src, dst)  # ← 如果你想搬走才用這個
-
-            print("Copied to data:", dst)
-    # =====================================================
-    # Next Year Seed
-    # =====================================================
-
-    print("\n✅ Year 114 Completed")
