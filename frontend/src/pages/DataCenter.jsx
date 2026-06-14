@@ -433,8 +433,7 @@ export default function DataCenter() {
                 textAlign: "center",
               }}
             >
-              <div className="dc-spinner" />
-
+             
               <div
                 style={{
                   marginTop: "15px",
