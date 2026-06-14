@@ -229,7 +229,7 @@ export default function Header() {
                 onMouseEnter={(e) => (e.target.style.opacity = "0.8")}
                 onMouseLeave={(e) => (e.target.style.opacity = "1")}
               >
-                {t("nav.logout")}（{user.role}）
+                {t("nav.logout")}
               </button>
             ) : (
               <Link
