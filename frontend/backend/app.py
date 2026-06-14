@@ -74,7 +74,7 @@ def generate_layout():
 
         script_path = os.path.abspath(
             os.path.join(
-                os.path.dirname(__file__), "..", "tools", "generate_114_layout.py"
+                os.path.dirname(__file__), "..", "tool", "generate_114_layout.py"
             )
         )
 
