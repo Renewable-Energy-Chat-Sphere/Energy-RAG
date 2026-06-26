@@ -46,7 +46,38 @@ CREATE TABLE IF NOT EXISTS users (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """)
+# =========================
+# 📊 daily_stats table
+# =========================
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS daily_stats (
 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    report_date TEXT,
+    category TEXT,
+
+    avg_power REAL,
+    ratio REAL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
+# =========================
+# ⚡ power_generation_logs table
+# =========================
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS power_generation_logs (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    timestamp TEXT,
+
+    category TEXT,
+
+    power REAL
+)
+""")
 conn.commit()
 
 conn.close()
