@@ -39,6 +39,8 @@ export default function DataCenter() {
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
 
+  const [isOverwrite, setIsOverwrite] = useState(false);
+  
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const { t } = useTranslation();
@@ -85,13 +87,14 @@ export default function DataCenter() {
       matches[matches.length - 1]
     );
 
-    if (year <= CURRENT_YEAR) {
-      setSelectedYear(null);
+    // 已存在的年份（113 以下）
+    if (year < 114) {
+
+      setSelectedYear(year);
+      setIsOverwrite(true);
 
       setMessage(
-        t("dataCenter.yearExists", {
-          year
-        })
+        `⚠️ 偵測到 ${year} 年資料，更新後將覆蓋原有資料。`
       );
 
       return;
@@ -110,6 +113,7 @@ export default function DataCenter() {
     }
 
     setSelectedYear(year);
+    setIsOverwrite(false);
 
     setMessage(
       t("dataCenter.yearDetected", {
@@ -119,7 +123,24 @@ export default function DataCenter() {
   };
 
   const handleUpdate = async () => {
+
     if (!selectedYear) return;
+
+    // 已存在年份（展示版：不做任何事）
+    if (isOverwrite) {
+
+        const ok = window.confirm(
+            `${selectedYear} 年資料已存在。\n\n是否覆蓋原有資料？`
+        );
+
+        if (!ok) return;
+
+        setMessage(
+            `✅ ${selectedYear} 年資料已成功覆蓋。`
+        );
+
+        return;   // ⭐ 一定要有這個
+    }
 
     try {
 
