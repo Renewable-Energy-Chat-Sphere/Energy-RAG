@@ -155,7 +155,6 @@ def detect_query_source(text):
         "今日供電",
         "備轉容量",
         "台電即時",
-
         # English
         "real-time power",
         "real-time generation",
@@ -165,39 +164,23 @@ def detect_query_source(text):
     ]
 
     history_keywords = [
-        "能源",
-        "天然氣",
-        "煤",
-        "石油",
-        "核能",
-        "風力",
-        "太陽能",
-        "工業",
-        "住宅",
-        "服務業",
-        "運輸",
-        "農業",
         "比例",
         "占比",
-        "趨勢",
+        "使用量",
+        "總量",
+        "排名",
         "最多",
         "最高",
         "最低",
-        
-        # English
-        "energy",
-        "natural gas",
-        "coal",
-        "oil",
-        "nuclear",
-        "solar",
-        "wind",
-        "industry",
-        "residential",
-        "transport",
+        "民國",
+        "年份",
+        "哪一年",
+        "前五",
+        "前十",
+        "top",
         "ratio",
         "percentage",
-        "trend",
+        "ranking",
         "highest",
         "lowest",
     ]
@@ -417,9 +400,7 @@ def append_sources(answer, sources):
 
                 title = s.get("title", "網頁資料")
 
-                source_lines.append(
-                    f"- [{title}]({s['url']})"
-                )
+                source_lines.append(f"- [{title}]({s['url']})")
 
             # Excel
             elif s.get("sheet"):
@@ -427,9 +408,7 @@ def append_sources(answer, sources):
                 sheet = s.get("sheet")
                 rows = s.get("rows", "?")
 
-                source_lines.append(
-                    f"- 工作表：{sheet}（{rows} rows）"
-                )
+                source_lines.append(f"- 工作表：{sheet}（{rows} rows）")
 
             # Energy RAG
             elif s.get("year"):
@@ -437,13 +416,9 @@ def append_sources(answer, sources):
                 year = s.get("year")
 
                 if s.get("sheet"):
-                    source_lines.append(
-                        f"- 民國{year}年｜{s['sheet']}"
-                    )
+                    source_lines.append(f"- 民國{year}年｜{s['sheet']}")
                 else:
-                    source_lines.append(
-                        f"- 民國{year}年能源資料"
-                    )
+                    source_lines.append(f"- 民國{year}年能源資料")
 
     # 去重複
     source_lines = list(dict.fromkeys(source_lines))
@@ -451,12 +426,8 @@ def append_sources(answer, sources):
     if not source_lines:
         return answer
 
-    return (
-        answer
-        + "\n\n---\n"
-        + "### 🔗 資料來源\n"
-        + "\n".join(source_lines)
-    )
+    return answer + "\n\n---\n" + "### 🔗 資料來源\n" + "\n".join(source_lines)
+
 
 # =====================================================
 # 網路資料來源格式化
@@ -705,6 +676,31 @@ def chat():
 
     openai_client = current_app.config.get("OPENAI_CLIENT")
     qa_over_web = current_app.config.get("QA_OVER_WEB")
+    # Energy RAG 優先
+    # ====================================
+    # ====================================
+    general_patterns = [
+        "是什麼",
+        "什麼是",
+        "是不是",
+        "為什麼",
+        "怎麼",
+        "如何",
+        "介紹",
+        "解釋",
+        "未來",
+        "適合",
+        "發展",
+        "哪些再生能源",
+        "可以發展",
+    ]
+
+    if should_use_energy_rag(user_text) and not any(
+        p in user_text for p in general_patterns
+    ):
+        query_source = "history"
+    else:
+        query_source = detect_query_source(user_text)
 
     # =====================================================
     # URL 轉換 RAG
@@ -733,20 +729,6 @@ def chat():
 
             except Exception as e:
                 user_text = f"(網址處理失敗) {e}\n\n{user_text}"
-
-
-    # ====================================
-    # Energy RAG 優先
-    # ====================================
-    if (
-        should_use_energy_rag(user_text)
-        and "是什麼" not in user_text
-        and "什麼是" not in user_text
-    ):
-        query_source = "history"
-        
-    else:
-        query_source = detect_query_source(user_text)
 
     print("QUERY_SOURCE =", query_source)
 
@@ -869,7 +851,7 @@ def chat():
                     assistant_text = get_output_text(resp)
                     sources = extract_sources(resp)
                     print("SOURCES =", sources)
-                    
+
                     # =====================================
                     # 輸出語種統一
                     # =====================================
@@ -971,7 +953,7 @@ def chat():
 
             sources = extract_sources(resp)
             print("SOURCES =", sources)
-    
+
             final_sources.extend(sources)
 
             # =====================================

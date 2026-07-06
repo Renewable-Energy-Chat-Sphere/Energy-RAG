@@ -13,7 +13,7 @@ INDEX_PATH = PROCESSED_DIR / "energy_rag_all_years.index"
 
 records = json.loads(META_PATH.read_text(encoding="utf-8"))
 index = faiss.read_index(str(INDEX_PATH))
-model = SentenceTransformer("BAAI/bge-m3")
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 # =====================================================
@@ -96,6 +96,25 @@ def should_use_energy_rag(user_text: str):
     department = normalize_department(text)
     energy_name = normalize_energy(text)
 
+    general_keywords = [
+        "是不是",
+        "怎樣",
+        "是什麼",
+        "為什麼",
+        "介紹",
+        "說明",
+        "解釋",
+        "概念",
+        "原因",
+        "影響",
+        "未來",
+        "適合",
+        "發展",
+        "可以發展",
+    ]
+
+    if any(k in text for k in general_keywords) and year is None and len(years) == 0:
+        return False
     intent = detect_intent(
         text,
         year=year,
@@ -444,9 +463,20 @@ def search_energy_records(question: str, k: int = 20):
     distances, indices = index.search(q_emb, k)
 
     results = []
-    for idx in indices[0]:
+
+    for dist, idx in zip(distances[0], indices[0]):
         if 0 <= idx < len(records):
-            results.append(records[idx])
+            item = records[idx].copy()
+
+            similarity = 1 / (1 + float(dist))
+            item["similarity"] = similarity
+            item["score"] = round(similarity * 100, 2)
+
+            if similarity < 0.4:
+                continue
+
+            results.append(item)
+
     return results
 
 
@@ -460,13 +490,10 @@ def get_ratio_records(year=None, department=None, energy_name=None):
         if (
             r.get("record_type") == "ratio"
             and r.get("sheet") == "總比例換算"
-
             # 🔥 排除總計
             and str(r.get("supply_code", "")).strip() != "S54"
-
             # 🔥 排除 D1
             and str(r.get("demand_code", "")).strip() != "D1"
-
             # 🔥 排除名稱型總計（保險）
             and "總計" not in str(r.get("supply_name_zh", ""))
             and "能源消費" not in str(r.get("demand_name", ""))
@@ -514,12 +541,14 @@ def answer_top_energy_by_department(department: str, year=None, top_n: int = 5):
     year_text = f"{year}年" if year else "各年度"
     answer = (
         f"根據{year_text}已生成的能源資料，{department}主要使用的能源包括："
-        + "、".join([
-            f"{r['supply_name_zh']}"
-            f"（比例 {round(r['value'],2)}%"
-            f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
-            for r in top
-        ])
+        + "、".join(
+            [
+                f"{r['supply_name_zh']}"
+                f"（比例 {round(r['value'],2)}%"
+                f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
+                for r in top
+            ]
+        )
         + "。"
     )
 
@@ -641,12 +670,14 @@ def answer_top_energy_overall(year=None, top_n: int = 5):
     year_text = f"民國{year}年" if year else "指定年度"
     answer = (
         f"根據{year_text}已生成的能源資料，使用量最多的能源包括："
-        + "、".join([
-            f"{r['supply_name_zh']}"
-            f"（比例 {round(r['value'],2)}%"
-            f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
-            for r in top
-        ])
+        + "、".join(
+            [
+                f"{r['supply_name_zh']}"
+                f"（比例 {round(r['value'],2)}%"
+                f"｜使用量 {round(r.get('total_supply',0) * r['value'] / 1000,2):,}公噸油當量（toe））"
+                for r in top
+            ]
+        )
         + "。"
     )
 
@@ -688,7 +719,7 @@ def answer_multi_year_top_energy(years, top_n=5):
 
     for r in results:
         names = "、".join(
-           [
+            [
                 f"{e['supply_name_zh']}（比例 {round(e['value'],2)}%｜使用量 {round(e.get('total_supply',0) * e['value'] / 1000,2):,}"
                 for e in r["top"]
             ]
@@ -759,7 +790,7 @@ def answer_compare_department_across_years(department, years, top_n=5):
 
     for r in results:
         names = "、".join(
-           [
+            [
                 f"{e['supply_name_zh']}（比例 {round(e['value'],2)}%｜使用量 {round(e.get('total_supply',0) * e['value'] / 1000,2):,}公噸油當量（toe））"
                 for e in r["top"]
             ]
