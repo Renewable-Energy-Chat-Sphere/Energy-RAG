@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 export default function EnergyNews() {
   const { t } = useTranslation();
-  const API = "http://127.0.0.1:8000";
+  const API = import.meta.env.VITE_API_URL;
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
 

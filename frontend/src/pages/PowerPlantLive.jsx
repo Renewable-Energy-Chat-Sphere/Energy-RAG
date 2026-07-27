@@ -633,7 +633,7 @@ export default function PowerPlantLive() {
   ======================== */
   useEffect(() => {
     const fetchData = () => {
-      fetch("http://127.0.0.1:8000/power-units")
+      fetch(`${import.meta.env.VITE_API_URL}/power-units`)
         .then((res) => res.json())
 
         .then((res) => {

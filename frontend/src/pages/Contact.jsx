@@ -30,7 +30,7 @@ export default function Contact() {
     setLoading(true); // 🔥 開始動畫
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/contact", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -66,9 +66,7 @@ export default function Contact() {
       <div className="contact-container">
         <h2 className="contact-title">{t("contact.title")}</h2>
 
-        <p className="contact-subtitle">
-          {t("contact.subtitle")}
-        </p>
+        <p className="contact-subtitle">{t("contact.subtitle")}</p>
 
         <div className="contact-grid">
           {/* 左側資訊 */}
@@ -149,7 +147,8 @@ export default function Contact() {
               <label>
                 {t("contact.feeling")}
                 <div className="radio-group">
-                  {t("contact.feelings", { returnObjects: true }).map((item) => (
+                  {t("contact.feelings", { returnObjects: true }).map(
+                    (item) => (
                       <label key={item}>
                         <input
                           type="radio"
@@ -179,12 +178,9 @@ export default function Contact() {
                 className={`contact-btn ${loading ? "loading" : ""}`}
                 disabled={loading}
               >
-                 {loading ? t("contact.sending") : t("contact.submit")}
+                {loading ? t("contact.sending") : t("contact.submit")}
               </button>
             </form>
-
-
-            
           </div>
         </div>
       </div>
@@ -498,6 +494,4 @@ export default function Contact() {
       `}</style>
     </section>
   );
-
 }
-

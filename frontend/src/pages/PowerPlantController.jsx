@@ -9,7 +9,7 @@ export default function PowerPlantController() {
   const [useLive, setUseLive] = useState(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/power-units")
+    fetch(`${import.meta.env.VITE_API_URL}/power-units`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("API Error");

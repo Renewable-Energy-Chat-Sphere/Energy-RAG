@@ -92,8 +92,7 @@ export default function Prediction() {
     if (!finalQuestion) {
       setData({
         mode: "guide",
-        message:
-          t("prediction.guide"),
+        message: t("prediction.guide"),
       });
 
       return;
@@ -105,7 +104,7 @@ export default function Prediction() {
 
     try {
       const res = await fetch(
-        "http://127.0.0.1:8000/predict_department_energy",
+        `${import.meta.env.VITE_API_URL}/predict_department_energy`,
         {
           method: "POST",
           headers: {

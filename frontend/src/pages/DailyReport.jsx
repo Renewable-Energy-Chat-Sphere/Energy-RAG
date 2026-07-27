@@ -74,7 +74,7 @@ function DailyReport() {
   }, []);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/daily-report")
+    fetch(`${import.meta.env.VITE_API_URL}/daily-report`)
       .then((res) => res.json())
       .then((res) => {
         // 🔥 找最新日期
@@ -89,16 +89,14 @@ function DailyReport() {
         setData(filtered);
         setLoading(false);
       });
-      
-    fetch("http://127.0.0.1:8000/daily-trend")
+
+    fetch(`${import.meta.env.VITE_API_URL}/daily-trend`)
       .then((res) => res.json())
       .then((res) => {
-
         const cleaned = res.map((row) => {
           const newRow = { ...row };
 
           Object.keys(newRow).forEach((key) => {
-
             if (
               key !== "time" &&
               typeof newRow[key] === "number" &&
@@ -106,7 +104,6 @@ function DailyReport() {
             ) {
               newRow[key] = 0;
             }
-
           });
 
           return newRow;
@@ -115,7 +112,7 @@ function DailyReport() {
         setTrendData(cleaned);
       });
 
-    fetch("http://127.0.0.1:8000/taipower-status")
+    fetch(`${import.meta.env.VITE_API_URL}/taipower-status`)
       .then((res) => res.json())
       .then((res) => {
         setTaipower(res);
@@ -180,7 +177,7 @@ function DailyReport() {
 
     setData(filtered);
   };
-  
+
   // =========================
   // 🔥 總發電量
   // =========================
@@ -231,7 +228,6 @@ function DailyReport() {
         transition: "background 0.35s ease, color 0.35s ease",
       }}
     >
-
       <div
         style={{
           display: "grid",
@@ -257,9 +253,7 @@ function DailyReport() {
             {t("daily.total")}
           </div>
 
-          <div style={statValueStyle}>
-            {totalPower.toFixed(0)} MW
-          </div>
+          <div style={statValueStyle}>{totalPower.toFixed(0)} MW</div>
         </div>
 
         <div
@@ -339,7 +333,6 @@ function DailyReport() {
             gap: 30,
           }}
         >
-
           {/* 台電即時資訊 */}
           {!taipower ? (
             <div
@@ -379,7 +372,6 @@ function DailyReport() {
                 padding: "40px 50px",
               }}
             >
-              
               {/* 目前用電量 */}
               <div
                 style={{
@@ -399,10 +391,7 @@ function DailyReport() {
               </div>
 
               <div style={innerCardStyle(innerCardBg)}>
-                
-                <div style={cardTitleStyle}>
-                  {t("daily.load")}
-                </div>
+                <div style={cardTitleStyle}>{t("daily.load")}</div>
 
                 <div
                   style={{
@@ -427,10 +416,7 @@ function DailyReport() {
 
               {/* 預估最高用電 */}
               <div style={innerCardStyle(innerCardBg)}>
-
-                <div style={cardTitleStyle}>
-                  {t("daily.forecast")}
-                </div>
+                <div style={cardTitleStyle}>{t("daily.forecast")}</div>
 
                 <div
                   style={{
@@ -454,16 +440,14 @@ function DailyReport() {
                     (Number(taipower.fore_peak_dema_load) /
                       Number(taipower.fore_maxi_sply_capacity)) *
                     100
-                  ).toFixed(0)}%
-                （{t("daily.peakTime")}：{taipower.fore_peak_hour_range}）
+                  ).toFixed(0)}
+                  % （{t("daily.peakTime")}：{taipower.fore_peak_hour_range}）
                 </p>
               </div>
 
               {/* 今日最大供電能力 */}
               <div style={innerCardStyle(innerCardBg)}>
-                <div style={cardTitleStyle}>
-                  {t("daily.capacity")}
-                </div>
+                <div style={cardTitleStyle}>{t("daily.capacity")}</div>
 
                 <div
                   style={{
@@ -531,8 +515,7 @@ function DailyReport() {
                       color: "#a783e7",
                     }}
                   >
-                    {t("daily.reserveRate")}：
-                    {taipower.fore_peak_resv_rate} %
+                    {t("daily.reserveRate")}：{taipower.fore_peak_resv_rate} %
                   </span>
 
                   <span
@@ -684,7 +667,6 @@ function DailyReport() {
             gap: 30,
           }}
         >
-          
           {/* 發電佔比排名 */}
           <div
             style={{
@@ -760,8 +742,7 @@ function DailyReport() {
                         style={{
                           width: `${item.ratio}%`,
                           height: "100%",
-                          background:
-                            COLORS[index % COLORS.length],
+                          background: COLORS[index % COLORS.length],
                           borderRadius: 999,
                           transition: "width 0.4s ease",
                         }}
@@ -772,7 +753,7 @@ function DailyReport() {
             </div>
           </div>
 
-         {/* 每日能源報表 */}
+          {/* 每日能源報表 */}
           <div
             style={{
               background: cardBg,
@@ -1006,13 +987,8 @@ function DailyReport() {
               width={150}
               tickMargin={15}
               domain={[0, 20000]}
-                ticks={Array.from(
-                  { length: 11 },
-                  (_, i) => i * 2000
-                )}
-              tickFormatter={(value) =>
-                `${Number(value).toLocaleString()} MW`
-              }
+              ticks={Array.from({ length: 11 }, (_, i) => i * 2000)}
+              tickFormatter={(value) => `${Number(value).toLocaleString()} MW`}
               tickLine={false}
               axisLine={{
                 stroke: isDark ? "#64748b" : "#94a3b8",
@@ -1030,19 +1006,16 @@ function DailyReport() {
                 if (!active || !payload?.length) return null;
 
                 const sortedPayload = [...payload].sort(
-                  (a, b) => b.value - a.value
+                  (a, b) => b.value - a.value,
                 );
 
                 return (
                   <div
                     style={{
                       background: isDark ? "#1e293b" : "#ffffff",
-                      border: `2px solid ${
-                        isDark ? "#475569" : "#cbd5e1"
-                      }`,
+                      border: `2px solid ${isDark ? "#475569" : "#cbd5e1"}`,
                       borderRadius: 30,
-                      boxShadow:
-                        "0 8px 24px rgba(0, 0, 0, 0.15)",
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)",
                       padding: "20px 24px",
                       minWidth: 220,
                     }}
@@ -1091,14 +1064,10 @@ function DailyReport() {
                             }}
                           />
 
-                          <span>
-                            {energyMap[item.name] || item.name}
-                          </span>
+                          <span>{energyMap[item.name] || item.name}</span>
                         </div>
 
-                        <span>
-                          {Number(item.value).toLocaleString()} MW
-                        </span>
+                        <span>{Number(item.value).toLocaleString()} MW</span>
                       </div>
                     ))}
                   </div>

@@ -53,7 +53,7 @@ Object.entries(energyFiles).forEach(([path, module]) => {
 });
 
 const years = Object.keys(energyMap).sort((a, b) => b - a);
-const API = "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_API_URL;
 export default function Global({ isMobile }) {
   function findNodeByCode(code, tree) {
     for (const key in tree) {

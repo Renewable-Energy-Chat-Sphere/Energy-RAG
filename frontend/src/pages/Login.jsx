@@ -8,8 +8,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
 
-  const API_BASE = "http://127.0.0.1:8000";
-
+  const API = import.meta.env.VITE_API_URL;
   const handleSubmit = async () => {
     if (!username || !password) {
       alert(t("login.inputRequired"));

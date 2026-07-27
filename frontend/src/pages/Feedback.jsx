@@ -30,7 +30,7 @@ export default function Feedback() {
   const [filter, setFilter] = useState("all");
   const [sortMode, setSortMode] = useState("time");
   const [selected, setSelected] = useState(null);
-  const API = "http://127.0.0.1:8000";
+  const API = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetch(`${API}/get_feedback`)

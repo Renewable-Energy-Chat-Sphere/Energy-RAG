@@ -24,7 +24,7 @@ export default function Header() {
   // =========================
   const handleLogout = async () => {
     try {
-      await fetch("http://127.0.0.1:8000/logout", {
+      await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -160,46 +160,38 @@ export default function Header() {
                 <div className="dropdown-menu">
                   <Link to="/powerplant">{t("nav.powerplant")}</Link>
                   <Link to="/daily-report">{t("nav.dailyReport")}</Link>
-                  <Link to="/electricity-analysis">{t("nav.electricityAnalysis")}</Link>
+                  <Link to="/electricity-analysis">
+                    {t("nav.electricityAnalysis")}
+                  </Link>
                 </div>
               </div>
             )}
 
-            {(isManager || isAdmin) ? (
+            {isManager || isAdmin ? (
               <div className="dropdown">
-                <span className="dropdown-title">{t("nav.analysisTools")} ▾</span>
+                <span className="dropdown-title">
+                  {t("nav.analysisTools")} ▾
+                </span>
 
                 <div className="dropdown-menu">
-                  <Link to="/rag">
-                    {t("nav.rag")}
-                  </Link>
+                  <Link to="/rag">{t("nav.rag")}</Link>
 
-                  <Link to="/Prediction">
-                    {t("nav.prediction")}
-                  </Link>
+                  <Link to="/Prediction">{t("nav.prediction")}</Link>
                 </div>
               </div>
             ) : (
-              <Link to="/rag">
-                {t("nav.rag")}
-              </Link>
+              <Link to="/rag">{t("nav.rag")}</Link>
             )}
 
             {/* admin 專屬 */}
             {isAdmin && (
               <div className="dropdown">
-                <span className="dropdown-title">
-                  {t("nav.adminCenter")} ▾
-                </span>
+                <span className="dropdown-title">{t("nav.adminCenter")} ▾</span>
 
                 <div className="dropdown-menu">
-                  <Link to="/data-center">
-                    {t("nav.energySphereUpdate")}
-                  </Link>
+                  <Link to="/data-center">{t("nav.energySphereUpdate")}</Link>
 
-                  <Link to="/Feedback">
-                    {t("nav.feedback")}
-                  </Link>
+                  <Link to="/Feedback">{t("nav.feedback")}</Link>
                 </div>
               </div>
             )}
