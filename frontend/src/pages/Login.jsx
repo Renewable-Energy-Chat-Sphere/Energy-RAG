@@ -25,7 +25,7 @@ export default function Login() {
           ? { username, password }
           : { username, password, role: "manager" };
 
-      const res = await fetch(API_BASE + url, {
+      const res = await fetch(`${API}${url}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
