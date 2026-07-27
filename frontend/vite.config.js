@@ -5,7 +5,12 @@ export default defineConfig({
   base: "/Ener-Sphere/",
   plugins: [
     react({
-      jsxRuntime: "automatic", 
+      jsxRuntime: "automatic",
     }),
   ],
+
+  server: {
+    host: true,
+    allowedHosts: true,
+  },
 });
