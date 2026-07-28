@@ -181,7 +181,7 @@ export default function Rag() {
   ];
 
   //const API = "/api";
-   const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL;
 
   async function downloadFile({
     endpoint,
@@ -504,6 +504,20 @@ export default function Rag() {
 
         let cleanAnswer = data.answer || data.message || "";
 
+        // 移除所有「使用量為 0 toe」的清單項目
+        cleanAnswer = cleanAnswer
+          .split("\n")
+          .filter((line) => {
+            const normalized = line.replace(/,/g, "").replace(/\s/g, "");
+
+            const isZeroUsage =
+              /使用量[｜|:]?0(?:\.0+)?公噸油當量(?:（toe）|\(toe\))?/i.test(
+                normalized,
+              );
+
+            return !isZeroUsage;
+          })
+          .join("\n");
         // 移除 structured_data 區塊
         cleanAnswer = cleanAnswer.replace(
           /structured_data[\s\S]*?(接下來|接著|我將|我會)/gi,

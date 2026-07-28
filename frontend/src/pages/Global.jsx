@@ -289,12 +289,16 @@ export default function Global({ isMobile }) {
       if (!demandData) return [];
 
       return Object.entries(demandData)
+        .filter(([supplyId]) => supplyId !== "S23")
         .map(([supplyId, value]) => {
           const ratio = typeof value === "object" ? value.ratio : value;
 
           const total = totalSupply?.[String(year)]?.value || 0;
 
-          const actualUsage = (total * ratio) / 1000;
+          const actualUsage =
+            typeof value === "object" && value.toe !== undefined
+              ? Number(value.toe)
+              : null;
           const supply = supplyCatalog[supplyId];
 
           const name = getName(supplyId);
@@ -323,6 +327,8 @@ export default function Global({ isMobile }) {
     const result = [];
 
     Object.entries(energyData).forEach(([dCode, supplies]) => {
+      if (node.code === "S23") return;
+
       if (supplies[node.code]) {
         const name = getName(dCode);
 
@@ -434,7 +440,22 @@ export default function Global({ isMobile }) {
       value: d.value / total,
     }));
   }
+  function cleanAIAnswer(text) {
+    if (!text) return "";
 
+    return (
+      text
+        // 移除「無鉛汽油，使用量 0 toe」整個項目
+        .replace(
+          /、?\s*\(?無鉛汽油\)?（比例\s*[\d.]+%\s*｜\s*使用量\s*0(?:\.0+)?\s*公噸油當量（toe））/g,
+          "",
+        )
+        // 修正刪除後可能出現的標點問題
+        .replace(/包括：、/g, "包括：")
+        .replace(/、。/g, "。")
+        .replace(/、、/g, "、")
+    );
+  }
   async function handleAsk() {
     if (!question.trim()) return;
 
@@ -465,7 +486,8 @@ export default function Global({ isMobile }) {
         return;
       }
 
-      typeWriter(data.answer);
+      const cleanedAnswer = cleanAIAnswer(data.answer);
+      typeWriter(cleanedAnswer);
     } catch {
       setAnswer(language === "en" ? "❌ Error occurred" : "❌ 發生錯誤");
     } finally {

@@ -13,7 +13,7 @@ import supplyCatalog from "../data/supply_catalog.json";
 import hierarchy from "../data/hierarchy.json";
 
 const SUPPLY_RADIUS = 3.02;
-
+const HIDDEN_SUPPLY_CODES = new Set(["S23"]);
 const supplyLayoutsRaw = import.meta.glob("../data/supply_layout_*.json", {
   eager: true,
 });
@@ -315,109 +315,111 @@ function SupplyNodes({ year, language, onHover, onSelect, selected }) {
     Other: "default.png",
   };
 
-  return Object.entries(supplyLayout).map(([id, pos]) => {
-    const position = getSupplyOffset(pos);
-    const camDir = camera.position.clone().normalize();
-    const nodeDir = new THREE.Vector3(...position).normalize();
-    const dot = camDir.dot(nodeDir);
+  return Object.entries(supplyLayout)
+    .filter(([id]) => !HIDDEN_SUPPLY_CODES.has(id))
+    .map(([id, pos]) => {
+      const position = getSupplyOffset(pos);
+      const camDir = camera.position.clone().normalize();
+      const nodeDir = new THREE.Vector3(...position).normalize();
+      const dot = camDir.dot(nodeDir);
 
-    const info = supplyMap[id];
-    const category = info?.category || "Other";
+      const info = supplyMap[id];
+      const category = info?.category || "Other";
 
-    const CATEGORY_COLOR = {
-      Coal: "#9ca3af",
-      Oil: "#f97316",
-      Gas: "#38bdf8",
-      Renewable: "#4ade80",
-      Electricity: "#facc15",
-      Waste: "#a78bfa",
-      Other: "#94a3b8",
-    };
-    const customIcon = getCustomIcon(info);
-    const iconFile = customIcon || iconMap[category] || "default.png";
+      const CATEGORY_COLOR = {
+        Coal: "#9ca3af",
+        Oil: "#f97316",
+        Gas: "#38bdf8",
+        Renewable: "#4ade80",
+        Electricity: "#facc15",
+        Waste: "#a78bfa",
+        Other: "#94a3b8",
+      };
+      const customIcon = getCustomIcon(info);
+      const iconFile = customIcon || iconMap[category] || "default.png";
 
-    const distance = camera.position.length();
-    const scale = THREE.MathUtils.clamp(10 / distance, 0.4, 1.8);
+      const distance = camera.position.length();
+      const scale = THREE.MathUtils.clamp(10 / distance, 0.4, 1.8);
 
-    return (
-      <group key={id} position={position}>
-        {(!selected || activeSupply?.includes(id)) && (
-          <Glow size={0.08} color={CATEGORY_COLOR[category] || "#94a3b8"} />
-        )}
+      return (
+        <group key={id} position={position}>
+          {(!selected || activeSupply?.includes(id)) && (
+            <Glow size={0.08} color={CATEGORY_COLOR[category] || "#94a3b8"} />
+          )}
 
-        <Html center occlude={false}>
-          <img
-            src={`${BASE}icons/${iconFile}`}
-            alt=""
-            style={{
-              width: `${20 * scale}px`,
-              height: `${20 * scale}px`,
-              objectFit: "contain",
-              transition: "transform 0.25s ease, filter 0.25s ease",
-              pointerEvents: dot > 0 ? "auto" : "none",
-              cursor: dot > 0 ? "pointer" : "default",
+          <Html center occlude={false}>
+            <img
+              src={`${BASE}icons/${iconFile}`}
+              alt=""
+              style={{
+                width: `${20 * scale}px`,
+                height: `${20 * scale}px`,
+                objectFit: "contain",
+                transition: "transform 0.25s ease, filter 0.25s ease",
+                pointerEvents: dot > 0 ? "auto" : "none",
+                cursor: dot > 0 ? "pointer" : "default",
 
-              /* 光暈 */
-              filter:
-                category === "Renewable"
-                  ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))"
-                  : category === "Coal"
-                    ? "drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))"
-                    : "drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))",
+                /* 光暈 */
+                filter:
+                  category === "Renewable"
+                    ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))"
+                    : category === "Coal"
+                      ? "drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))"
+                      : "drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))",
 
-              /* 未被選中時隱藏 */
-              opacity:
-                dot > 0
-                  ? !selected ||
-                    selected.type === "supply" ||
-                    activeSupply?.includes(id)
-                    ? 1
-                    : 0.2
-                  : 0.05,
-            }}
-            onError={(e) => {
-              if (e.currentTarget.dataset.fallback) return;
-              e.currentTarget.dataset.fallback = "true";
-              e.currentTarget.src = `${BASE}icons/default.png`;
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect({
-                code: id,
-                name: getSupplyName(info, language) || id,
-                type: "supply",
-              });
-            }}
-            onMouseEnter={(e) => {
-              e.stopPropagation();
+                /* 未被選中時隱藏 */
+                opacity:
+                  dot > 0
+                    ? !selected ||
+                      selected.type === "supply" ||
+                      activeSupply?.includes(id)
+                      ? 1
+                      : 0.2
+                    : 0.05,
+              }}
+              onError={(e) => {
+                if (e.currentTarget.dataset.fallback) return;
+                e.currentTarget.dataset.fallback = "true";
+                e.currentTarget.src = `${BASE}icons/default.png`;
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect({
+                  code: id,
+                  name: getSupplyName(info, language) || id,
+                  type: "supply",
+                });
+              }}
+              onMouseEnter={(e) => {
+                e.stopPropagation();
 
-              e.currentTarget.style.transform = "translateY(-2px) scale(1.1)";
+                e.currentTarget.style.transform = "translateY(-2px) scale(1.1)";
 
-              e.currentTarget.style.filter =
-                "drop-shadow(0 0 14px rgba(255, 255, 255, 0.25))";
+                e.currentTarget.style.filter =
+                  "drop-shadow(0 0 14px rgba(255, 255, 255, 0.25))";
 
-              onHover({
-                code: id,
-                name: getSupplyName(info, language) || id,
-                type: "supply",
-              });
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0px) scale(1)";
-              e.currentTarget.style.filter =
-                category === "Renewable"
-                  ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))"
-                  : category === "Coal"
-                    ? "drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))"
-                    : "drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))";
+                onHover({
+                  code: id,
+                  name: getSupplyName(info, language) || id,
+                  type: "supply",
+                });
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0px) scale(1)";
+                e.currentTarget.style.filter =
+                  category === "Renewable"
+                    ? "drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))"
+                    : category === "Coal"
+                      ? "drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))"
+                      : "drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))";
 
-              onHover(null);
-            }}
-          />
-        </Html>
-      </group>
-    );
-  });
+                onHover(null);
+              }}
+            />
+          </Html>
+        </group>
+      );
+    });
 }
 
 /* Demand Nodes */
@@ -611,10 +613,19 @@ function SupplyFlowLines({ year, selected, lod }) {
   }
 
   const toSphere = (v, r) => new THREE.Vector3(v.x, v.y, v.z).multiplyScalar(r);
-  const values = Object.values(ratio);
-  const max = Math.max(...values);
+  const filteredRatio = Object.fromEntries(
+    Object.entries(ratio).filter(([targetCode]) => {
+      const supplyCode =
+        selected.type === "supply" ? selected.code : targetCode;
 
-  return Object.entries(ratio)
+      return !HIDDEN_SUPPLY_CODES.has(supplyCode);
+    }),
+  );
+
+  const values = Object.values(filteredRatio);
+  const max = Math.max(...values, 0);
+
+  return Object.entries(filteredRatio)
     .map(([targetCode, raw]) => {
       let supplyPos, demandPos;
 
