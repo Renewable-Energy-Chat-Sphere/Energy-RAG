@@ -192,7 +192,7 @@ export default function Global({ isMobile }) {
       panel: "能源控制面板",
       year: "年份",
       flow: "顯示連線",
-      search: "搜尋部門...",
+      search: "搜尋部門或能源...",
       ai: "點我詢問能源",
       send: "送出",
       mainDemand: "主要需求項目",
@@ -811,7 +811,22 @@ export default function Global({ isMobile }) {
             />
             {t.flow}
           </label>
+          <div className="node-search-box">
+            <label className="node-search-label">
+              {language === "en" ? "Search" : "搜尋節點"}
+            </label>
 
+            <input
+              className="node-search-input"
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSelected(null);
+              }}
+              placeholder={t.search}
+            />
+          </div>
           <div className="ai-box" onClick={() => setShowAI(true)}>
             <i
               className="fi fi-br-comments"
@@ -835,6 +850,7 @@ export default function Global({ isMobile }) {
           <GlobeVisualizer
             year={year}
             language={language}
+            searchKeyword={search}
             onHover={onHover}
             onSelect={onSelect}
             selected={selected}

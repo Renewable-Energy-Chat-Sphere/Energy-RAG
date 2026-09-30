@@ -259,7 +259,14 @@ function GridSphere() {
 
 /* Supply Nodes */
 
-function SupplyNodes({ year, language, onHover, onSelect, selected }) {
+function SupplyNodes({
+  year,
+  language,
+  searchKeyword,
+  onHover,
+  onSelect,
+  selected,
+}) {
   const { camera } = useThree();
   const BASE = import.meta.env.BASE_URL;
   const supplyLayout = supplyLayouts[year];
@@ -317,6 +324,24 @@ function SupplyNodes({ year, language, onHover, onSelect, selected }) {
 
   return Object.entries(supplyLayout)
     .filter(([id]) => !HIDDEN_SUPPLY_CODES.has(id))
+    .filter(([id]) => {
+      const info = supplyMap[id];
+      const nameZh = info?.name_zh || "";
+      const nameEn = info?.name_en || "";
+
+      const keyword = searchKeyword.trim().toLowerCase();
+
+      const matchesSearch =
+        !keyword ||
+        id.toLowerCase().includes(keyword) ||
+        nameZh.toLowerCase().includes(keyword) ||
+        nameEn.toLowerCase().includes(keyword);
+
+      const isRelated =
+        selected?.type === "demand" && activeSupply?.includes(id);
+
+      return matchesSearch || isRelated;
+    })
     .map(([id, pos]) => {
       const position = getSupplyOffset(pos);
       const camDir = camera.position.clone().normalize();
@@ -384,11 +409,15 @@ function SupplyNodes({ year, language, onHover, onSelect, selected }) {
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect({
-                  code: id,
-                  name: getSupplyName(info, language) || id,
-                  type: "supply",
-                });
+                onSelect(
+                  selected?.type === "supply" && selected?.code === id
+                    ? null
+                    : {
+                        code: id,
+                        name: getSupplyName(info, language) || id,
+                        type: "supply",
+                      },
+                );
               }}
               onMouseEnter={(e) => {
                 e.stopPropagation();
@@ -424,7 +453,15 @@ function SupplyNodes({ year, language, onHover, onSelect, selected }) {
 
 /* Demand Nodes */
 
-function DemandNodes({ year, language, lod, onHover, onSelect, selected }) {
+function DemandNodes({
+  year,
+  language,
+  lod,
+  searchKeyword,
+  onHover,
+  onSelect,
+  selected,
+}) {
   const { camera } = useThree();
   const demandLayout = demandLayouts[year];
 
@@ -442,96 +479,122 @@ function DemandNodes({ year, language, lod, onHover, onSelect, selected }) {
     }
   }
 
-  return Object.entries(demandLayout).map(([id, pos]) => {
-    const level = demandLevel[id];
+  return Object.entries(demandLayout)
+    .filter(([id]) => {
+      const level = demandLevel[id];
 
-    if (lod === 0 && level !== 1) return null;
-    if (lod === 1 && level !== 2) return null;
-    if (lod === 2 && level !== 3) return null;
+      // 先限制目前層級
+      if (lod === 0 && level !== 1) return false;
+      if (lod === 1 && level !== 2) return false;
+      if (lod === 2 && level !== 3) return false;
 
-    const root = getRootDept(id);
-    const deptColor = DEPT_COLOR[root] || "#3b82f6";
+      const nameZh = demandName[id]?.zh || "";
+      const nameEn = demandName[id]?.en || "";
+      const keyword = searchKeyword.trim().toLowerCase();
 
-    const size = level === 1 ? 0.1 : level === 2 ? 0.075 : 0.06;
-    const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
-    const position = [pos.x * radius, pos.y * radius, pos.z * radius];
+      const matchesSearch =
+        !keyword ||
+        id.toLowerCase().includes(keyword) ||
+        nameZh.toLowerCase().includes(keyword) ||
+        nameEn.toLowerCase().includes(keyword);
 
-    const camDir = camera.position.clone().normalize();
-    const nodeDir = new THREE.Vector3(...position).normalize();
-    const dot = camDir.dot(nodeDir);
+      // 如果目前點的是能源供給，
+      // 那跟它相連的需求節點即使不符合搜尋，也要顯示
+      const isRelated =
+        selected?.type === "supply" && activeDemand?.includes(id);
 
-    return (
-      <group key={id} position={position}>
-        <Glow size={size} color={deptColor} />
+      return matchesSearch || isRelated;
+    })
+    .map(([id, pos]) => {
+      const level = demandLevel[id];
 
-        <mesh
-          onPointerOver={(e) => {
-            if (dot <= 0) return;
-            e.stopPropagation();
-            onHover({
-              code: id,
-              name: getDemandName(id, language) || id,
-              type: "demand",
-            });
-          }}
-          onPointerOut={() => onHover(null)}
-          onClick={(e) => {
-            if (dot <= 0) return;
-            e.stopPropagation();
-            onSelect({
-              code: id,
-              name: getDemandName(id, language) || id,
-              type: "demand",
-            });
-          }}
-        >
-          <sphereGeometry args={[size, 16, 16]} />
+      const root = getRootDept(id);
+      const deptColor = DEPT_COLOR[root] || "#3b82f6";
 
-          <meshStandardMaterial
-            color={deptColor}
-            emissive={deptColor}
-            emissiveIntensity={dot > 0 ? 0.5 : 0.1}
-            transparent
-            opacity={
-              dot > 0
-                ? !selected ||
-                  selected.type === "demand" ||
-                  activeDemand?.includes(id)
-                  ? 1
-                  : 0.2
-                : 0.05
-            }
-          />
-        </mesh>
+      const size = level === 1 ? 0.1 : level === 2 ? 0.075 : 0.06;
+      const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
+      const position = [pos.x * radius, pos.y * radius, pos.z * radius];
 
-        {/* Label */}
-        {lod === 0 && level === 1 && (
-          <Label
-            position={[0, size + 0.18, 0]}
-            worldPosition={position}
-            text={getDemandName(id, language)}
-            baseSize={18}
-          />
-        )}
-        {lod === 1 && level === 2 && (
-          <Label
-            position={[0, size + 0.14, 0]}
-            worldPosition={position}
-            text={getDemandName(id, language)}
-            baseSize={12}
-          />
-        )}
-        {lod === 2 && level === 3 && (
-          <Label
-            position={[0, size + 0.1, 0]}
-            worldPosition={position}
-            text={getDemandName(id, language)}
-            baseSize={10}
-          />
-        )}
-      </group>
-    );
-  });
+      const camDir = camera.position.clone().normalize();
+      const nodeDir = new THREE.Vector3(...position).normalize();
+      const dot = camDir.dot(nodeDir);
+
+      return (
+        <group key={id} position={position}>
+          <Glow size={size} color={deptColor} />
+
+          <mesh
+            onPointerOver={(e) => {
+              if (dot <= 0) return;
+              e.stopPropagation();
+              onHover({
+                code: id,
+                name: getDemandName(id, language) || id,
+                type: "demand",
+              });
+            }}
+            onPointerOut={() => onHover(null)}
+            onClick={(e) => {
+              if (dot <= 0) return;
+              e.stopPropagation();
+              onSelect(
+                selected?.type === "demand" && selected?.code === id
+                  ? null
+                  : {
+                      code: id,
+                      name: getDemandName(id, language) || id,
+                      type: "demand",
+                    },
+              );
+            }}
+          >
+            <sphereGeometry args={[size, 16, 16]} />
+
+            <meshStandardMaterial
+              color={deptColor}
+              emissive={deptColor}
+              emissiveIntensity={dot > 0 ? 0.5 : 0.1}
+              transparent
+              opacity={
+                dot > 0
+                  ? !selected ||
+                    selected.type === "demand" ||
+                    activeDemand?.includes(id)
+                    ? 1
+                    : 0.2
+                  : 0.05
+              }
+            />
+          </mesh>
+
+          {/* Label */}
+          {lod === 0 && level === 1 && (
+            <Label
+              position={[0, size + 0.18, 0]}
+              worldPosition={position}
+              text={getDemandName(id, language)}
+              baseSize={18}
+            />
+          )}
+          {lod === 1 && level === 2 && (
+            <Label
+              position={[0, size + 0.14, 0]}
+              worldPosition={position}
+              text={getDemandName(id, language)}
+              baseSize={12}
+            />
+          )}
+          {lod === 2 && level === 3 && (
+            <Label
+              position={[0, size + 0.1, 0]}
+              worldPosition={position}
+              text={getDemandName(id, language)}
+              baseSize={10}
+            />
+          )}
+        </group>
+      );
+    });
 }
 
 /* Supply Flow Lines*/
@@ -706,6 +769,7 @@ function SupplyFlowLines({ year, selected, lod }) {
 function Scene({
   year,
   language,
+  searchKeyword,
   onHover,
   onSelect,
   selected,
@@ -753,6 +817,7 @@ function Scene({
       <SupplyNodes
         year={year}
         language={language}
+        searchKeyword={searchKeyword}
         onHover={onHover}
         hovered={hovered}
         selected={selected}
@@ -762,6 +827,7 @@ function Scene({
       <DemandNodes
         year={year}
         language={language}
+        searchKeyword={searchKeyword}
         lod={lod}
         onHover={onHover}
         onSelect={onSelect}
@@ -787,6 +853,7 @@ function Scene({
 export default function GlobeVisualizer({
   year,
   language,
+  searchKeyword = "",
   onHover,
   onSelect,
   selected,
@@ -797,6 +864,7 @@ export default function GlobeVisualizer({
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [rotateSpeed, setRotateSpeed] = useState(0.6);
   const [isLocked, setIsLocked] = useState(false);
+
   const controlRef = useRef();
   useEffect(() => {
     const handleResize = () => {
@@ -824,6 +892,7 @@ export default function GlobeVisualizer({
         <Scene
           year={year}
           language={language}
+          searchKeyword={searchKeyword}
           onHover={onHover}
           onSelect={onSelect}
           selected={selected}

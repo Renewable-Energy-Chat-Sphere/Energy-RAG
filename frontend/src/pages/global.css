@@ -1147,3 +1147,45 @@ input[type="checkbox"] {
 .motion-stop:hover {
   background: #ea580c;
 }
+.node-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.node-search-label {
+  color: #60a5fa;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.node-search-input {
+  width: 200px;
+  height: 36px;
+  padding: 0 12px;
+
+  border: 1px solid  #60a5fa;
+  border-radius: 100px;
+
+  background: rgb(120 180 255 / 22%);
+  color: #1f2937;
+
+  font-size: 14px;
+  outline: none;
+
+  transition: all 0.2s ease;
+}
+
+.node-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.node-search-input:hover {
+  border-color: #64748b;
+}
+
+.node-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
