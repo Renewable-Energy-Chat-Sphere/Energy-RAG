@@ -27,6 +27,10 @@ body {
 
 /* 控制面板 */
 .control-panel {
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(18px);
   border: 1px solid rgba(120, 180, 255, 0.4) !important;
@@ -47,8 +51,10 @@ body {
 .panel-row > * {
   flex-shrink: 0;
 }
-
 .panel-row {
+  position: relative;
+  overflow: visible;
+
   display: flex;
   align-items: center;
   white-space: nowrap;
@@ -1165,7 +1171,7 @@ input[type="checkbox"] {
   height: 36px;
   padding: 0 12px;
 
-  border: 1px solid  #60a5fa;
+  border: 1px solid #60a5fa;
   border-radius: 100px;
 
   background: rgb(120 180 255 / 22%);
@@ -1176,7 +1182,9 @@ input[type="checkbox"] {
 
   transition: all 0.2s ease;
 }
-
+#main-content.dark .node-search-input {
+  color: #ffffff;
+}
 .node-search-input::placeholder {
   color: #9ca3af;
 }
@@ -1188,4 +1196,45 @@ input[type="checkbox"] {
 .node-search-input:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+.node-search-wrapper {
+  position: relative;
+  z-index: 9999;
+}
+
+.node-search-stats {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+
+  width: 200px;
+  padding: 12px 14px;
+
+  background: #a7c9f3;
+  border: 1px solid #60a5fa;
+  border-radius: 14px;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  z-index: 99999;
+}
+.node-search-stats > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 5px 2px;
+  font-size: 13px;
+}
+
+.node-search-stats strong {
+  color: #3b82f6;
+}
+
+.node-search-stats .search-total {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #1e3a8a;
+
+  font-weight: 600;
 }

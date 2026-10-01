@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { Bar } from "react-chartjs-2";
 import { useTranslation } from "react-i18next";
 import { BarElement } from "chart.js";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -42,7 +42,32 @@ import totalSupply from "../data/consumption.json";
 const energyFiles = import.meta.glob("../data/*_energy_demand_supply.json", {
   eager: true,
 });
+const supplyLayoutFiles = import.meta.glob("../data/supply_layout_*.json", {
+  eager: true,
+});
 
+const demandLayoutFiles = import.meta.glob("../data/demand_layout_*.json", {
+  eager: true,
+});
+
+const supplyLayoutMap = {};
+const demandLayoutMap = {};
+
+Object.entries(supplyLayoutFiles).forEach(([path, module]) => {
+  const match = path.match(/supply_layout_(\d+)\.json/);
+
+  if (match) {
+    supplyLayoutMap[match[1]] = module.default;
+  }
+});
+
+Object.entries(demandLayoutFiles).forEach(([path, module]) => {
+  const match = path.match(/demand_layout_(\d+)\.json/);
+
+  if (match) {
+    demandLayoutMap[match[1]] = module.default;
+  }
+});
 const energyMap = {};
 
 Object.entries(energyFiles).forEach(([path, module]) => {
@@ -235,7 +260,80 @@ export default function Global({ isMobile }) {
   };
 
   const t = TEXT[language];
+  const searchStats = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
 
+    if (!keyword) return null;
+
+    const stats = {
+      level1: 0,
+      level2: 0,
+      level3: 0,
+      supply: 0,
+      total: 0,
+    };
+
+    const currentDemandLayout = demandLayoutMap[year] || {};
+    const currentSupplyLayout = supplyLayoutMap[year] || {};
+
+    // 找需求節點資料
+    function findHierarchyNode(code, nodes = hierarchy) {
+      for (const [id, node] of Object.entries(nodes)) {
+        if (id === code) return node;
+
+        if (node?.children) {
+          const found = findHierarchyNode(code, node.children);
+          if (found) return found;
+        }
+      }
+
+      return null;
+    }
+
+    // 需求：只統計目前年份球上真的存在的節點
+    Object.keys(currentDemandLayout).forEach((code) => {
+      const node = findHierarchyNode(code);
+
+      if (!node) return;
+
+      const nameZh = node?.name_zh || "";
+      const nameEn = node?.name_en || "";
+
+      const matched =
+        code.toLowerCase().includes(keyword) ||
+        nameZh.toLowerCase().includes(keyword) ||
+        nameEn.toLowerCase().includes(keyword);
+
+      if (!matched) return;
+
+      if (node.level === 1) stats.level1++;
+      if (node.level === 2) stats.level2++;
+      if (node.level === 3) stats.level3++;
+    });
+
+    // 供給：只統計目前年份球上真的存在的節點
+    Object.keys(currentSupplyLayout).forEach((code) => {
+      if (code === "S23") return;
+
+      const supply = supplyCatalog?.[code];
+
+      const nameZh = supply?.name_zh || "";
+      const nameEn = supply?.name_en || "";
+
+      const matched =
+        code.toLowerCase().includes(keyword) ||
+        nameZh.toLowerCase().includes(keyword) ||
+        nameEn.toLowerCase().includes(keyword);
+
+      if (matched) {
+        stats.supply++;
+      }
+    });
+
+    stats.total = stats.level1 + stats.level2 + stats.level3 + stats.supply;
+
+    return stats;
+  }, [search, year]);
   function getName(code) {
     if (!code) return "";
 
@@ -811,21 +909,54 @@ export default function Global({ isMobile }) {
             />
             {t.flow}
           </label>
-          <div className="node-search-box">
-            <label className="node-search-label">
-              {language === "en" ? "Search" : "搜尋節點"}
-            </label>
+          <div className="node-search-wrapper">
+            <div className="node-search-box">
+              <label className="node-search-label">
+                {language === "en" ? "Search" : "搜尋節點"}
+              </label>
 
-            <input
-              className="node-search-input"
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setSelected(null);
-              }}
-              placeholder={t.search}
-            />
+              <input
+                className="node-search-input"
+                type="text"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setSelected(null);
+                }}
+                placeholder={t.search}
+              />
+            </div>
+
+            {searchStats && (
+              <div className="node-search-stats">
+                <div>
+                  <span>{language === "en" ? "Level 1" : "第一層"}</span>
+                  <strong>{searchStats.level1}</strong>
+                </div>
+
+                <div>
+                  <span>{language === "en" ? "Level 2" : "第二層"}</span>
+                  <strong>{searchStats.level2}</strong>
+                </div>
+
+                <div>
+                  <span>{language === "en" ? "Level 3" : "第三層"}</span>
+                  <strong>{searchStats.level3}</strong>
+                </div>
+
+                <div>
+                  <span>
+                    {language === "en" ? "Energy Supply" : "供給能源"}
+                  </span>
+                  <strong>{searchStats.supply}</strong>
+                </div>
+
+                <div className="search-total">
+                  <span>{language === "en" ? "Total" : "總計"}</span>
+                  <strong>{searchStats.total}</strong>
+                </div>
+              </div>
+            )}
           </div>
           <div className="ai-box" onClick={() => setShowAI(true)}>
             <i
