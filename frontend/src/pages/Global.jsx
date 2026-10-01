@@ -978,6 +978,31 @@ export default function Global({ isMobile }) {
             });
           }}
         >
+          <div className="space-bg">
+            <span className="space-star star-white s1"></span>
+            <span className="space-star star-blue s2"></span>
+            <span className="space-star star-gold s3"></span>
+            <span className="space-star star-red s4"></span>
+            <span className="space-star star-purple s5"></span>
+
+            <span className="space-star star-white s6"></span>
+            <span className="space-star star-blue s7"></span>
+            <span className="space-star star-gold s8"></span>
+            <span className="space-star star-red s9"></span>
+            <span className="space-star star-purple s10"></span>
+
+            <span className="space-star star-white s11"></span>
+            <span className="space-star star-blue s12"></span>
+            <span className="space-star star-gold s13"></span>
+            <span className="space-star star-white s14"></span>
+            <span className="space-star star-purple s15"></span>
+
+            <span className="space-orb orb-blue o1"></span>
+            <span className="space-orb orb-gold o2"></span>
+            <span className="space-orb orb-red o3"></span>
+            <span className="space-orb orb-purple o4"></span>
+          </div>
+
           <GlobeVisualizer
             year={year}
             language={language}
