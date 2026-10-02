@@ -324,11 +324,16 @@ function SupplyNodes({
 
   return Object.entries(supplyLayout)
     .filter(([id]) => !HIDDEN_SUPPLY_CODES.has(id))
-    .filter(([id]) => {
+
+    .map(([id, pos]) => {
+      const position = getSupplyOffset(pos);
+      const camDir = camera.position.clone().normalize();
+      const nodeDir = new THREE.Vector3(...position).normalize();
+      const dot = camDir.dot(nodeDir);
+
       const info = supplyMap[id];
       const nameZh = info?.name_zh || "";
       const nameEn = info?.name_en || "";
-
       const keyword = searchKeyword.trim().toLowerCase();
 
       const matchesSearch =
@@ -340,15 +345,9 @@ function SupplyNodes({
       const isRelated =
         selected?.type === "demand" && activeSupply?.includes(id);
 
-      return matchesSearch || isRelated;
-    })
-    .map(([id, pos]) => {
-      const position = getSupplyOffset(pos);
-      const camDir = camera.position.clone().normalize();
-      const nodeDir = new THREE.Vector3(...position).normalize();
-      const dot = camDir.dot(nodeDir);
+      const isSelectedSelf =
+        selected?.type === "supply" && selected.code === id;
 
-      const info = supplyMap[id];
       const category = info?.category || "Other";
 
       const CATEGORY_COLOR = {
@@ -394,13 +393,20 @@ function SupplyNodes({
 
                 /* 未被選中時隱藏 */
                 opacity:
-                  dot > 0
-                    ? !selected ||
-                      selected.type === "supply" ||
-                      activeSupply?.includes(id)
-                      ? 1
-                      : 0.2
-                    : 0.05,
+                  dot <= 0
+                    ? 0.08
+                    : keyword
+                      ? matchesSearch || isSelectedSelf
+                        ? 1
+                        : isRelated
+                          ? 0.8
+                          : 0.18
+                      : selected
+                        ? selected.type === "supply" ||
+                          activeSupply?.includes(id)
+                          ? 1
+                          : 0.25
+                        : 1,
               }}
               onError={(e) => {
                 if (e.currentTarget.dataset.fallback) return;
@@ -483,11 +489,13 @@ function DemandNodes({
     .filter(([id]) => {
       const level = demandLevel[id];
 
-      // 先限制目前層級
       if (lod === 0 && level !== 1) return false;
       if (lod === 1 && level !== 2) return false;
       if (lod === 2 && level !== 3) return false;
 
+      return true;
+    })
+    .map(([id, pos]) => {
       const nameZh = demandName[id]?.zh || "";
       const nameEn = demandName[id]?.en || "";
       const keyword = searchKeyword.trim().toLowerCase();
@@ -498,14 +506,13 @@ function DemandNodes({
         nameZh.toLowerCase().includes(keyword) ||
         nameEn.toLowerCase().includes(keyword);
 
-      // 如果目前點的是能源供給，
-      // 那跟它相連的需求節點即使不符合搜尋，也要顯示
       const isRelated =
         selected?.type === "supply" && activeDemand?.includes(id);
 
-      return matchesSearch || isRelated;
-    })
-    .map(([id, pos]) => {
+      const isSelectedSelf =
+        selected?.type === "demand" && selected.code === id;
+      const showLabel =
+        !keyword || matchesSearch || isRelated || isSelectedSelf;
       const level = demandLevel[id];
 
       const root = getRootDept(id);
@@ -556,19 +563,25 @@ function DemandNodes({
               emissiveIntensity={dot > 0 ? 0.5 : 0.1}
               transparent
               opacity={
-                dot > 0
-                  ? !selected ||
-                    selected.type === "demand" ||
-                    activeDemand?.includes(id)
-                    ? 1
-                    : 0.2
-                  : 0.05
+                dot <= 0
+                  ? 0.05
+                  : keyword
+                    ? matchesSearch || isSelectedSelf
+                      ? 1
+                      : isRelated
+                        ? 0.8
+                        : 0.18
+                    : selected
+                      ? selected.type === "demand" || activeDemand?.includes(id)
+                        ? 1
+                        : 0.2
+                      : 1
               }
             />
           </mesh>
 
           {/* Label */}
-          {lod === 0 && level === 1 && (
+          {lod === 0 && level === 1 && showLabel && (
             <Label
               position={[0, size + 0.18, 0]}
               worldPosition={position}
@@ -576,7 +589,7 @@ function DemandNodes({
               baseSize={18}
             />
           )}
-          {lod === 1 && level === 2 && (
+          {lod === 1 && level === 2 && showLabel && (
             <Label
               position={[0, size + 0.14, 0]}
               worldPosition={position}
@@ -584,7 +597,7 @@ function DemandNodes({
               baseSize={12}
             />
           )}
-          {lod === 2 && level === 3 && (
+          {lod === 2 && level === 3 && showLabel && (
             <Label
               position={[0, size + 0.1, 0]}
               worldPosition={position}
@@ -782,17 +795,88 @@ function Scene({
 }) {
   const { camera } = useThree();
   const [lod, setLOD] = useState(0);
+  const focusTarget = useRef(null);
 
+  useEffect(() => {
+    if (!selected) {
+      focusTarget.current = null;
+      return;
+    }
+
+    let targetPosition = null;
+
+    if (selected.type === "supply") {
+      const pos = supplyLayouts[year]?.[selected.code];
+
+      if (pos) {
+        targetPosition = getSupplyOffset(pos);
+      }
+    } else if (selected.type === "demand") {
+      const pos = demandLayouts[year]?.[selected.code];
+
+      if (pos) {
+        const level = demandLevel[selected.code];
+
+        const radius = level === 1 ? 3.05 : level === 2 ? 3.1 : 3.15;
+
+        targetPosition = new THREE.Vector3(
+          pos.x * radius,
+          pos.y * radius,
+          pos.z * radius,
+        );
+      }
+    }
+
+    if (!targetPosition) return;
+
+    let targetDistance = camera.position.length();
+
+    if (selected.type === "demand") {
+      const level = demandLevel[selected.code];
+
+      if (level === 1) {
+        targetDistance = 9;
+      } else if (level === 2) {
+        targetDistance = 7;
+      } else if (level === 3) {
+        targetDistance = 5.5;
+      }
+    }
+
+    const targetCameraPosition = targetPosition
+      .clone()
+      .normalize()
+      .multiplyScalar(targetDistance);
+    focusTarget.current = targetCameraPosition;
+  }, [selected?.code, selected?.type, year, camera]);
   useFrame(() => {
     const d = camera.position.length();
 
     let newLevel = 0;
+
     if (d > 8) newLevel = 0;
     else if (d > 6) newLevel = 1;
     else newLevel = 2;
 
     setLOD(newLevel);
     onLODChange?.(newLevel);
+
+    // 搜尋結果被選取後，自動把節點轉到正面
+    if (focusTarget.current) {
+      camera.position.lerp(focusTarget.current, 0.08);
+
+      camera.lookAt(0, 0, 0);
+
+      if (controlRef?.current) {
+        controlRef.current.target.set(0, 0, 0);
+        controlRef.current.update();
+      }
+
+      if (camera.position.distanceTo(focusTarget.current) < 0.03) {
+        camera.position.copy(focusTarget.current);
+        focusTarget.current = null;
+      }
+    }
   });
   return (
     <>

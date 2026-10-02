@@ -100,6 +100,7 @@ export default function Global({ isMobile }) {
   const [year, setYear] = useState("113");
   const [showSupply, setShowSupply] = useState(false);
   const [search, setSearch] = useState("");
+  const [openSearchGroup, setOpenSearchGroup] = useState(null);
   const [showAI, setShowAI] = useState(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -334,6 +335,98 @@ export default function Global({ isMobile }) {
 
     return stats;
   }, [search, year]);
+  const searchResults = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    if (!keyword) return [];
+
+    const results = [];
+
+    const currentDemandLayout = demandLayoutMap[year] || {};
+    const currentSupplyLayout = supplyLayoutMap[year] || {};
+
+    function findHierarchyNode(code, nodes = hierarchy) {
+      for (const [id, node] of Object.entries(nodes)) {
+        if (id === code) return node;
+
+        if (node?.children) {
+          const found = findHierarchyNode(code, node.children);
+          if (found) return found;
+        }
+      }
+
+      return null;
+    }
+
+    Object.keys(currentDemandLayout).forEach((code) => {
+      const node = findHierarchyNode(code);
+
+      if (!node) return;
+
+      const nameZh = node?.name_zh || "";
+      const nameEn = node?.name_en || "";
+
+      const matched =
+        code.toLowerCase().includes(keyword) ||
+        nameZh.toLowerCase().includes(keyword) ||
+        nameEn.toLowerCase().includes(keyword);
+
+      if (matched) {
+        results.push({
+          code,
+          name:
+            language === "en"
+              ? nameEn || nameZh || code
+              : nameZh || nameEn || code,
+          type: "demand",
+          level: node.level,
+        });
+      }
+    });
+
+    Object.keys(currentSupplyLayout).forEach((code) => {
+      if (code === "S23") return;
+
+      const supply = supplyCatalog?.[code];
+
+      const nameZh = supply?.name_zh || "";
+      const nameEn = supply?.name_en || "";
+
+      const matched =
+        code.toLowerCase().includes(keyword) ||
+        nameZh.toLowerCase().includes(keyword) ||
+        nameEn.toLowerCase().includes(keyword);
+
+      if (matched) {
+        results.push({
+          code,
+          name:
+            language === "en"
+              ? nameEn || nameZh || code
+              : nameZh || nameEn || code,
+          type: "supply",
+          level: null,
+        });
+      }
+    });
+
+    return results;
+  }, [search, year, language]);
+
+  const groupedSearchResults = useMemo(() => {
+    return {
+      level1: searchResults.filter(
+        (item) => item.type === "demand" && item.level === 1,
+      ),
+      level2: searchResults.filter(
+        (item) => item.type === "demand" && item.level === 2,
+      ),
+      level3: searchResults.filter(
+        (item) => item.type === "demand" && item.level === 3,
+      ),
+      supply: searchResults.filter((item) => item.type === "supply"),
+    };
+  }, [searchResults]);
   function getName(code) {
     if (!code) return "";
 
@@ -929,28 +1022,173 @@ export default function Global({ isMobile }) {
 
             {searchStats && (
               <div className="node-search-stats">
-                <div>
-                  <span>{language === "en" ? "Level 1" : "第一層"}</span>
-                  <strong>{searchStats.level1}</strong>
+                {/* 第一層 */}
+                <div className="search-group">
+                  <div className="search-group-header">
+                    <span>{language === "en" ? "Level 1" : "第一層"}</span>
+
+                    <div className="search-group-action">
+                      <strong>{searchStats.level1}</strong>
+
+                      {searchStats.level1 > 0 && (
+                        <button
+                          className="search-expand-btn"
+                          onClick={() =>
+                            setOpenSearchGroup(
+                              openSearchGroup === "level1" ? null : "level1",
+                            )
+                          }
+                        >
+                          {openSearchGroup === "level1" ? "▲" : "▼"}
+                        </button>
+                      )}
+
+                      {openSearchGroup === "level1" && (
+                        <div className="search-popover">
+                          {groupedSearchResults.level1.map((item) => (
+                            <button
+                              key={item.code}
+                              className="search-popover-item"
+                              onClick={() => {
+                                onSelect(item);
+                                setOpenSearchGroup(null);
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <span>{language === "en" ? "Level 2" : "第二層"}</span>
-                  <strong>{searchStats.level2}</strong>
+                {/* 第二層 */}
+                <div className="search-group">
+                  <div className="search-group-header">
+                    <span>{language === "en" ? "Level 2" : "第二層"}</span>
+
+                    <div className="search-group-action">
+                      <strong>{searchStats.level2}</strong>
+
+                      {searchStats.level2 > 0 && (
+                        <button
+                          className="search-expand-btn"
+                          onClick={() =>
+                            setOpenSearchGroup(
+                              openSearchGroup === "level2" ? null : "level2",
+                            )
+                          }
+                        >
+                          {openSearchGroup === "level2" ? "▲" : "▼"}
+                        </button>
+                      )}
+
+                      {openSearchGroup === "level2" && (
+                        <div className="search-popover">
+                          {groupedSearchResults.level2.map((item) => (
+                            <button
+                              key={item.code}
+                              className="search-popover-item"
+                              onClick={() => {
+                                onSelect(item);
+                                setOpenSearchGroup(null);
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <span>{language === "en" ? "Level 3" : "第三層"}</span>
-                  <strong>{searchStats.level3}</strong>
+                {/* 第三層 */}
+                <div className="search-group">
+                  <div className="search-group-header">
+                    <span>{language === "en" ? "Level 3" : "第三層"}</span>
+
+                    <div className="search-group-action">
+                      <strong>{searchStats.level3}</strong>
+
+                      {searchStats.level3 > 0 && (
+                        <button
+                          className="search-expand-btn"
+                          onClick={() =>
+                            setOpenSearchGroup(
+                              openSearchGroup === "level3" ? null : "level3",
+                            )
+                          }
+                        >
+                          {openSearchGroup === "level3" ? "▲" : "▼"}
+                        </button>
+                      )}
+
+                      {openSearchGroup === "level3" && (
+                        <div className="search-popover">
+                          {groupedSearchResults.level3.map((item) => (
+                            <button
+                              key={item.code}
+                              className="search-popover-item"
+                              onClick={() => {
+                                onSelect(item);
+                                setOpenSearchGroup(null);
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <span>
-                    {language === "en" ? "Energy Supply" : "供給能源"}
-                  </span>
-                  <strong>{searchStats.supply}</strong>
+                {/* 供給能源 */}
+                <div className="search-group">
+                  <div className="search-group-header">
+                    <span>
+                      {language === "en" ? "Energy Supply" : "供給能源"}
+                    </span>
+
+                    <div className="search-group-action">
+                      <strong>{searchStats.supply}</strong>
+
+                      {searchStats.supply > 0 && (
+                        <button
+                          className="search-expand-btn"
+                          onClick={() =>
+                            setOpenSearchGroup(
+                              openSearchGroup === "supply" ? null : "supply",
+                            )
+                          }
+                        >
+                          {openSearchGroup === "supply" ? "▲" : "▼"}
+                        </button>
+                      )}
+
+                      {openSearchGroup === "supply" && (
+                        <div className="search-popover">
+                          {groupedSearchResults.supply.map((item) => (
+                            <button
+                              key={item.code}
+                              className="search-popover-item"
+                              onClick={() => {
+                                onSelect(item);
+                                setOpenSearchGroup(null);
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
+                {/* 總計 */}
                 <div className="search-total">
                   <span>{language === "en" ? "Total" : "總計"}</span>
                   <strong>{searchStats.total}</strong>
