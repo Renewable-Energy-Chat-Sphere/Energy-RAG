@@ -889,7 +889,7 @@ function Scene({
           emissive="#3b82f6"
           emissiveIntensity={0.8}
           transparent
-          opacity={0.2}
+          opacity={0.4}
           roughness={0.2}
           metalness={0.1}
           clearcoat={1}

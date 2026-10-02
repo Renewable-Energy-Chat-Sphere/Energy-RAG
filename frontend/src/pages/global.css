@@ -1385,386 +1385,469 @@ input[type="checkbox"] {
   overflow: hidden;
 }
 
+/* 宇宙背景層 */
 .space-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
   pointer-events: none;
+  overflow: hidden;
+
+  background: linear-gradient(
+    18deg,
+    transparent 34%,
+    rgba(120, 140, 255, 0.05) 43%,
+    rgba(180, 120, 255, 0.1) 50%,
+    rgba(80, 170, 255, 0.06) 57%,
+    transparent 66%
+  );
 }
 
-/* ===== 星點基礎 ===== */
-
-.space-star {
+/* 彩色星雲 + 大亮點 */
+.space-bg::before {
+  content: "";
   position: absolute;
-  border-radius: 50%;
+  inset: -8%;
 
-  width: 3px;
-  height: 3px;
+  background-image:
+    radial-gradient(
+      circle at 18% 25%,
+      rgba(120, 180, 255, 0.9) 0 1.5px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 72% 22%,
+      rgba(255, 210, 130, 0.8) 0 1.5px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 45% 72%,
+      rgba(190, 140, 255, 0.8) 0 1.5px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 86% 62%,
+      rgba(255, 130, 140, 0.75) 0 1.5px,
+      transparent 3px
+    ),
+    radial-gradient(
+      ellipse at 25% 55%,
+      rgba(70, 140, 255, 0.22),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 72% 38%,
+      rgba(160, 100, 255, 0.18),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(80, 170, 255, 0.1),
+      transparent 55%
+    );
+
+  background-size:
+    150px 150px,
+    220px 220px,
+    190px 190px,
+    260px 260px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
 
   animation:
-    spaceDrift 24s linear infinite,
-    naturalTwinkle 5s ease-in-out infinite;
-
-  will-change: transform, opacity;
+    galaxyFloat 30s ease-in-out infinite alternate,
+    galaxyGlow 8s ease-in-out infinite;
 }
 
-/* ===== 不同恆星色溫 ===== */
-
-.star-white {
-  background: #ffffff;
-  box-shadow:
-    0 0 4px rgba(255, 255, 255, 0.95),
-    0 0 10px rgba(255, 255, 255, 0.45);
-}
-
-.star-blue {
-  background: #a9d8ff;
-  box-shadow:
-    0 0 5px rgba(100, 190, 255, 0.95),
-    0 0 14px rgba(59, 130, 246, 0.45);
-}
-
-.star-gold {
-  background: #ffe29a;
-  box-shadow:
-    0 0 5px rgba(255, 210, 120, 0.95),
-    0 0 14px rgba(245, 158, 11, 0.38);
-}
-
-.star-red {
-  background: #ff9a8c;
-  box-shadow:
-    0 0 5px rgba(255, 120, 100, 0.9),
-    0 0 14px rgba(239, 68, 68, 0.35);
-}
-
-.star-purple {
-  background: #d7b7ff;
-  box-shadow:
-    0 0 5px rgba(190, 140, 255, 0.9),
-    0 0 14px rgba(139, 92, 246, 0.35);
-}
-
-/* ===== 每顆大小、位置、速度不同 ===== */
-
-.s1 {
-  top: 8%;
-  left: 7%;
-  width: 2px;
-  height: 2px;
-  animation-duration: 28s, 6s;
-}
-.s2 {
-  top: 14%;
-  left: 22%;
-  width: 4px;
-  height: 4px;
-  animation-duration: 34s, 4s;
-}
-.s3 {
-  top: 7%;
-  left: 48%;
-  width: 3px;
-  height: 3px;
-  animation-duration: 26s, 7s;
-}
-.s4 {
-  top: 18%;
-  left: 70%;
-  width: 2px;
-  height: 2px;
-  animation-duration: 31s, 5s;
-}
-.s5 {
-  top: 26%;
-  left: 90%;
-  width: 4px;
-  height: 4px;
-  animation-duration: 38s, 8s;
-}
-
-.s6 {
-  top: 34%;
-  left: 12%;
-  width: 3px;
-  height: 3px;
-  animation-duration: 29s, 4.5s;
-}
-.s7 {
-  top: 40%;
-  left: 36%;
-  width: 2px;
-  height: 2px;
-  animation-duration: 35s, 6.5s;
-}
-.s8 {
-  top: 48%;
-  left: 76%;
-  width: 4px;
-  height: 4px;
-  animation-duration: 27s, 5.2s;
-}
-.s9 {
-  top: 58%;
-  left: 92%;
-  width: 3px;
-  height: 3px;
-  animation-duration: 33s, 7.5s;
-}
-.s10 {
-  top: 64%;
-  left: 18%;
-  width: 2px;
-  height: 2px;
-  animation-duration: 30s, 4.8s;
-}
-
-.s11 {
-  top: 72%;
-  left: 42%;
-  width: 4px;
-  height: 4px;
-  animation-duration: 40s, 8.2s;
-}
-.s12 {
-  top: 78%;
-  left: 68%;
-  width: 3px;
-  height: 3px;
-  animation-duration: 32s, 5.7s;
-}
-.s13 {
-  top: 86%;
-  left: 88%;
-  width: 2px;
-  height: 2px;
-  animation-duration: 36s, 6.8s;
-}
-.s14 {
-  top: 90%;
-  left: 28%;
-  width: 3px;
-  height: 3px;
-  animation-duration: 25s, 4.2s;
-}
-.s15 {
-  top: 52%;
-  left: 54%;
-  width: 2px;
-  height: 2px;
-  animation-duration: 37s, 7.3s;
-}
-
-/* ===== 遠方大型光源 / 行星感 ===== */
-
-.space-orb {
+/* 密集小星點 */
+.space-bg::after {
+  content: "";
   position: absolute;
-  border-radius: 50%;
+  inset: -10%;
 
-  opacity: 0.22;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.7px),
+    radial-gradient(
+      circle,
+      rgba(110, 180, 255, 0.85) 0 1.1px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle,
+      rgba(255, 210, 130, 0.75) 0 0.9px,
+      transparent 1.6px
+    ),
+    radial-gradient(circle, rgba(200, 150, 255, 0.7) 0 0.8px, transparent 1.5px);
 
-  filter: blur(1px);
+  background-size:
+    75px 75px,
+    110px 110px,
+    145px 145px,
+    180px 180px;
+
+  background-position:
+    10px 15px,
+    45px 70px,
+    90px 30px,
+    120px 100px;
 
   animation:
-    orbTravel 32s ease-in-out infinite alternate,
-    orbPulse 8s ease-in-out infinite;
+    starFieldMove 26s linear infinite,
+    starTwinkle 4s ease-in-out infinite;
 }
 
-.orb-blue {
-  background: radial-gradient(
-    circle at 35% 35%,
-    rgba(255, 255, 255, 0.9),
-    rgba(100, 180, 255, 0.55) 30%,
-    rgba(59, 130, 246, 0.15) 62%,
-    transparent 80%
-  );
-
-  box-shadow:
-    0 0 25px rgba(59, 130, 246, 0.3),
-    0 0 50px rgba(59, 130, 246, 0.12);
-}
-
-.orb-gold {
-  background: radial-gradient(
-    circle at 35% 35%,
-    rgba(255, 255, 230, 0.95),
-    rgba(255, 200, 100, 0.5) 30%,
-    rgba(245, 158, 11, 0.13) 62%,
-    transparent 80%
-  );
-
-  box-shadow:
-    0 0 25px rgba(245, 158, 11, 0.25),
-    0 0 50px rgba(245, 158, 11, 0.1);
-}
-
-.orb-red {
-  background: radial-gradient(
-    circle at 35% 35%,
-    rgba(255, 230, 230, 0.9),
-    rgba(255, 120, 100, 0.45) 30%,
-    rgba(239, 68, 68, 0.12) 62%,
-    transparent 80%
-  );
-
-  box-shadow:
-    0 0 25px rgba(239, 68, 68, 0.22),
-    0 0 50px rgba(239, 68, 68, 0.08);
-}
-
-.orb-purple {
-  background: radial-gradient(
-    circle at 35% 35%,
-    rgba(245, 235, 255, 0.95),
-    rgba(170, 120, 255, 0.45) 30%,
-    rgba(139, 92, 246, 0.12) 62%,
-    transparent 80%
-  );
-
-  box-shadow:
-    0 0 25px rgba(139, 92, 246, 0.22),
-    0 0 50px rgba(139, 92, 246, 0.08);
-}
-
-.o1 {
-  width: 18px;
-  height: 18px;
-  top: 16%;
-  left: 14%;
-}
-
-.o2 {
-  width: 24px;
-  height: 24px;
-  top: 26%;
-  right: 8%;
-  animation-duration: 40s, 10s;
-}
-
-.o3 {
-  width: 14px;
-  height: 14px;
-  bottom: 18%;
-  left: 12%;
-  animation-duration: 28s, 7s;
-}
-
-.o4 {
-  width: 20px;
-  height: 20px;
-  bottom: 12%;
-  right: 20%;
-  animation-duration: 36s, 9s;
-}
-
-/* ===== 不規律漂移 ===== */
-
-@keyframes spaceDrift {
-  0% {
-    transform: translate(0, 0);
-  }
-
-  20% {
-    transform: translate(8px, -6px);
-  }
-
-  45% {
-    transform: translate(18px, 4px);
-  }
-
-  70% {
-    transform: translate(10px, 12px);
-  }
-
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-/* ===== 不規律亮度 ===== */
-
-@keyframes naturalTwinkle {
-  0% {
-    opacity: 0.2;
-  }
-
-  18% {
-    opacity: 0.55;
-  }
-
-  37% {
-    opacity: 0.3;
-  }
-
-  63% {
-    opacity: 0.9;
-  }
-
-  78% {
-    opacity: 0.4;
-  }
-
-  100% {
-    opacity: 0.22;
-  }
-}
-
-/* ===== 大型光源慢漂 ===== */
-
-@keyframes orbTravel {
+/* 星雲慢慢漂 */
+@keyframes galaxyFloat {
   0% {
     transform: translate(0, 0) scale(1);
   }
 
-  33% {
-    transform: translate(22px, -14px) scale(1.05);
-  }
-
-  66% {
-    transform: translate(-12px, 16px) scale(0.96);
+  50% {
+    transform: translate(-18px, 10px) scale(1.04);
   }
 
   100% {
-    transform: translate(16px, 8px) scale(1.08);
+    transform: translate(16px, -12px) scale(1.07);
   }
 }
 
-@keyframes orbPulse {
+/* 星空移動 */
+@keyframes starFieldMove {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(45px, -28px) scale(1.03);
+  }
+
+  100% {
+    transform: translate(95px, -62px) scale(1.06);
+  }
+}
+
+/* 星雲明暗 */
+@keyframes galaxyGlow {
   0%,
   100% {
-    opacity: 0.12;
+    opacity: 0.7;
   }
 
-  40% {
-    opacity: 0.26;
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 星點閃爍 */
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 0.45;
   }
 
-  65% {
-    opacity: 0.18;
-  }
-
-  85% {
-    opacity: 0.32;
+  50% {
+    opacity: 0.95;
   }
 }
 
 /* ===== 白天模式 ===== */
 
-#main-content:not(.dark) .space-star {
-  opacity: 0.28;
+#main-content:not(.dark) .globe-area {
+  background: radial-gradient(
+    circle at 50% 40%,
+    #ffffff 0%,
+    #f7faff 58%,
+    #edf3fa 100%
+  );
 }
 
-#main-content:not(.dark) .space-orb {
-  opacity: 0.13;
+#main-content:not(.dark) .space-bg::before {
+  opacity: 0.55;
+}
+
+#main-content:not(.dark) .space-bg::after {
+  opacity: 0.4;
 }
 
 /* ===== 黑夜模式 ===== */
 
-#main-content.dark .space-star {
-  opacity: 0.7;
+#main-content.dark .globe-area {
+  background: radial-gradient(
+    circle at 50% 40%,
+    #18233a 0%,
+    #0b1324 58%,
+    #050913 100%
+  );
 }
 
-#main-content.dark .space-orb {
+#main-content.dark .space-bg::before {
+  opacity: 0.95;
+}
+
+#main-content.dark .space-bg::after {
+  opacity: 0.85;
+}
+.floating-star {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+
+  animation:
+    floatStar 12s ease-in-out infinite alternate,
+    pulseStar 3.8s ease-in-out infinite;
+}
+
+.fs1 {
+  top: 10%;
+  left: 14%;
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+  animation-duration: 13s, 3.2s;
+}
+
+.fs2 {
+  top: 18%;
+  left: 72%;
+  width: 4px;
+  height: 4px;
+  background: #9fd2ff;
+  box-shadow: 0 0 12px rgba(120, 180, 255, 0.85);
+  animation-duration: 15s, 4.2s;
+}
+
+.fs3 {
+  top: 34%;
+  left: 22%;
+  width: 3px;
+  height: 3px;
+  background: #ffd58b;
+  box-shadow: 0 0 9px rgba(255, 210, 120, 0.8);
+  animation-duration: 10s, 3s;
+}
+
+.fs4 {
+  top: 42%;
+  left: 81%;
+  width: 5px;
+  height: 5px;
+  background: #d7b4ff;
+  box-shadow: 0 0 11px rgba(190, 140, 255, 0.8);
+  animation-duration: 14s, 4.5s;
+}
+
+.fs5 {
+  top: 62%;
+  left: 12%;
+  width: 4px;
+  height: 4px;
+  background: #ffb4b4;
+  box-shadow: 0 0 10px rgba(255, 140, 140, 0.7);
+  animation-duration: 11s, 3.6s;
+}
+
+.fs6 {
+  top: 70%;
+  left: 68%;
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.85);
+  animation-duration: 16s, 4.8s;
+}
+
+.fs7 {
+  top: 78%;
+  left: 38%;
+  width: 3px;
+  height: 3px;
+  background: #9fd2ff;
+  box-shadow: 0 0 9px rgba(120, 180, 255, 0.8);
+  animation-duration: 9s, 2.8s;
+}
+
+.fs8 {
+  top: 24%;
+  left: 48%;
+  width: 5px;
+  height: 5px;
+  background: #ffe2a0;
+  box-shadow: 0 0 11px rgba(255, 210, 120, 0.8);
+  animation-duration: 17s, 5s;
+}
+
+@keyframes floatStar {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(10px, -8px);
+  }
+
+  100% {
+    transform: translate(-8px, 10px);
+  }
+}
+
+@keyframes pulseStar {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+.meteor {
+  position: absolute;
+  width: 120px;
+  height: 2px;
+  pointer-events: none;
+
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.9)
+  );
+
+  border-radius: 999px;
+  transform: rotate(-28deg);
+
+  opacity: 0;
+
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.85));
+}
+
+.meteor::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.95),
+    0 0 18px rgba(120, 180, 255, 0.7);
+}
+
+.meteor1 {
+  top: 70%;
+  left: -15%;
+  animation: meteorFly1 10s linear infinite;
+}
+
+.meteor2 {
+  top: 18%;
+  right: -20%;
+  left: auto;
+
+  /* 右邊透明 → 左邊亮，因為它往左下飛 */
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0)
+  );
+
+  animation: meteorFly2 13s linear infinite;
+  animation-delay: 3s;
+}
+.meteor2::after {
+  left: -2px;
+  right: auto;
+}
+.meteor3 {
+  bottom: -10%;
+  left: 35%;
+  top: auto;
+  animation: meteorFly3 16s linear infinite;
+  animation-delay: 6s;
+}
+
+@keyframes meteorFly1 {
+  0% {
+    transform: translate(0, 0) rotate(-28deg);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  22% {
+    transform: translate(420px, -220px) rotate(-28deg);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translate(420px, -220px) rotate(-28deg);
+    opacity: 0;
+  }
+}
+
+@keyframes meteorFly2 {
+  0% {
+    transform: translate(0, 0) rotate(-28deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  24% {
+    transform: translate(-420px, 220px) rotate(-28deg);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translate(-420px, 220px) rotate(-28deg);
+    opacity: 0;
+  }
+}
+
+@keyframes meteorFly3 {
+  0% {
+    transform: translate(0, 0) rotate(-45deg);
+    opacity: 0;
+  }
+
+  9% {
+    opacity: 1;
+  }
+
+  22% {
+    transform: translate(280px, -360px) rotate(-45deg);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translate(280px, -360px) rotate(-45deg);
+    opacity: 0;
+  }
+}
+#main-content:not(.dark) .floating-star {
   opacity: 0.28;
+}
+
+#main-content:not(.dark) .meteor {
+  opacity: 0.55;
+}
+
+#main-content.dark .floating-star {
+  opacity: 0.6;
+}
+
+#main-content.dark .meteor {
+  opacity: 0.85;
 }
